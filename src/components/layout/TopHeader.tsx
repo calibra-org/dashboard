@@ -15,7 +15,7 @@ export function TopHeader({ title, subtitle }: TopHeaderProps) {
   return (
     <header className="border-b border-slate-200 bg-white/95 px-5 py-4 backdrop-blur">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
+        <div className="max-w-2xl">
           <p className="text-sm font-medium text-violet-600">Lolit SEO V2</p>
           <h1 className="text-xl font-semibold text-slate-900">{title}</h1>
           {subtitle ? <p className="mt-1 text-sm text-slate-500">{subtitle}</p> : null}

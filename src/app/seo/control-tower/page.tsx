@@ -1,10 +1,17 @@
 "use client";
 
+import { useState } from "react";
 import { CheckCircle2, PlayCircle, ShieldCheck, Sparkles, Workflow } from "lucide-react";
 import { StatusBadge } from "@/src/components/ui/StatusBadge";
+import { Tabs } from "@/src/components/ui/Tabs";
+import { FilterBar } from "@/src/components/ui/FilterBar";
+import { ApprovalQueue } from "@/src/components/ui/ApprovalQueue";
 import { approvalData, agentData, engineStatusData, recommendationData } from "@/src/data/seo";
 
 export default function ControlTowerPage() {
+  const [activeTab, setActiveTab] = useState("recommendations");
+  const [filter, setFilter] = useState("همه");
+  const filteredRecommendations = recommendationData.filter((item) => filter === "همه" || item.impact === filter);
   return (
     <div className="space-y-6">
       <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
@@ -56,30 +63,41 @@ export default function ControlTowerPage() {
 
       <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-sm font-medium text-slate-500">پیشنهادهای آماده</p>
               <h3 className="text-xl font-semibold text-slate-900">توصیه‌های AI</h3>
             </div>
-            <button className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-600">درخواست بررسی</button>
+            <Tabs items={[{ id: "recommendations", label: "پیشنهادها" }, { id: "queue", label: "صف تأیید" }]} activeId={activeTab} onChange={setActiveTab} />
           </div>
-          <div className="mt-6 space-y-3">
-            {recommendationData.map((item) => (
-              <div key={item.id} className="rounded-2xl border border-slate-200 p-4">
-                <div className="flex items-center justify-between gap-2">
-                  <div>
-                    <p className="font-medium text-slate-900">{item.title}</p>
-                    <p className="mt-1 text-sm text-slate-600">{item.summary}</p>
-                  </div>
-                  <StatusBadge tone={item.status} label={item.impact} />
-                </div>
-                <div className="mt-3 flex items-center gap-2 text-sm text-slate-500">
-                  <PlayCircle size={16} />
-                  تلاش: {item.effort}
-                </div>
+          {activeTab === "recommendations" ? (
+            <>
+              <div className="mt-4">
+                <FilterBar activeFilter={filter} onChange={setFilter} options={["همه", "بالا", "متوسط"]} />
               </div>
-            ))}
-          </div>
+              <div className="mt-6 space-y-3">
+                {filteredRecommendations.map((item) => (
+                  <div key={item.id} className="rounded-2xl border border-slate-200 p-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        <p className="font-medium text-slate-900">{item.title}</p>
+                        <p className="mt-1 text-sm text-slate-600">{item.summary}</p>
+                      </div>
+                      <StatusBadge tone={item.status} label={item.impact} />
+                    </div>
+                    <div className="mt-3 flex items-center gap-2 text-sm text-slate-500">
+                      <PlayCircle size={16} />
+                      تلاش: {item.effort}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="mt-6">
+              <ApprovalQueue />
+            </div>
+          )}
         </div>
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between">
@@ -90,7 +108,7 @@ export default function ControlTowerPage() {
             <StatusBadge tone="warning" label="در انتظار تایید" />
           </div>
           <div className="mt-6 space-y-3">
-            {approvalData.map((item) => (
+            {approvalData.slice(0, 2).map((item) => (
               <div key={item.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <div className="flex items-center justify-between">
                   <div>

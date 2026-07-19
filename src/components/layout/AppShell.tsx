@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { RightSidebar } from "@/src/components/layout/RightSidebar";
 import { TopHeader } from "@/src/components/layout/TopHeader";
+import { MobileNav } from "@/src/components/layout/MobileNav";
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -40,6 +41,9 @@ export function AppShell({ children }: AppShellProps) {
       <div className="flex min-h-screen flex-col lg:flex-row">
         <div className="flex-1">
           <TopHeader title={title} subtitle="نسخه V2 • داشبورد عملیاتی" />
+          <div className="border-b border-slate-200 bg-white/80 px-4 py-3 backdrop-blur md:px-6 lg:hidden">
+            <MobileNav />
+          </div>
           <main className="p-4 md:p-6 lg:p-8">{children}</main>
         </div>
         <RightSidebar />
