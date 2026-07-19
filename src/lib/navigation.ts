@@ -1,0 +1,18 @@
+export const navItems = [
+  { href: "/seo/overview", label: "نمای کلی", section: "overview" },
+  { href: "/seo/control-tower", label: "کنترل‌تاور", section: "control" },
+  { href: "/seo/products", label: "محصولات", section: "products" },
+  { href: "/seo/categories-links", label: "دسته‌بندی و لینک", section: "categories" },
+  { href: "/seo/keywords-content", label: "کلمات و محتوا", section: "keywords" },
+  { href: "/seo/images-alt", label: "تصاویر و ALT", section: "images" },
+  { href: "/seo/schema-preview", label: "اسکیما و پیش‌نمایش", section: "schema" },
+  { href: "/seo/technical-health", label: "سلامت فنی", section: "technical" },
+  { href: "/seo/crawl-monitoring", label: "پایش Crawl", section: "crawl" },
+  { href: "/seo/rank-tracking", label: "ردیاب رتبه", section: "rank" },
+  { href: "/seo/competitors-serp", label: "رقبا و SERP", section: "competitors" },
+  { href: "/seo/live-editor", label: "ویرایش زنده", section: "editor" },
+  { href: "/seo/content-refresh", label: "به‌روزرسانی محتوا", section: "refresh" },
+  { href: "/seo/market-radar", label: "رادار بازار", section: "market" },
+  { href: "/seo/reports", label: "گزارش‌ها", section: "reports" },
+  { href: "/seo/settings", label: "تنظیمات", section: "settings" },
+];
