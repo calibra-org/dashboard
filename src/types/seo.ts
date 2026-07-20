@@ -194,3 +194,47 @@ export interface AutomationItem {
   status: StatusTone;
   nextRun: string;
 }
+
+export interface OverviewMetric {
+  id: string;
+  label: string;
+  value: string;
+  change: string;
+  detail: string;
+  tone: StatusTone;
+}
+
+export interface OverviewTrendPoint {
+  label: string;
+  value: number;
+  target: number;
+}
+
+export interface OverviewSignal {
+  id: string;
+  title: string;
+  detail: string;
+  owner: string;
+  store: string;
+  score: number;
+  status: StatusTone;
+  impact: string;
+}
+
+export interface OverviewAlertItem {
+  id: string;
+  title: string;
+  detail: string;
+  level: "critical" | "warning" | "info";
+  action: string;
+}
+
+export interface OverviewWatchItem {
+  id: string;
+  title: string;
+  owner: string;
+  impact: string;
+  score: number;
+  status: StatusTone;
+  eta: string;
+}

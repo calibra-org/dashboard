@@ -1,0 +1,30 @@
+<svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="12" y1="8" x2="82" y2="91" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F7F4FF"/>
+      <stop offset="1" stop-color="#E8E2FF"/>
+    </linearGradient>
+    <linearGradient id="coat" x1="27" y1="68" x2="70" y2="96" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#172033"/>
+      <stop offset="1" stop-color="#2B3650"/>
+    </linearGradient>
+    <filter id="shadow" x="18" y="10" width="61" height="63" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#4C1D95" flood-opacity="0.14"/>
+    </filter>
+  </defs>
+  <rect width="96" height="96" rx="48" fill="url(#bg)"/>
+  <circle cx="48" cy="48" r="43" stroke="#FFFFFF" stroke-opacity="0.8" stroke-width="2"/>
+  <g filter="url(#shadow)">
+    <path d="M30 37C30 24.8 37.8 16 48.6 16C60.3 16 67 25.4 66 38.4C62.3 31.5 56.5 28.4 48 28.4C40.2 28.4 34.5 31.1 30 37Z" fill="#111827"/>
+    <ellipse cx="48" cy="40" rx="17.5" ry="20" fill="#DFA77F"/>
+    <path d="M31.5 39.5C34.5 35.2 39.2 32.6 48.2 32.6C56 32.6 61.5 35.3 64.6 39.6C63.7 30.7 58.3 24 48.5 24C39.4 24 33.4 30.7 31.5 39.5Z" fill="#151C2B"/>
+    <path d="M34.2 46.2C35.6 57.7 40.7 64 48.3 64C56 64 61.7 57.2 63 46.1C59.8 52.2 55 55.6 48.3 55.6C41.9 55.6 37.5 52.4 34.2 46.2Z" fill="#2B2330"/>
+    <path d="M38.6 48.2C41.6 51.3 45 52.7 48.4 52.7C52.3 52.7 55.7 51 58.1 48.1C56.9 56.3 53.4 60 48.3 60C43.5 60 39.8 56.1 38.6 48.2Z" fill="#3B2D34"/>
+    <ellipse cx="41.5" cy="41.3" rx="1.4" ry="1.2" fill="#111827"/>
+    <ellipse cx="55.1" cy="41.3" rx="1.4" ry="1.2" fill="#111827"/>
+    <path d="M43 48.5C46.2 50.2 50.5 50.3 53.5 48.5" stroke="#8B4D3C" stroke-width="1.7" stroke-linecap="round"/>
+  </g>
+  <path d="M17 96C19.8 76.6 30.7 65.5 48 65.5C65.5 65.5 76.7 76.8 79 96H17Z" fill="url(#coat)"/>
+  <path d="M38.3 66.7L48 77.4L57.8 66.7L54 87H42L38.3 66.7Z" fill="#F8FAFC"/>
+  <path d="M48 77.4L43.8 83.6L48 91L52.2 83.6L48 77.4Z" fill="#7C3AED"/>
+</svg>

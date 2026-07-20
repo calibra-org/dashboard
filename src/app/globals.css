@@ -11,8 +11,9 @@ body {
   min-height: 100%;
   margin: 0;
   padding: 0;
+  overflow-x: hidden;
   font-family: "Vazirmatn", sans-serif;
-  background-color: #f8fafc;
+  background-color: #f7f8fb;
 }
 
 * {
@@ -25,7 +26,40 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
 ::selection {
-  background: #8b5cf6;
+  background: #7c3aed;
   color: white;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+  background-color: #cbd5e1;
 }

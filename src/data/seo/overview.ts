@@ -1,0 +1,231 @@
+import type {
+  ArchitectureLayer,
+  CrawlMetric,
+  OverviewAgent,
+  OverviewKpi,
+  OverviewQueue,
+  PriorityEntity,
+  SerpBar,
+  SystemEngine,
+} from "@/src/types/overview";
+
+export const overviewKpis: OverviewKpi[] = [
+  {
+    id: "health",
+    title: "سلامت کلی سئو",
+    value: "۸۸",
+    detail: "از ۱۰۰",
+    tone: "green",
+    icon: "health",
+    score: 88,
+    status: "عالی",
+  },
+  {
+    id: "needs-action",
+    title: "محصولات نیازمند اقدام",
+    value: "۱۵۶",
+    trend: "۱۲٪",
+    trendDirection: "down",
+    detail: "از ۸٬۴۳۲ محصول",
+    tone: "orange",
+    icon: "warning",
+  },
+  {
+    id: "growth",
+    title: "فرصت‌های رشد",
+    value: "۲٬۴۱۸",
+    trend: "۱۸٪",
+    trendDirection: "up",
+    detail: "کلمات کلیدی",
+    tone: "green",
+    icon: "growth",
+  },
+  {
+    id: "declining",
+    title: "رتبه‌های در حال افت",
+    value: "۳۱۲",
+    trend: "۸٪",
+    trendDirection: "down",
+    detail: "کلمات کلیدی",
+    tone: "red",
+    icon: "decline",
+  },
+  {
+    id: "technical",
+    title: "صفحات دارای خطای فنی",
+    value: "۴۸",
+    trend: "۱۵٪",
+    trendDirection: "down",
+    detail: "URL",
+    tone: "red",
+    icon: "error",
+  },
+  {
+    id: "execution",
+    title: "نرخ اجرای پیشنهادها",
+    value: "۷۱٪",
+    trend: "۹٪",
+    trendDirection: "up",
+    detail: "پذیرفته‌شده",
+    tone: "violet",
+    icon: "complete",
+  },
+];
+
+export const overviewQueues: OverviewQueue[] = [
+  {
+    id: "critical",
+    title: "بحرانی",
+    count: 12,
+    tone: "red",
+    items: [
+      { label: "صفحات 4xx و 5xx", count: 5 },
+      { label: "مشکلات ایندکس‌شدن", count: 4 },
+      { label: "اسکیماهای نامعتبر", count: 3 },
+    ],
+  },
+  {
+    id: "improve",
+    title: "نیاز به بهبود",
+    count: 46,
+    tone: "orange",
+    items: [
+      { label: "عنوان‌های کوتاه یا تکراری", count: 18 },
+      { label: "ALTهای ناقص", count: 12 },
+      { label: "لینک‌های داخلی شکسته", count: 16 },
+    ],
+  },
+  {
+    id: "opportunities",
+    title: "فرصت‌ها",
+    count: 138,
+    tone: "green",
+    items: [
+      { label: "کلمات کلیدی بدون رتبه", count: 56 },
+      { label: "ویرایش محتوا برای رشد", count: 48 },
+      { label: "افزودن FAQ و HowTo", count: 34 },
+    ],
+  },
+  {
+    id: "approval",
+    title: "در انتظار تأیید",
+    count: 27,
+    tone: "violet",
+    items: [
+      { label: "تغییرات عنوان و متا", count: 9 },
+      { label: "بهینه‌سازی گروهی تصاویر", count: 11 },
+      { label: "به‌روزرسانی اسکیما", count: 7 },
+    ],
+  },
+];
+
+export const priorityEntities: PriorityEntity[] = [
+  {
+    id: "entity-1",
+    name: "هدفون بی‌سیم لولیت X1",
+    type: "محصول",
+    score: 72,
+    ctr: 3.2,
+    images: "۶/۸",
+    imageStatus: "bad",
+    schema: "warning",
+    status: "waiting",
+    agent: "Content Optimizer",
+    thumbnail: "headphone",
+  },
+  {
+    id: "entity-2",
+    name: "دسته‌بندی گوشی موبایل",
+    type: "دسته‌بندی",
+    score: 85,
+    ctr: 7.1,
+    images: "۱۲/۱۲",
+    imageStatus: "good",
+    schema: "valid",
+    status: "approved",
+    agent: "Internal Linking Agent",
+    thumbnail: "mobile",
+  },
+  {
+    id: "entity-3",
+    name: "برند شیائومی",
+    type: "برند",
+    score: 68,
+    ctr: 2.7,
+    images: "۸/۱۵",
+    imageStatus: "bad",
+    schema: "warning",
+    status: "review",
+    agent: "SEO Strategist",
+    thumbnail: "brand",
+  },
+  {
+    id: "entity-4",
+    name: "هندزفری بلوتوث QCY",
+    type: "محصول",
+    score: 58,
+    ctr: 1.1,
+    images: "۴/۸",
+    imageStatus: "bad",
+    schema: "invalid",
+    status: "waiting",
+    agent: "Image SEO Agent",
+    thumbnail: "earbuds",
+  },
+  {
+    id: "entity-5",
+    name: "لپ‌تاپ ایسوس VivoBook",
+    type: "محصول",
+    score: 91,
+    ctr: 9.3,
+    images: "۱۰/۱۰",
+    imageStatus: "good",
+    schema: "valid",
+    status: "approved",
+    agent: "Technical Auditor",
+    thumbnail: "laptop",
+  },
+];
+
+export const crawlMetrics: CrawlMetric[] = [
+  { id: "crawled", label: "URLهای خزش‌شده", value: "۴۸٬۹۳۶", trend: "۱۲٪", trendDirection: "up", tone: "green" },
+  { id: "errors", label: "خطاها", value: "۴۸", trend: "۱۵٪", trendDirection: "up", tone: "red" },
+  { id: "warnings", label: "هشدارها", value: "۳۱۶", trend: "۵٪", trendDirection: "up", tone: "orange" },
+  { id: "canonical", label: "Canonical", value: "۳۸٬۷۲۱", trend: "۹۹٪", trendDirection: "up", tone: "green" },
+  { id: "noindex", label: "Noindex", value: "۶٬۱۴۲", trend: "۱۳٪", trendDirection: "up", tone: "orange" },
+  { id: "redirects", label: "Redirects", value: "۱٬۲۰۳", trend: "۲٪", trendDirection: "down", tone: "violet" },
+];
+
+export const serpBars: SerpBar[] = [
+  { id: "you", label: "شما", value: 3842, displayValue: "۳٬۸۴۲" },
+  { id: "rival-1", label: "رقیب ۱", value: 5921, displayValue: "۵٬۹۲۱" },
+  { id: "rival-2", label: "رقیب ۲", value: 4673, displayValue: "۴٬۶۷۳" },
+  { id: "rival-3", label: "رقیب ۳", value: 3210, displayValue: "۳٬۲۱۰" },
+];
+
+export const activeAgents: OverviewAgent[] = [
+  { id: "agent-1", name: "SEO Strategist", icon: "search" },
+  { id: "agent-2", name: "Technical Auditor", icon: "audit" },
+  { id: "agent-3", name: "Content Optimizer", icon: "content" },
+  { id: "agent-4", name: "Image SEO Agent", icon: "image" },
+  { id: "agent-5", name: "Schema Agent", icon: "schema" },
+  { id: "agent-6", name: "Internal Linking Agent", icon: "link" },
+  { id: "agent-7", name: "Competitor Intelligence Agent", icon: "competitor" },
+];
+
+export const architectureLayers: ArchitectureLayer[] = [
+  { id: "layer-1", title: "لایه ۱: داده و خزش", description: "جمع‌آوری داده و وب‌مستر کنسول", tone: "violet", icon: "database" },
+  { id: "layer-2", title: "لایه ۲: تحلیل و قوانین", description: "تحلیل، استاندارد و قوانین هوشمند", tone: "violet", icon: "rules" },
+  { id: "layer-3", title: "لایه ۳: پیشنهاد و Agentها", description: "تولید پیشنهادها و اجرای خودکار", tone: "orange", icon: "idea" },
+  { id: "layer-4", title: "لایه ۴: اجرا، تأیید و گزارش", description: "تأیید، اجرا، مانیتور و گزارش‌دهی", tone: "green", icon: "execute" },
+];
+
+export const systemEngines: SystemEngine[] = [
+  { id: "engine-1", name: "موتور خزش و مانیتورینگ", description: "خزش عمیق و پایش پیوسته", icon: "crawl" },
+  { id: "engine-2", name: "موتور تحلیل رقبا و SERP", description: "تحلیل رتبه، شکاف و فرصت‌ها", icon: "competitor" },
+  { id: "engine-3", name: "موتور رتبه و داده‌های گوگل", description: "ترکیب داده‌های رتبه و سرچ", icon: "google" },
+  { id: "engine-4", name: "Rule Engine", description: "قوانین استاندارد و کنترل کیفیت", icon: "rules" },
+  { id: "engine-5", name: "Agent Orchestration", description: "هماهنگی و اولویت‌بندی Agentها", icon: "agents" },
+  { id: "engine-6", name: "موتور بهینه‌سازی تصاویر و ALT", description: "پایش تصویر، حجم و متن جایگزین", icon: "image" },
+  { id: "engine-7", name: "موتور تحلیل محتوا و تجربه کاربر", description: "خوانایی، ساختار و کیفیت تجربه", icon: "content" },
+];

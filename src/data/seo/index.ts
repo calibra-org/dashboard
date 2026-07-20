@@ -5,6 +5,11 @@ import type {
   AuditEvent,
   CompetitorItem,
   ContentOpportunity,
+  OverviewAlertItem,
+  OverviewMetric,
+  OverviewSignal,
+  OverviewTrendPoint,
+  OverviewWatchItem,
   CrawlResult,
   EngineStatus,
   ImageItem,
@@ -156,4 +161,40 @@ export const permissionData: PermissionItem[] = [
 export const automationData: AutomationItem[] = [
   { id: "AUT1", title: "اسکن هفتگی", schedule: "هر شنبه", status: "success", nextRun: "۲۴ ساعت دیگر" },
   { id: "AUT2", title: "ارسال گزارش", schedule: "هر روز", status: "warning", nextRun: "۶ ساعت دیگر" },
+];
+
+export const overviewMetrics: OverviewMetric[] = [
+  { id: "OM1", label: "Impressions", value: "۱۲۸٬۰۰۰", change: "+۱۸٪", detail: "در ۷ روز اخیر", tone: "success" },
+  { id: "OM2", label: "CTR میانگین", value: "۱.۸۴%", change: "+۰.۲۲", detail: "نسبت به هفته قبل", tone: "success" },
+  { id: "OM3", label: "رتبه متوسط", value: "۷.۲", change: "-۰.۶", detail: "پیشرفت در ۳ کلمه هدف", tone: "warning" },
+  { id: "OM4", label: "پیشنهادهای باز", value: "۲۴", change: "+۵", detail: "منتظر تأیید اجرا", tone: "warning" },
+];
+
+export const overviewTrendSeries: OverviewTrendPoint[] = [
+  { label: "شنبه", value: 72, target: 80 },
+  { label: "یکشنبه", value: 78, target: 80 },
+  { label: "دوشنبه", value: 81, target: 84 },
+  { label: "سه‌شنبه", value: 79, target: 84 },
+  { label: "چهارشنبه", value: 86, target: 88 },
+  { label: "پنجشنبه", value: 88, target: 90 },
+  { label: "جمعه", value: 91, target: 92 },
+];
+
+export const overviewSignals: OverviewSignal[] = [
+  { id: "OS1", title: "بهبود عنوان Product Page", detail: "رتبه کلمه هدف در ۳ صفحه با عنوان جدید تقویت شد", owner: "سارا", store: "فروشگاه اصلی", score: 92, status: "success", impact: "بالا" },
+  { id: "OS2", title: "FAQ برای صفحه رطوبت‌سنج", detail: "کسب‌وکار در SERP با FAQ ۲۳٪ بیشتر دیده می‌شود", owner: "رضا", store: "فروشگاه اصلی", score: 88, status: "warning", impact: "متوسط" },
+  { id: "OS3", title: "ALT تصاویر محصول", detail: "۳ تصویر با متن جایگزین ناقص در صفحجات مهم", owner: "آرمان", store: "گلخانه", score: 84, status: "warning", impact: "کم" },
+  { id: "OS4", title: "Canonical و redirect", detail: "۴ URL قدیمی در انتظار بررسی و بازنویسی", owner: "نرگس", store: "فروشگاه اصلی", score: 79, status: "danger", impact: "بالا" },
+];
+
+export const overviewAlerts: OverviewAlertItem[] = [
+  { id: "OA1", title: "کاهش crawl در صفحه کود", detail: "Googlebot در ۳ روز اخیر فقط یک بار بازدید کرده", level: "warning", action: "بررسی مجدد" },
+  { id: "OA2", title: "سرعت صفحه زیر حد استاندارد", detail: "سرعت LCP برای ۲ صفحه مهم در وضعیت هشدار", level: "critical", action: "مداخله فنی" },
+  { id: "OA3", title: "پاسخ به پیشنهاد AI", detail: "۵ پیشنهاد آماده‌اند تا در صف تأیید قرار گیرند", level: "info", action: "نمایش صف" },
+];
+
+export const overviewWatchlist: OverviewWatchItem[] = [
+  { id: "OW1", title: "افزایش FAQ برای صفحه آبیاری", owner: "تیم محتوا", impact: "بالا", score: 94, status: "success", eta: "۱۰ دقیقه" },
+  { id: "OW2", title: "به‌روزرسانی متا برای صفحه کود", owner: "سئو فنی", impact: "متوسط", score: 81, status: "warning", eta: "۲۵ دقیقه" },
+  { id: "OW3", title: "تکمیل ALT تصاویر گلخانه", owner: "تیم دیجیتال", impact: "کم", score: 76, status: "neutral", eta: "۴۵ دقیقه" },
 ];
