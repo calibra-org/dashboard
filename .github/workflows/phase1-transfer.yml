@@ -25,11 +25,17 @@ jobs:
           test -n "$id"
           mkdir -p .transfer-output
           sha="$(awk -v id="$id" '$1 == id { print $2 }' .transfer/MANIFEST)"
+          codec="$(awk -v id="$id" '$1 == id { print $3 }' .transfer/MANIFEST)"
+          codec="${codec:-gzip}"
           if [ -n "$sha" ]; then
             gh api "repos/${GITHUB_REPOSITORY}/git/blobs/$sha" --jq .content \
               | tr -d '\r\n' | base64 --decode \
-              | tr -d '\r\n' | base64 --decode | gzip -d \
-              > ".transfer-output/blob-$id"
+              | tr -d '\r\n' | base64 --decode > /tmp/phase1-transfer.bin
+            case "$codec" in
+              gzip) gzip -dc /tmp/phase1-transfer.bin > ".transfer-output/blob-$id" ;;
+              bzip2) bzip2 -dc /tmp/phase1-transfer.bin > ".transfer-output/blob-$id" ;;
+              *) echo "Unsupported codec: $codec" >&2; exit 2 ;;
+            esac
           else
             dir=".transfer/blob-$id"
             test -d "$dir"
