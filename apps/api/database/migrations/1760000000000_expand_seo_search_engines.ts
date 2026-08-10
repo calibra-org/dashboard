@@ -4,7 +4,8 @@ import { BaseSchema } from "@adonisjs/lucid/schema";
  * Expands SEO integrations from the original utility/provider list to seven concrete
  * search engines with real native API/protocol capabilities. Also preserves decimal
  * average positions returned by Search Console/Yandex instead of rounding them into
- * misleading integers and allows ISO alpha-3 country codes returned by webmaster APIs.
+ * misleading integers, allows ISO alpha-3 country codes returned by webmaster APIs,
+ * and adds an explicit `all` device bucket for aggregate provider observations.
  */
 export default class extends BaseSchema {
     async up() {
@@ -31,6 +32,16 @@ export default class extends BaseSchema {
             )
         `);
 
+        this.schema.raw(`
+            ALTER TABLE seo_keywords
+            DROP CONSTRAINT IF EXISTS seo_keywords_device_check
+        `);
+        this.schema.raw(`
+            ALTER TABLE seo_keywords
+            ADD CONSTRAINT seo_keywords_device_check CHECK (
+                device IN ('all','desktop','mobile','tablet')
+            )
+        `);
         this.schema.raw(`
             ALTER TABLE seo_keywords
             ALTER COLUMN current_position TYPE numeric(8,2) USING current_position::numeric,
@@ -72,6 +83,19 @@ export default class extends BaseSchema {
                 )
             )
         `);
+
+        this.schema.raw(`UPDATE seo_keywords SET device = 'desktop' WHERE device = 'all'`);
+        this.schema.raw(`
+            ALTER TABLE seo_keywords
+            DROP CONSTRAINT IF EXISTS seo_keywords_device_check
+        `);
+        this.schema.raw(`
+            ALTER TABLE seo_keywords
+            ADD CONSTRAINT seo_keywords_device_check CHECK (
+                device IN ('desktop','mobile','tablet')
+            )
+        `);
+        this.schema.raw(`UPDATE seo_keywords SET country = LEFT(country, 2) WHERE LENGTH(country) > 2`);
         this.schema.raw(`
             ALTER TABLE seo_keywords
             ALTER COLUMN current_position TYPE integer USING round(current_position)::integer,
