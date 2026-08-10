@@ -1,0 +1,529 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/**
+ * Scan the shared `@calibra/panel-kit` source so Tailwind picks up classes used *only* inside its
+ * primitives. `transpilePackages` runs the package's code, but Tailwind v4 doesn't scan the
+ * workspace package (symlinked under `node_modules`) on its own. Helps the production build;
+ * Turbopack's dev scan of the package is unreliable, so the critical case is also pinned below.
+ */
+@source "../../../../packages/panel-kit/src/**/*.{ts,tsx}";
+
+@custom-variant dark (&:is(.dark *));
+
+/* -------------------------------------------------------------------------- */
+/*  Palette layer — CONSOLE "mission-control" identity                          */
+/*                                                                             */
+/*  This is where the control plane diverges from the admin. The admin is a    */
+/*  light-first Linear-indigo (232°) panel; the console is a DARK-FIRST slate   */
+/*  console with a vivid iris/violet (262°) signature accent and a cooler,      */
+/*  near-black neutral ramp with wider elevation contrast so cards read as      */
+/*  crisp layered surfaces. Same primitives (`@calibra/panel-kit`), different   */
+/*  token values — that's the whole divergence mechanism.                       */
+/*                                                                             */
+/*  Light scales go 50 → 900; dark mode inverts the gray ramp so semantic       */
+/*  tokens can keep using the same step names.                                  */
+/* -------------------------------------------------------------------------- */
+:root {
+    /**
+     * Light ramp. Secondary mode for the console (it defaults dark). Cool blue-slate tint
+     * (hue ~226°, a touch bluer than the admin's 240°) so the light surface still reads as
+     * the same product family as the dark one. Very low saturation so the violet accent stays loud.
+     */
+    --color-gray-50: 0 0% 100%;
+    --color-gray-75: 226 30% 98.5%;
+    --color-gray-100: 226 24% 96.5%;
+    --color-gray-150: 226 20% 93%;
+    --color-gray-200: 226 16% 89%;
+    --color-gray-300: 226 14% 79%;
+    --color-gray-400: 226 12% 60%;
+    --color-gray-500: 228 10% 44%;
+    --color-gray-600: 230 12% 31%;
+    --color-gray-700: 232 16% 19%;
+    --color-gray-800: 234 22% 12%;
+    --color-gray-900: 236 30% 8%;
+
+    /**
+     * Signature accent — vivid iris/violet (`~262°`). Distinct from the admin's 232° indigo, and
+     * pushed to a higher saturation so it reads "electric / control plane" rather than "corporate".
+     */
+    --color-brand-100: 262 100% 97%;
+    --color-brand-200: 262 94% 91%;
+    --color-brand-400: 262 86% 74%;
+    --color-brand-500: 262 80% 64%;
+    --color-brand-600: 262 72% 54%;
+    --color-brand-700: 262 70% 46%;
+
+    /**
+     * Semantic accents (status) — palette-layer raw HSL components. Named with a `-h` suffix to
+     * avoid colliding with the `--color-success` / `--color-warning` / … keys Tailwind v4 reads
+     * inside the `@theme inline` block below to generate utilities. Without the suffix Tailwind
+     * picks up the raw-component value (`152 64% 38%`) as the theme color and refuses to generate
+     * `.bg-success` / `.text-success` etc. because the value isn't a parseable color expression.
+     */
+    --success-h: 158 68% 38%;
+    --warning-h: 35 92% 50%;
+    --danger-h: 0 84% 60%;
+    --info-h: 199 90% 48%;
+
+    /** Paired tone foregrounds — same `-h` suffix dance so the `@theme inline` resolver doesn't
+     * eagerly inline these and strip the wrapping `hsl(...)`. */
+    --success-foreground-h: 0 0% 100%;
+    --warning-foreground-h: 236 30% 8%;
+    --danger-foreground-h: 0 0% 100%;
+    --info-foreground-h: 0 0% 100%;
+
+    /** Electric data accent — cyan/azure used for the secondary chart series + sparklines, so
+     * telemetry reads with a distinct hue from the violet primary (a true "mission control" duo). */
+    --accent-cyan-h: 190 90% 50%;
+}
+
+.dark {
+    /**
+     * Dark ramp — near-black slate canvas. Base sits a touch darker and cooler than the admin
+     * (hue ~232°, ~5% lightness) and the elevation steps are WIDER (≈2.5–3.5% apart, vs the
+     * admin's 1.5–2%) so stacked surfaces — page → card → popover — read as crisp, separated
+     * panels rather than one calm slab. Text foreground is pushed bright (≈97%) for dense tables.
+     */
+    --color-gray-50: 232 24% 5%;
+    --color-gray-75: 232 22% 7%;
+    --color-gray-100: 231 20% 9.5%;
+    --color-gray-150: 231 18% 12.5%;
+    --color-gray-200: 230 16% 16.5%;
+    --color-gray-300: 230 12% 25%;
+    --color-gray-400: 230 9% 44%;
+    --color-gray-500: 230 8% 62%;
+    --color-gray-600: 231 10% 74%;
+    --color-gray-700: 232 14% 84%;
+    --color-gray-800: 234 20% 92%;
+    --color-gray-900: 240 30% 97%;
+
+    --color-brand-100: 262 40% 22%;
+    --color-brand-200: 262 48% 34%;
+    --color-brand-400: 262 72% 58%;
+    --color-brand-500: 262 88% 72%;
+    --color-brand-600: 262 90% 76%;
+    --color-brand-700: 262 92% 84%;
+
+    --success-h: 158 64% 50%;
+    --warning-h: 35 92% 60%;
+    --danger-h: 0 74% 60%;
+    --info-h: 199 90% 60%;
+
+    /** Dark-mode tone foregrounds — success / warning / info ride lighter against the lighter dark
+     * surfaces, so flip foregrounds to dark text; danger stays bright enough for white. */
+    --success-foreground-h: 232 24% 5%;
+    --warning-foreground-h: 232 24% 5%;
+    --danger-foreground-h: 0 0% 100%;
+    --info-foreground-h: 232 24% 5%;
+
+    --accent-cyan-h: 190 95% 60%;
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Semantic layer                                                             */
+/*  Surfaces, foreground, intents. All component CSS reads from this layer so  */
+/*  the palette can change without touching components.                        */
+/* -------------------------------------------------------------------------- */
+:root {
+    /** Tighter than the admin's 0.625rem — a crisper, more data-dense console feel. */
+    --radius: 0.5rem;
+
+    /** Background elevation steps — page → card → popover → tooltip. */
+    --background-base: var(--color-gray-75);
+    --background-layer-1: var(--color-gray-50);
+    --background-layer-2: var(--color-gray-50);
+    --background-subdued: var(--color-gray-100);
+    --background-elevated: var(--color-gray-150);
+
+    /** Foreground tones — body → muted helper → disabled → heading. */
+    --foreground-base: var(--color-gray-900);
+    --foreground-subdued: var(--color-gray-500);
+    --foreground-disabled: var(--color-gray-400);
+    --foreground-heading: var(--color-gray-900);
+
+    /** Shadcn-shaped token surface so every existing class (bg-card, text-foreground, …) lights up. */
+    --background: var(--background-base);
+    --foreground: var(--foreground-base);
+    --card: var(--background-layer-1);
+    --card-foreground: var(--foreground-base);
+    --popover: var(--background-layer-2);
+    --popover-foreground: var(--foreground-base);
+
+    --primary: var(--color-brand-600);
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: var(--color-gray-150);
+    --secondary-foreground: var(--color-gray-900);
+
+    --muted: var(--background-subdued);
+    --muted-foreground: var(--foreground-subdued);
+
+    --accent: var(--background-elevated);
+    --accent-foreground: var(--foreground-base);
+
+    --destructive: var(--danger-h);
+    --destructive-foreground: 0 0% 100%;
+
+    /** Status accents — expose every semantic tone with a paired foreground so callers can render
+     * tone backgrounds without re-deriving readable text colour. `--destructive` stays as a
+     * shadcn-compat alias; new code uses `--danger` / `text-danger`. */
+    --success: var(--success-h);
+    --success-foreground: 0 0% 100%;
+    --warning: var(--warning-h);
+    --warning-foreground: 236 30% 8%;
+    --danger: var(--danger-h);
+    --danger-foreground: 0 0% 100%;
+    --info: var(--info-h);
+    --info-foreground: 0 0% 100%;
+
+    --border: var(--color-gray-200);
+    --input: var(--color-gray-200);
+    --ring: var(--color-brand-600);
+
+    --chart-1: var(--color-brand-600);
+    --chart-2: var(--accent-cyan-h);
+    --chart-3: var(--success-h);
+    --chart-4: var(--warning-h);
+    --chart-5: 326 78% 58%;
+
+    --sidebar: var(--background-base);
+    --sidebar-foreground: var(--color-gray-700);
+    --sidebar-primary: var(--color-brand-600);
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: var(--background-elevated);
+    --sidebar-accent-foreground: var(--foreground-base);
+    --sidebar-border: var(--color-gray-200);
+    --sidebar-ring: var(--color-brand-600);
+}
+
+.dark {
+    --background-base: var(--color-gray-50);
+    --background-layer-1: var(--color-gray-100);
+    --background-layer-2: var(--color-gray-150);
+    --background-subdued: var(--color-gray-100);
+    --background-elevated: var(--color-gray-200);
+
+    --foreground-base: var(--color-gray-900);
+    --foreground-subdued: var(--color-gray-500);
+    --foreground-disabled: var(--color-gray-400);
+    --foreground-heading: var(--color-gray-900);
+
+    --background: var(--background-base);
+    --foreground: var(--foreground-base);
+    --card: var(--background-layer-1);
+    --card-foreground: var(--foreground-base);
+    --popover: var(--background-layer-2);
+    --popover-foreground: var(--foreground-base);
+
+    /** Dark primary is a bright violet with near-black text — a glowing accent button, the most
+     * "operator action" surface in the console. */
+    --primary: var(--color-brand-500);
+    --primary-foreground: var(--color-gray-50);
+
+    --secondary: var(--background-subdued);
+    --secondary-foreground: var(--foreground-base);
+
+    --muted: var(--background-subdued);
+    --muted-foreground: var(--foreground-subdued);
+
+    --accent: var(--background-elevated);
+    --accent-foreground: var(--foreground-base);
+
+    --destructive: var(--danger-h);
+    --destructive-foreground: 0 0% 100%;
+
+    /** Dark-mode tone foregrounds: success / warning / info are lighter in dark mode, so flip
+     * their foregrounds to dark text. Danger stays saturated enough to need white text. */
+    --success: var(--success-h);
+    --success-foreground: 232 24% 5%;
+    --warning: var(--warning-h);
+    --warning-foreground: 232 24% 5%;
+    --danger: var(--danger-h);
+    --danger-foreground: 0 0% 100%;
+    --info: var(--info-h);
+    --info-foreground: 232 24% 5%;
+
+    --border: var(--color-gray-200);
+    --input: var(--color-gray-200);
+    --ring: var(--color-brand-500);
+
+    --chart-1: var(--color-brand-500);
+    --chart-2: var(--accent-cyan-h);
+    --chart-3: var(--success-h);
+    --chart-4: var(--warning-h);
+    --chart-5: 326 84% 66%;
+
+    --sidebar: var(--background-base);
+    --sidebar-foreground: var(--color-gray-600);
+    --sidebar-primary: var(--color-brand-500);
+    --sidebar-primary-foreground: var(--color-gray-50);
+    --sidebar-accent: var(--background-elevated);
+    --sidebar-accent-foreground: var(--foreground-base);
+    --sidebar-border: var(--color-gray-200);
+    --sidebar-ring: var(--color-brand-500);
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Tailwind v4 theme map                                                       */
+/* -------------------------------------------------------------------------- */
+@theme inline {
+    --radius-sm: calc(var(--radius) - 4px);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) + 4px);
+
+    /**
+     * Monospace stack for slugs / domains / IDs / numeric readouts. System fonts only — no new
+     * font dependency. Living in `@theme` (not `:root`) is safe here because, unlike `--font-sans`,
+     * the mono stack never needs a per-locale cascade override, so inlining it into `.font-mono`
+     * is fine.
+     */
+    --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, Consolas, monospace;
+
+    --color-background: hsl(var(--background));
+    --color-foreground: hsl(var(--foreground));
+    --color-card: hsl(var(--card));
+    --color-card-foreground: hsl(var(--card-foreground));
+    --color-popover: hsl(var(--popover));
+    --color-popover-foreground: hsl(var(--popover-foreground));
+    --color-primary: hsl(var(--primary));
+    --color-primary-foreground: hsl(var(--primary-foreground));
+    --color-secondary: hsl(var(--secondary));
+    --color-secondary-foreground: hsl(var(--secondary-foreground));
+    --color-muted: hsl(var(--muted));
+    --color-muted-foreground: hsl(var(--muted-foreground));
+    --color-accent: hsl(var(--accent));
+    --color-accent-foreground: hsl(var(--accent-foreground));
+    --color-destructive: hsl(var(--destructive));
+    --color-destructive-foreground: hsl(var(--destructive-foreground));
+    /**
+     * Tone tokens reference the `-h` palette layer directly. Going through the bare `--success`
+     * / `--warning` / … middleman trips Tailwind v4's `@theme inline` resolver — it follows the
+     * chain to the raw HSL components and strips the outer `hsl(...)` wrap, leaving
+     * `--color-success: 152 64% 38%` (invalid CSS color) and refusing to emit `.bg-success` /
+     * `.text-success` / `.ring-success` utilities. Skipping the middleman keeps the expression
+     * `hsl(var(--success-h))` intact so the browser resolves it at runtime and dark-mode overrides
+     * of `--success-h` still cascade.
+     */
+    --color-success: hsl(var(--success-h));
+    --color-success-foreground: hsl(var(--success-foreground-h));
+    --color-warning: hsl(var(--warning-h));
+    --color-warning-foreground: hsl(var(--warning-foreground-h));
+    --color-danger: hsl(var(--danger-h));
+    --color-danger-foreground: hsl(var(--danger-foreground-h));
+    --color-info: hsl(var(--info-h));
+    --color-info-foreground: hsl(var(--info-foreground-h));
+    /** Electric cyan data accent, exposed as `bg-accent-cyan` / `text-accent-cyan` / `stroke-accent-cyan`. */
+    --color-accent-cyan: hsl(var(--accent-cyan-h));
+    --color-border: hsl(var(--border));
+    --color-input: hsl(var(--input));
+    --color-ring: hsl(var(--ring));
+    --color-chart-1: hsl(var(--chart-1));
+    --color-chart-2: hsl(var(--chart-2));
+    --color-chart-3: hsl(var(--chart-3));
+    --color-chart-4: hsl(var(--chart-4));
+    --color-chart-5: hsl(var(--chart-5));
+
+    --color-sidebar: hsl(var(--sidebar));
+    --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+    --color-sidebar-primary: hsl(var(--sidebar-primary));
+    --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+    --color-sidebar-accent: hsl(var(--sidebar-accent));
+    --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+    --color-sidebar-border: hsl(var(--sidebar-border));
+    --color-sidebar-ring: hsl(var(--sidebar-ring));
+}
+
+/**
+ * `--font-sans` is intentionally NOT declared inside `@theme inline` — Tailwind v4 inlines
+ * `@theme` values into the generated utility classes, which would freeze `.font-sans` at the
+ * Inter-first stack and prevent Persian's `html[lang="fa"]` override from ever winning. Defining
+ * the variable in `:root` (and overriding it on `html[lang="fa"]`) keeps it cascading, and the
+ * `@layer base` rule below applies it everywhere via `font-family: var(--font-sans)`.
+ */
+:root {
+    --font-sans: var(--font-inter), var(--font-vazirmatn), ui-sans-serif, system-ui, sans-serif;
+}
+
+html[lang="fa"] {
+    --font-sans: var(--font-vazirmatn), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+    html,
+    body {
+        @apply bg-background text-foreground antialiased;
+        font-family: var(--font-sans);
+        /** No horizontal page scroll — console chrome is column-bounded; runaway X scroll is always a bug. */
+        overflow-x: hidden;
+    }
+    /** Numerics read as aligned columns everywhere in the console (KPIs, tables, usage bars). */
+    .tabular-nums,
+    th,
+    td {
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+/**
+ * `display: contents` for the panel-kit Button's children wrapper. Tailwind would normally emit
+ * the `.contents` utility, but it only scans this app's own source — and nothing here uses
+ * `contents` except the shared Button (in the workspace package). Pinning the rule here guarantees
+ * the wrapper collapses so the Button's flex layout reaches the icon + label directly (otherwise
+ * the preflight `display:block` icon stacks above the label). Authored as the plain utility so a
+ * later `@source` pickup is a harmless duplicate.
+ */
+.contents {
+    display: contents;
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Mission-control surface treatments                                          */
+/*                                                                             */
+/*  Opt-in utility classes (like `.custom-scrollbar`) applied by the console's  */
+/*  COMPOSED components — never by panel-kit primitives, which stay neutral.    */
+/*  `.mission-panel` is the signature elevated surface: a hairline border plus  */
+/*  a faint top-edge highlight that makes a card read as a lit slab of glass.   */
+/* -------------------------------------------------------------------------- */
+.mission-panel {
+    position: relative;
+    border: 1px solid hsl(var(--border) / 0.6);
+    background-color: hsl(var(--card));
+    border-radius: var(--radius);
+}
+.mission-panel::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding-block-start: 1px;
+    background: linear-gradient(to bottom, hsl(var(--foreground) / 0.08), transparent 42%);
+    -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+}
+
+/** Accent-tinted variant for the hero / primary panel — a violet inner-glow on the top edge. */
+.mission-panel-accent::before {
+    background: linear-gradient(to bottom, hsl(var(--primary) / 0.35), transparent 48%);
+}
+
+/** Subtle violet glow ring — used on the active nav pill and the hero KPI. */
+.accent-glow {
+    box-shadow:
+        0 0 0 1px hsl(var(--primary) / 0.4),
+        0 8px 28px -12px hsl(var(--primary) / 0.55);
+}
+
+/**
+ * Roomier data-table density for the console. The shared panel-kit `Table` primitive stays
+ * admin-dense (`px-2`, `h-10`); applying `.console-table` to the `<table>` widens column padding,
+ * insets the first/last cells off the panel edge, and gives rows more vertical rhythm — the
+ * "mission control" tables read as spacious without forking the primitive.
+ */
+.console-table thead th {
+    height: 2.75rem;
+    padding-inline: 0.875rem;
+    padding-block: 0.5rem;
+}
+.console-table tbody td {
+    padding-inline: 0.875rem;
+    padding-block: 0.875rem;
+}
+.console-table thead th:first-child,
+.console-table tbody td:first-child {
+    padding-inline-start: 1.25rem;
+}
+.console-table thead th:last-child,
+.console-table tbody td:last-child {
+    padding-inline-end: 1.25rem;
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Slim scrollbar styling applied via opt-in `.custom-scrollbar` class. Used    */
+/*  by surfaces where we need a *real* native scrollbar (e.g. tables with sticky */
+/*  `<th>` cells) but still want the visual language of our `<ScrollArea>`        */
+/*  primitive — same 8px width, same translucent thumb that fades on hover.      */
+/* -------------------------------------------------------------------------- */
+.custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--foreground) / 0.25) transparent;
+}
+.custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--foreground) / 0.25);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--foreground) / 0.4);
+}
+.custom-scrollbar::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+/* -------------------------------------------------------------------------- */
+/*  RTL helpers                                                                */
+/*                                                                             */
+/*  Declarative direction-aware transforms. Tag an element with a `data-rtl-*` */
+/*  attribute and the matching rule applies the transform when the document is */
+/*  RTL. Uses the modern individual transform properties (`scale`, `rotate`,   */
+/*  `translate`) so they compose cleanly with Tailwind v4's utilities.         */
+/*  Selectors use `:where(...)` to keep specificity at 0.                      */
+/* -------------------------------------------------------------------------- */
+:where([dir="rtl"]) [data-rtl-flip] {
+    scale: -1 1;
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Skeleton shimmer                                                            */
+/*  Loading placeholder. A wide highlight band rides across the muted block via */
+/*  an animated `background-position` sweep (no overlay element, so it composes  */
+/*  with any width/height/radius). `--skeleton-highlight` steps lighter than the */
+/*  base in both themes so the sweep stays visible on light and dark surfaces.   */
+/* -------------------------------------------------------------------------- */
+:root {
+    --skeleton-base: hsl(var(--color-gray-150));
+    --skeleton-highlight: hsl(var(--color-gray-50));
+}
+.dark {
+    --skeleton-base: hsl(var(--color-gray-150));
+    --skeleton-highlight: hsl(var(--color-gray-300));
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.skeleton-shimmer {
+    background-color: var(--skeleton-base);
+    background-image: linear-gradient(90deg, var(--skeleton-base) 0%, var(--skeleton-highlight) 50%, var(--skeleton-base) 100%);
+    background-size: 200% 100%;
+    background-repeat: no-repeat;
+    animation: shimmer 1.4s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .skeleton-shimmer {
+        animation: none;
+    }
+}

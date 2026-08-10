@@ -1,0 +1,96 @@
+title: Cart
+description: >
+    Server-side cart, returned by every `/api/v1/cart/*` endpoint. The shape is identical across
+    GET, POST, PATCH, and DELETE so storefronts only have to know one cart envelope. Money fields
+    are Rial minor units. Persian/English item display copy is resolved server-side from the
+    active locale.
+type: object
+properties:
+    id:
+        type: integer
+    token:
+        type: string
+        description: Opaque base32 cart token. The same value rides on the `cart_token` cookie for anonymous shoppers.
+    customer_id:
+        type: [integer, "null"]
+        description: Null for anonymous carts; populated after `POST /cart/customer` or login.
+    currency:
+        type: string
+        description: ISO currency code; currently always `IRR`.
+        examples: ["IRR"]
+    items:
+        type: array
+        items:
+            $ref: "./CartLine.yaml"
+    applied_coupons:
+        type: array
+        items:
+            type: object
+            required: [coupon_id, code]
+            properties:
+                coupon_id: { type: integer }
+                code:
+                    type: string
+                    description: Snapshot of the coupon code at apply time (uppercased).
+                    examples: ["WELCOME10"]
+    shipping_rates:
+        type: array
+        description: "Eligible shipping rates given the cart address; the selected rate is flagged via `selected: true`."
+        items:
+            type: object
+            required: [id, method_code, title, total, total_tax, selected]
+            properties:
+                id: { type: integer }
+                method_code: { type: string }
+                title: { type: string }
+                total: { type: integer, description: "Shipping cost in Rial minor units." }
+                total_tax: { type: integer, description: "Tax on shipping in Rial minor units (currently always 0)." }
+                selected: { type: boolean }
+    address:
+        type: object
+        required: [country, region_id, postcode]
+        properties:
+            country: { type: [string, "null"] }
+            region_id: { type: [integer, "null"] }
+            postcode: { type: [string, "null"] }
+    totals:
+        type: object
+        description: All money fields are in Rial minor units.
+        required:
+            - items_total
+            - items_tax_total
+            - shipping_total
+            - shipping_tax_total
+            - discount_total
+            - discount_tax_total
+            - tax_total
+            - grand_total
+            - needs_shipping
+            - needs_payment
+        properties:
+            items_total: { type: integer }
+            items_tax_total: { type: integer }
+            shipping_total: { type: integer }
+            shipping_tax_total: { type: integer }
+            discount_total: { type: integer }
+            discount_tax_total: { type: integer }
+            tax_total: { type: integer }
+            grand_total: { type: integer }
+            needs_shipping:
+                type: boolean
+                description: False when every line is virtual.
+            needs_payment:
+                type: boolean
+                description: False when `totals.grand_total` is ≤ 0 (e.g. a 100%-off coupon).
+    created_at: { type: [string, "null"], format: date-time }
+    updated_at: { type: [string, "null"], format: date-time }
+required:
+    - id
+    - token
+    - customer_id
+    - currency
+    - items
+    - applied_coupons
+    - shipping_rates
+    - address
+    - totals

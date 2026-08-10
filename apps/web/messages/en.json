@@ -1,0 +1,69 @@
+{
+    "Nav": {
+        "home": "Home",
+        "products": "Products",
+        "cart": "Cart",
+        "magazine": "Magazine"
+    },
+    "Home": {
+        "heroTitle": "Welcome",
+        "heroBody": "A curated selection of quality products — fresh and dependable.",
+        "browseProducts": "Browse products"
+    },
+    "Products": {
+        "title": "Products",
+        "empty": "No products to display yet."
+    },
+    "Cart": {
+        "title": "Cart",
+        "empty": "Your cart is empty."
+    },
+    "Common": {
+        "switchLocale": "فارسی",
+        "rights": "All rights reserved."
+    },
+    "Magazine": {
+        "metadataTitle": "Magazine and articles",
+        "metadataDescription": "Guides, news, and specialist store content",
+        "eyebrow": "Knowledge center",
+        "title": "Magazine and articles",
+        "description": "Reviewed guides, analysis, and news designed to support better decisions.",
+        "empty": "No content has been published yet.",
+        "news": "News",
+        "post": "Article",
+        "minutes": "min",
+        "fallbackExcerpt": "Open this article to read the full content.",
+        "previous": "Previous",
+        "next": "Next",
+        "pagination": "Pagination",
+        "readTime": "min read",
+        "relatedProducts": "Related products",
+        "viewProducts": "View products",
+        "product": "Product",
+        "search": "Search",
+        "searchPlaceholder": "Search posts and news…"
+    },
+    "ProductDetail": {
+        "breadcrumb": "Breadcrumb",
+        "products": "Products",
+        "featured": "Featured",
+        "price": "Price",
+        "published": "Available",
+        "sku": "SKU",
+        "weight": "Weight",
+        "gram": "g",
+        "dimensions": "Dimensions",
+        "millimeter": "mm",
+        "categories": "Categories",
+        "description": "Product description",
+        "variations": "Options and variants",
+        "variation": "Variant"
+    },
+    "Taxonomy": {
+        "breadcrumb": "Breadcrumb",
+        "products": "Products",
+        "category": "Product category",
+        "brand": "Product brand",
+        "empty": "No published products are available here yet."
+    }
+}

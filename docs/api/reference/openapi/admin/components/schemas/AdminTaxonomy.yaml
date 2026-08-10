@@ -1,0 +1,40 @@
+title: AdminTaxonomy
+description: >
+    Shared shape for the simple taxonomic resources — categories, tags, brands, and attribute
+    terms. `name` and `slug` are resolved from the active locale; the detail variants surface
+    the full `translations[]` array for editing.
+type: object
+properties:
+    id: { type: integer }
+    parent_id:
+        type: [integer, "null"]
+        description: Only meaningful for hierarchical resources (categories). Other resources always return `null`.
+    name: { type: string, description: Resolved from the active locale. }
+    slug: { type: string }
+    locale: { type: string }
+    image_media_id:
+        type: [integer, "null"]
+        description: Foreign key into the media library. `null` clears the linked asset.
+    image_url:
+        type: [string, "null"]
+        description: Convenience read-only URL resolved from the linked media row; `null` when no asset is attached.
+    menu_order: { type: integer }
+    used_count:
+        type: [integer, "null"]
+        description: >
+            Number of products linked to this taxonomy row. Always populated on the admin index
+            endpoints (a `withCount` subquery runs alongside the row fetch). `null` on reads
+            that don't carry the count (e.g. `show` or storefront list endpoints).
+    translations:
+        type: array
+        items:
+            type: object
+            properties:
+                locale: { type: string }
+                name: { type: string }
+                slug: { type: string }
+                description: { type: [string, "null"] }
+required:
+    - id
+    - name
+    - slug

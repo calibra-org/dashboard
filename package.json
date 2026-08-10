@@ -1,27 +1,47 @@
 {
-  "name": "calibra-dashboard",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
-  },
-  "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "next": "^14.0.0"
-  },
-  "devDependencies": {
-    "typescript": "^5.0.0",
-    "@types/node": "^20.0.0",
-    "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0",
-    "autoprefixer": "^10.4.14",
-    "postcss": "^8.4.24",
-    "tailwindcss": "^3.3.0",
-    "eslint": "^8.44.0",
-    "eslint-config-next": "^14.0.0"
-  }
+    "name": "@calibra/monorepo",
+    "private": true,
+    "type": "module",
+    "packageManager": "pnpm@10.32.1",
+    "scripts": {
+        "build": "turbo run build",
+        "dev": "turbo run dev",
+        "dev:web": "turbo run dev --filter=@calibra/web",
+        "dev:admin": "turbo run dev --filter=@calibra/admin",
+        "dev:platform": "turbo run dev --filter=@calibra/platform",
+        "dev:api": "turbo run dev --filter=@calibra/api",
+        "format": "biome format .",
+        "format:fix": "biome format . --write",
+        "lint": "pnpm run lint:biome && pnpm run lint:tokens && pnpm run lint:ws",
+        "lint:fix": "pnpm run lint:biome:fix",
+        "lint:biome": "biome lint . && biome check .",
+        "lint:biome:fix": "biome lint . --write && biome check . --write",
+        "lint:tokens": "node scripts/lint-tokens.mjs --scope=apps/admin/src --level=error",
+        "lint:ws": "pnpm dlx sherif@latest --ignore-rule root-package-dependencies",
+        "lint:ws:fix": "pnpm dlx sherif@latest --fix",
+        "spin": "node scripts/spin.mjs",
+        "test": "turbo run test",
+        "typecheck": "turbo run typecheck"
+    },
+    "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@playwright/test": "catalog:",
+        "@types/node": "catalog:",
+        "tsdown": "catalog:",
+        "turbo": "catalog:",
+        "typescript": "catalog:",
+        "vitest": "catalog:"
+    },
+    "pnpm": {
+        "onlyBuiltDependencies": [
+            "@tailwindcss/oxide",
+            "msw",
+            "sharp",
+            "unrs-resolver"
+        ],
+        "ignoredBuiltDependencies": [
+            "core-js",
+            "protobufjs"
+        ]
+    }
 }

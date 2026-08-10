@@ -1,0 +1,91 @@
+title: AdminProduct
+description: >
+    Admin product card. The detail variant {@link AdminProductDetail} adds the full image
+    gallery, every translation row, the variation list, and the attribute → terms map.
+    Money fields are in Rial minor units.
+type: object
+properties:
+    id: { type: integer }
+    type:
+        type: string
+        enum: [simple, variable, virtual, downloadable, external]
+    sku: { type: [string, "null"] }
+    gtin: { type: [string, "null"], description: Global Trade Item Number (UPC/EAN/JAN/ISBN). }
+    status:
+        type: string
+        enum: [draft, publish, pending, private, archived]
+    catalog_visibility:
+        type: string
+        enum: [catalog, search, hidden, both, visible]
+    featured: { type: boolean }
+    virtual: { type: boolean }
+    downloadable: { type: boolean }
+    regular_price: { type: [integer, "null"] }
+    sale_price: { type: [integer, "null"] }
+    effective_price: { type: [integer, "null"] }
+    on_sale: { type: boolean }
+    sale_starts_at: { type: [string, "null"], format: date-time }
+    sale_ends_at: { type: [string, "null"], format: date-time }
+    tax_class_id: { type: [integer, "null"] }
+    tax_status: { type: string, enum: [taxable, shipping, none] }
+    shipping_class_id: { type: [integer, "null"] }
+    weight_grams: { type: [integer, "null"] }
+    length_mm: { type: [integer, "null"] }
+    width_mm: { type: [integer, "null"] }
+    height_mm: { type: [integer, "null"] }
+    sold_individually: { type: boolean }
+    reviews_allowed: { type: boolean }
+    external_url: { type: [string, "null"] }
+    menu_order: { type: integer }
+    name: { type: [string, "null"], description: Resolved from the active locale. }
+    slug: { type: [string, "null"] }
+    short_description: { type: [string, "null"] }
+    locale: { type: string }
+    featured_image_url: { type: [string, "null"] }
+    is_favorite:
+        type: boolean
+        description: Whether the requesting admin has starred this product (per-user favourite).
+    gallery_image_urls:
+        type: array
+        items: { type: string }
+        description: Full media URLs of all gallery images, ordered by position.
+    categories:
+        type: array
+        description: Categories this product belongs to, for the list's linkable chips.
+        items: { $ref: "./ProductTaxonomyRef.yaml" }
+    tags:
+        type: array
+        description: Tags attached to this product.
+        items: { $ref: "./ProductTaxonomyRef.yaml" }
+    brands:
+        type: array
+        description: Brands attached to this product (the brand taxonomy is many-to-many).
+        items: { $ref: "./ProductTaxonomyRef.yaml" }
+    inventory:
+        type: object
+        description: Aggregated stock across all product-level inventory locations.
+        properties:
+            total: { type: integer }
+            low_stock: { type: boolean }
+            default_low_stock_threshold:
+                type: integer
+                description: >
+                    Global `inventory.low_stock_threshold_default` setting at the time the
+                    transformer ran. Per-location `low_stock_threshold` overrides it.
+            locations:
+                type: array
+                items:
+                    type: object
+                    properties:
+                        id: { type: integer }
+                        location_id: { type: [integer, "null"] }
+                        stock_quantity: { type: integer }
+                        manage_stock: { type: boolean }
+                        low_stock_threshold: { type: [integer, "null"] }
+                        backorders: { type: string, enum: [no, notify, yes] }
+                        stock_status: { type: string, enum: [instock, outofstock, onbackorder] }
+required:
+    - id
+    - type
+    - status
+    - is_favorite

@@ -1,0 +1,39 @@
+operationId: adminPaymentAttemptsIndex
+summary: List payment attempts
+description: >
+    Paginated audit log of every `payment_attempts` row — every init + callback writes here.
+    Filter, sort, and paginate via the unified TableView wire grammar (`filter[]=field:op:value`,
+    `sort[]=field:dir`, `page`, `limit`). Read-only on the admin surface; the payment service is
+    the sole writer.
+
+
+    **TableView filterable fields**: `id`, `order_id`, `gateway_id`, `gateway_code_snapshot`,
+    `status`, `amount_minor`, `created_at`, `initiated_at`, `verified_at`.
+
+
+    **TableView orderable fields**: `id`, `status`, `amount_minor`, `created_at`, `initiated_at`,
+    `verified_at`.
+tags: [Admin / Payments]
+
+parameters:
+    - $ref: "../../../common/components/parameters/table-view/Page.yaml"
+    - $ref: "../../../common/components/parameters/table-view/Limit.yaml"
+    - $ref: "../../../common/components/parameters/table-view/Filter.yaml"
+    - $ref: "../../../common/components/parameters/table-view/FilterOr.yaml"
+    - $ref: "../../../common/components/parameters/table-view/Sort.yaml"
+
+responses:
+    "200":
+        description: Paginated attempt list.
+        content:
+            application/json:
+                schema:
+                    type: object
+                    required: [data, meta]
+                    properties:
+                        data:
+                            type: array
+                            items: { $ref: "../../components/schemas/AdminPaymentAttempt.yaml" }
+                        meta: { $ref: "../../../common/components/schemas/PaginationMeta.yaml" }
+    "401": { $ref: "../../../common/components/responses/Unauthorized.yaml" }
+    "403": { $ref: "../../../common/components/responses/Forbidden.yaml" }

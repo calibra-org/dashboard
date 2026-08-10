@@ -1,0 +1,4115 @@
+{
+    "DataGrid": {
+        "reset": "بازنشانی به پیش‌فرض",
+        "resetTitle": "بازنشانی نمای جدول؟",
+        "resetDescription": "نمایش، ترتیب، عرض ستون‌ها و تراکم به حالت پیش‌فرض برمی‌گردد.",
+        "resetCancel": "انصراف",
+        "resetConfirm": "بازنشانی"
+    },
+    "Site": {
+        "name": "پنل مدیریت کالیبرا",
+        "tagline": "پنل مدیریت فروشگاه"
+    },
+    "Nav": {
+        "overview": "نمای کلی",
+        "catalog": "کاتالوگ",
+        "sales": "فروش",
+        "customersSection": "مشتری‌ها",
+        "configuration": "پیکربندی",
+        "dashboard": "داشبورد",
+        "products": "محصولات",
+        "categories": "دسته‌بندی‌ها",
+        "tags": "برچسب‌ها",
+        "brands": "برندها",
+        "attributes": "ویژگی‌ها",
+        "reviews": "نقد و بررسی‌ها",
+        "media": "رسانه‌ها",
+        "orders": "سفارش‌ها",
+        "coupons": "کوپن‌ها",
+        "customers": "مشتری‌ها",
+        "tax": "مالیات",
+        "shipping": "ارسال",
+        "payments": "روش‌های پرداخت",
+        "settings": "تنظیمات",
+        "reports": "گزارش‌ها",
+        "analytics": "تحلیل و گزارش",
+        "analyticsOverview": "بررسی اجمالی",
+        "analyticsRevenue": "درآمد",
+        "analyticsOrders": "سفارش‌ها",
+        "analyticsProducts": "محصولات",
+        "analyticsCategories": "دسته‌ها",
+        "analyticsCoupons": "کدهای تخفیف",
+        "analyticsTaxes": "مالیات",
+        "analyticsStock": "انبار",
+        "factor": "فاکتور",
+        "factorDocuments": "فاکتورها و پیش‌فاکتورها",
+        "factorPayments": "پرداخت‌ها و درگاه‌ها",
+        "factorReports": "گزارش‌ها",
+        "factorRecords": "مشتریان و کاتالوگ",
+        "factorSettings": "تنظیمات",
+        "content": "نوشته‌ها",
+        "contentPosts": "مدیریت نوشته‌ها",
+        "contentMarketRadar": "اخبار و رصد بازار",
+        "contentAgents": "مرکز فرمان Agent",
+        "contentStudio": "استودیو محتوا و AI",
+        "contentCalendar": "تقویم و انتشار",
+        "contentMedia": "رسانه و فایل‌ها",
+        "contentTaxonomy": "دسته‌ها و برچسب‌ها",
+        "contentReports": "تحلیل و گزارش‌ها",
+        "contentSettings": "تنظیمات",
+        "seo": "سئو",
+        "seoSectionControl": "کنترل",
+        "seoSectionCatalog": "کاتالوگ",
+        "seoSectionContent": "محتوا",
+        "seoSectionMonitoring": "پایش",
+        "seoSectionSystem": "سیستم",
+        "seoOverview": "نمای کلی",
+        "seoControlTower": "برج کنترل",
+        "seoProducts": "سئوی محصولات",
+        "seoCategoriesLinks": "دسته‌ها و لینک‌ها",
+        "seoImagesAlt": "تصاویر و ALT",
+        "seoSchemaPreview": "اسکیما و پیش‌نمایش",
+        "seoKeywordsContent": "کلمات کلیدی و محتوا",
+        "seoContentRefresh": "به‌روزرسانی محتوا",
+        "seoLiveEditor": "ویرایشگر زنده",
+        "seoMarketRadar": "رادار بازار",
+        "seoTechnicalHealth": "سلامت فنی",
+        "seoCrawlMonitoring": "پایش کرال",
+        "seoRankTracking": "رهگیری رتبه",
+        "seoCompetitorsSerp": "رقبا و SERP",
+        "seoReports": "گزارش‌های سئو",
+        "seoSettings": "تنظیمات و ابزارها"
+    },
+    "Topbar": {
+        "search": "جستجو…",
+        "notifications": "اعلان‌ها",
+        "signOut": "خروج",
+        "account": "حساب کاربری",
+        "profile": "پروفایل",
+        "settings": "تنظیمات"
+    },
+    "Theme": {
+        "toggle": "تغییر تم",
+        "light": "روشن",
+        "dark": "تیره",
+        "system": "بر اساس سیستم"
+    },
+    "Common": {
+        "switchLocale": "English",
+        "search": "جستجو",
+        "filter": "فیلتر",
+        "all": "همه",
+        "actions": "عملیات",
+        "edit": "ویرایش",
+        "save": "ذخیره",
+        "cancel": "انصراف",
+        "delete": "حذف",
+        "view": "مشاهده",
+        "viewAll": "مشاهده همه",
+        "back": "بازگشت",
+        "yes": "بله",
+        "no": "خیر",
+        "active": "فعال",
+        "inactive": "غیرفعال",
+        "enabled": "فعال",
+        "disabled": "غیرفعال",
+        "loading": "در حال بارگذاری…",
+        "noResults": "نتیجه‌ای یافت نشد",
+        "refresh": "بروزرسانی",
+        "retry": "تلاش مجدد",
+        "errorLoading": "بارگذاری اطلاعات با خطا مواجه شد.",
+        "today": "امروز",
+        "yesterday": "دیروز",
+        "thisWeek": "این هفته",
+        "comparison": "نسبت به دوره قبل",
+        "showing": "نمایش {from} تا {to} از {total}",
+        "moreInfo": "اطلاعات بیشتر",
+        "dismiss": "بستن",
+        "learnMore": "بیشتر بدانید",
+        "select": "انتخاب کنید",
+        "remove": "حذف",
+        "clearAll": "پاک کردن همه",
+        "create": "ساخت «{name}»",
+        "add": "افزودن",
+        "money": {
+            "tomanShort": "تومان",
+            "rialShort": "ریال"
+        },
+        "dateRange": {
+            "today": "امروز",
+            "yesterday": "دیروز",
+            "tomorrow": "فردا",
+            "last7": "۷ روز گذشته",
+            "last30": "۳۰ روز گذشته",
+            "thisMonth": "این ماه",
+            "lastMonth": "ماه گذشته",
+            "next7": "۷ روز آینده",
+            "next30": "۳۰ روز آینده",
+            "nextMonth": "ماه آینده"
+        },
+        "shortcuts": {
+            "title": "میانبرها",
+            "search": "تمرکز روی جستجو",
+            "new": "محصول جدید",
+            "refresh": "بازخوانی",
+            "edit": "ویرایش",
+            "quickEdit": "ویرایش سریع",
+            "duplicate": "تکثیر",
+            "trash": "انتقال به زباله‌دان",
+            "deletePermanently": "حذف کامل",
+            "selectAll": "انتخاب همه",
+            "clearSelection": "لغو انتخاب",
+            "open": "باز کردن",
+            "navigation": "ناوبری"
+        }
+    },
+    "Login": {
+        "title": "ورود به پنل مدیریت",
+        "subtitle": "برای دسترسی به فروشگاه، اطلاعات ورود را وارد کنید.",
+        "email": "ایمیل",
+        "password": "رمز عبور",
+        "submit": "ورود",
+        "demoNotice": "حالت دمو: هر ایمیل/رمز عبور غیرخالی پذیرفته می‌شود.",
+        "highlightSecure": "احراز هویت امن",
+        "highlightBilingual": "فارسی + انگلیسی",
+        "highlightTheme": "حالت روشن و تاریک",
+        "footerCopyright": "© ۱۴۰۵ کالیبرا — تمامی حقوق محفوظ است."
+    },
+    "Dashboard": {
+        "title": "داشبورد",
+        "subtitle": "نمای کلی فروشگاه در یک نگاه.",
+        "ordersToday": "سفارش‌های امروز",
+        "revenueToday": "درآمد امروز",
+        "activeProducts": "محصولات فعال",
+        "pendingFulfilments": "در انتظار ارسال",
+        "newCustomers": "مشتری‌های جدید",
+        "newCustomersDescription": "ثبت‌نام‌های ۲۴ ساعت اخیر",
+        "newCustomersComparison": "نسبت به ۲۴ ساعت قبل",
+        "recentCustomers": "تازه‌واردها",
+        "recentCustomersSubtitle": "آخرین مشتری‌هایی که حساب کاربری ساخته‌اند",
+        "noNewCustomers": "در ۲۴ ساعت گذشته ثبت‌نامی انجام نشده است.",
+        "joinedRelative": "{relative}",
+        "salesTrend": "روند فروش",
+        "salesTrendSubtitle": "درآمد روزانه طی دو هفته اخیر",
+        "ordersByStatus": "سفارش‌ها بر اساس وضعیت",
+        "ordersByStatusSubtitle": "ترکیب وضعیت‌های فعال در سیستم",
+        "topProducts": "پرفروش‌ترین‌ها",
+        "topProductsSubtitle": "پرفروش‌ترین محصولات این ماه",
+        "recentOrders": "سفارش‌های اخیر",
+        "viewAll": "مشاهده همه",
+        "comparedTo": "نسبت به دوره قبل",
+        "customerInsights": {
+            "title": "خلاصه مشتری‌ها",
+            "subtitle": "وضعیت پایگاه مشتری و روند ۳۰ روز اخیر",
+            "viewAll": "مشاهده همه مشتری‌ها",
+            "total": "کل مشتری‌ها",
+            "avgOrderCount": "میانگین تعداد سفارش",
+            "avgLifetimeSpend": "میانگین مجموع خرید",
+            "avgOrderValue": "میانگین مبلغ سفارش",
+            "pctWithAccount": "دارای حساب کاربری",
+            "delta30d": "از ۳۰ روز پیش",
+            "sparklines": {
+                "total": "نمودار ۳۰ روزه تعداد مشتری‌های جدید",
+                "spend": "نمودار ۳۰ روزه درآمد دریافتی"
+            }
+        },
+        "regional": {
+            "title": "نقشهٔ سفارش‌ها",
+            "subtitle": "بازهٔ زمانی و معیار رنگ‌بندی را تغییر دهید",
+            "metricOrders": "تعداد سفارش‌ها",
+            "metricRevenue": "مبلغ فروش",
+            "metricCustomers": "تعداد مشتری‌ها",
+            "topProductsLabel": "محصولات برتر",
+            "topProductsCount": "تعداد",
+            "backToCountry": "بازگشت به نقشهٔ کشور",
+            "totalOrders": "کل سفارش‌ها",
+            "totalRevenue": "کل فروش",
+            "totalCustomers": "کل مشتری‌ها",
+            "topProvince": "استان برتر",
+            "topCounty": "شهرستان برتر",
+            "empty": "سفارشی در بازهٔ انتخاب‌شده ثبت نشده است",
+            "emptyProvince": "بدون سفارش",
+            "tooltipHint": "برای جزئیات کلیک کنید",
+            "legendTitle": "راهنمای رنگ‌ها",
+            "countiesHeading": "شهرستان‌ها",
+            "unmatchedCounty": "شهرستان شناسایی‌نشده",
+            "dateRangeLabel": "بازهٔ زمانی",
+            "dateRangeAddLabel": "افزودن بازهٔ زمانی"
+        }
+    },
+    "ProductsExport": {
+        "title": "خروجی محصولات به CSV",
+        "subtitle": "محصولات فروشگاه را با فیلترهای دلخواه به فایل CSV خروجی بگیرید.",
+        "backToProducts": "بازگشت به محصولات",
+        "steps": {
+            "aria": "مراحل خروجی",
+            "filter": "انتخاب فیلتر و ستون‌ها",
+            "review": "بررسی و تأیید",
+            "exporting": "گرفتن خروجی",
+            "done": "پایان"
+        },
+        "matchCount": {
+            "label": "محصول مطابق فیلتر فعلی:",
+            "variations": "متغیر"
+        },
+        "scope": {
+            "all": "همه محصولات",
+            "allHelp": "تمام محصولات فروشگاه (بدون فیلتر).",
+            "filter": "فیلتر سفارشی",
+            "filterHelp": "بر اساس فیلترهای انتخاب‌شده در پایین.",
+            "selected": "فقط موارد انتخاب‌شده",
+            "selectedHelp": "{n} محصول از صفحه قبل."
+        },
+        "step1": {
+            "title": "انتخاب فیلتر و ستون‌ها",
+            "subtitle": "تصمیم بگیرید چه محصولاتی و با کدام ستون‌ها خروجی گرفته شوند.",
+            "scopeTitle": "محدوده خروجی",
+            "preview": "پیش‌نمایش ۵ ردیف",
+            "continueToReview": "ادامه به مرحله بررسی",
+            "generate": "گرفتن خروجی",
+            "disabledNoColumns": "حداقل یک ستون انتخاب کنید",
+            "disabledNoMatches": "هیچ محصولی مطابق فیلتر فعلی پیدا نشد",
+            "previewFailed": "پیش‌نمایش با خطا مواجه شد.",
+            "startFailed": "شروع خروجی با خطا مواجه شد.",
+            "previewTitle": "پیش‌نمایش ۵ ردیف اول"
+        },
+        "review": {
+            "title": "بررسی و تأیید خروجی",
+            "subtitle": "نمونه‌ای از خروجی نهایی را ببینید و در صورت نیاز قالب را تنظیم کنید.",
+            "totals": {
+                "products": "محصول مطابق",
+                "variations": "متغیر",
+                "columns": "ستون خروجی",
+                "format": "قالب"
+            },
+            "formatTitle": "قالب خروجی",
+            "formatHelp": "تغییر این گزینه‌ها، پیش‌نمایش پایین را به‌صورت خودکار به‌روزرسانی می‌کند.",
+            "digitStyle": "شکل ارقام",
+            "digitStyleAscii": "انگلیسی",
+            "digitStylePersian": "فارسی",
+            "dateFormat": "قالب تاریخ",
+            "jalali": "جلالی",
+            "moneyFormat": "قالب پول",
+            "moneyMinor": "ریال (واحد خرد)",
+            "moneyMajor": "تومان",
+            "headerLanguage": "زبان ستون‌سرها",
+            "headerEn": "انگلیسی (سازگار با ورود مجدد)",
+            "headerFa": "فارسی",
+            "previewTitle": "نمونه ۵ ردیف اول",
+            "previewSubtitle": "نمایش {rows} ردیف اول از خروجی نهایی",
+            "previewCapNote": "برای عملکرد بهتر و جلوگیری از بارگذاری‌های سنگین، فقط {rows} ردیف نمونه نمایش داده می‌شود. در زمان گرفتن خروجی واقعی، تمام {total} ردیف پردازش خواهد شد.",
+            "refresh": "بازخوانی پیش‌نمایش",
+            "generate": "تأیید و گرفتن خروجی",
+            "backToFilter": "بازگشت به فیلتر",
+            "previewFailed": "بازخوانی پیش‌نمایش با خطا مواجه شد.",
+            "startFailed": "شروع گرفتن خروجی با خطا مواجه شد."
+        },
+        "filters": {
+            "title": "فیلترها",
+            "status": "وضعیت",
+            "type": "نوع محصول",
+            "stockStatus": "وضعیت موجودی",
+            "onSale": "در حال تخفیف",
+            "featured": "ویژه",
+            "hasImages": "دارای تصویر",
+            "hasVariations": "دارای متغیر",
+            "lowStock": "موجودی پایین",
+            "includeVariations": "شامل متغیرها",
+            "priceRange": "بازه قیمت",
+            "min": "حداقل",
+            "max": "حداکثر",
+            "skuPattern": "الگوی SKU",
+            "skuPatternPlaceholder": "مثال: nut-*",
+            "search": "جستجو",
+            "searchPlaceholder": "نام محصول، توضیحات یا SKU",
+            "createdAfter": "ساخته‌شده پس از",
+            "createdBefore": "ساخته‌شده پیش از"
+        },
+        "statusLabels": {
+            "publish": "منتشرشده",
+            "draft": "پیش‌نویس",
+            "pending": "در انتظار",
+            "private": "خصوصی"
+        },
+        "typeLabels": {
+            "simple": "ساده",
+            "variable": "متغیر",
+            "grouped": "گروهی",
+            "external": "خارجی"
+        },
+        "stockLabels": {
+            "instock": "موجود",
+            "outofstock": "ناموجود",
+            "onbackorder": "پیش‌خرید"
+        },
+        "columns": {
+            "title": "ستون‌ها",
+            "subtitle": "ستون‌هایی که در فایل خروجی ظاهر می‌شوند. ترتیب را با کشیدن تغییر دهید.",
+            "addMore": "افزودن ستون‌های بیشتر",
+            "remove": "حذف ستون",
+            "preset": {
+                "default": "پیش‌فرض",
+                "all": "همه ستون‌ها",
+                "required": "فقط ستون‌های ضروری",
+                "pricing": "فقط ستون‌های قیمتی",
+                "none": "هیچ‌کدام"
+            }
+        },
+        "format": {
+            "title": "گزینه‌های پیشرفته",
+            "delimiter": "جداکننده",
+            "tab": "Tab",
+            "encoding": "رمزگذاری",
+            "digitStyle": "شکل ارقام",
+            "digitStyleAscii": "انگلیسی",
+            "digitStylePersian": "فارسی",
+            "dateFormat": "قالب تاریخ",
+            "jalali": "جلالی",
+            "moneyFormat": "قالب پول",
+            "moneyMinor": "ریال (واحد خرد)",
+            "moneyMajor": "تومان",
+            "compress": "فشرده‌سازی",
+            "compressAuto": "خودکار",
+            "compressAlways": "همیشه",
+            "compressNever": "هرگز",
+            "headerLanguage": "زبان ستون‌سرها",
+            "headerEn": "انگلیسی (سازگار با ورود مجدد)",
+            "headerFa": "فارسی"
+        },
+        "exporting": {
+            "title": "در حال گرفتن خروجی",
+            "subtitle": "فایل CSV در حال ساخت است.",
+            "processedOfTotal": "پردازش‌شده: {processed} از {total}",
+            "slowChunk": "در حال پردازش ردیف {row} — ممکن است چند ثانیه طول بکشد",
+            "cancel": "لغو",
+            "background": "ادامه در پس‌زمینه",
+            "connection": {
+                "sse": "اتصال زنده",
+                "polling": "در حال بررسی…",
+                "connecting": "در حال اتصال…"
+            }
+        },
+        "done": {
+            "headline": {
+                "completed": "خروجی با موفقیت آماده شد",
+                "completed_with_errors": "خروجی با هشدار آماده شد",
+                "failed": "گرفتن خروجی ناموفق بود",
+                "cancelled": "خروجی لغو شد",
+                "queued": "در صف",
+                "running": "در حال اجرا"
+            },
+            "file": "نام فایل",
+            "size": "حجم",
+            "rows": "ردیف‌های خروجی",
+            "columns": "ستون‌ها",
+            "duration": "زمان",
+            "scopeLabel": "محدوده",
+            "scope": {
+                "all": "همه",
+                "filter": "فیلتر سفارشی",
+                "selected": "موارد انتخاب‌شده",
+                "preset": "از پیش‌تنظیمات"
+            },
+            "download": "دانلود فایل",
+            "copyLink": "کپی لینک دانلود",
+            "copied": "کپی شد",
+            "noLongerAvailable": "فایل دیگر در دسترس نیست — برای دریافت دوباره، خروجی جدید بگیرید.",
+            "rerun": "خروجی جدید با همین فیلتر",
+            "history": "تاریخچه خروجی‌ها",
+            "backToProducts": "بازگشت به محصولات"
+        },
+        "history": {
+            "title": "تاریخچه خروجی‌های محصولات",
+            "subtitle": "همه خروجی‌های گذشته. دانلود تا ۲۴ ساعت در دسترس است.",
+            "backToProducts": "بازگشت به محصولات",
+            "empty": "هنوز خروجی‌ای ثبت نشده است.",
+            "col": {
+                "file": "فایل",
+                "date": "تاریخ",
+                "status": "وضعیت",
+                "rows": "ردیف‌ها",
+                "size": "حجم",
+                "actions": "عمل",
+                "download": "دانلود",
+                "delete": "حذف"
+            }
+        }
+    },
+    "ProductsImport": {
+        "title": "وارد کردن محصولات از CSV",
+        "subtitle": "اطلاعات محصولات فروشگاه را از فایل CSV یا XLSX وارد کنید یا اطلاعات موجود را به‌روزرسانی کنید.",
+        "backToProducts": "بازگشت به محصولات",
+        "steps": {
+            "aria": "مراحل وارد کردن",
+            "upload": "آپلود فایل CSV",
+            "mapping": "تطبیق ستون‌ها",
+            "review": "بررسی و تأیید",
+            "importing": "وارد کردن",
+            "done": "پایان"
+        },
+        "common": {
+            "auto": "خودکار",
+            "tab": "Tab"
+        },
+        "step1": {
+            "title": "وارد کردن محصولات از فایل CSV",
+            "subtitle": "اطلاعات محصولات فروشگاه را از فایل CSV یا XLSX وارد کنید یا اطلاعات موجود را به‌روزرسانی کنید.",
+            "downloadTemplate": "دانلود قالب نمونه",
+            "history": "تاریخچه عملیات",
+            "dropOrClick": "فایل را اینجا رها کنید یا کلیک کنید",
+            "dropHere": "فایل را اینجا رها کنید",
+            "pasteHint": "همچنین می‌توانید CSV را با Ctrl+V بچسبانید",
+            "accepted": "فرمت‌های پذیرفته‌شده: CSV, TXT, XLSX  •  حداکثر {mb} مگابایت",
+            "dropzoneAria": "محل اهرها کردن فایل برای دیافت تاضل",
+            "uploading": "در حال آپلود ({percent}٪)",
+            "uploadFailed": "آپلود فایل با خطا مواجه شد.",
+            "updateExisting": {
+                "label": "به‌روزرسانی محصولات موجود",
+                "help": "محصولاتی که SKU یکسانی با ردیف‌های فایل دارند به‌روزرسانی می‌شوند. محصولاتی که در فایل نیستند حذف نخواهند شد."
+            },
+            "advanced": {
+                "title": "گزینه‌های پیشرفته",
+                "delimiter": "جداکننده",
+                "encoding": "رمزگذاری"
+            }
+        },
+        "step2": {
+            "title": "تطبیق ستون‌های CSV با فیلدهای محصول",
+            "subtitle": "هر ستون CSV را به فیلد متناظر در محصول وصل کنید. ستون‌هایی که نمی‌خواهید وارد شوند را روی «وارد نکن» بگذارید.",
+            "comingSoon": "به‌زودی"
+        },
+        "mapping": {
+            "title": "تطبیق ستون‌های CSV با فیلدهای محصول",
+            "subtitle": "هر ستون CSV را به فیلد متناظر در محصول وصل کنید. ستون‌هایی که نمی‌خواهید وارد شوند را روی «وارد نکن» بگذارید.",
+            "presetApplied": "از تطبیق قبلی «{name}» استفاده شد — برای تغییر کلیک کنید",
+            "columnHeader": "نام ستون",
+            "destinationHeader": "تطبیق با فیلد",
+            "samplesLabel": "نمونه‌ها",
+            "samplesEmpty": "(همه مقادیر خالی)",
+            "dontImport": "وارد نکن",
+            "searchField": "جستجوی فیلد…",
+            "noResults": "موردی یافت نشد.",
+            "preview": "پیش‌نمایش",
+            "rePreview": "پیش‌نمایش مجدد",
+            "start": "شروع وارد کردن",
+            "continueToReview": "ادامه به مرحله بررسی",
+            "previewFirstHint": "برای فعال شدن دکمه «شروع وارد کردن»، ابتدا روی «پیش‌نمایش» کلیک کنید",
+            "stickyBarAria": "خلاصه پیش‌نمایش و اقدامات",
+            "previewFailed": "پیش‌نمایش با خطا مواجه شد.",
+            "startFailed": "شروع وارد کردن با خطا مواجه شد.",
+            "toolbar": {
+                "autoMap": "تطبیق خودکار همه",
+                "clearAll": "پاک کردن همه تطبیق‌ها",
+                "dropUnrelated": "حذف ستون‌های نامرتبط"
+            },
+            "savePreset": {
+                "label": "ذخیره به‌عنوان الگو",
+                "placeholder": "نام الگو"
+            }
+        },
+        "review": {
+            "title": "بررسی و تأیید نتیجه",
+            "subtitle": "نتیجه شبیه‌سازی روی فایل آپلودشده — هنوز چیزی در پایگاه داده تغییر نکرده است.",
+            "controlsTitle": "محدوده عملیات",
+            "controlsHelp": "تصمیم بگیرید این عملیات چه چیزهایی را تغییر دهد. می‌توانید قبل از شروع، محدوده را محدودتر کنید.",
+            "controls": {
+                "updateExisting": {
+                    "label": "به‌روزرسانی محصولات موجود",
+                    "help": "محصولاتی که SKU مشترکی با ردیف‌های فایل دارند به‌روزرسانی می‌شوند."
+                },
+                "skipNew": {
+                    "label": "محصولات جدید را وارد نکن",
+                    "help": "ردیف‌هایی که قرار است محصول جدید بسازند نادیده گرفته می‌شوند."
+                },
+                "skipUpdates": {
+                    "label": "محصولات موجود را به‌روزرسانی نکن",
+                    "help": "ردیف‌هایی که قرار است محصولات موجود را به‌روز کنند نادیده گرفته می‌شوند."
+                },
+                "skipWarningRows": {
+                    "label": "ردیف‌های دارای هشدار را رد کن",
+                    "help": "هر ردیفی که پرچم هشدار خورده، در عملیات نهایی اعمال نمی‌شود."
+                }
+            },
+            "effectiveTitle": "نتیجه نهایی پس از اعمال محدوده",
+            "counters": {
+                "willCreate": "ساخته می‌شود",
+                "willUpdate": "به‌روزرسانی می‌شود",
+                "willSkip": "رد می‌شود",
+                "willFail": "ناموفق"
+            },
+            "start": "تأیید و شروع وارد کردن",
+            "autoRefreshing": "در حال بازخوانی پیش‌نمایش…",
+            "backToMapping": "بازگشت به تطبیق ستون‌ها",
+            "previewFailed": "بازخوانی پیش‌نمایش با خطا مواجه شد.",
+            "startFailed": "شروع وارد کردن با خطا مواجه شد."
+        },
+        "preview": {
+            "title": "پیش‌نمایش وارد کردن",
+            "subtitle": "نتیجه شبیه‌سازی روی فایل آپلودشده — هنوز چیزی در پایگاه داده تغییر نکرده است.",
+            "create": "ساخته می‌شود",
+            "update": "به‌روزرسانی می‌شود",
+            "skip": "رد می‌شود",
+            "fail": "ناموفق",
+            "warnings": "هشدارها",
+            "noCreate": "هیچ محصول جدیدی ساخته نمی‌شود.",
+            "noUpdates": "هیچ محصولی به‌روزرسانی نمی‌شود.",
+            "noSkip": "هیچ ردیفی رد نمی‌شود.",
+            "noFail": "هیچ ردیفی ناموفق نیست.",
+            "noWarnings": "هشداری وجود ندارد.",
+            "createSummary": "{count} محصول جدید ساخته می‌شود.",
+            "skipSummary": "{count} ردیف رد می‌شود.",
+            "skipMore": "{count} ردیف دیگر نیز با همین دلایل رد می‌شوند.",
+            "skipReason": {
+                "duplicate_sku": "SKU تکراری",
+                "empty_row": "ردیف خالی",
+                "all_columns_unmapped": "هیچ ستونی تطبیق داده نشده"
+            },
+            "skipReasonHelp": {
+                "duplicate_sku": "محصولی با این SKU وجود دارد و گزینه «به‌روزرسانی محصولات موجود» خاموش است.",
+                "empty_row": "هیچ ستون تطبیق‌داده‌شده‌ای در این ردیف مقدار نداشت.",
+                "all_columns_unmapped": "هیچ ستونی به فیلد محصول تطبیق داده نشده — مقادیر این ردیف اعمال نمی‌شوند."
+            },
+            "rowLabel": "ردیف {n}",
+            "rowsLabel": "{n} ردیف",
+            "anomaly": {
+                "price_jump": "افزایش غیرمعمول قیمت",
+                "price_drop": "کاهش غیرمعمول قیمت",
+                "duplicate_sku_in_file": "SKU تکراری در فایل",
+                "outlier_price": "قیمت پرت",
+                "missing_required_on_create": "فیلد الزامی در ردیف ساخت خالی است",
+                "type_mismatch": "نوع داده ستون نامتجانس"
+            }
+        },
+        "groups": {
+            "basic": "اصلی",
+            "pricing": "قیمت‌گذاری",
+            "stock": "موجودی",
+            "shipping": "ارسال",
+            "taxonomy": "دسته‌بندی و برچسب",
+            "media": "رسانه",
+            "linked": "محصولات مرتبط",
+            "attributes": "ویژگی‌ها",
+            "seo": "سئو"
+        },
+        "fields": {
+            "sku": {
+                "label": "SKU"
+            },
+            "name": {
+                "label": "نام محصول"
+            },
+            "type": {
+                "label": "نوع محصول"
+            },
+            "status": {
+                "label": "وضعیت"
+            },
+            "short_description": {
+                "label": "توضیحات کوتاه"
+            },
+            "description": {
+                "label": "توضیحات کامل"
+            },
+            "visibility": {
+                "label": "قابلیت مشاهده"
+            },
+            "featured": {
+                "label": "محصول ویژه"
+            },
+            "allow_reviews": {
+                "label": "اجازه دیدگاه"
+            },
+            "purchase_note": {
+                "label": "یادداشت خرید"
+            },
+            "menu_order": {
+                "label": "ترتیب نمایش"
+            },
+            "regular_price": {
+                "label": "قیمت اصلی"
+            },
+            "sale_price": {
+                "label": "قیمت ویژه"
+            },
+            "sale_price_start": {
+                "label": "شروع تخفیف"
+            },
+            "sale_price_end": {
+                "label": "پایان تخفیف"
+            },
+            "tax_status": {
+                "label": "وضعیت مالیات"
+            },
+            "tax_class": {
+                "label": "کلاس مالیاتی"
+            },
+            "manage_stock": {
+                "label": "مدیریت موجودی"
+            },
+            "stock_quantity": {
+                "label": "تعداد موجودی"
+            },
+            "stock_status": {
+                "label": "وضعیت موجودی"
+            },
+            "backorders_allowed": {
+                "label": "پیش‌خرید"
+            },
+            "sold_individually": {
+                "label": "فروش تکی"
+            },
+            "weight": {
+                "label": "وزن"
+            },
+            "length": {
+                "label": "طول"
+            },
+            "width": {
+                "label": "عرض"
+            },
+            "height": {
+                "label": "ارتفاع"
+            },
+            "shipping_class": {
+                "label": "کلاس ارسال"
+            },
+            "categories": {
+                "label": "دسته‌بندی"
+            },
+            "tags": {
+                "label": "برچسب"
+            },
+            "brand": {
+                "label": "برند"
+            },
+            "images": {
+                "label": "تصاویر"
+            },
+            "parent_sku": {
+                "label": "SKU والد"
+            },
+            "upsells": {
+                "label": "محصولات پیشنهادی"
+            },
+            "cross_sells": {
+                "label": "محصولات مرتبط"
+            },
+            "external_url": {
+                "label": "آدرس خارجی"
+            },
+            "button_text": {
+                "label": "متن دکمه"
+            }
+        },
+        "step3": {
+            "title": "در حال وارد کردن",
+            "inProgress": "عملیات {id} — وضعیت: {status}",
+            "backToList": "بازگشت به محصولات"
+        },
+        "step4": {
+            "title": "خلاصه عملیات",
+            "status": "وضعیت",
+            "created": "ساخته شد",
+            "updated": "به‌روزرسانی شد",
+            "failed": "ناموفق",
+            "viewProducts": "مشاهده محصولات",
+            "importAnother": "وارد کردن فایل دیگر"
+        },
+        "importing": {
+            "title": "در حال وارد کردن",
+            "subtitle": "فایل CSV در حال پردازش است.",
+            "processedOfTotal": "پردازش‌شده: {processed} از {total}",
+            "slowChunk": "در حال پردازش ردیف {row} — ممکن است چند ثانیه طول بکشد",
+            "created": "ساخته شد",
+            "updated": "به‌روزرسانی شد",
+            "skipped": "رد شد",
+            "failed": "ناموفق",
+            "cancel": "لغو عملیات",
+            "background": "ادامه در پس‌زمینه",
+            "notificationAsk": "آیا اجازه می‌دهید پس از پایان وارد کردن، نوتیفیکیشن نمایش داده شود؟",
+            "notificationDenied": "نوتیفیکیشن غیرفعال است — برای فعال‌سازی به تنظیمات مرورگر مراجعه کنید.",
+            "connection": {
+                "sse": "اتصال زنده",
+                "polling": "در حال بررسی…",
+                "connecting": "در حال اتصال…"
+            }
+        },
+        "done": {
+            "headline": {
+                "completed": "وارد کردن با موفقیت انجام شد",
+                "completed_with_errors": "وارد کردن با هشدار به پایان رسید",
+                "failed": "وارد کردن ناموفق بود",
+                "cancelled": "وارد کردن لغو شد",
+                "rolled_back": "این عملیات بازگشت داده شد",
+                "queued": "در صف",
+                "validating": "در حال اعتبارسنجی",
+                "running": "در حال اجرا"
+            },
+            "status": {
+                "rolled_back": "بازگشت داده‌شده"
+            },
+            "totals": {
+                "totalRows": "کل ردیف‌های فایل",
+                "created": "ساخته شد",
+                "updated": "به‌روزرسانی شد",
+                "skipped": "رد شد (هشدار)",
+                "failed": "ناموفق (خطا)",
+                "newCategories": "دسته‌بندی‌های جدید ساخته‌شده",
+                "newTags": "برچسب‌های جدید ساخته‌شده",
+                "queuedImages": "تصاویر در صف آپلود",
+                "duration": "مدت زمان"
+            },
+            "severity": {
+                "error": "خطا",
+                "warning": "هشدار"
+            },
+            "rollback": {
+                "banner": "می‌توانید تا ۲۴ ساعت این عملیات را بازگشت دهید",
+                "cta": "بازگشت این عملیات",
+                "afterMessage": "این عملیات در {at} توسط مدیر بازگشت داده شد",
+                "failed": "بازگشت با خطا مواجه شد."
+            },
+            "errors": {
+                "title": "جزئیات خطاها و هشدارها",
+                "loading": "در حال بارگذاری خطاها…",
+                "download": "دانلود گزارش خطا (CSV)",
+                "retryAll": "تلاش دوباره با مقادیر اصلاح‌شده",
+                "retryRow": "تلاش دوباره",
+                "retried": "تلاش شد",
+                "rowLabel": "ردیف {n}"
+            },
+            "actions": {
+                "viewProducts": "مشاهده محصولات",
+                "importAnother": "وارد کردن فایل دیگر",
+                "history": "تاریخچه عملیات وارد کردن"
+            },
+            "rollbackFailed": "بازگشت با خطا مواجه شد."
+        },
+        "history": {
+            "title": "تاریخچه وارد کردن محصولات",
+            "subtitle": "همه عملیات‌های وارد کردن گذشته. می‌توانید گزارش خطا را دانلود یا عملیات‌های اخیر را بازگشت دهید.",
+            "backToProducts": "بازگشت به محصولات",
+            "empty": "هنوز عملیات وارد کردنی ثبت نشده است.",
+            "col": {
+                "file": "فایل",
+                "date": "تاریخ",
+                "status": "وضعیت",
+                "created": "ساخته‌شده",
+                "updated": "به‌روز شده",
+                "skipped": "رد شد",
+                "failed": "ناموفق",
+                "actions": "عمل",
+                "download": "دانلود گزارش خطا",
+                "rollback": "بازگشت"
+            }
+        }
+    },
+    "Products": {
+        "title": "محصولات",
+        "subtitle": "مدیریت کاتالوگ محصولات.",
+        "addProduct": "افزودن محصول",
+        "search": "جستجوی محصول…",
+        "empty": "هنوز محصولی اضافه نکرده‌اید.",
+        "filterStatus": "وضعیت",
+        "table": {
+            "product": "محصول",
+            "sku": "کد",
+            "price": "قیمت",
+            "stock": "موجودی",
+            "status": "وضعیت",
+            "category": "دسته‌بندی",
+            "updated": "بروزرسانی",
+            "actions": "عملیات"
+        },
+        "form": {
+            "general": "اطلاعات عمومی",
+            "name": "نام محصول",
+            "slug": "نامک",
+            "shortDescription": "توضیح کوتاه",
+            "pricing": "قیمت‌گذاری",
+            "regularPrice": "قیمت اصلی (ریال)",
+            "salePrice": "قیمت تخفیف (ریال)",
+            "inventory": "موجودی",
+            "stockQuantity": "تعداد موجودی",
+            "manageStock": "مدیریت موجودی",
+            "stockStatus": "وضعیت موجودی",
+            "organization": "دسته‌بندی و برند",
+            "category": "دسته‌بندی",
+            "brand": "برند",
+            "tags": "برچسب‌ها",
+            "submit": "ذخیره محصول"
+        },
+        "newTitle": "افزودن محصول جدید",
+        "newSubtitle": "اطلاعات اولیه را وارد کنید؛ بعداً می‌توانید تنوع و رسانه را اضافه کنید.",
+        "list": {
+            "title": "محصولات",
+            "totalProducts": "{count} محصول",
+            "loadingTotal": "در حال بارگذاری…",
+            "addProduct": "افزودن محصول جدید",
+            "secondaryActions": "بیشتر",
+            "import": "ورود فایل CSV",
+            "export": "خروجی CSV",
+            "refresh": "بروزرسانی",
+            "searchPlaceholder": "جستجوی محصول، شناسه یا برچسب…",
+            "viewOptions": "نمایش",
+            "columnsHeading": "ستون‌ها",
+            "densityHeading": "تراکم",
+            "density": {
+                "comfortable": "راحت",
+                "cozy": "متوسط",
+                "compact": "فشرده"
+            },
+            "reorderColumn": "جابجایی ستون",
+            "taxonomyDelete": {
+                "title": "حذف؟",
+                "description": "آیا از حذف «{name}» مطمئن هستید؟ این کار قابل بازگشت نیست.",
+                "untitled": "بدون عنوان",
+                "confirm": "حذف",
+                "pending": "در حال حذف…",
+                "cancel": "انصراف"
+            },
+            "clearAll": "پاک کردن همه",
+            "clearFilter": "پاک کردن",
+            "filters": {
+                "type": "نوع محصول",
+                "stock": "وضعیت موجودی",
+                "category": "دسته‌بندی",
+                "brand": "برند",
+                "tag": "برچسب",
+                "favorites": "علاقه‌مندی‌ها",
+                "onSale": "فقط فروش ویژه",
+                "featured": "فقط ویژه",
+                "hasImage": "دارای تصویر",
+                "visibility": "قابلیت دیدن",
+                "stockLevelLabel": "سطح موجودی",
+                "dateRange": "تاریخ ایجاد",
+                "stockLevel": {
+                    "instock": "موجود",
+                    "low": "کم‌موجود",
+                    "outofstock": "ناموجود"
+                },
+                "visibilityOption": {
+                    "visible": "همه‌جا",
+                    "catalog": "فقط فروشگاه",
+                    "search": "فقط جستجو",
+                    "hidden": "مخفی"
+                }
+            },
+            "type": {
+                "simple": "یک نسخه",
+                "variable": "چند نسخه",
+                "grouped": "گروهی",
+                "external": "بیرونی"
+            },
+            "status": {
+                "any": "همه",
+                "publish": "منتشرشده",
+                "draft": "پیش‌نویس",
+                "pending": "در انتظار بررسی",
+                "private": "خصوصی",
+                "trash": "زباله‌دان"
+            },
+            "columns": {
+                "favorite": "علاقه‌مندی",
+                "image": "تصویر",
+                "name": "محصول",
+                "sku": "شناسه",
+                "stock": "موجودی",
+                "price": "قیمت",
+                "categories": "دسته‌بندی‌ها",
+                "tags": "برچسب‌ها",
+                "brand": "برند",
+                "date": "وضعیت / تاریخ",
+                "views": "بازدید",
+                "actions": "عملیات",
+                "visibility": "قابلیت دیدن",
+                "visibilityShown": "نمایش",
+                "visibilityHidden": "مخفی",
+                "salePeriod": "بازه فروش ویژه",
+                "lowStock": "کم‌موجود",
+                "inventory": "کل موجودی",
+                "createdAt": "تاریخ ایجاد",
+                "updatedAt": "آخرین تغییر"
+            },
+            "actions": {
+                "edit": "ویرایش",
+                "quickEdit": "ویرایش سریع",
+                "duplicate": "تکثیر",
+                "view": "نمایش",
+                "openShop": "نمایش در فروشگاه",
+                "copyLink": "کپی پیوند",
+                "copyId": "کپی شناسه",
+                "trash": "انتقال به زباله‌دان",
+                "restore": "بازگردانی",
+                "deletePermanently": "حذف کامل"
+            },
+            "rowActionsLabel": "عملیات ردیف",
+            "selectAll": "انتخاب همه",
+            "selectRow": "انتخاب ردیف",
+            "sortAsc": "صعودی",
+            "sortDesc": "نزولی",
+            "hideColumn": "پنهان کردن ستون",
+            "copySku": "کپی شناسه",
+            "lowStock": "موجودی کم",
+            "addToFavorites": "افزودن به علاقه‌مندی‌ها",
+            "removeFromFavorites": "حذف از علاقه‌مندی‌ها",
+            "favoriteAdded": "به علاقه‌مندی‌ها اضافه شد",
+            "favoriteRemoved": "از علاقه‌مندی‌ها حذف شد",
+            "favoriteFailed": "بروزرسانی علاقه‌مندی با خطا مواجه شد",
+            "idCopied": "شناسه کپی شد",
+            "linkCopied": "پیوند کپی شد",
+            "duplicated": "محصول تکثیر شد",
+            "duplicateFailed": "تکثیر با خطا مواجه شد",
+            "trashed": "به زباله‌دان منتقل شد",
+            "trashFailed": "انتقال به زباله‌دان با خطا مواجه شد",
+            "trashTitle": "انتقال به زباله‌دان؟",
+            "trashDescription": "آیا مطمئن هستید که می‌خواهید «{name}» را به زباله‌دان منتقل کنید؟",
+            "cancel": "انصراف",
+            "allCategories": "همه دسته‌بندی‌ها",
+            "taxonomyAll": {
+                "category": "همه دسته‌بندی‌ها",
+                "tag": "همه برچسب‌ها",
+                "brand": "همه برندها"
+            },
+            "taxonomySheet": {
+                "category": "ویرایش دسته‌بندی",
+                "tag": "ویرایش برچسب",
+                "brand": "ویرایش برند",
+                "loadError": "بارگذاری اطلاعات با خطا مواجه شد"
+            },
+            "selectedCount": "{count} انتخاب‌شده",
+            "selectedOf": "{selected} از {total} انتخاب‌شده",
+            "showing": "نمایش {from}–{to} از {total}",
+            "rowsPerPage": "تعداد در هر صفحه",
+            "pageOf": "صفحه {page} از {lastPage}",
+            "first": "اولین",
+            "previous": "قبلی",
+            "next": "بعدی",
+            "last": "آخرین",
+            "empty": "هنوز محصولی اضافه نکرده‌اید",
+            "emptyDescription": "اولین محصول کاتالوگ خود را اضافه کنید.",
+            "filteredEmpty": "نتیجه‌ای با این فیلترها یافت نشد",
+            "filteredEmptyDescription": "فیلترها را تغییر دهید یا پاکشان کنید.",
+            "loadError": "بارگذاری محصولات با خطا مواجه شد.",
+            "retry": "تلاش مجدد",
+            "clearSelection": "لغو انتخاب",
+            "bulk": {
+                "status": "تغییر وضعیت",
+                "duplicate": "تکثیر",
+                "favorite": "افزودن به علاقه‌مندی",
+                "category": "تغییر دسته‌بندی",
+                "trash": "انتقال به زباله‌دان",
+                "restore": "بازگردانی",
+                "deletePermanently": "حذف کامل",
+                "setVisibility": "تغییر قابلیت دیدن",
+                "setStock": "تغییر وضعیت موجودی",
+                "setFeatured": "تنظیم وضعیت ویژه",
+                "assignBrand": "تخصیص برند",
+                "assignTags": "تخصیص برچسب",
+                "exportSelected": "خروجی موارد انتخابی"
+            },
+            "bulkStatusChanged": "وضعیت بروزرسانی شد",
+            "bulkDuplicated": "محصولات انتخاب‌شده تکثیر شدند",
+            "bulkTrashed": "به زباله‌دان منتقل شدند",
+            "bulkRestored": "بازگردانده شدند",
+            "bulkForceDeleted": "محصولات انتخاب‌شده برای همیشه حذف شدند",
+            "bulkForceSkipped": "{count} محصول به دلیل وجود سفارش فعال حذف نشد",
+            "bulkFailed": "عملیات گروهی با خطا مواجه شد",
+            "bulkTrashTitle": "حذف گروهی؟",
+            "bulkTrashDescription": "{count} محصول انتخاب‌شده به زباله‌دان منتقل خواهد شد. ادامه می‌دهید؟",
+            "bulkForceTitle": "حذف کامل گروهی؟",
+            "bulkForceDescription": "{count} محصول برای همیشه حذف خواهد شد. این عملیات قابل بازگشت نیست.",
+            "bulkFavoritedTodo": "افزودن گروهی به علاقه‌مندی‌ها به‌زودی",
+            "bulkCategoryTodo": "تغییر دسته‌بندی گروهی به‌زودی",
+            "quickEdit": {
+                "title": "ویرایش سریع",
+                "identity": "شناسنامه",
+                "identityHint": "اولین چیزی که مشتری می‌بیند.",
+                "pricingInventory": "قیمت و موجودی",
+                "pricingInventoryHint": "قیمت تخفیف و وضعیت موجودی با هم.",
+                "organization": "سازماندهی",
+                "organizationHint": "این محصول کجای کاتالوگ قرار می‌گیرد.",
+                "name": "نام محصول",
+                "slug": "نامک",
+                "sku": "شناسه (SKU)",
+                "gtin": "GTIN/UPC/EAN",
+                "gtinHint": "شناسه‌ی جهانی محصول؛ برای جستجوی گوگل شاپینگ مفید است.",
+                "shortDescription": "توضیح کوتاه",
+                "status": "وضعیت",
+                "visibility": "قابلیت دیدن",
+                "featured": "محصول ویژه",
+                "featuredHint": "در صفحه‌های ویژه نمایش داده شود",
+                "regularPrice": "قیمت اصلی",
+                "salePrice": "قیمت تخفیف",
+                "salePriceHint": "برای حذف تخفیف، خالی بگذارید.",
+                "saleSchedule": "بازه فروش ویژه",
+                "saleScheduleHint": "خالی = همیشه فعال. در غیر این صورت فقط بین این دو تاریخ.",
+                "currency": "تومان",
+                "manageStock": "مدیریت موجودی",
+                "manageStockHint": "موجودی را در سطح این محصول مدیریت کن",
+                "stockQuantity": "تعداد موجودی",
+                "stockStatus": "وضعیت موجودی",
+                "lowStockThreshold": "آستانه کم‌موجود",
+                "lowStockThresholdHint": "زیر این عدد، هشدار کم‌موجودی نشان داده می‌شود.",
+                "backorders": "پیش‌سفارش",
+                "backordersOptions": {
+                    "no": "اجازه نده",
+                    "notify": "اجازه بده — اطلاع‌رسانی",
+                    "yes": "اجازه بده"
+                },
+                "categories": "شناسه‌ی دسته‌بندی‌ها",
+                "tags": "شناسه‌ی برچسب‌ها",
+                "brand": "شناسه‌ی برند",
+                "idCsvHint": "شناسه‌ها را با کاما جدا کنید.",
+                "save": "ذخیره",
+                "saving": "در حال ذخیره…",
+                "cancel": "انصراف",
+                "openFullEdit": "ویرایش کامل",
+                "saved": "تغییرات ذخیره شد",
+                "saveFailed": "ذخیره با خطا مواجه شد",
+                "discardConfirm": "تغییرات ذخیره‌نشده وجود دارد. واقعاً انصراف می‌دهید؟",
+                "dirty": "ذخیره‌نشده",
+                "lastEdited": "آخرین ویرایش: {relative}"
+            },
+            "rowActions": {
+                "viewOnStore": "نمایش در فروشگاه",
+                "copyLink": "کپی لینک",
+                "restore": "بازگردانی",
+                "deletePermanently": "حذف کامل"
+            },
+            "rowActionsKbd": {
+                "edit": "E",
+                "quickEdit": "Q",
+                "duplicate": "D",
+                "trash": "Del",
+                "deletePermanently": "Shift+Del"
+            },
+            "emptyHint": {
+                "title": "اولین محصول خود را اضافه کنید",
+                "description": "با افزودن محصولات، فروشگاه شما زنده می‌شود.",
+                "cta": "محصول جدید"
+            },
+            "restore": {
+                "ok": "بازگردانده شد",
+                "failed": "بازگردانی با خطا مواجه شد"
+            },
+            "forceDelete": {
+                "ok": "محصول برای همیشه حذف شد",
+                "failed": "حذف کامل با خطا مواجه شد",
+                "title": "حذف کامل؟",
+                "description": "محصول «{name}» برای همیشه حذف خواهد شد. این عملیات قابل بازگشت نیست.",
+                "confirm": "حذف کامل",
+                "skippedActiveOrder": "این محصول در یک سفارش فعال استفاده شده — ابتدا آن را لغو کنید."
+            },
+            "shortcuts": {
+                "title": "میانبرهای صفحه‌کلید",
+                "search": "تمرکز روی جستجو",
+                "new": "محصول جدید",
+                "refresh": "بازخوانی",
+                "open": "باز کردن میانبرها",
+                "edit": "ویرایش",
+                "quickEdit": "ویرایش سریع",
+                "duplicate": "تکثیر",
+                "trash": "انتقال به زباله‌دان",
+                "selectAll": "انتخاب همه",
+                "clearSelection": "لغو انتخاب",
+                "navigate": "ناوبری ردیف‌ها"
+            },
+            "errors": {
+                "nameRequired": "نام محصول الزامی است",
+                "slugRequired": "نامک الزامی است",
+                "numberRequired": "عدد معتبر وارد کنید"
+            }
+        },
+        "detail": {
+            "backToList": "بازگشت به فهرست محصولات",
+            "untitled": "محصول بدون عنوان",
+            "newProductTitle": "محصول جدید",
+            "lastEditedAt": "آخرین ویرایش: {at}",
+            "slugTaken": "این نامک قبلاً استفاده شده است",
+            "unsavedConfirm": "تغییرات ذخیره‌نشده دارید. ادامه می‌دهید؟",
+            "trashBanner": "این محصول در زباله‌دان است.",
+            "idListHint": "شناسه‌ها را با کاما جدا کنید",
+            "idHint": "شناسهٔ عددی",
+            "noneSelected": "بدون انتخاب",
+            "sections": {
+                "howItSells": "نحوهٔ فروش و ساختار محصول",
+                "productInfo": "اطلاعات محصول",
+                "commerce": "قیمت‌گذاری، موجودی و ارسال",
+                "sellingMode": "نحوهٔ فروش",
+                "general": "عمومی",
+                "description": "توضیحات",
+                "pricing": "قیمت‌گذاری",
+                "inventory": "موجودی",
+                "shipping": "ارسال",
+                "shippingClass": "کلاس ارسال",
+                "linked": "محصولات مرتبط",
+                "specs": "مشخصات",
+                "choices": "انتخاب‌های مشتری",
+                "versions": "نسخه‌های قابل فروش",
+                "advanced": "پیشرفته",
+                "publish": "انتشار",
+                "image": "تصویر شاخص",
+                "gallery": "گالری",
+                "categories": "دسته‌بندی‌ها",
+                "brand": "برند",
+                "tags": "برچسب‌ها",
+                "tax": "مالیات",
+                "reviews": "نظرات"
+            },
+            "fields": {
+                "type": "نوع محصول",
+                "name": "نام",
+                "slug": "نامک",
+                "shortDescription": "توضیح کوتاه",
+                "description": "توضیح کامل",
+                "regularPrice": "قیمت اصلی",
+                "salePrice": "قیمت حراج",
+                "saleWindow": "بازهٔ حراج",
+                "taxStatus": "وضعیت مالیات",
+                "taxClass": "کلاس مالیاتی",
+                "externalUrl": "آدرس بیرونی",
+                "buttonText": "متن دکمه",
+                "sku": "SKU",
+                "gtin": "GTIN/EAN",
+                "manageStock": "مدیریت موجودی",
+                "stockQuantity": "تعداد موجودی",
+                "lowStockThreshold": "آستانهٔ کم‌بودن موجودی",
+                "backorders": "پیش‌سفارش",
+                "stockStatus": "وضعیت موجودی",
+                "soldIndividually": "فقط یک عدد در سفارش",
+                "weight": "وزن (گرم)",
+                "length": "طول (mm)",
+                "width": "عرض (mm)",
+                "height": "ارتفاع (mm)",
+                "shippingClass": "کلاس ارسال",
+                "isDigital": "مجازی / دانلودی",
+                "upsells": "Up-sell",
+                "crossSells": "Cross-sell",
+                "groupedMembers": "محصولات عضو",
+                "purchaseNote": "یادداشت پس از خرید",
+                "menuOrder": "ترتیب در منو",
+                "enableReviews": "اجازهٔ ثبت نظر",
+                "posAvailable": "نمایش در صندوق فروشگاهی",
+                "visibility": "نمایش‌پذیری",
+                "publishOn": "تاریخ انتشار",
+                "status": "وضعیت",
+                "featured": "محصول ویژه"
+            },
+            "tooltips": {
+                "type": "ساده = یک محصول مستقل. متغیر = دارای تنوع (مثلاً سایز + رنگ). گروهی = بستهٔ چند محصول. بیرونی = پیوند به سایت دیگر.",
+                "name": "در فروشگاه، جستجو، سبد خرید و ایمیل سفارش نمایش داده می‌شود.",
+                "slug": "شناسهٔ URL. حروف کوچک و خط تیره. در صورت خالی بودن از روی نام ساخته می‌شود.",
+                "shortDescription": "خلاصهٔ بالای صفحه و در لیست‌ها.",
+                "description": "متن کامل صفحهٔ محصول.",
+                "regularPrice": "قیمت پایه به تومان.",
+                "salePrice": "قیمت حراج؛ اگر تعیین شود به‌جای قیمت اصلی نمایش داده می‌شود.",
+                "saleWindow": "حراج فقط در این بازه اعمال می‌شود.",
+                "sku": "شناسه داخلی موجودی و گزارش‌ها.",
+                "gtin": "شناسهٔ کالای جهانی؛ برای فروش در فروشگاه‌های بزرگ مفید.",
+                "externalUrl": "آدرس صفحهٔ شریک."
+            },
+            "types": {
+                "simple": "یک نسخه",
+                "variable": "چند نسخه",
+                "grouped": "گروهی",
+                "external": "بیرونی",
+                "descriptions": {
+                    "simple": "بدون انتخاب — یک قیمت و یک شناسهٔ کالا.",
+                    "variable": "خریدار بین چند گزینه (رنگ، سایز، ...) انتخاب می‌کند.",
+                    "grouped": "مجموعه‌ای از محصولات مرتبط.",
+                    "external": "پیوند به سایت دیگر."
+                }
+            },
+            "taxStatus": {
+                "taxable": "مشمول مالیات",
+                "shipping": "فقط بر ارسال",
+                "none": "بدون مالیات"
+            },
+            "visibility": {
+                "visible": "همه‌جا",
+                "catalog": "فقط در دسته‌ها",
+                "search": "فقط در جستجو",
+                "hidden": "پنهان"
+            },
+            "actions": {
+                "save": "ذخیره",
+                "saving": "در حال ذخیره...",
+                "saved": "ذخیره شد",
+                "create": "ساخت محصول",
+                "creating": "در حال ساخت...",
+                "duplicate": "تکثیر",
+                "trash": "انتقال به زباله‌دان",
+                "restore": "بازیابی",
+                "deletePermanently": "حذف دائم",
+                "viewOnStorefront": "مشاهده در فروشگاه",
+                "copyLink": "کپی لینک",
+                "openShortcuts": "میانبرهای صفحه‌کلید",
+                "addDownload": "افزودن فایل دانلودی",
+                "removeDownload": "حذف فایل"
+            },
+            "toasts": {
+                "saved": "محصول ذخیره شد",
+                "created": "محصول ساخته شد",
+                "error": "ذخیره ناموفق بود"
+            },
+            "conflictDialog": {
+                "title": "تغییرات هم‌زمان",
+                "message": "این محصول از زمان بارگذاری شما تغییر کرده است. بارگذاری دوباره کنید یا تغییرات خود را اعمال کنید.",
+                "reload": "بارگذاری دوباره",
+                "overwrite": "اعمال تغییرات من",
+                "viewDiff": "نمایش تفاوت‌ها"
+            },
+            "featuredImage": {
+                "setProductImage": "تنظیم تصویر محصول",
+                "replace": "تغییر تصویر",
+                "remove": "حذف تصویر محصول",
+                "removeShiftsGalleryHint": "با حذف تصویر شاخص، نخستین تصویر گالری جایگزین آن می‌شود."
+            },
+            "gallery": {
+                "add": "افزودن",
+                "addImages": "افزودن تصاویر گالری محصول",
+                "remove": "حذف از گالری",
+                "setAsFeatured": "تنظیم به‌عنوان تصویر شاخص",
+                "thumbAlt": "تصویر گالری",
+                "emptyHint": "هنوز تصویری به گالری اضافه نشده است."
+            },
+            "categories": {
+                "tabs": {
+                    "all": "همه دسته‌ها",
+                    "mostUsed": "پر استفاده‌ها"
+                },
+                "searchPlaceholder": "جستجو در دسته‌ها",
+                "treeLabel": "دسته‌بندی‌های محصول",
+                "expandAll": "گسترش همه",
+                "collapseAll": "جمع کردن همه",
+                "addNew": "افزودن دسته جدید",
+                "addNewPlaceholder": "نام دسته",
+                "addNewParent": "زیرمجموعهٔ",
+                "createdToast": "دسته ساخته شد",
+                "createFailedToast": "ساخت دسته ناموفق بود",
+                "noMatches": "هیچ دسته‌ای پیدا نشد",
+                "empty": "هنوز دسته‌ای ساخته نشده است."
+            },
+            "brands": {
+                "tabs": {
+                    "all": "همه برندها",
+                    "mostUsed": "پر استفاده‌ها"
+                },
+                "searchPlaceholder": "جستجو در برندها",
+                "treeLabel": "برندهای محصول",
+                "clearSelection": "حذف انتخاب",
+                "addNew": "افزودن برند جدید",
+                "addNewPlaceholder": "نام برند",
+                "createdToast": "برند ساخته شد",
+                "createFailedToast": "ساخت برند ناموفق بود",
+                "noMatches": "هیچ برندی پیدا نشد",
+                "empty": "هنوز برندی ساخته نشده است."
+            },
+            "tags": {
+                "tabs": {
+                    "all": "همه برچسب‌ها",
+                    "mostUsed": "پر استفاده‌ها"
+                },
+                "searchPlaceholder": "جستجو در برچسب‌ها",
+                "treeLabel": "برچسب‌های محصول",
+                "addNew": "افزودن برچسب جدید",
+                "addNewPlaceholder": "نام برچسب",
+                "createdToast": "برچسب ساخته شد",
+                "createFailedToast": "ساخت برچسب ناموفق بود",
+                "noMatches": "هیچ برچسبی پیدا نشد",
+                "empty": "هنوز برچسبی ساخته نشده است."
+            },
+            "variations": {
+                "placeholderTitle": "تنوعات",
+                "placeholderBody": "صفحهٔ مدیریت تنوعات در نسخهٔ بعدی فعال می‌شود.",
+                "notVariableHint": "برای فعال‌سازی تنوعات، نوع محصول را به «متغیر» تغییر دهید.",
+                "count": "{count} تنوع",
+                "regenerate": "بازتولید از ویژگی‌ها",
+                "empty": {
+                    "noAttributesTitle": "ابتدا ویژگی لازم است",
+                    "noAttributesDescription": "برای ساختن تنوعات، در کارت «ویژگی‌ها» حداقل یک ویژگی اضافه کنید و گزینهٔ «استفاده برای تنوعات» را روشن کنید.",
+                    "attributesReadyTitle": "ساخت تنوعات",
+                    "attributesReadyDescription": "می‌توان {count} تنوع از ترکیب ویژگی‌های فعلی ساخت.",
+                    "generate": "تولید از همه ویژگی‌ها"
+                },
+                "generate": {
+                    "title": "پیش‌نمایش تولید تنوعات",
+                    "summaryNew": "{count} تنوع جدید",
+                    "summaryUnchanged": "{count} تنوع بدون تغییر",
+                    "summaryOutdated": "{count} تنوع منسوخ",
+                    "deleteOutdatedLabel": "حذف {count} تنوع منسوخ",
+                    "confirm": "تأیید و ساخت",
+                    "cancel": "انصراف"
+                },
+                "row": {
+                    "any": "هر مقدار",
+                    "default": "پیش‌فرض",
+                    "deleteConfirm": "این تنوع حذف شود؟"
+                },
+                "columns": {
+                    "sku": "SKU"
+                },
+                "toasts": {
+                    "generated": "تنوعات ساخته شدند",
+                    "generateFailed": "ساخت تنوعات ناموفق بود",
+                    "deleted": "تنوع حذف شد",
+                    "saveFailed": "ذخیره ناموفق بود"
+                }
+            },
+            "sellingMode": {
+                "title": "این محصول چطور فروخته می‌شود؟",
+                "subtitle": "روش فروش تعیین می‌کند که خریدار قبل از سفارش چه چیزی انتخاب می‌کند.",
+                "oneVersion": {
+                    "title": "یک نسخه",
+                    "description": "وقتی خریدار نیازی به انتخاب رنگ، سایز، حجم یا گزینهٔ دیگری ندارد.",
+                    "example": "نمونه: گوشی آیفون ۱۵ پرو، ۲۵۶ گیگ، نقره‌ای",
+                    "result": "یک قیمت، یک شناسهٔ کالا، یک موجودی."
+                },
+                "multipleVersions": {
+                    "title": "چند نسخه",
+                    "description": "وقتی خریدار قبل از خرید بین گزینه‌هایی مثل رنگ، سایز، حجم یا حافظه انتخاب می‌کند.",
+                    "example": "نمونه: گوشی آیفون ۱۵ پرو — خریدار رنگ و حافظه را انتخاب می‌کند",
+                    "result": "هر نسخه می‌تواند قیمت، موجودی، شناسه و تصویر مستقل داشته باشد."
+                },
+                "customizable": {
+                    "title": "سفارشی‌سازی توسط مشتری",
+                    "description": "وقتی خریدار محصول را شخصی‌سازی می‌کند: حکاکی، کاغذ کادو، متن دلخواه یا فایل ارسالی.",
+                    "comingSoon": "به‌زودی"
+                },
+                "advancedDisclosure": "گزینه‌های پیشرفته",
+                "grouped": {
+                    "title": "گروهی",
+                    "description": "مجموعه‌ای از محصولات مرتبط که با هم نمایش داده می‌شوند."
+                },
+                "external": {
+                    "title": "بیرونی",
+                    "description": "پیوند به یک سایت خارجی برای خرید."
+                },
+                "switchToVariableNotice": "قیمت و شناسهٔ فعلی به‌عنوان مقدار پیش‌فرض نسخه‌های جدید استفاده می‌شود.",
+                "convertToOneVersion": {
+                    "title": "تبدیل به «یک نسخه»",
+                    "body": "این محصول هم‌اکنون {count} نسخهٔ قابل فروش دارد. تبدیل به «یک نسخه» انتخاب‌ها را از صفحهٔ خریدار حذف می‌کند.",
+                    "keepOne": "یک نسخه را به‌عنوان محصول اصلی نگه دار",
+                    "archiveAll": "همه نسخه‌ها را آرشیو کن",
+                    "ordersPreserved": "سفارش‌های قبلی محفوظ می‌مانند.",
+                    "selectKeeper": "نسخهٔ نگه‌داشتنی",
+                    "confirm": "تبدیل کن",
+                    "cancel": "لغو"
+                }
+            },
+            "specs": {
+                "title": "مشخصات",
+                "subtitle": "مشخصات، حقایق محصول‌اند — به خریدار اطلاعات می‌دهند، اما گزینهٔ قابل انتخاب نمی‌سازند.",
+                "empty": "مشخصاتی مثل جنس، رنگ، سایز، ظرفیت یا سازگاری اضافه کنید. مشخصات به فهم محصول کمک می‌کنند، اما نسخهٔ قابل فروش نمی‌سازند.",
+                "emptyWantChoicesHint": "می‌خواهید خریدار بین چند گزینه (رنگ، سایز، …) انتخاب کند؟ نوع محصول را به «چند نسخه» تغییر دهید.",
+                "switchToMultipleCta": "تغییر به «چند نسخه»",
+                "addFromTaxonomy": "افزودن از مشخصات سراسری",
+                "addFreeForm": "افزودن مشخصهٔ آزاد",
+                "expandAll": "گسترش همه",
+                "collapseAll": "بستن همه",
+                "row": {
+                    "name": "نام",
+                    "values": "مقادیر",
+                    "valuesPlaceholder": "مقدار را بنویسید و Enter بزنید",
+                    "namePlaceholder": "برای مثال جنس یا منشأ",
+                    "showOnProductPage": "نمایش در صفحهٔ محصول",
+                    "showOnProductPageTooltip": "اگر روشن باشد، این مشخصه در جدول مشخصات صفحهٔ محصول نمایش داده می‌شود.",
+                    "clear": "حذف",
+                    "valueCount": "{count} مقدار",
+                    "untitled": "مشخصهٔ بدون نام"
+                },
+                "multiValueWarning": "چند مقدار وارد کرده‌اید. آیا خریدار باید بین این مقادیر انتخاب کند؟",
+                "multiValueWarningKeep": "نگه‌داشتن به‌عنوان مشخصه",
+                "multiValueWarningPromote": "تبدیل به انتخاب مشتری",
+                "freeFormCannotBeChoice": "مشخصه‌های آزاد نمی‌توانند انتخاب مشتری شوند. ابتدا مشخصهٔ سراسری بسازید."
+            },
+            "choices": {
+                "title": "انتخاب‌های مشتری",
+                "subtitle": "گزینه‌هایی که خریدار قبل از افزودن به سبد انتخاب می‌کند — مثل رنگ، سایز یا حافظه.",
+                "empty": "هنوز انتخابی برای خریدار تعیین نشده. مثلاً برای یک گوشی آیفون، انتخاب‌ها می‌توانند «رنگ» و «حافظه» باشند. هر ترکیب یک نسخهٔ قابل فروش می‌سازد.",
+                "addChoice": "افزودن انتخاب از مشخصات سراسری",
+                "displayType": {
+                    "label": "نمایش به خریدار",
+                    "dropdown": "کشویی",
+                    "pills": "دکمه‌ای",
+                    "color_swatch": "سواچ رنگی",
+                    "image_swatch": "سواچ تصویری"
+                },
+                "row": {
+                    "values": "مقادیر",
+                    "selectAll": "انتخاب همه",
+                    "selectNone": "انتخاب هیچ‌کدام",
+                    "createValue": "ساخت مقدار جدید",
+                    "combinationCount": "این انتخاب با بقیه، {count} نسخه می‌سازد.",
+                    "singleValueWarning": "این انتخاب تنها یک مقدار دارد. اگر خریدار نمی‌تواند مقدار دیگری انتخاب کند، آن را به «مشخصات» منتقل کنید.",
+                    "demoteToSpec": "انتقال به مشخصات"
+                },
+                "totalCount": "از این انتخاب‌ها، {count} نسخهٔ قابل فروش ساخته می‌شود.",
+                "warnLarge": "تعداد نسخه‌ها زیاد است. از ابزار ویرایش گروهی استفاده کنید تا اشتباه نشود.",
+                "warnVeryLarge": "تأیید می‌کنم که قصد ساختن ۲۰۰+ نسخه را دارم.",
+                "blockTooMany": "تعداد را با کاهش گزینه‌ها یا مقدارها کم کنید.",
+                "generateButton": "ساخت نسخه‌های قابل فروش",
+                "ifVariableRequired": "برای افزودن انتخاب، نوع محصول به «چند نسخه» تغییر می‌کند.",
+                "explainer": {
+                    "title": "این چطور کار می‌کند؟ (نمونه)",
+                    "exampleProduct": "مثال: گوشی آیفون ۱۵ پرو",
+                    "exampleChoicesHeader": "انتخاب‌های مشتری:",
+                    "exampleVersionsHeader": "نسخه‌های قابل فروش:",
+                    "footer": "هر نسخه می‌تواند قیمت، موجودی، شناسه و تصویر مستقل داشته باشد.",
+                    "dismiss": "فهمیدم"
+                },
+                "migrationNotice": "تنوع‌های قبلی به نسخه‌های قابل فروش تغییر نام داده‌اند. ساختار داده تغییری نکرده — فقط برچسب‌ها برای فهم آسان‌تر تازه شده‌اند.",
+                "migrationDismiss": "متوجه شدم"
+            },
+            "versions": {
+                "title": "نسخه‌های قابل فروش",
+                "subtitle": "هر ترکیب از انتخاب‌ها یک نسخهٔ قابل فروش می‌سازد. قیمت، موجودی، شناسه و تصویر هر نسخه را اینجا ویرایش کنید.",
+                "notVariableHint": "برای فعال‌سازی نسخه‌ها، روش فروش را به «چند نسخه» تغییر دهید.",
+                "needChoicesTitle": "ابتدا انتخاب مشتری اضافه کنید",
+                "needChoicesDescription": "برای ساختن نسخه‌های قابل فروش، در کارت «انتخاب‌های مشتری» حداقل یک انتخاب با چند مقدار اضافه کنید.",
+                "checklist": {
+                    "title": "گام‌های راه‌اندازی",
+                    "prices": "قیمت‌گذاری همهٔ نسخه‌ها",
+                    "skus": "شناسه‌گذاری همهٔ نسخه‌ها",
+                    "stock": "ثبت موجودی همهٔ نسخه‌ها",
+                    "images": "تصویرگذاری نسخه‌های فعال",
+                    "drafts": "بازبینی نسخه‌های پیش‌نویس"
+                },
+                "search": "جست‌وجو در نسخه‌ها یا شناسه‌ها...",
+                "filter": {
+                    "status": "وضعیت",
+                    "missingPrice": "بدون قیمت",
+                    "missingSku": "بدون شناسه",
+                    "outOfStock": "بدون موجودی",
+                    "missingImage": "بدون تصویر",
+                    "clearAll": "پاک کردن فیلترها"
+                },
+                "status": {
+                    "draft": "پیش‌نویس",
+                    "active": "فعال",
+                    "inactive": "غیرفعال",
+                    "archived": "آرشیو"
+                },
+                "columns": {
+                    "version": "نسخه",
+                    "image": "تصویر",
+                    "sku": "شناسه",
+                    "price": "قیمت",
+                    "stock": "موجودی",
+                    "status": "وضعیت",
+                    "compareAt": "قیمت مقایسه‌ای",
+                    "cost": "هزینهٔ تمام‌شده",
+                    "barcode": "بارکد",
+                    "weight": "وزن (گرم)",
+                    "lowStockThreshold": "آستانهٔ کم‌موجودی",
+                    "backorder": "سیاست پیش‌سفارش",
+                    "actions": "عملیات"
+                },
+                "rowActions": {
+                    "edit": "ویرایش کامل",
+                    "duplicate": "تکثیر",
+                    "archive": "آرشیو",
+                    "delete": "حذف"
+                },
+                "selection": {
+                    "selectAll": "انتخاب همه",
+                    "selectRow": "انتخاب این نسخه",
+                    "selectedCount": "{count} نسخه انتخاب شده"
+                },
+                "bulk": {
+                    "setPrice": "تنظیم قیمت",
+                    "setStock": "تنظیم موجودی",
+                    "generateSku": "ساخت شناسه‌ها (SKU)",
+                    "markActive": "فعال",
+                    "markInactive": "غیرفعال",
+                    "markArchived": "آرشیو",
+                    "delete": "حذف",
+                    "clear": "لغو انتخاب"
+                },
+                "regenerate": "بازسازی از انتخاب‌ها",
+                "bulkDeleteDialog": {
+                    "title": "حذف نسخه‌های انتخاب‌شده",
+                    "body": "{count} نسخه به‌طور دائم حذف می‌شود.",
+                    "ordersPreserved": "نسخه‌هایی که در سفارش‌ها استفاده شده‌اند، به جای حذف، آرشیو می‌شوند.",
+                    "cancel": "لغو",
+                    "confirm": "حذف {count} نسخه"
+                },
+                "regenerateDialog": {
+                    "title": "ساخت نسخه‌های قابل فروش",
+                    "summaryNew": "{count} نسخهٔ جدید ساخته می‌شود",
+                    "summaryUnchanged": "{count} نسخه بدون تغییر باقی می‌ماند",
+                    "summaryOutdated": "{count} نسخه دیگر در ترکیب‌ها نیست",
+                    "archiveOutdated": "نسخه‌های اضافی را آرشیو کن.",
+                    "draftNote": "نسخه‌های جدید به‌صورت پیش‌نویس ساخته می‌شوند تا قبل از انتشار بازبینی کنید.",
+                    "cancel": "لغو",
+                    "confirm": "ساخت نسخه‌ها"
+                },
+                "setPriceDialog": {
+                    "title": "تنظیم قیمت گروهی",
+                    "mode": "حالت",
+                    "modeAbsolute": "قیمت ثابت",
+                    "modePercent": "تغییر درصدی",
+                    "absoluteLabel": "قیمت (تومان)",
+                    "percentLabel": "درصد تغییر",
+                    "percentHint": "مثبت یعنی افزایش، منفی یعنی کاهش.",
+                    "preview": "پیش‌نمایش روی سه نسخهٔ اول:",
+                    "previewEmpty": "نسخهٔ قابل تغییری وجود ندارد — هیچ‌یک از نسخه‌های انتخاب‌شده قیمت پایه ندارد.",
+                    "skippedNoBasePrice": "{count} نسخه قیمت پایه ندارد و در تغییر درصدی نادیده گرفته می‌شود.",
+                    "apply": "اعمال بر {count} نسخه",
+                    "cancel": "لغو"
+                },
+                "setStockDialog": {
+                    "title": "تنظیم موجودی گروهی",
+                    "mode": "حالت",
+                    "modeReplace": "جایگزینی",
+                    "modeIncrease": "افزایش",
+                    "modeDecrease": "کاهش",
+                    "quantity": "تعداد",
+                    "apply": "اعمال بر {count} نسخه",
+                    "cancel": "لغو"
+                },
+                "skuGenerator": {
+                    "title": "ساخت شناسهٔ نسخه‌ها",
+                    "subtitle": "شناسه‌ها را از کد محصول و مقدار انتخاب‌ها بسازید.",
+                    "patternLabel": "الگو",
+                    "patternHint": "نام محصول را با product و هر انتخاب را با نامش بنویسید (داخل آکولاد).",
+                    "abbrevLabel": "مخفف‌های هر مقدار",
+                    "previewLabel": "پیش‌نمایش (سه ردیف اول)",
+                    "collisionWarning": "{count} مورد تکراری پیدا شد. الگو را تغییر دهید یا مقادیر کوتاه‌شده را اصلاح کنید.",
+                    "apply": "اعمال بر {count} نسخه",
+                    "cancel": "لغو"
+                },
+                "toasts": {
+                    "generated": "نسخه‌های جدید با وضعیت «پیش‌نویس» ساخته شدند",
+                    "generateFailed": "ساخت نسخه‌ها ناموفق بود",
+                    "deleted": "نسخه حذف شد",
+                    "deleteRefused": "این نسخه در سفارش‌ها استفاده شده — به‌جای حذف، آرشیو می‌شود",
+                    "saveFailed": "ذخیره ناموفق بود",
+                    "bulkUpdated": "{count} نسخه به‌روزرسانی شد",
+                    "bulkDeleted": "{count} نسخه حذف شد",
+                    "bulkUpdateFailed": "به‌روزرسانی گروهی ناموفق بود",
+                    "skusApplied": "{count} شناسه ذخیره شد"
+                },
+                "deletedWithOrdersFallback": "این نسخه در سفارش‌ها استفاده شده — به‌جای حذف، آرشیو می‌شود.",
+                "rowSummaryFallback": "بدون مقدار",
+                "noResults": "نسخه‌ای با این فیلتر پیدا نشد.",
+                "noResultsDescription": "فیلترها را پاک کنید تا همهٔ نسخه‌ها دوباره نمایش داده شوند.",
+                "emptyTitle": "هنوز نسخه‌ای ساخته نشده",
+                "emptyDescription": "روی «بازسازی از انتخاب‌ها» بزنید تا اولین نسخه‌ها از ترکیب انتخاب‌های مشتری ساخته شوند."
+            },
+            "attributes": {
+                "empty": {
+                    "title": "ابتدا یک ویژگی اضافه کنید",
+                    "description": "ویژگی‌هایی مانند «اندازه» و «رنگ» به مشتری کمک می‌کنند نسخهٔ مناسب محصول را انتخاب کند. در محصولات متغیر، ویژگی‌ها تعیین‌کنندهٔ تنوع‌ها هم هستند. ساخت ویژگی از صفحهٔ «ویژگی‌ها» در بخش محصولات انجام می‌شود.",
+                    "addExisting": "افزودن ویژگی"
+                },
+                "row": {
+                    "showOnProductPage": "نمایش در برگه محصول",
+                    "useForVariations": "استفاده برای تنوعات",
+                    "terms": "مقادیر",
+                    "addTerms": "افزودن مقدار...",
+                    "remove": "حذف",
+                    "clear": "پاک کردن",
+                    "selectAll": "انتخاب همه",
+                    "selectNone": "انتخاب هیچکدام",
+                    "createValue": "ایجاد مقدار",
+                    "termCount": "{count} مقدار",
+                    "dragHandle": "جابه‌جایی ویژگی",
+                    "dragTooltip": "برای تعیین ترتیب ویژگی‌ها بکشید و رها کنید",
+                    "expand": "گسترش این ردیف",
+                    "collapse": "بستن این ردیف",
+                    "nameLabel": "نام"
+                },
+                "toolbar": {
+                    "addExisting": "موجود را اضافه کنید",
+                    "addNew": "افزودن جدید",
+                    "expandAll": "گسترش همه",
+                    "collapseAll": "بستن همه"
+                },
+                "newAttribute": {
+                    "untitled": "ویژگی جدید",
+                    "placeholderName": "برای مثال، طول یا وزن",
+                    "valuesHelp": "گزینه‌هایی را وارد کنید تا مشتریان از بین آن‌ها انتخاب کنند، برای مثال: «آبی» یا «بزرگ». پس از هر مقدار Enter بزنید.",
+                    "valuesPlaceholder": "مقدار را بنویسید و Enter بزنید"
+                },
+                "saveButton": "ذخیره ویژگی‌ها",
+                "savedToast": "ویژگی‌ها ذخیره شدند",
+                "saveFailedToast": "ذخیرهٔ ویژگی‌ها ناموفق بود",
+                "customNotSavedWarning": "{count} ویژگی سفارشی هنوز ذخیره نشده — برای ذخیرهٔ نهایی روی «ذخیره ویژگی‌ها» بزنید.",
+                "tooltips": {
+                    "showOnProductPage": "اگر روشن باشد، این ویژگی در جدول مشخصات محصول در فروشگاه نمایش داده می‌شود.",
+                    "useForVariations": "روشن کنید تا این ویژگی به ساخت تنوع‌های محصول کمک کند.",
+                    "useForVariationsDisabled": "برای فعال‌سازی این گزینه، نوع محصول باید «متغیر» باشد.",
+                    "useForVariationsCustom": "ویژگی‌های سفارشی هنوز برای ساخت تنوعات استفاده نمی‌شوند."
+                },
+                "createTermFailed": "ایجاد مقدار ناموفق بود"
+            },
+            "dnd": {
+                "grabHandle": "جابه‌جایی بخش",
+                "collapse": "بستن",
+                "expand": "باز کردن"
+            }
+        }
+    },
+    "ProductStatus": {
+        "draft": "پیش‌نویس",
+        "publish": "منتشرشده",
+        "private": "خصوصی",
+        "pending": "در انتظار",
+        "any": "همه"
+    },
+    "StockStatus": {
+        "instock": "موجود",
+        "outofstock": "ناموجود",
+        "onbackorder": "پیش‌سفارش"
+    },
+    "Categories": {
+        "title": "دسته‌بندی‌ها",
+        "subtitle": "ساختار درختی محصولات.",
+        "subtitleStats": "{total} دسته • {topLevel} دستهٔ ریشه • {products} محصول دسته‌بندی‌شده",
+        "addCategory": "دستهٔ جدید",
+        "untitled": "بدون نام",
+        "untitledHeader": "دستهٔ تازه",
+        "expand": "باز کن",
+        "collapse": "ببند",
+        "addChild": "افزودن زیرشاخه",
+        "edit": "ویرایش",
+        "delete": "حذف",
+        "dragHandle": "برای جابه‌جایی یا تغییر والد بکش",
+        "dropAsChild": "برای ساختن زیرشاخه رها کن",
+        "selectAllVisible": "انتخاب همهٔ ردیف‌های قابل مشاهده",
+        "selectRow": "انتخاب {name}",
+        "editAria": "ویرایش {name}",
+        "deleteAria": "حذف {name}",
+        "addChildAria": "افزودن زیرشاخه به {name}",
+        "table": {
+            "name": "نام",
+            "slug": "نامک",
+            "parent": "والد",
+            "productCount": "تعداد محصول",
+            "actions": "عملیات"
+        },
+        "noParent": "—",
+        "tree": {
+            "label": "درخت دسته‌بندی‌ها"
+        },
+        "toolbar": {
+            "searchPlaceholder": "جست‌وجو بر اساس نام یا نامک",
+            "clearSearch": "پاک‌سازی جست‌وجو",
+            "expandAll": "گسترش همه",
+            "collapseAll": "جمع کردن همه",
+            "filters": {
+                "all": "همه",
+                "topLevel": "ریشه",
+                "withProducts": "دارای محصول",
+                "empty": "خالی"
+            }
+        },
+        "bulk": {
+            "selected": "{count} دسته انتخاب شده",
+            "clear": "لغو انتخاب",
+            "delete": "حذف انتخاب‌شده‌ها"
+        },
+        "deleteDialog": {
+            "title": "این دسته حذف شود؟",
+            "description": "با حذف «{name}» این دسته از همهٔ محصول‌ها جدا می‌شود و زیرشاخه‌ها به والد بالاتر منتقل می‌شوند. این عمل قابل بازگرداندن نیست.",
+            "untitled": "این دسته",
+            "cancel": "انصراف",
+            "confirm": "حذف دسته",
+            "pending": "در حال حذف…"
+        },
+        "bulkDeleteDialog": {
+            "title": "{count} دسته حذف شود؟",
+            "description": "این دسته‌ها از محصول‌هایشان جدا می‌شوند و زیرشاخه‌هایشان به والد بالاتر منتقل می‌شوند. این عمل قابل بازگرداندن نیست.",
+            "cancel": "انصراف",
+            "confirm": "حذف انتخاب‌شده‌ها",
+            "pending": "در حال حذف…"
+        },
+        "hints": {
+            "dragRoot": "برای جابه‌جایی، ردیف را بکش",
+            "dragIndent": "برای تو رفتن، افقی بکش"
+        },
+        "emptyTree": {
+            "empty": {
+                "title": "هنوز هیچ دسته‌ای نساخته‌اید",
+                "description": "دسته‌ها شکل فروشگاه را می‌سازند — با یک دستهٔ ریشه مثل «پوشاک» یا «دکوراسیون» شروع کنید.",
+                "cta": "ساخت اولین دسته"
+            },
+            "noResults": {
+                "title": "چیزی پیدا نشد",
+                "description": "یک واژهٔ کوتاه‌تر امتحان کنید یا فیلتر بالا را تغییر دهید."
+            }
+        },
+        "inspector": {
+            "badgeNew": "تازه",
+            "badgeEdit": "ویرایش",
+            "inspecting": "{name}",
+            "untitled": "بدون نام",
+            "untitledHeader": "دستهٔ تازه",
+            "close": "بستن پانل",
+            "menu": {
+                "createSibling": "ساخت دستهٔ هم‌سطح",
+                "createChild": "افزودن زیرشاخه",
+                "delete": "حذف دسته"
+            },
+            "fields": {
+                "name": {
+                    "label": "نام",
+                    "placeholder": "مثلاً پوشاک"
+                },
+                "slug": {
+                    "label": "نامک",
+                    "placeholder": "خودکار ساخته می‌شود",
+                    "hint": "در آدرس فروشگاه استفاده می‌شود. تنها حروف کوچک، عدد و خط‌تیره.",
+                    "regenerate": "ساخت دوبارهٔ نامک"
+                },
+                "parent": {
+                    "label": "والد"
+                },
+                "description": {
+                    "label": "توضیحات",
+                    "placeholder": "اختیاری — در صفحهٔ دسته نمایش داده می‌شود.",
+                    "todo": "هنوز این فیلد روی بک‌اند ذخیره نمی‌شود — موقتاً برای پیش‌نمایش است."
+                }
+            },
+            "cover": {
+                "label": "تصویر کاور",
+                "placeholder": "تصویر را رها کنید یا کلیک کنید",
+                "remove": "حذف",
+                "todo": "نقطهٔ پایانی آپلود هنوز آماده نیست"
+            },
+            "parent": {
+                "none": "بدون والد (سطح ریشه)",
+                "untitled": "بدون نام",
+                "searchPlaceholder": "جست‌وجوی دسته‌های والد",
+                "noMatches": "تطابقی پیدا نشد"
+            },
+            "stats": {
+                "products": "محصول",
+                "children": "زیرشاخهٔ مستقیم",
+                "depth": "عمق"
+            },
+            "buttons": {
+                "save": "ذخیرهٔ تغییرات",
+                "create": "ساخت دسته",
+                "cancel": "انصراف"
+            },
+            "footer": {
+                "newHint": "برای افزودن این دسته، Enter یا ذخیره را بزنید.",
+                "editHint": "تغییرات محلی هستند تا زمانی که نقطهٔ پایانی ذخیره آماده شود."
+            },
+            "empty": {
+                "title": "یک دسته انتخاب کنید",
+                "subtitle": "ردیفی از درخت را برگزینید، یا دستهٔ تازه‌ای بسازید. دسته‌ها در یک ساختار درختی هستند — برای جابه‌جایی، ردیف‌ها را در درخت بکشید.",
+                "cta": "شروع یک دستهٔ تازه",
+                "tip1": "برای جابه‌جایی، دستگیرهٔ کنار ردیف را بکشید.",
+                "tip2": "برای تو رفتن زیر یک هم‌سطح، حین کشیدن کمی به سمت داخل ببرید.",
+                "tip3": "از منوی ردیف، گزینهٔ «افزودن زیرشاخه» را بزنید."
+            }
+        },
+        "dropCaption": {
+            "inside": "زیر «{name}» (به‌عنوان فرزند)",
+            "top": "به سطح ریشه برود",
+            "reorder": "ترتیب جدید",
+            "above": "بالای «{name}» قرار بگیرد",
+            "below": "زیر «{name}» قرار بگیرد (هم‌سطح)",
+            "dragHint": "روی یک ردیف رها کنید"
+        }
+    },
+    "Tags": {
+        "title": "برچسب‌ها",
+        "subtitle": "برچسب‌های توصیفی برای محصولات.",
+        "subtitleStats": "{total} برچسب · {attachments} پیوند با محصولات · {unused} بدون استفاده",
+        "addTag": "افزودن برچسب",
+        "footerCount": {
+            "total": "نمایش هر {total} برچسب",
+            "partial": "نمایش {visible} از {total} برچسب"
+        },
+        "table": {
+            "name": "نام",
+            "slug": "نامک",
+            "productCount": "تعداد محصول",
+            "actions": "عملیات",
+            "untitled": "بدون نام",
+            "editAria": "ویرایش {name}",
+            "deleteAria": "حذف {name}"
+        },
+        "toolbar": {
+            "searchPlaceholder": "جست‌وجو بر اساس نام یا نامک",
+            "clearSearch": "پاک‌سازی جست‌وجو",
+            "selectAll": "انتخاب همهٔ ردیف‌های قابل مشاهده",
+            "selectRow": "انتخاب {name}",
+            "filters": {
+                "all": "همه",
+                "popular": "پرکاربرد",
+                "unused": "بدون استفاده"
+            }
+        },
+        "bulk": {
+            "selected": "{count} برچسب انتخاب شده",
+            "clear": "لغو انتخاب",
+            "delete": "حذف انتخاب‌شده‌ها"
+        },
+        "emptyList": {
+            "empty": {
+                "title": "هنوز هیچ برچسبی وجود ندارد",
+                "description": "برچسب‌ها به مشتری کمک می‌کنند فروشگاه را با موضوعاتی مثل «جدید»، «تخفیف ویژه» یا «نسخه محدود» مرور کند. اولین برچسب را از فرم کنار همین صفحه بسازید."
+            },
+            "noResults": {
+                "title": "چیزی پیدا نشد",
+                "description": "یک واژهٔ کوتاه‌تر امتحان کنید یا فیلتر بالا را تغییر دهید."
+            }
+        },
+        "inspector": {
+            "badgeNew": "تازه",
+            "badgeEdit": "ویرایش",
+            "inspecting": "{name}",
+            "untitled": "بدون نام",
+            "untitledHeader": "برچسب تازه",
+            "close": "بستن پانل",
+            "deleteAria": "حذف این برچسب",
+            "fields": {
+                "name": {
+                    "label": "نام",
+                    "placeholder": "مثلاً جدید",
+                    "hint": "نامی که در فیلترها و چیپ‌های فروشگاه دیده می‌شود."
+                },
+                "slug": {
+                    "label": "نامک",
+                    "placeholder": "خودکار ساخته می‌شود",
+                    "hint": "در آدرس فروشگاه استفاده می‌شود. تنها حروف کوچک، عدد و خط‌تیره.",
+                    "regenerate": "ساخت دوبارهٔ نامک"
+                },
+                "description": {
+                    "label": "توضیحات",
+                    "placeholder": "اختیاری — در صفحهٔ برچسب نمایش داده می‌شود.",
+                    "hint": "بعضی قالب‌ها این متن را در صفحهٔ آرشیو برچسب نشان می‌دهند."
+                }
+            },
+            "stats": {
+                "products": "محصول",
+                "id": "شناسهٔ برچسب"
+            },
+            "buttons": {
+                "save": "ذخیرهٔ تغییرات",
+                "create": "ساخت برچسب",
+                "cancel": "انصراف"
+            },
+            "footer": {
+                "newHint": "برای افزودن این برچسب، Enter یا ذخیره را بزنید.",
+                "editHint": "تغییرات بلافاصله در کاتالوگ ذخیره می‌شود."
+            },
+            "empty": {
+                "title": "یک برچسب را انتخاب کنید یا تازه بسازید",
+                "subtitle": "یک ردیف از لیست را انتخاب کنید تا ویرایش شود، یا برچسبی تازه بسازید. برچسب‌ها ساختار درختی ندارند — تخت و بدون والد هستند.",
+                "cta": "ساخت اولین برچسب",
+                "tip1": "روی هر ردیف کلیک کنید تا همان‌جا ویرایش شود.",
+                "tip2": "از دکمهٔ زبان برای نوشتن همزمان فارسی و انگلیسی استفاده کنید.",
+                "tip3": "برای پاک‌سازی برچسب‌های بدون استفاده از حذف گروهی کمک بگیرید."
+            }
+        },
+        "deleteDialog": {
+            "title": "این برچسب حذف شود؟",
+            "description": "با حذف «{name}» ارتباط آن از همهٔ محصول‌ها قطع می‌شود. این عمل قابل بازگرداندن نیست.",
+            "untitled": "این برچسب",
+            "cancel": "انصراف",
+            "confirm": "حذف برچسب",
+            "pending": "در حال حذف…"
+        },
+        "bulkDeleteDialog": {
+            "title": "{count} برچسب حذف شود؟",
+            "description": "ارتباط هر برچسب از محصول‌هایش قطع می‌شود. این عمل قابل بازگرداندن نیست.",
+            "cancel": "انصراف",
+            "confirm": "حذف انتخاب‌شده‌ها",
+            "pending": "در حال حذف…"
+        }
+    },
+    "Brands": {
+        "title": "برندها",
+        "subtitle": "برندهای موجود در کاتالوگ.",
+        "subtitleStats": "{total} برند · {attachments} پیوند با محصولات · {unused} بدون محصول",
+        "addBrand": "افزودن برند",
+        "footerCount": {
+            "total": "نمایش هر {total} برند",
+            "partial": "نمایش {visible} از {total} برند"
+        },
+        "table": {
+            "name": "نام",
+            "slug": "نامک",
+            "productCount": "تعداد محصول",
+            "actions": "عملیات",
+            "untitled": "بدون نام",
+            "editAria": "ویرایش {name}",
+            "deleteAria": "حذف {name}"
+        },
+        "toolbar": {
+            "searchPlaceholder": "جست‌وجو بر اساس نام یا نامک",
+            "clearSearch": "پاک‌سازی جست‌وجو",
+            "selectAll": "انتخاب همهٔ ردیف‌های قابل مشاهده",
+            "selectRow": "انتخاب {name}",
+            "filters": {
+                "all": "همه",
+                "withProducts": "دارای محصول",
+                "empty": "بدون محصول"
+            }
+        },
+        "bulk": {
+            "selected": "{count} برند انتخاب شده",
+            "clear": "لغو انتخاب",
+            "delete": "حذف انتخاب‌شده‌ها"
+        },
+        "emptyList": {
+            "empty": {
+                "title": "هنوز هیچ برندی نساخته‌اید",
+                "description": "برندها به مشتری کمک می‌کنند فروشگاه را بر اساس سازنده مرور کند. اولین برند را از فرم کنار همین صفحه بسازید."
+            },
+            "noResults": {
+                "title": "چیزی پیدا نشد",
+                "description": "یک واژهٔ کوتاه‌تر امتحان کنید یا فیلتر بالا را تغییر دهید."
+            }
+        },
+        "inspector": {
+            "badgeNew": "تازه",
+            "badgeEdit": "ویرایش",
+            "inspecting": "{name}",
+            "untitled": "بدون نام",
+            "untitledHeader": "برند تازه",
+            "close": "بستن پانل",
+            "deleteAria": "حذف این برند",
+            "fields": {
+                "name": {
+                    "label": "نام برند",
+                    "placeholder": "مثلاً سامسونگ",
+                    "hint": "نامی که در فیلترها و صفحهٔ محصول دیده می‌شود."
+                },
+                "slug": {
+                    "label": "نامک",
+                    "placeholder": "خودکار ساخته می‌شود",
+                    "hint": "در آدرس فروشگاه استفاده می‌شود. تنها حروف کوچک، عدد و خط‌تیره.",
+                    "regenerate": "ساخت دوبارهٔ نامک"
+                },
+                "description": {
+                    "label": "توضیحات",
+                    "placeholder": "اختیاری — در صفحهٔ آرشیو برند نمایش داده می‌شود.",
+                    "hint": "بعضی قالب‌ها این متن را در صفحهٔ آرشیو برند نشان می‌دهند."
+                },
+                "logo": {
+                    "label": "لوگوی برند",
+                    "placeholder": "تصویر را رها کنید یا کلیک کنید",
+                    "remove": "حذف",
+                    "todo": "نقطهٔ پایانی آپلود هنوز آماده نیست"
+                }
+            },
+            "stats": {
+                "products": "محصول",
+                "id": "شناسهٔ برند"
+            },
+            "buttons": {
+                "save": "ذخیرهٔ تغییرات",
+                "create": "ساخت برند",
+                "cancel": "انصراف"
+            },
+            "footer": {
+                "newHint": "برای افزودن این برند، Enter یا ذخیره را بزنید.",
+                "editHint": "تغییرات بلافاصله در کاتالوگ ذخیره می‌شود."
+            },
+            "empty": {
+                "title": "یک برند انتخاب کنید یا تازه بسازید",
+                "subtitle": "یک ردیف از لیست را انتخاب کنید تا ویرایش شود، یا برند تازه‌ای بسازید.",
+                "cta": "ساخت اولین برند",
+                "tip1": "روی هر ردیف کلیک کنید تا همان‌جا ویرایش شود.",
+                "tip2": "نامک برای آدرس فروشگاه استفاده می‌شود — یک نام انگلیسی کوتاه بهتر است.",
+                "tip3": "برای پاک‌سازی برندهای بدون محصول از حذف گروهی کمک بگیرید."
+            }
+        },
+        "deleteDialog": {
+            "title": "این برند حذف شود؟",
+            "description": "با حذف «{name}» ارتباط آن از همهٔ محصول‌ها قطع می‌شود. این عمل قابل بازگرداندن نیست.",
+            "untitled": "این برند",
+            "cancel": "انصراف",
+            "confirm": "حذف برند",
+            "pending": "در حال حذف…"
+        },
+        "bulkDeleteDialog": {
+            "title": "{count} برند حذف شود؟",
+            "description": "ارتباط هر برند از محصول‌هایش قطع می‌شود. این عمل قابل بازگرداندن نیست.",
+            "cancel": "انصراف",
+            "confirm": "حذف انتخاب‌شده‌ها",
+            "pending": "در حال حذف…"
+        }
+    },
+    "Attributes": {
+        "title": "ویژگی‌های محصول",
+        "subtitle": "ویژگی‌هایی مانند رنگ و جنس که در تنوع محصول استفاده می‌شوند.",
+        "subtitleStats": "{total} ویژگی · {terms} گزینه",
+        "subtitleCount": "{total} ویژگی",
+        "addAttribute": "افزودن ویژگی",
+        "footerCount": {
+            "total": "نمایش هر {total} ویژگی",
+            "partial": "نمایش {visible} از {total} ویژگی"
+        },
+        "table": {
+            "name": "نام",
+            "slug": "نامک",
+            "code": "کد",
+            "termCount": "تعداد گزینه",
+            "orderBy": "ترتیب",
+            "hasArchives": "صفحهٔ آرشیو",
+            "termsPreview": "گزینه‌ها",
+            "termsPreviewMore": "+ {count} مورد دیگر",
+            "termsLoadError": "بارگذاری گزینه‌ها با خطا مواجه شد",
+            "termsConfigure": "پیکربندی",
+            "termsConfigureFor": "پیکربندی گزینه‌های {name}",
+            "actions": "عملیات",
+            "untitled": "بدون نام",
+            "editAria": "ویرایش {name}",
+            "deleteAria": "حذف {name}",
+            "termsAria": "پیکربندی گزینه‌های {name}"
+        },
+        "orderBy": {
+            "menu_order": "ترتیب دستی",
+            "name": "نام",
+            "id": "شناسه"
+        },
+        "toolbar": {
+            "searchPlaceholder": "جست‌وجو بر اساس نام یا نامک",
+            "clearSearch": "پاک‌سازی جست‌وجو",
+            "selectAll": "انتخاب همهٔ ردیف‌های قابل مشاهده",
+            "selectRow": "انتخاب {name}"
+        },
+        "bulk": {
+            "selected": "{count} ویژگی انتخاب شده",
+            "clear": "لغو انتخاب",
+            "delete": "حذف انتخاب‌شده‌ها"
+        },
+        "emptyList": {
+            "empty": {
+                "title": "هنوز هیچ ویژگی‌ای نساخته‌اید",
+                "description": "ویژگی‌هایی مثل «رنگ» یا «سایز» را اینجا بسازید، سپس گزینه‌های مجاز را در صفحهٔ هر ویژگی اضافه کنید."
+            },
+            "noResults": {
+                "title": "چیزی پیدا نشد",
+                "description": "یک واژهٔ کوتاه‌تر امتحان کنید."
+            }
+        },
+        "inspector": {
+            "badgeNew": "تازه",
+            "badgeEdit": "ویرایش",
+            "inspecting": "{name}",
+            "untitled": "بدون نام",
+            "untitledHeader": "ویژگی تازه",
+            "close": "بستن پانل",
+            "deleteAria": "حذف این ویژگی",
+            "fields": {
+                "name": {
+                    "label": "نام",
+                    "placeholder": "مثلاً رنگ",
+                    "hint": "نامی که در فیلترها و فرم تنوع‌ها دیده می‌شود."
+                },
+                "slug": {
+                    "label": "نامک (کد)",
+                    "placeholder": "خودکار ساخته می‌شود",
+                    "hint": "در URL و در شناسهٔ ویژگی استفاده می‌شود — تنها حروف کوچک، عدد و خط‌تیره.",
+                    "regenerate": "ساخت دوبارهٔ نامک"
+                },
+                "hasArchives": {
+                    "label": "صفحهٔ آرشیو فعال شود؟",
+                    "hint": "اگر روشن باشد، فروشگاه برای هر گزینهٔ این ویژگی یک صفحهٔ آرشیو اختصاصی می‌سازد."
+                },
+                "orderBy": {
+                    "label": "ترتیب پیش‌فرض گزینه‌ها",
+                    "hint": "گزینه‌های این ویژگی به این ترتیب در فروشگاه دیده می‌شوند."
+                }
+            },
+            "stats": {
+                "terms": "گزینه",
+                "id": "شناسهٔ ویژگی"
+            },
+            "buttons": {
+                "save": "ذخیرهٔ تغییرات",
+                "create": "ساخت ویژگی",
+                "cancel": "انصراف"
+            },
+            "footer": {
+                "newHint": "بعد از ساخت، گزینه‌های مجاز را از صفحهٔ همان ویژگی اضافه کنید.",
+                "editHint": "تغییرات بلافاصله در کاتالوگ ذخیره می‌شود."
+            },
+            "empty": {
+                "title": "یک ویژگی انتخاب کنید یا تازه بسازید",
+                "subtitle": "روی ردیفی کلیک کنید تا ویرایش شود، یا با فرم کنار همین صفحه ویژگی تازه‌ای بسازید.",
+                "cta": "ساخت اولین ویژگی",
+                "tip1": "نامک ویژگی همان «کد» در سمت بک‌اند است — قابل استفاده در API.",
+                "tip2": "برای ساخت فیلترهای فروشگاه، صفحهٔ آرشیو را روشن کنید.",
+                "tip3": "گزینه‌های هر ویژگی را از روی ردیف، با «پیکربندی» مدیریت کنید."
+            }
+        },
+        "deleteDialog": {
+            "title": "این ویژگی حذف شود؟",
+            "description": "با حذف «{name}»، خود ویژگی و همهٔ گزینه‌های آن از کاتالوگ پاک می‌شود. این عمل قابل بازگرداندن نیست.",
+            "untitled": "این ویژگی",
+            "cancel": "انصراف",
+            "confirm": "حذف ویژگی",
+            "pending": "در حال حذف…"
+        },
+        "bulkDeleteDialog": {
+            "title": "{count} ویژگی حذف شود؟",
+            "description": "خود ویژگی‌ها و گزینه‌هایشان از کاتالوگ پاک می‌شوند. این عمل قابل بازگرداندن نیست.",
+            "cancel": "انصراف",
+            "confirm": "حذف انتخاب‌شده‌ها",
+            "pending": "در حال حذف…"
+        }
+    },
+    "AttributeTerms": {
+        "title": "گزینه‌های ویژگی",
+        "titleFor": "گزینه‌های «{name}»",
+        "subtitle": "مقادیر مجاز برای این ویژگی.",
+        "subtitleStats": "{total} گزینه",
+        "backToAttributes": "بازگشت به ویژگی‌ها",
+        "addTerm": "افزودن گزینه",
+        "footerCount": {
+            "total": "نمایش هر {total} گزینه",
+            "partial": "نمایش {visible} از {total} گزینه"
+        },
+        "table": {
+            "name": "نام",
+            "slug": "نامک",
+            "productCount": "تعداد محصول",
+            "actions": "عملیات",
+            "untitled": "بدون نام",
+            "editAria": "ویرایش {name}",
+            "deleteAria": "حذف {name}"
+        },
+        "toolbar": {
+            "searchPlaceholder": "جست‌وجو بر اساس نام یا نامک",
+            "clearSearch": "پاک‌سازی جست‌وجو",
+            "selectAll": "انتخاب همهٔ ردیف‌های قابل مشاهده",
+            "selectRow": "انتخاب {name}"
+        },
+        "bulk": {
+            "selected": "{count} گزینه انتخاب شده",
+            "clear": "لغو انتخاب",
+            "delete": "حذف انتخاب‌شده‌ها"
+        },
+        "emptyList": {
+            "empty": {
+                "title": "هنوز هیچ گزینه‌ای نساخته‌اید",
+                "description": "اولین گزینه را از فرم کنار همین صفحه بسازید — مثلاً «قرمز» برای ویژگی «رنگ»."
+            },
+            "noResults": {
+                "title": "چیزی پیدا نشد",
+                "description": "یک واژهٔ کوتاه‌تر امتحان کنید."
+            }
+        },
+        "inspector": {
+            "badgeNew": "تازه",
+            "badgeEdit": "ویرایش",
+            "inspecting": "{name}",
+            "untitled": "بدون نام",
+            "untitledHeader": "گزینهٔ تازه",
+            "close": "بستن پانل",
+            "deleteAria": "حذف این گزینه",
+            "fields": {
+                "name": {
+                    "label": "نام گزینه",
+                    "placeholder": "مثلاً قرمز",
+                    "hint": "نامی که در فیلترها و کارت محصول دیده می‌شود."
+                },
+                "slug": {
+                    "label": "نامک",
+                    "placeholder": "خودکار ساخته می‌شود",
+                    "hint": "در URL آرشیو این گزینه استفاده می‌شود — تنها حروف کوچک، عدد و خط‌تیره.",
+                    "regenerate": "ساخت دوبارهٔ نامک"
+                },
+                "description": {
+                    "label": "توضیحات",
+                    "placeholder": "اختیاری — در صفحهٔ آرشیو این گزینه نمایش داده می‌شود.",
+                    "hint": "بعضی قالب‌ها این متن را در صفحهٔ آرشیو نشان می‌دهند."
+                }
+            },
+            "stats": {
+                "products": "محصول",
+                "id": "شناسهٔ گزینه"
+            },
+            "buttons": {
+                "save": "ذخیرهٔ تغییرات",
+                "create": "ساخت گزینه",
+                "cancel": "انصراف"
+            },
+            "footer": {
+                "newHint": "برای افزودن این گزینه، Enter یا ذخیره را بزنید.",
+                "editHint": "تغییرات بلافاصله در کاتالوگ ذخیره می‌شود."
+            },
+            "empty": {
+                "title": "یک گزینه انتخاب کنید یا تازه بسازید",
+                "subtitle": "روی ردیفی کلیک کنید تا ویرایش شود، یا با فرم کنار همین صفحه گزینهٔ تازه‌ای بسازید.",
+                "cta": "ساخت اولین گزینه",
+                "tip1": "نامک‌ها باید در میان گزینه‌های همین ویژگی یکتا باشند.",
+                "tip2": "برای پاک‌سازی گزینه‌های بدون استفاده از حذف گروهی کمک بگیرید."
+            }
+        },
+        "deleteDialog": {
+            "title": "این گزینه حذف شود؟",
+            "description": "با حذف «{name}» این گزینه از همهٔ محصول‌های مرتبط جدا می‌شود. این عمل قابل بازگرداندن نیست.",
+            "untitled": "این گزینه",
+            "cancel": "انصراف",
+            "confirm": "حذف گزینه",
+            "pending": "در حال حذف…"
+        },
+        "bulkDeleteDialog": {
+            "title": "{count} گزینه حذف شود؟",
+            "description": "این گزینه‌ها از همهٔ محصول‌های مرتبط جدا می‌شوند. این عمل قابل بازگرداندن نیست.",
+            "cancel": "انصراف",
+            "confirm": "حذف انتخاب‌شده‌ها",
+            "pending": "در حال حذف…"
+        }
+    },
+    "Reviews": {
+        "title": "نقد و بررسی‌ها",
+        "subtitle": "بازرسی و مدیریت نظرات مشتریان.",
+        "list": {
+            "title": "نقد و بررسی‌ها",
+            "totalReviews": "{count} دیدگاه",
+            "loadingTotal": "در حال بارگذاری…",
+            "secondaryActions": "بیشتر",
+            "export": "خروجی CSV",
+            "refresh": "بروزرسانی",
+            "searchPlaceholder": "جستجو در دیدگاه‌ها، بازنگر، محصول…",
+            "viewOptions": "نمایش",
+            "columnsHeading": "ستون‌ها",
+            "densityHeading": "تراکم",
+            "density": {
+                "comfortable": "راحت",
+                "cozy": "متوسط",
+                "compact": "فشرده"
+            },
+            "clearAll": "پاک کردن همه",
+            "clearFilter": "پاک کردن",
+            "filters": {
+                "rating": "امتیاز",
+                "product": "محصول",
+                "verified": "خرید تأییدشده"
+            },
+            "columns": {
+                "reviewer": "بازنگر",
+                "product": "محصول",
+                "rating": "امتیاز",
+                "body": "نقد و پاسخ",
+                "status": "وضعیت",
+                "date": "تاریخ ثبت",
+                "actions": "عملیات"
+            },
+            "actions": {
+                "approve": "تأیید",
+                "unapprove": "لغو تأیید",
+                "reply": "پاسخ",
+                "quickEdit": "ویرایش سریع",
+                "spam": "علامت‌گذاری به‌عنوان هرزنامه",
+                "unspam": "خروج از هرزنامه",
+                "restore": "بازیابی",
+                "trash": "انتقال به زباله‌دان",
+                "delete": "حذف دائمی",
+                "openProduct": "نمایش محصول",
+                "copyEmail": "کپی ایمیل",
+                "copyId": "کپی شناسه"
+            },
+            "rowActionsLabel": "عملیات ردیف",
+            "selectAll": "انتخاب همه",
+            "selectRow": "انتخاب ردیف",
+            "sortAsc": "صعودی",
+            "sortDesc": "نزولی",
+            "hideColumn": "پنهان کردن ستون",
+            "verifiedPurchase": "خرید تأییدشده",
+            "copyEmail": "کپی ایمیل",
+            "emailCopied": "ایمیل کپی شد",
+            "idCopied": "شناسه کپی شد",
+            "selectedCount": "{count} انتخاب‌شده",
+            "selectedOf": "{selected} از {total} انتخاب‌شده",
+            "showing": "نمایش {from}–{to} از {total}",
+            "rowsPerPage": "تعداد در هر صفحه",
+            "pageOf": "صفحه {page} از {lastPage}",
+            "first": "اولین",
+            "previous": "قبلی",
+            "next": "بعدی",
+            "last": "آخرین",
+            "empty": "هنوز دیدگاهی ثبت نشده",
+            "emptyDescription": "وقتی مشتریان نظری ارسال کنند، این‌جا نمایش داده می‌شود.",
+            "filteredEmpty": "نتیجه‌ای با این فیلترها یافت نشد",
+            "filteredEmptyDescription": "فیلترها را تغییر دهید یا پاکشان کنید.",
+            "loadError": "بارگذاری دیدگاه‌ها با خطا مواجه شد.",
+            "retry": "تلاش مجدد",
+            "clearSelection": "لغو انتخاب",
+            "cancel": "انصراف",
+            "save": "ذخیره",
+            "saving": "در حال ذخیره…",
+            "saved": "تغییرات ذخیره شد",
+            "saveFailed": "ذخیره با خطا مواجه شد",
+            "approved": "دیدگاه تأیید شد",
+            "unapproved": "دیدگاه به انتظار بازگشت",
+            "markedSpam": "به‌عنوان هرزنامه علامت‌گذاری شد",
+            "unspammed": "از هرزنامه خارج شد",
+            "trashed": "به زباله‌دان منتقل شد",
+            "trashedWithName": "دیدگاه‌های «{name}» به زباله‌دان منتقل شد.",
+            "markedSpamWithName": "دیدگاه «{name}» به‌عنوان هرزنامه علامت‌گذاری شد.",
+            "pendingTrashMessage": "دیدگاه «{name}» به زباله‌دان منتقل شد.",
+            "pendingSpamMessage": "دیدگاه «{name}» به‌عنوان هرزنامه علامت‌گذاری شد.",
+            "restored": "بازیابی شد",
+            "deleted": "برای همیشه حذف شد",
+            "undo": "بازگردانی",
+            "dismiss": "بستن",
+            "bulk": {
+                "status": "تغییر وضعیت",
+                "approve": "تأیید",
+                "unapprove": "لغو تأیید",
+                "spam": "علامت‌گذاری به‌عنوان هرزنامه",
+                "restore": "بازیابی",
+                "trash": "انتقال به زباله‌دان",
+                "delete": "حذف دائمی"
+            },
+            "bulkApproved": "دیدگاه‌های انتخاب‌شده تأیید شدند",
+            "bulkUnapproved": "دیدگاه‌های انتخاب‌شده به انتظار بازگشتند",
+            "bulkSpam": "به‌عنوان هرزنامه علامت‌گذاری شدند",
+            "bulkTrashed": "به زباله‌دان منتقل شدند",
+            "bulkTrashedWithCount": "{count} دیدگاه به زباله‌دان منتقل شد.",
+            "bulkRestored": "بازیابی شدند",
+            "bulkDeleted": "برای همیشه حذف شدند",
+            "bulkFailed": "عملیات گروهی با خطا مواجه شد",
+            "bulkTrashTitle": "انتقال به زباله‌دان؟",
+            "bulkTrashDescription": "{count} دیدگاه انتخاب‌شده به زباله‌دان منتقل خواهد شد. ادامه می‌دهید؟",
+            "bulkDeleteTitle": "حذف دائمی؟",
+            "bulkDeleteDescription": "{count} دیدگاه برای همیشه حذف می‌شود. این عمل قابل بازگشت نیست.",
+            "quickEdit": {
+                "title": "ویرایش سریع و پاسخ",
+                "rating": "امتیاز",
+                "status": "وضعیت",
+                "body": "متن دیدگاه",
+                "reply": "پاسخ مدیر",
+                "replyPlaceholder": "پاسخ خود را بنویسید…",
+                "replyHint": "پاسخ شما در زیر دیدگاه نمایش داده می‌شود.",
+                "repliedAlready": "پاسخ ثبت شده",
+                "reviewerName": "نام بازنگر",
+                "reviewerEmail": "ایمیل",
+                "reviewerUrl": "نشانی اینترنتی",
+                "toolbar": {
+                    "bold": "بولد",
+                    "boldPlaceholder": "متن بولد",
+                    "italic": "ایتالیک",
+                    "italicPlaceholder": "متن ایتالیک",
+                    "strike": "خط‌خورده",
+                    "strikePlaceholder": "متن خط‌خورده",
+                    "link": "پیوند",
+                    "linkPrompt": "نشانی پیوند را وارد کنید",
+                    "linkPlaceholder": "متن پیوند",
+                    "quote": "نقل قول",
+                    "quotePlaceholder": "متن نقل قول",
+                    "code": "کد",
+                    "codePlaceholder": "کد",
+                    "list": "فهرست نشانه‌دار",
+                    "listOrdered": "فهرست شماره‌دار",
+                    "listPlaceholder": "آیتم فهرست"
+                }
+            }
+        }
+    },
+    "ReviewStatus": {
+        "pending": "در انتظار",
+        "approved": "تأییدشده",
+        "spam": "هرزنامه",
+        "trash": "سطل زباله",
+        "any": "همه"
+    },
+    "Media": {
+        "title": "رسانه‌ها",
+        "subtitle": "کتابخانهٔ رسانه‌ها برای پیوست تصویرها، اسناد و فایل‌ها به محصول‌ها و دسته‌بندی‌ها.",
+        "subtitleStats": "{total} مورد رسانه · {images} تصویر · {files} فایل دیگر",
+        "addButton": "افزودن رسانه",
+        "viewToggle": {
+            "grid": "نمایش شبکه‌ای",
+            "list": "نمایش فهرستی"
+        },
+        "bulkToggle": "انتخاب دسته‌جمعی",
+        "bulkToggleExit": "خروج از انتخاب",
+        "toolbar": {
+            "searchPlaceholder": "جست‌وجو در نام پرونده یا عنوان",
+            "clearSearch": "پاک‌سازی جست‌وجو"
+        },
+        "bulk": {
+            "selected": "{count} مورد انتخاب شده",
+            "cancel": "لغو",
+            "delete": "حذف برای همیشه"
+        },
+        "table": {
+            "file": "پرونده",
+            "author": "بارگذاری توسط",
+            "uploadedIn": "پیوست به",
+            "comments": "نظرها",
+            "date": "تاریخ",
+            "actions": "عملیات",
+            "untitled": "بدون عنوان",
+            "unknown": "—",
+            "selectAll": "انتخاب همهٔ ردیف‌های قابل مشاهده",
+            "selectRow": "انتخاب {name}"
+        },
+        "row": {
+            "edit": "ویرایش",
+            "delete": "پاک‌کردن برای همیشه",
+            "view": "نمایش",
+            "copyUrl": "کپی URL",
+            "download": "دریافت پرونده"
+        },
+        "tile": {
+            "selectAria": "انتخاب {name}",
+            "openAria": "نمایش جزئیات {name}",
+            "fallbackName": "بدون عنوان"
+        },
+        "emptyList": {
+            "empty": {
+                "title": "هنوز پرونده‌ای بارگذاری نشده است",
+                "description": "از دکمهٔ «افزودن رسانه» اولین پرونده را به کتابخانه اضافه کنید — می‌توانید چند پرونده را همزمان روی این صفحه رها کنید."
+            },
+            "noResults": {
+                "title": "چیزی پیدا نشد",
+                "description": "یک واژهٔ کوتاه‌تر امتحان کنید یا فیلترها را تغییر دهید."
+            }
+        },
+        "modal": {
+            "title": "جزئیات پیوست",
+            "previousAria": "مورد قبلی",
+            "nextAria": "مورد بعدی",
+            "closeAria": "بستن",
+            "savedToast": "ذخیره شد",
+            "saveButton": "ذخیرهٔ تغییرات",
+            "savingButton": "در حال ذخیره…",
+            "copyToast": "نشانی کپی شد",
+            "saveFailedToast": "ذخیره ناموفق بود",
+            "uploadedBy": "بارگذاری توسط",
+            "uploadedAt": "تاریخ بارگذاری",
+            "uploadedIn": "پیوست در",
+            "metadata": {
+                "filename": "نام پرونده",
+                "filetype": "نوع پرونده",
+                "filesize": "اندازهٔ پرونده",
+                "dimensions": "ابعاد"
+            },
+            "fields": {
+                "alt": "متن جایگزین",
+                "altHelper": "توضیح کوتاه برای نمایش‌گرهای صفحه — اولین جمله را گویا انتخاب کنید.",
+                "title": "عنوان",
+                "caption": "توضیح مختصر",
+                "description": "توضیح",
+                "url": "نشانی پرونده"
+            },
+            "buttons": {
+                "copyUrl": "کپی نشانی در کلیپ‌بورد",
+                "editImage": "ویرایش تصویر",
+                "editImageSoon": "به‌زودی در دسترس قرار می‌گیرد"
+            },
+            "footerLinks": {
+                "view": "نمایش صفحهٔ پروندهٔ رسانه",
+                "edit": "ویرایش جزئیات بیشتر",
+                "download": "دریافت پرونده",
+                "delete": "پاک‌کردن برای همیشه"
+            },
+            "missing": {
+                "title": "این پرونده پیدا نشد",
+                "description": "ممکن است پاک شده باشد. فهرست رسانه‌ها را تازه کنید."
+            },
+            "previewMissingAlt": "پیش‌نمایش در دسترس نیست"
+        },
+        "deleteDialog": {
+            "title": "این پرونده پاک شود؟",
+            "description": "این عمل قابل بازگشت نیست. اگر این پرونده به محصول، دسته یا برندی پیوست شده باشد، آن پیوند می‌شکند.",
+            "cancel": "انصراف",
+            "confirm": "پاک‌کردن",
+            "pending": "در حال پاک‌کردن…"
+        },
+        "bulkDeleteDialog": {
+            "title": "حذف {count} پرونده؟",
+            "description": "این عمل قابل بازگشت نیست. هر پروندهٔ پیوست‌شده با محصول‌ها بازنشانی می‌شود.",
+            "cancel": "انصراف",
+            "confirm": "حذف برای همیشه",
+            "pending": "در حال حذف…"
+        },
+        "loadMore": "بارگذاری بیشتر",
+        "loadMoreLoading": "در حال بارگذاری…",
+        "footerCount": {
+            "total": "نمایش هر {total} پرونده",
+            "partial": "نمایش {visible} از {total} پرونده"
+        },
+        "mediaTypes": {
+            "all": "همهٔ موارد رسانه‌ها",
+            "image": "تصویرها",
+            "audio": "صدا",
+            "video": "ویدیو",
+            "document": "اسناد",
+            "spreadsheet": "صفحه‌های گسترده",
+            "archive": "بایگانی‌ها",
+            "unattached": "پیوست‌نشده",
+            "mine": "رسانه‌های من"
+        },
+        "dateFilter": {
+            "all": "همهٔ تاریخ‌ها",
+            "monthLabel": "{month}"
+        },
+        "monthNames": {
+            "10": "اکتبر",
+            "11": "نوامبر",
+            "12": "دسامبر",
+            "01": "ژانویه",
+            "02": "فوریه",
+            "03": "مارس",
+            "04": "آوریل",
+            "05": "می",
+            "06": "ژوئن",
+            "07": "ژوئیه",
+            "08": "اوت",
+            "09": "سپتامبر"
+        },
+        "upload": {
+            "openButton": "افزودن رسانه",
+            "title": "بارگذاری پرونده",
+            "subtitle": "پرونده‌ها را روی صفحه رها کنید یا کلیک کنید تا انتخاب شوند.",
+            "dropHint": "پرونده را اینجا رها کنید",
+            "browse": "انتخاب از سیستم",
+            "remove": "حذف",
+            "uploading": "در حال بارگذاری…",
+            "uploaded": "بارگذاری شد",
+            "failed": "بارگذاری ناموفق بود",
+            "doneClose": "بستن",
+            "filesCounter": "{done} از {total}"
+        }
+    },
+    "MediaPicker": {
+        "titleSingle": "انتخاب رسانه",
+        "titleMultiple": "انتخاب رسانه‌ها",
+        "tabs": {
+            "library": "کتابخانه",
+            "upload": "بارگذاری"
+        },
+        "footer": {
+            "selectedSingle": "۱ مورد انتخاب شده",
+            "selectedMultiple": "{count} مورد انتخاب شده",
+            "empty": "موردی انتخاب نشده است"
+        },
+        "buttons": {
+            "cancel": "انصراف",
+            "select": "انتخاب"
+        },
+        "field": {
+            "choose": "انتخاب تصویر",
+            "change": "تغییر",
+            "remove": "حذف",
+            "previewAlt": "پیش‌نمایش تصویر انتخاب‌شده"
+        }
+    },
+    "Orders": {
+        "title": "سفارش‌ها",
+        "subtitle": "پیگیری، فیلتر و انجام سفارش‌های ورودی.",
+        "search": "جستجوی سفارش، مشتری یا ایمیل…",
+        "filterStatus": "وضعیت",
+        "empty": "هنوز سفارشی ثبت نشده است.",
+        "table": {
+            "order": "سفارش",
+            "customer": "مشتری",
+            "total": "مبلغ",
+            "status": "وضعیت",
+            "payment": "پرداخت",
+            "placedAt": "زمان ثبت",
+            "actions": "عملیات"
+        },
+        "list": {
+            "title": "سفارش‌ها",
+            "totalOrders": "{count} سفارش",
+            "loadingTotal": "در حال بارگذاری…",
+            "newOrder": "سفارش جدید",
+            "secondaryActions": "بیشتر",
+            "refresh": "بروزرسانی",
+            "export": "خروجی",
+            "exportTodo": "خروجی به‌زودی فعال می‌شود",
+            "keyboardShortcuts": "میان‌برها",
+            "searchPlaceholder": "جست‌وجوی شماره سفارش، نام مشتری، ایمیل یا کد رهگیری…",
+            "viewOptions": "نمایش",
+            "columnsHeading": "ستون‌ها",
+            "densityHeading": "تراکم",
+            "density": {
+                "comfortable": "راحت",
+                "cozy": "متوسط",
+                "compact": "فشرده"
+            },
+            "clearAll": "پاک کردن همه",
+            "clearFilter": "پاک کردن",
+            "guest": "مهمان",
+            "openCustomer": "مشاهده مشتری",
+            "itemsCount": "{count} قلم",
+            "refundedShort": "بازگشت داده شد",
+            "quickPreview": "پیش‌نمایش سریع",
+            "quickComplete": "تکمیل سریع",
+            "filters": {
+                "payment": "روش پرداخت",
+                "source": "منبع",
+                "country": "کشور",
+                "needsAttention": "نیاز به اقدام",
+                "created": "تاریخ ثبت"
+            },
+            "payment": {
+                "cod": "پرداخت در محل",
+                "bank_transfer": "انتقال بانکی",
+                "zarinpal": "زرین‌پال",
+                "idpay": "آی‌دی‌پی",
+                "nextpay": "نکست‌پی",
+                "payir": "پی پینگ",
+                "zibal": "زیبال"
+            },
+            "source": {
+                "checkout": "پرداخت آنلاین",
+                "admin": "ثبت دستی",
+                "api": "API",
+                "import": "وارد شده"
+            },
+            "tabs": {
+                "all": "همه",
+                "trashed": "حذف‌شده‌ها"
+            },
+            "columns": {
+                "number": "سفارش",
+                "date": "تاریخ",
+                "status": "وضعیت",
+                "customer": "مشتری",
+                "shipTo": "آدرس ارسال",
+                "total": "مبلغ",
+                "payment": "پرداخت",
+                "source": "منبع",
+                "items": "تعداد قلم",
+                "coupon": "کوپن",
+                "actions": "عملیات"
+            },
+            "actions": {
+                "open": "باز کردن سفارش",
+                "quickPreview": "پیش‌نمایش سریع",
+                "markShipped": "ثبت ارسال",
+                "resendConfirmation": "ارسال مجدد ایمیل تأیید",
+                "printInvoice": "چاپ فاکتور",
+                "printPackingSlip": "چاپ برگه ارسال",
+                "copyLink": "کپی پیوند",
+                "copyNumber": "کپی شماره",
+                "trash": "انتقال به حذف‌شده‌ها"
+            },
+            "rowActionsLabel": "عملیات ردیف",
+            "selectAll": "انتخاب همه",
+            "selectRow": "انتخاب ردیف",
+            "sortAsc": "صعودی",
+            "sortDesc": "نزولی",
+            "hideColumn": "پنهان کردن ستون",
+            "selectedCount": "{count} ردیف انتخاب‌شده",
+            "selectedOf": "{selected} از {total} انتخاب‌شده",
+            "showing": "نمایش {from}–{to} از {total}",
+            "rowsPerPage": "تعداد در هر صفحه",
+            "pageOf": "صفحه {page} از {lastPage}",
+            "first": "اولین",
+            "previous": "قبلی",
+            "next": "بعدی",
+            "last": "آخرین",
+            "empty": "هنوز سفارشی ثبت نشده است",
+            "emptyDescription": "وقتی اولین سفارش ثبت شود اینجا نمایش داده می‌شود.",
+            "filteredEmpty": "با این فیلترها سفارشی یافت نشد",
+            "filteredEmptyDescription": "فیلترها را تغییر دهید یا پاکشان کنید.",
+            "loadError": "بارگذاری سفارش‌ها با خطا مواجه شد.",
+            "retry": "تلاش مجدد",
+            "clearSelection": "لغو انتخاب",
+            "bulk": {
+                "status": "تغییر وضعیت",
+                "print": "چاپ فاکتورها",
+                "resendConfirmation": "ارسال مجدد ایمیل",
+                "trash": "حذف"
+            },
+            "bulkStatusChanged": "وضعیت ردیف‌های انتخاب‌شده به‌روزرسانی شد",
+            "bulkTrashed": "ردیف‌های انتخاب‌شده حذف شدند",
+            "bulkFailed": "اجرای عملیات گروهی با خطا مواجه شد",
+            "bulkEmailTodo": "ارسال گروهی ایمیل به‌زودی فعال می‌شود",
+            "bulkTrashTitle": "حذف گروهی؟",
+            "bulkTrashDescription": "{count} سفارش به حذف‌شده‌ها منتقل می‌شود. ادامه می‌دهید؟",
+            "trashTitle": "حذف سفارش؟",
+            "trashDescription": "سفارش #{number} به حذف‌شده‌ها منتقل می‌شود. تا ۳۰ روز قابل بازیابی است.",
+            "cancel": "انصراف",
+            "numberCopied": "شماره سفارش کپی شد",
+            "linkCopied": "پیوند کپی شد",
+            "confirmationResent": "ایمیل تأیید برای ارسال صف شد",
+            "confirmationResendFailed": "ارسال مجدد ایمیل با خطا مواجه شد",
+            "markedShipped": "سفارش به‌عنوان ارسال‌شده ثبت شد",
+            "markShippedFailed": "ثبت ارسال با خطا مواجه شد",
+            "trashed": "سفارش حذف شد",
+            "trashFailed": "حذف سفارش با خطا مواجه شد",
+            "riskFlags": {
+                "high_value": {
+                    "label": "مبلغ بالا",
+                    "description": "این سفارش در بازهٔ بالای فروشگاه قرار دارد؛ پیش از ارسال یک بار بازبینی کنید."
+                },
+                "shipping_mismatch": {
+                    "label": "ناهماهنگی آدرس",
+                    "description": "کشور آدرس صورتحساب با آدرس ارسال یکسان نیست."
+                },
+                "failed_payment": {
+                    "label": "پرداخت ناموفق",
+                    "description": "آخرین تلاش پرداخت ناموفق بوده است."
+                }
+            },
+            "preview": {
+                "subtitle": "ثبت‌شده در {date} · {total}",
+                "openFull": "باز کردن کامل",
+                "close": "بستن",
+                "previous": "ردیف قبلی",
+                "next": "ردیف بعدی",
+                "noItems": "آیتمی برای این سفارش ثبت نشده است.",
+                "noTimeline": "تغییر وضعیتی ثبت نشده است.",
+                "paymentMethod": "روش پرداخت",
+                "paidAt": "زمان پرداخت",
+                "completedAt": "زمان تکمیل",
+                "tracking": "کد رهگیری",
+                "trackingCopied": "کد رهگیری کپی شد",
+                "changeStatus": "تغییر وضعیت",
+                "statusUpdated": "وضعیت ذخیره شد",
+                "statusUpdateFailed": "تغییر وضعیت با خطا مواجه شد",
+                "tabs": {
+                    "items": "آیتم‌ها",
+                    "addresses": "آدرس‌ها",
+                    "payment": "پرداخت",
+                    "timeline": "زمان‌بندی"
+                }
+            },
+            "keyboard": {
+                "title": "میان‌برهای صفحه‌کلید",
+                "subtitle": "همهٔ کارهای اصلی را بدون موس انجام دهید.",
+                "section": {
+                    "rows": "ردیف‌ها",
+                    "page": "صفحه",
+                    "preview": "پیش‌نمایش"
+                },
+                "nextRow": "ردیف بعدی",
+                "prevRow": "ردیف قبلی",
+                "toggleSelect": "انتخاب ردیف",
+                "openPreview": "پیش‌نمایش سریع",
+                "openDetail": "باز کردن صفحه سفارش",
+                "focusSearch": "تمرکز روی جست‌وجو",
+                "newOrder": "ثبت سفارش جدید",
+                "openHelp": "نمایش این راهنما",
+                "navigatePreview": "حرکت بین سفارش‌ها در پیش‌نمایش",
+                "closePreview": "بستن پیش‌نمایش"
+            }
+        },
+        "detail": {
+            "metaTitle": "سفارش",
+            "title": "سفارش #{number}",
+            "titleEditable": "ویرایش سفارش #{number}",
+            "subtitle": "ثبت‌شده در {date}",
+            "items": "آیتم‌های سفارش",
+            "billing": "آدرس صورتحساب",
+            "shipping": "آدرس ارسال",
+            "summary": "خلاصه سفارش",
+            "itemsTotal": "جمع آیتم‌ها",
+            "shippingTotal": "هزینه ارسال",
+            "taxTotal": "مالیات",
+            "discountTotal": "تخفیف",
+            "feesTotal": "هزینه‌های افزوده",
+            "grandTotal": "مبلغ نهایی",
+            "history": "تاریخچه وضعیت",
+            "notes": "یادداشت‌ها",
+            "addNote": "افزودن یادداشت",
+            "sections": {
+                "summary": "خلاصه سفارش",
+                "items": "آیتم‌ها",
+                "shipping": "ارسال",
+                "refunds": "بازگشت وجه",
+                "meta": "زمینه‌های سفارشی",
+                "timeline": "زمان‌بندی",
+                "actions": "عملیات سفارش",
+                "customer": "مشتری",
+                "addresses": "آدرس‌ها",
+                "customerHistory": "سوابق مشتری",
+                "source": "مبدا سفارش",
+                "grab": "جا‌به‌جایی این بخش",
+                "collapse": "بستن بخش",
+                "expand": "باز کردن بخش",
+                "resetOrder": "بازنشانی به ترتیب پیش‌فرض",
+                "resetDone": "ترتیب بخش‌ها بازنشانی شد",
+                "shortcuts": "میان‌برهای صفحه‌کلید"
+            },
+            "actionsCard": {
+                "placeholder": "یک عمل را انتخاب کنید…",
+                "apply": "اجرا",
+                "trash": "انتقال به حذف‌شده‌ها",
+                "options": {
+                    "resend_confirmation": "ارسال مجدد ایمیل تأیید سفارش",
+                    "mark_shipped": "ثبت ارسال",
+                    "print_invoice": "چاپ فاکتور",
+                    "print_packing": "چاپ برگه ارسال"
+                }
+            },
+            "sourceCard": {
+                "origin": "مبدا",
+                "ip": "آی‌پی",
+                "browser": "مرورگر",
+                "referrer": "ارجاع",
+                "unknown": "ناشناس",
+                "channels": {
+                    "web": "وب‌سایت",
+                    "admin": "پنل مدیریت",
+                    "api": "API",
+                    "import": "وارد کردن CSV",
+                    "checkout-block": "صفحه پرداخت",
+                    "checkout": "صفحه پرداخت"
+                }
+            },
+            "customerHistory": {
+                "totalOrders": "مجموع سفارش‌ها",
+                "totalRevenue": "درآمد کل",
+                "aov": "میانگین مقدار سفارش",
+                "refresh": "تازه‌سازی",
+                "guest": {
+                    "title": "خرید مهمان",
+                    "description": "این سفارش بدون حساب کاربری ثبت شده است."
+                }
+            },
+            "meta": {
+                "empty": "هیچ زمینه سفارشی ثبت نشده است.",
+                "addNew": "افزودن زمینهٔ سفارشی",
+                "add": "افزودن",
+                "keyPlaceholder": "نام زمینه",
+                "valuePlaceholder": "مقدار",
+                "remove": "حذف زمینه",
+                "removed": "زمینه حذف شد",
+                "removeFailed": "حذف زمینه با خطا مواجه شد",
+                "saveFailed": "ذخیره زمینه با خطا مواجه شد",
+                "duplicateKey": "این نام زمینه قبلاً ثبت شده است",
+                "showHidden": "نمایش زمینه‌های مخفی"
+            },
+            "lockedBanner": {
+                "title": "این سفارش دیگر قابل ویرایش نیست.",
+                "unlock": "ویرایش به هر حال",
+                "confirmTitle": "آیا قفل سفارش را بشکنیم؟",
+                "confirmDescription": "برای ادامه عبارت {token} را وارد کنید.",
+                "cancel": "انصراف",
+                "unlocked": "سفارش از حالت قفل خارج شد",
+                "unlockFailed": "خارج کردن از حالت قفل با خطا مواجه شد"
+            },
+            "keyboard": {
+                "title": "میان‌برهای صفحه‌کلید",
+                "subtitle": "میان‌برهای ویژهٔ صفحهٔ سفارش.",
+                "section": {
+                    "page": "این صفحه",
+                    "print": "چاپ"
+                },
+                "focusAddItem": "تمرکز روی افزودن آیتم",
+                "openRefund": "باز کردن فرم بازگشت وجه",
+                "focusNote": "تمرکز روی یادداشت",
+                "saveAll": "ذخیره همه تغییرات",
+                "openHelp": "نمایش این راهنما",
+                "printInvoice": "چاپ فاکتور",
+                "printPacking": "چاپ برگه ارسال"
+            },
+            "addressForm": {
+                "edit": "ویرایش آدرس",
+                "save": "ذخیره",
+                "cancel": "انصراف",
+                "saved": "آدرس ذخیره شد",
+                "saveFailed": "ذخیره آدرس با خطا مواجه شد",
+                "copyBilling": "کپی آدرس صورتحساب",
+                "nationalId": "کد ملی",
+                "customerNote": "یادداشت ارائه‌شده مشتری",
+                "invalidNationalId": "کد ملی معتبر نیست",
+                "invalidPostcode": "کد پستی ایران باید ۱۰ رقم باشد"
+            },
+            "itemsEditor": {
+                "quantity": "تعداد",
+                "price": "قیمت واحد",
+                "total": "مبلغ",
+                "addProduct": "افزودن آیتم محصول",
+                "productId": "شناسهٔ محصول",
+                "productAdded": "محصول به سفارش افزوده شد",
+                "productAddFailed": "افزودن محصول با خطا مواجه شد",
+                "addFee": "افزودن هزینه",
+                "feeTitle": "عنوان هزینه",
+                "feeAmount": "مبلغ هزینه",
+                "feeAdded": "هزینه افزوده شد",
+                "feeAddFailed": "افزودن هزینه با خطا مواجه شد",
+                "addShipping": "افزودن حمل و نقل",
+                "shipMethod": "کد روش",
+                "shipTitle": "عنوان روش",
+                "shipTotal": "هزینه",
+                "shippingAdded": "روش ارسال افزوده شد",
+                "shippingAddFailed": "افزودن روش ارسال با خطا مواجه شد",
+                "applyCoupon": "اعمال کوپن",
+                "couponCode": "کد کوپن",
+                "couponApplied": "کوپن اعمال شد",
+                "couponFailed": "اعمال کوپن با خطا مواجه شد",
+                "recalculate": "بازنشانی محاسبات",
+                "recalculated": "مجموع‌ها به‌روزرسانی شد",
+                "removed": "آیتم حذف شد",
+                "removeFailed": "حذف آیتم با خطا مواجه شد",
+                "dirtyBar": "{count} تغییر ذخیره‌نشده",
+                "saveAll": "ذخیره همه",
+                "cancelAll": "انصراف از همه",
+                "savedAll": "همه تغییرات ذخیره شد",
+                "saveAllPartial": "ذخیره {failed} ردیف با خطا مواجه شد",
+                "lockedNotice": "این سفارش قفل است؛ ابتدا قفل را بشکنید."
+            },
+            "refunds": "بازگشت وجه",
+            "addRefund": "ثبت بازگشت وجه",
+            "refundReason": "علت بازگشت",
+            "refundAmount": "مبلغ بازگشت (ریال)",
+            "refundRestock": "بازگرداندن کالا به موجودی",
+            "refundSubmit": "ثبت بازگشت",
+            "refundCreated": "بازگشت وجه ثبت شد",
+            "refundFailed": "ثبت بازگشت وجه با خطا مواجه شد",
+            "noteVisibility": {
+                "internal": "داخلی",
+                "customer": "قابل‌مشاهده برای مشتری"
+            },
+            "tabs": {
+                "items": "آیتم‌ها",
+                "addresses": "آدرس‌ها",
+                "history": "تاریخچه",
+                "notes": "یادداشت‌ها",
+                "refunds": "بازگشت‌ها"
+            },
+            "timeline": {
+                "title": "زمان‌بندی سفارش",
+                "subtitle": "تغییر وضعیت‌ها، یادداشت‌ها و بازگشت‌ها در یک خط زمانی.",
+                "empty": "هنوز هیچ رویدادی برای این سفارش ثبت نشده است.",
+                "internalNote": "یادداشت داخلی",
+                "customerNote": "یادداشت مشتری",
+                "refundEntry": "بازگشت #{number} — {amount}",
+                "statusChange": "تغییر وضعیت به {status}",
+                "addNotePlaceholder": "افزودن یادداشت…",
+                "internal": "داخلی",
+                "customer": "قابل‌مشاهده برای مشتری",
+                "send": "ثبت"
+            },
+            "shippingCard": {
+                "title": "ارسال",
+                "tracking": "کد رهگیری",
+                "trackingPlaceholder": "کد رهگیری را وارد کنید",
+                "carrier": "شرکت ارسال",
+                "carrierPlaceholder": "نام شرکت پستی",
+                "save": "ثبت ارسال",
+                "saved": "اطلاعات ارسال ذخیره شد",
+                "saveFailed": "ذخیره اطلاعات ارسال با خطا مواجه شد",
+                "trackingCopied": "کد رهگیری کپی شد"
+            },
+            "customerCard": {
+                "title": "مشتری",
+                "totalSpent": "جمع خرید",
+                "ordersCount": "تعداد سفارش",
+                "lastOrder": "آخرین سفارش",
+                "guest": "مهمان",
+                "viewProfile": "مشاهده پروفایل"
+            },
+            "headerActions": {
+                "more": "بیشتر",
+                "markShipped": "ثبت ارسال",
+                "resend": "ارسال مجدد ایمیل تأیید",
+                "printInvoice": "چاپ فاکتور",
+                "printPacking": "چاپ برگه ارسال",
+                "delete": "حذف سفارش"
+            },
+            "changeStatus": "تغییر وضعیت",
+            "statusUpdated": "وضعیت سفارش به‌روزرسانی شد.",
+            "statusUpdateFailed": "به‌روزرسانی وضعیت با خطا مواجه شد.",
+            "notFound": "این سفارش یافت نشد."
+        },
+        "new": {
+            "title": "ثبت سفارش جدید",
+            "subtitle": "ثبت دستی یک سفارش به نمایندگی از مشتری.",
+            "customer": {
+                "title": "مشتری",
+                "search": "جست‌وجوی مشتری بر اساس ایمیل…",
+                "guest": "ثبت برای مهمان"
+            },
+            "billing": "آدرس صورتحساب",
+            "shipping": "آدرس ارسال",
+            "sameAsBilling": "آدرس ارسال با صورتحساب یکسان است",
+            "items": "آیتم‌ها",
+            "addProduct": "افزودن محصول",
+            "productPlaceholder": "شناسهٔ محصول",
+            "quantity": "تعداد",
+            "remove": "حذف",
+            "payment": "روش پرداخت",
+            "notes": "یادداشت داخلی",
+            "saveDraft": "ذخیره به‌عنوان پیش‌نویس",
+            "place": "ثبت سفارش",
+            "created": "سفارش ساخته شد",
+            "createFailed": "ساخت سفارش با خطا مواجه شد",
+            "address": {
+                "firstName": "نام",
+                "lastName": "نام خانوادگی",
+                "phone": "تلفن",
+                "addressLine1": "نشانی",
+                "addressLine2": "نشانی تکمیلی",
+                "city": "شهر",
+                "postcode": "کد پستی",
+                "country": "کشور",
+                "email": "ایمیل"
+            }
+        },
+        "print": {
+            "invoice": "فاکتور",
+            "packingSlip": "برگه ارسال",
+            "issuedAt": "تاریخ صدور",
+            "orderNumber": "شماره سفارش",
+            "billTo": "صورتحساب به",
+            "shipTo": "ارسال به",
+            "item": "کالا",
+            "quantity": "تعداد",
+            "unit": "قیمت واحد",
+            "total": "مبلغ",
+            "subtotal": "جمع کل",
+            "shipping": "هزینه ارسال",
+            "tax": "مالیات",
+            "discount": "تخفیف",
+            "grandTotal": "مبلغ نهایی",
+            "thankYou": "از خرید شما متشکریم.",
+            "print": "چاپ"
+        }
+    },
+    "OrderStatus": {
+        "draft": "پیش‌نویس",
+        "pending": "در انتظار پرداخت",
+        "on_hold": "در انتظار",
+        "processing": "در حال پردازش",
+        "completed": "تکمیل‌شده",
+        "cancelled": "لغوشده",
+        "refunded": "بازگشت‌داده‌شده",
+        "failed": "ناموفق",
+        "any": "همه"
+    },
+    "Coupons": {
+        "title": "کدهای تخفیف",
+        "subtitle": "ساخت، مدیریت و رصد عملکرد کدهای تخفیف فروشگاه.",
+        "newCoupon": "افزودن کد تخفیف",
+        "addCoupon": "افزودن کد تخفیف",
+        "exportCsv": "خروجی CSV",
+        "search": "جست‌وجو در کد یا توضیحات…",
+        "refresh": "بازخوانی نما",
+        "empty": "هنوز کد تخفیفی ثبت نشده است.",
+        "emptyFiltered": "موردی با فیلترهای کنونی پیدا نشد.",
+        "emptyFilteredHint": "فیلترها را تغییر دهید یا پاک کنید.",
+        "errorTitle": "بارگذاری ناموفق بود",
+        "errorRetry": "تلاش مجدد",
+        "selectAll": "انتخاب همه",
+        "selectRow": "انتخاب ردیف",
+        "neverExpires": "بدون انقضا",
+        "expiredBadge": "منقضی‌شده",
+        "daysToExpiry": "{n} روز تا انقضا",
+        "tabs": {
+            "any": "همه",
+            "active": "فعال",
+            "scheduled": "زمان‌بندی‌شده",
+            "used": "استفاده‌شده",
+            "disabled": "غیرفعال",
+            "expired": "منقضی‌شده",
+            "trashed": "حذف‌شده"
+        },
+        "table": {
+            "code": "کد",
+            "type": "نوع",
+            "value": "مقدار",
+            "description": "توضیحات",
+            "constraints": "محدودیت‌ها",
+            "usage": "استفاده",
+            "startsAt": "تاریخ شروع",
+            "expiresAt": "تاریخ انقضا",
+            "minimumAmount": "حداقل مبلغ",
+            "freeShipping": "ارسال رایگان",
+            "individualUse": "استفاده انفرادی",
+            "status": "وضعیت",
+            "actions": "عملیات",
+            "productChip": "{n} محصول",
+            "categoryChip": "{n} دسته",
+            "brandChip": "{n} برند",
+            "emailChip": "{n} ایمیل",
+            "recent7d": "{n} استفاده در ۷ روز اخیر"
+        },
+        "discountType": {
+            "percent": "درصدی",
+            "fixed_cart": "مبلغ ثابت سبد",
+            "fixed_product": "مبلغ ثابت محصول",
+            "free_shipping": "ارسال رایگان"
+        },
+        "status": {
+            "active": "فعال",
+            "disabled": "غیرفعال"
+        },
+        "statusBadge": {
+            "active": "فعال",
+            "disabled": "غیرفعال",
+            "scheduled": "زمان‌بندی‌شده",
+            "expired": "منقضی‌شده",
+            "trashed": "حذف‌شده"
+        },
+        "filters": {
+            "discountType": "نوع تخفیف",
+            "freeShipping": "ارسال رایگان",
+            "individualUse": "استفاده انفرادی",
+            "excludeSaleItems": "شامل اقلام تخفیف ویژه",
+            "expiringSoon": "نزدیک به انقضا",
+            "hasProductConstraints": "محدودیت محصول",
+            "hasCategoryConstraints": "محدودیت دسته‌بندی",
+            "hasEmailRestrictions": "محدودیت ایمیل"
+        },
+        "toolbar": {
+            "clearAll": "پاک‌سازی همه",
+            "clearFilter": "حذف",
+            "viewOptions": "نمایش",
+            "columns": "ستون‌ها",
+            "density": "تراکم",
+            "densityComfortable": "گسترده",
+            "densityCozy": "متوسط",
+            "densityCompact": "فشرده"
+        },
+        "rowActions": {
+            "edit": "ویرایش",
+            "duplicate": "تکثیر",
+            "copyCode": "کپی کد",
+            "quickTest": "تست سریع",
+            "viewHistory": "مشاهده تاریخچه استفاده",
+            "activate": "فعال",
+            "disable": "غیرفعال",
+            "extendExpiry": "تمدید انقضا",
+            "delete": "حذف",
+            "restore": "بازیابی",
+            "deleteConfirm": "این کد تخفیف به سطل زباله منتقل می‌شود. ادامه می‌دهید؟"
+        },
+        "bulk": {
+            "selectedCount": "{count} مورد انتخاب شده",
+            "clear": "پاک‌سازی انتخاب",
+            "activate": "فعال‌سازی",
+            "disable": "غیرفعال‌سازی",
+            "setExpiry": "تنظیم انقضا",
+            "setExpiryHint": "تاریخ انقضای {count} کد تخفیف انتخاب‌شده به این تاریخ تنظیم می‌شود.",
+            "expiryDate": "تاریخ انقضا",
+            "apply": "اعمال",
+            "cancel": "انصراف",
+            "delete": "انتقال به سطل زباله",
+            "duplicateHint": "تکثیر دسته‌جمعی به‌زودی فعال می‌شود",
+            "restore": "بازیابی",
+            "finalDelete": "حذف نهایی",
+            "confirmFinalDeleteTitle": "حذف نهایی کدهای تخفیف",
+            "confirmFinalDeleteBody": "این {count} کد به‌صورت نهایی حذف خواهد شد. برای تأیید عبارت «{keyword}» را تایپ کنید.",
+            "confirmDeleteKeyword": "حذف"
+        },
+        "sort": {
+            "asc": "صعودی",
+            "desc": "نزولی",
+            "hide": "پنهان‌سازی ستون"
+        },
+        "pagination": {
+            "rowsPerPage": "ردیف در هر صفحه",
+            "showing": "نمایش {from}–{to} از {total}",
+            "selectedOf": "{selected} از {total} انتخاب شده",
+            "first": "ابتدا",
+            "previous": "قبلی",
+            "next": "بعدی",
+            "last": "آخر",
+            "pageOf": "صفحه {page} از {lastPage}"
+        },
+        "editor": {
+            "backToList": "بازگشت به فهرست",
+            "titleNew": "افزودن کد تخفیف جدید",
+            "titleEdit": "ویرایش کد تخفیف «{code}»",
+            "toggleStatus": "تغییر وضعیت",
+            "moreActions": "اقدامات بیشتر",
+            "statusActive": "فعال",
+            "statusDisabled": "غیرفعال",
+            "trashedBanner": "این کد تخفیف حذف شده است و قابل ویرایش نیست.",
+            "codeAvailable": "این کد در دسترس است",
+            "codeTaken": "این کد قبلاً استفاده شده است",
+            "codeTakenWithSuggestion": "این کد قبلاً استفاده شده است — پیشنهاد: {suggestion}",
+            "actions": {
+                "quickTest": "تست سریع",
+                "duplicate": "تکثیر کد",
+                "extendExpiry": "تمدید انقضا",
+                "delete": "انتقال به سطل زباله"
+            },
+            "dnd": {
+                "grabHandle": "جابه‌جایی بخش",
+                "collapse": "بستن بخش",
+                "expand": "گشودن بخش"
+            },
+            "sections": {
+                "actions": "عملیات",
+                "general": "اطلاعات کلی",
+                "discount": "نوع و مقدار تخفیف",
+                "time": "محدودیت زمانی",
+                "cart": "محدودیت‌های سبد",
+                "products": "محصولات شامل و مستثنی",
+                "categories": "دسته‌بندی‌های شامل و مستثنی",
+                "brands": "برندهای شامل و مستثنی",
+                "emails": "محدودیت ایمیل",
+                "usageLimits": "محدودیت تعداد استفاده",
+                "liveStats": "آمار استفاده",
+                "redemptions": "تاریخچه استفاده"
+            },
+            "pickers": {
+                "includeTab": "شامل",
+                "excludeTab": "مستثنی",
+                "productHint": "محصولات این کد تخفیف را محدود کنید.",
+                "categoryHint": "دسته‌بندی‌های هدف یا مستثنی‌شده را انتخاب کنید.",
+                "brandHint": "برندهای هدف یا مستثنی‌شده را انتخاب کنید.",
+                "addProduct": "افزودن محصول",
+                "addCategory": "افزودن دسته‌بندی",
+                "addBrand": "افزودن برند",
+                "searchProducts": "جست‌وجو در محصولات…",
+                "searchCategories": "جست‌وجو در دسته‌ها…",
+                "searchBrands": "جست‌وجو در برندها…",
+                "noResults": "موردی پیدا نشد",
+                "loading": "در حال بارگذاری…",
+                "clearAll": "پاک‌سازی همه",
+                "remove": "حذف"
+            },
+            "fields": {
+                "code": "کد",
+                "generate": "تولید کد",
+                "copy": "کپی کد",
+                "descriptionFa": "توضیحات (فارسی)",
+                "descriptionEn": "توضیحات (انگلیسی)",
+                "amountPercent": "مقدار تخفیف (٪)",
+                "amountMinor": "مبلغ تخفیف (تومان)",
+                "freeShippingOnly": "این کد فقط حمل و نقل را رایگان می‌کند. برای آن مقداری وارد نکنید.",
+                "startsAt": "تاریخ شروع",
+                "expiresAt": "تاریخ انقضا",
+                "preset24h": "۲۴ ساعت",
+                "preset7d": "۷ روز",
+                "preset30d": "۳۰ روز",
+                "presetEndOfMonth": "تا پایان ماه",
+                "minimumAmount": "حداقل مبلغ سبد",
+                "maximumAmount": "حداکثر مبلغ سبد",
+                "individualUse": "استفاده انفرادی",
+                "individualUseHint": "اگر فعال باشد، نمی‌توان همزمان با سایر کدهای تخفیف از این کد استفاده کرد.",
+                "excludeSaleItems": "بدون اقلام در حال تخفیف",
+                "excludeSaleItemsHint": "اگر فعال باشد، اقلامی که در حال شرکت در تخفیف ویژه هستند از این کد بهره نمی‌برند.",
+                "freeShipping": "ارسال رایگان",
+                "freeShippingHint": "اگر فعال باشد، علاوه بر تخفیف مبلغ، هزینه ارسال نیز رایگان می‌شود.",
+                "limitUsageToXItems": "محدود کردن تخفیف به N آیتم اول",
+                "allItems": "همه آیتم‌ها",
+                "usageLimitGlobal": "محدودیت کل استفاده",
+                "usageLimitPerUser": "محدودیت برای هر کاربر",
+                "unlimited": "نامحدود",
+                "emailsHint": "این کد فقط برای ایمیل‌های زیر کار می‌کند. خالی گذاشتن یعنی بدون محدودیت.",
+                "emailsAdd": "افزودن ایمیل",
+                "emailsRemove": "حذف ایمیل"
+            },
+            "stats": {
+                "usageCount": "تعداد استفاده‌های ثبت‌شده",
+                "recent7d": "۷ روز اخیر",
+                "limit": "سقف کل",
+                "perUser": "سقف هر کاربر"
+            },
+            "redemptionsEmpty": "هنوز استفاده‌ای از این کد ثبت نشده است.",
+            "dirtyBar": {
+                "save": "ذخیره تغییرات",
+                "create": "ایجاد و ذخیره",
+                "cancel": "انصراف",
+                "dirty": "{count} تغییر ذخیره‌نشده",
+                "clean": "همه تغییرات ذخیره شده‌اند"
+            }
+        },
+        "duplicateDialog": {
+            "title": "تکثیر کد تخفیف",
+            "description": "یک نسخه از «{code}» با کد جدید ساخته می‌شود. وضعیت پیش‌فرض غیرفعال خواهد بود تا قبل از فعال‌سازی بتوانید مرور کنید.",
+            "fields": {
+                "code": "کد جدید"
+            },
+            "codeTaken": "این کد قبلاً استفاده شده است",
+            "codeTakenWithSuggestion": "این کد قبلاً استفاده شده است — پیشنهاد: {suggestion}",
+            "cancel": "انصراف",
+            "duplicate": "ساخت نسخه"
+        },
+        "expirySheet": {
+            "title": "تنظیم تاریخ انقضا",
+            "description": "تاریخ انقضای این کد را تغییر دهید یا روی بدون انقضا قرار دهید.",
+            "neverExpires": "بدون انقضا",
+            "neverExpiresHint": "اگر فعال باشد، این کد هیچ‌گاه منقضی نمی‌شود.",
+            "date": "تاریخ انقضا",
+            "cancel": "انصراف",
+            "apply": "اعمال"
+        },
+        "quickTest": {
+            "title": "تست سریع کد تخفیف",
+            "description": "این کد را روی یک سبد نمونه تست کنید — هیچ تغییری در دیتا ذخیره نمی‌شود.",
+            "products": "محصولات سبد",
+            "addProduct": "افزودن محصول",
+            "removeItem": "حذف آیتم",
+            "quantity": "تعداد",
+            "email": "ایمیل خریدار",
+            "country": "کشور",
+            "runTest": "اجرای تست",
+            "close": "بستن",
+            "eligibleBadge": "این کد قابل استفاده است",
+            "ineligibleBadge": "این کد قابل استفاده نیست",
+            "unknownReason": "دلیل نامشخص",
+            "calc": {
+                "subtotal": "جمع کالاها",
+                "discount": "تخفیف",
+                "shipping": "هزینه ارسال",
+                "total": "مبلغ نهایی"
+            }
+        },
+        "detail": {
+            "title": "کوپن «{code}»",
+            "subtitle": "تنظیمات تخفیف و محدودیت‌های استفاده.",
+            "general": "اطلاعات کلی",
+            "constraints": "محدودیت‌ها",
+            "usage": "آمار استفاده",
+            "totalUses": "تعداد استفاده",
+            "perUserLimit": "محدودیت برای هر کاربر",
+            "globalLimit": "محدودیت کل",
+            "minimumAmount": "حداقل مبلغ سفارش",
+            "maximumAmount": "حداکثر مبلغ سفارش"
+        }
+    },
+    "Customers": {
+        "title": "مشتری‌ها",
+        "subtitle": "مدیریت پروفایل، آدرس‌ها، تگ‌ها، یادداشت‌ها و دسته‌بندی‌ها.",
+        "search": "جستجوی نام، ایمیل، تلفن، کد ملی، شهر یا کد پستی…",
+        "newCustomer": "افزودن مشتری",
+        "refresh": "بازخوانی",
+        "guest": "مهمان",
+        "selectAll": "انتخاب همه ردیف‌ها",
+        "selectRow": "انتخاب ردیف",
+        "empty": "هنوز مشتری‌ای ثبت نشده است.",
+        "emptyFiltered": "هیچ مشتری‌ای با این فیلترها پیدا نشد.",
+        "emptyFilteredHint": "فیلترها را تغییر دهید یا پاک کنید تا نتایج بیشتری ببینید.",
+        "sort": {
+            "asc": "مرتب‌سازی صعودی",
+            "desc": "مرتب‌سازی نزولی",
+            "hide": "پنهان‌کردن ستون"
+        },
+        "toolbar": {
+            "clearAll": "پاک کردن فیلترها",
+            "clearFilter": "پاک کردن",
+            "searchLabel": "جستجو",
+            "viewOptions": "نمایش",
+            "density": "تراکم",
+            "densityComfortable": "راحت",
+            "densityCozy": "متوسط",
+            "densityCompact": "فشرده",
+            "columns": "ستون‌ها"
+        },
+        "errorTitle": "بارگذاری مشتری‌ها ممکن نشد.",
+        "errorRetry": "تلاش دوباره",
+        "tabs": {
+            "any": "همه",
+            "account": "دارای حساب کاربری",
+            "guest": "مهمان",
+            "big": "پرخرید",
+            "new": "جدید",
+            "inactive": "غیرفعال",
+            "no_address": "بدون آدرس",
+            "trashed": "حذف‌شده"
+        },
+        "table": {
+            "customer": "مشتری",
+            "name": "نام",
+            "email": "ایمیل",
+            "phone": "تلفن",
+            "country": "کشور",
+            "nationalId": "کد ملی",
+            "orders": "سفارش‌ها",
+            "spent": "مجموع خرید",
+            "aov": "میانگین سفارش",
+            "lastOrder": "آخرین سفارش",
+            "createdAt": "عضو از",
+            "tags": "تگ‌ها",
+            "status": "وضعیت حساب",
+            "actions": "عملیات"
+        },
+        "statusBadge": {
+            "active": "فعال",
+            "suspended": "تعلیق‌شده",
+            "deleted": "حذف‌شده"
+        },
+        "rowActions": {
+            "quickPreview": "گشودن پروفایل",
+            "viewProfile": "مشاهده پروفایل",
+            "viewOrders": "مشاهده سفارش‌های این مشتری",
+            "sendPasswordReset": "ارسال بازنشانی رمز عبور",
+            "suspend": "تعلیق",
+            "activate": "فعال‌سازی",
+            "delete": "انتقال به حذف‌شده‌ها",
+            "restore": "بازیابی",
+            "deleteConfirm": "این مشتری به حذف‌شده‌ها منتقل شود؟",
+            "suspendActiveOrdersConfirm": "این مشتری سفارش فعال دارد. با وجود این تعلیق شود؟"
+        },
+        "bulk": {
+            "selectedCount": "{count} انتخاب شده",
+            "clear": "پاک‌سازی",
+            "tags": "تگ‌ها",
+            "addTag": "افزودن تگ",
+            "removeTag": "حذف تگ",
+            "tagDialogHint": "نام تگ‌ها را با ویرگول جدا کنید.",
+            "suspend": "تعلیق",
+            "activate": "فعال‌سازی",
+            "delete": "انتقال به حذف‌شده‌ها",
+            "cancel": "انصراف",
+            "apply": "اعمال",
+            "confirmDeleteTitle": "انتقال مشتری‌ها به حذف‌شده‌ها؟",
+            "confirmDeleteBody": "{count} مشتری منتقل می‌شود. بعداً می‌توانید از تب «حذف‌شده» بازیابی کنید."
+        },
+        "new": {
+            "title": "افزودن مشتری",
+            "subtitle": "مشتری مهمان یا دارای حساب کاربری بسازید.",
+            "kind": "نوع مشتری",
+            "guest": "مهمان",
+            "hasAccount": "دارای حساب کاربری",
+            "firstName": "نام",
+            "lastName": "نام خانوادگی",
+            "phone": "تلفن",
+            "country": "کشور",
+            "email": "ایمیل",
+            "password": "رمز عبور",
+            "required": "الزامی",
+            "invalidEmail": "ایمیل نامعتبر",
+            "passwordRule": "حداقل ۸ کاراکتر، شامل حروف و عدد.",
+            "cancel": "انصراف",
+            "create": "ساخت مشتری",
+            "successTitle": "مشتری ساخته شد",
+            "successBody": "پروفایل را باز کنید یا مشتری دیگری بسازید.",
+            "openProfile": "گشودن پروفایل",
+            "addAnother": "افزودن مشتری دیگر"
+        },
+        "pagination": {
+            "rowsPerPage": "ردیف در هر صفحه",
+            "showing": "نمایش {from}–{to} از {total}",
+            "selectedOf": "{selected} از {total} انتخاب شده",
+            "first": "ابتدا",
+            "previous": "قبلی",
+            "next": "بعدی",
+            "last": "آخر",
+            "pageOf": "صفحه {page} از {lastPage}"
+        },
+        "detail": {
+            "title": "{name}",
+            "subtitle": "عضو از {since}",
+            "profile": "پروفایل",
+            "addresses": "آدرس‌ها",
+            "ordersTab": "سفارش‌ها",
+            "downloads": "دانلودها",
+            "totalOrders": "تعداد سفارش",
+            "totalSpent": "مجموع خرید",
+            "averageOrder": "میانگین سفارش",
+            "daysSinceLastOrder": "روز از آخرین سفارش",
+            "noDownloads": "دانلودی برای این مشتری ثبت نشده است.",
+            "addressLabel": "{label} ({kind})",
+            "noOrders": "هنوز سفارشی ثبت نشده است.",
+            "recentOrders": "سفارش‌های اخیر",
+            "viewAll": "مشاهده همه ({count})",
+            "tags": "تگ‌ها",
+            "addTag": "افزودن تگ",
+            "noTags": "هنوز تگی ثبت نشده است.",
+            "timeline": "خط زمانی فعالیت",
+            "notes": "یادداشت‌های داخلی",
+            "addNote": "افزودن یادداشت",
+            "notePlaceholder": "یک یادداشت داخلی بنویسید (فقط برای ادمین‌ها دیده می‌شود)…",
+            "edit": "ویرایش",
+            "save": "ذخیره",
+            "cancel": "انصراف",
+            "delete": "حذف",
+            "loading": "در حال بارگذاری…",
+            "loadError": "بارگذاری اطلاعات مشتری با خطا مواجه شد.",
+            "retry": "تلاش مجدد",
+            "notFound": "این مشتری یافت نشد.",
+            "lifetimeStats": "آمار طول عمر",
+            "copyEmail": "کپی ایمیل",
+            "copyPhone": "کپی تلفن",
+            "impersonateNoStorefrontTitle": "آدرس فروشگاه تنظیم نشده — توکن در کلیپ‌بورد کپی شد",
+            "section": {
+                "grabHandle": "برای جابه‌جایی بکشید",
+                "collapse": "بستن",
+                "expand": "گشودن"
+            },
+            "summary": {
+                "firstName": "نام",
+                "lastName": "نام خانوادگی",
+                "phone": "تلفن",
+                "country": "کشور",
+                "email": "ایمیل",
+                "nationalId": "کد ملی",
+                "company": "شرکت",
+                "createdAt": "تاریخ عضویت"
+            },
+            "convertDialog": {
+                "hint": "برای ساخت حساب کاربری مرتبط، یک ایمیل و رمز عبور وارد کنید.",
+                "email": "ایمیل",
+                "password": "رمز عبور"
+            },
+            "timelineSection": {
+                "title": "خط زمانی فعالیت",
+                "filter": {
+                    "all": "همه"
+                },
+                "kind": {
+                    "order": "سفارش",
+                    "note": "یادداشت",
+                    "status": "وضعیت",
+                    "marketing": "بازاریابی",
+                    "impersonation": "ورود ادمین"
+                },
+                "order": {
+                    "summary": "سفارش #{number} — {status} — {total}"
+                },
+                "status": {
+                    "summary": "{from} ← {to}",
+                    "summaryWithReason": "{from} ← {to} — {reason}"
+                },
+                "marketing": {
+                    "summary": "{channel}: {onOff}"
+                },
+                "impersonation": {
+                    "summary": "ادمین به‌عنوان این مشتری وارد شد"
+                }
+            },
+            "marketing": "ترجیحات بازاریابی",
+            "marketingHint": "تغییر این ترجیحات، تاریخ رضایت جدیدی ثبت می‌کند.",
+            "marketingPendingSave": "در انتظار ذخیره…",
+            "marketingSaving": "در حال ذخیره…",
+            "channelEmail": "اشتراک ایمیلی",
+            "channelSms": "اشتراک پیامکی",
+            "channelPhone": "تماس بازاریابی",
+            "channelEnabled": "روشن",
+            "channelDisabled": "خاموش",
+            "consentHistory": "تاریخچه رضایت",
+            "actions": "عملیات",
+            "convertToAccount": "تبدیل به حساب کاربری",
+            "sendPasswordReset": "ارسال بازنشانی رمز عبور",
+            "loginAsCustomer": "ورود به‌عنوان این مشتری",
+            "mergeWith": "ادغام با مشتری دیگر",
+            "addressKind": {
+                "billing": "صورتحساب",
+                "shipping": "ارسال",
+                "both": "هر دو"
+            },
+            "downloadsTable": {
+                "product": "محصول",
+                "order": "سفارش",
+                "granted": "صدور",
+                "expires": "انقضا",
+                "downloadsUsed": "استفاده‌شده",
+                "limit": "محدودیت"
+            }
+        }
+    },
+    "Tax": {
+        "title": "مالیات",
+        "subtitle": "کلاس‌ها و نرخ‌های مالیاتی فروشگاه.",
+        "tabs": {
+            "classes": "کلاس‌ها",
+            "rates": "نرخ‌ها"
+        },
+        "classes": {
+            "title": "کلاس‌های مالیاتی",
+            "subtitle": "گروه‌های مالیاتی قابل اتساب به محصولات.",
+            "table": {
+                "name": "نام",
+                "slug": "نامک",
+                "rateCount": "تعداد نرخ"
+            }
+        },
+        "rates": {
+            "title": "نرخ‌های مالیاتی",
+            "subtitle": "نرخ‌های قابل اعمال بر سفارش‌ها.",
+            "table": {
+                "label": "عنوان",
+                "country": "کشور",
+                "province": "استان",
+                "rate": "درصد",
+                "priority": "اولویت",
+                "compound": "ترکیبی",
+                "appliesToShipping": "شامل ارسال"
+            },
+            "anywhere": "همه"
+        }
+    },
+    "Shipping": {
+        "title": "ارسال",
+        "subtitle": "زون‌ها و روش‌های ارسال فروشگاه.",
+        "tabs": {
+            "zones": "زون‌ها",
+            "methods": "روش‌ها"
+        },
+        "zones": {
+            "title": "زون‌های ارسال",
+            "subtitle": "محدوده‌های جغرافیایی با روش‌های ارسال اختصاصی.",
+            "table": {
+                "name": "نام",
+                "countries": "کشورها",
+                "methodCount": "تعداد روش",
+                "isFallback": "زون پیش‌فرض"
+            },
+            "fallback": "زون پیش‌فرض",
+            "noCountries": "تمام موقعیت‌های دیگر"
+        },
+        "methods": {
+            "title": "روش‌های ارسال",
+            "subtitle": "روش‌های قابل ارائه در زون‌ها.",
+            "table": {
+                "title": "عنوان",
+                "code": "کد",
+                "description": "توضیحات"
+            }
+        }
+    },
+    "Payments": {
+        "title": "روش‌های پرداخت",
+        "subtitle": "درگاه‌های پرداخت موجود در فروشگاه.",
+        "table": {
+            "title": "عنوان",
+            "code": "کد",
+            "status": "وضعیت",
+            "supportsRefunds": "بازگشت وجه",
+            "ordering": "ترتیب",
+            "actions": "عملیات"
+        },
+        "stub": {
+            "badge": "پیاده‌سازی نشده",
+            "tooltip": "این درگاه برای پلتفرم شناخته شده است اما هنوز پیاده‌سازی نشده. تا زمان عرضه آداپتر واقعی، امکان فعال‌سازی وجود ندارد."
+        },
+        "detail": {
+            "title": "{title}",
+            "subtitle": "تنظیمات درگاه و دستورالعمل‌های مشتری.",
+            "configuration": "پیکربندی",
+            "customerInstructions": "دستورالعمل‌های مشتری",
+            "save": "ذخیره تنظیمات"
+        }
+    },
+    "Settings": {
+        "title": "تنظیمات",
+        "subtitle": "گروه‌بندی تنظیمات فروشگاه.",
+        "save": "ذخیره تغییرات",
+        "groupsNav": "گروه تنظیمات",
+        "groups": {
+            "general": "عمومی",
+            "products": "محصولات",
+            "tax": "مالیات",
+            "shipping": "ارسال",
+            "payments": "روش‌های پرداخت",
+            "account": "حساب کاربری",
+            "email": "ایمیل",
+            "advanced": "پیشرفته",
+            "datetime": "تاریخ و زمان",
+            "media": "رسانه",
+            "branding": "برندینگ"
+        },
+        "general": {
+            "comingSoon": "به‌زودی",
+            "unsaved": "تغییرات ذخیره‌نشده",
+            "discard": "انصراف",
+            "saveError": "ذخیره ناموفق بود — دوباره تلاش کنید.",
+            "storeAddress": {
+                "title": "آدرس فروشگاه",
+                "subtitle": "این نشانی برای محاسبهٔ نرخ مالیات و حمل و نقل استفاده می‌شود.",
+                "address1": "آدرس ۱",
+                "address2": "آدرس ۲",
+                "city": "شهر",
+                "country": "کشور",
+                "state": "استان",
+                "statePlaceholder": "بدون استان",
+                "postcode": "کدپستی"
+            },
+            "generalOptions": {
+                "title": "گزینه‌های عمومی",
+                "selling": "مکان‌های فروش",
+                "sellingAll": "فروش به همه کشورها",
+                "sellingAllExcept": "فروش به همه کشورها به‌جز…",
+                "sellingSpecific": "فروش به کشورهای خاص",
+                "shipping": "مکان‌های حمل و نقل",
+                "shippingSell": "حمل و نقل به تمامی کشورهایی که محصول را می‌فروشید",
+                "shippingAll": "حمل و نقل به تمام کشورها",
+                "shippingSpecific": "حمل و نقل به کشورهای خاص",
+                "shippingDisabled": "غیرفعال‌سازی حمل و نقل و محاسبهٔ آن",
+                "customer": "مکان پیش‌فرض مشتری",
+                "customerNone": "بدون مکان",
+                "customerBase": "آدرس پایهٔ فروشگاه",
+                "customerGeo": "مکان‌یابی جغرافیایی",
+                "customerGeoCache": "مکان‌یابی جغرافیایی با کش صفحه"
+            },
+            "taxes": {
+                "title": "مالیات و کوپن‌ها",
+                "enable": "فعال کردن مالیات و محاسبهٔ آن",
+                "enableHelp": "نرخ‌ها قابل تنظیم خواهد بود و مالیات در زمان پرداخت محاسبه می‌شود.",
+                "coupons": "فعال‌سازی استفاده از کدهای کوپن و تخفیف",
+                "couponsHelp": "کوپن‌ها فقط از طریق سبد خرید و برگهٔ تسویه‌حساب قابل اعمال هستند.",
+                "sequential": "محاسبهٔ پیاپی تخفیف چند کوپن",
+                "sequentialHelp": "زمانی که چند کوپن اعمال می‌شود، هر تخفیف روی قیمت کاهش‌یافتهٔ قبلی محاسبه می‌شود."
+            },
+            "currency": {
+                "title": "پیکربندی واحد پول",
+                "subtitle": "پیکربندی زیر، چگونگی نمایش قیمت در سایت را نشان می‌دهد.",
+                "currency": "واحد پولی",
+                "position": "محل واحد مالی",
+                "posLeft": "چپ",
+                "posRight": "راست",
+                "posLeftSpace": "چپ (با فاصله)",
+                "posRightSpace": "راست (با فاصله)",
+                "thousandSep": "جداکنندهٔ هزارگان",
+                "decimalSep": "جداکنندهٔ اعشاری",
+                "numDecimals": "تعداد اعشار",
+                "preview": "پیش‌نمایش",
+                "sepEqual": "جداکنندهٔ هزارگان و اعشاری باید متفاوت باشند."
+            }
+        },
+        "datetime": {
+            "unsaved": "تغییرات ذخیره‌نشده",
+            "discard": "انصراف",
+            "saveError": "ذخیره ناموفق بود — دوباره تلاش کنید.",
+            "dateTitle": "ساختار تاریخ",
+            "dateSubtitle": "نحوهٔ نمایش تاریخ در سراسر پنل را انتخاب کنید.",
+            "timeTitle": "ساختار زمان",
+            "timeSubtitle": "نحوهٔ نمایش زمان را انتخاب کنید.",
+            "custom": "سفارشی",
+            "customDate": "قالب سفارشی تاریخ",
+            "customTime": "قالب سفارشی زمان",
+            "preview": "پیش‌نمایش",
+            "tokensTitle": "نشانه‌های قالب",
+            "docsLink": "مستندات ساختار تاریخ و زمان",
+            "invalidDateFormat": "قالب تاریخ نامعتبر است — فقط از نشانه‌های سال، ماه و روز استفاده کنید.",
+            "invalidTimeFormat": "قالب زمان نامعتبر است — فقط از نشانه‌های ساعت، دقیقه و ثانیه استفاده کنید.",
+            "preset": {
+                "dMonthY": "روز ماه سال",
+                "monthDY": "ماه روز، سال",
+                "ymdSlash": "سال/ماه/روز",
+                "ymdDash": "سال-ماه-روز",
+                "dmy": "روز/ماه/سال",
+                "h24": "۲۴ ساعته",
+                "h12": "۱۲ ساعته (ق.ظ/ب.ظ)",
+                "h24s": "۲۴ ساعته با ثانیه",
+                "custom": "سفارشی"
+            },
+            "tokens": {
+                "yyyy": "سال",
+                "MMMM": "نام ماه",
+                "MM": "ماه (دو رقمی)",
+                "dd": "روز (دو رقمی)",
+                "d": "روز",
+                "HH": "ساعت (۲۴ساعته)",
+                "h": "ساعت (۱۲ساعته)",
+                "mm": "دقیقه",
+                "ss": "ثانیه",
+                "a": "ق.ظ/ب.ظ"
+            }
+        },
+        "media": {
+            "unsaved": "تغییرات ذخیره‌نشده",
+            "discard": "انصراف",
+            "saveError": "ذخیره ناموفق بود — دوباره تلاش کنید.",
+            "imageSizes": "اندازه‌های تصویر",
+            "imageSizesSubtitle": "اعداد مشخص‌شده در پایین حداکثر ابعاد عکس‌ها را بر حسب پیکسل وقتی که عکسی را به کتابخانهٔ رسانه اضافه می‌کنید، مشخص می‌کنند.",
+            "thumbnail": "اندازهٔ بندانگشتی",
+            "medium": "اندازهٔ میانه",
+            "large": "اندازهٔ بزرگ",
+            "width": "عرض",
+            "maxWidth": "بیشترین پهنا",
+            "height": "ارتفاع",
+            "maxHeight": "بیشترین ارتفاع",
+            "thumbnailCrop": "بریدن تصاویر بندانگشتی (به طور عادی، تصاویر بندانگشتی متناسب هستند)",
+            "thumbnailHelp": "ابعاد ثابت برای نمایش در فهرست‌ها و گالری‌ها.",
+            "boundedHelp": "حداکثر ابعاد؛ نسبت تصویر حفظ می‌شود.",
+            "uploads": "در حال بارگذاری پرونده‌ها",
+            "organizeByDate": "پرونده‌ها را ماهانه و سالانه سازماندهی کن",
+            "organizeHelp": "پرونده‌های آپلودشده در پوشه‌های سال/ماه ذخیره می‌شوند.",
+            "maxUpload": "بیشینهٔ اندازهٔ بارگذاری",
+            "maxUploadHelp": "بزرگ‌ترین حجم مجاز برای هر پرونده."
+        }
+    },
+    "Reports": {
+        "title": "گزارش‌ها",
+        "subtitle": "روند فروش و عملکرد محصولات.",
+        "tabs": {
+            "sales": "فروش",
+            "topSellers": "پرفروش‌ترین‌ها"
+        },
+        "sales": {
+            "title": "گزارش فروش",
+            "subtitle": "خلاصه درآمد و بازگشت‌ها در ۳۰ روز اخیر.",
+            "totalRevenue": "درآمد ناخالص",
+            "netRevenue": "درآمد خالص",
+            "refundedAmount": "بازگشت‌ها",
+            "averageOrder": "میانگین مبلغ سفارش",
+            "orderCount": "تعداد سفارش",
+            "chartTitle": "روند درآمد و بازگشت‌ها"
+        },
+        "topSellers": {
+            "title": "پرفروش‌ترین محصولات",
+            "subtitle": "بازه: {start} تا {end}",
+            "table": {
+                "product": "محصول",
+                "sku": "کد",
+                "units": "تعداد",
+                "revenue": "درآمد"
+            },
+            "chartTitle": "ده محصول برتر بر اساس درآمد"
+        }
+    },
+    "ReportsLegend": {
+        "revenue": "درآمد",
+        "refunded": "بازگشت‌ها"
+    },
+    "Address": {
+        "country": "کشور",
+        "province": "استان",
+        "city": "شهر",
+        "postcode": "کدپستی",
+        "line1": "آدرس",
+        "line2": "ادامه آدرس",
+        "phone": "تلفن",
+        "nationalId": "کد ملی"
+    },
+    "NotFound": {
+        "title": "صفحه پیدا نشد",
+        "description": "این آدرس وجود ندارد یا حذف شده است.",
+        "back": "بازگشت به داشبورد"
+    },
+    "UnknownShop": {
+        "title": "فروشگاه ناشناخته",
+        "subtitle": "این آدرس به هیچ فروشگاهی متصل نیست.",
+        "hint": "پنل مدیریت فروشگاه خود را با آدرس اختصاصی آن باز کنید — برای نمونه yourshop.admin.calibra.app."
+    },
+    "Impersonation": {
+        "banner": "شما در حال مشاهدهٔ پنل {shop} به‌عنوان پشتیبان هستید.",
+        "exit": "خروج از حالت پشتیبانی",
+        "exiting": "در حال خروج…"
+    },
+    "Branding": {
+        "title": "برندینگ",
+        "subtitle": "ظاهر فروشگاه خود را سفارشی کنید. این تنظیمات فروشگاه را تغییر می‌دهد، نه این پنل مدیریت.",
+        "identity": {
+            "title": "هویت",
+            "subtitle": "نام و شعار فروشگاه شما همان‌طور که در فروشگاه نمایش داده می‌شود.",
+            "name": "نام فروشگاه",
+            "nameHelp": "در سربرگ فروشگاه و عنوان مرورگر نمایش داده می‌شود.",
+            "tagline": "شعار",
+            "taglineHelp": "یک جملهٔ کوتاه زیر نام فروشگاه."
+        },
+        "assets": {
+            "title": "لوگو و فاوآیکون",
+            "subtitle": "از کتابخانهٔ رسانه بارگذاری کنید. بدون لوگو، فروشگاه حرف اول نام را نشان می‌دهد.",
+            "logo": "لوگو",
+            "favicon": "فاوآیکون",
+            "choose": "انتخاب تصویر",
+            "change": "تغییر",
+            "remove": "حذف"
+        },
+        "typography": {
+            "title": "تایپوگرافی",
+            "font": "فونت",
+            "fontHelp": "فونتی که فروشگاه بارگذاری می‌کند."
+        },
+        "fonts": {
+            "vazirmatn": "وزیرمتن",
+            "inter": "اینتر"
+        },
+        "palette": {
+            "title": "پالت رنگ",
+            "subtitle": "رنگ‌ها با فرمت OKLCH ذخیره و پیش از اولین رندر روی فروشگاه اعمال می‌شوند.",
+            "background": "پس‌زمینه",
+            "foreground": "متن",
+            "muted": "خنثی",
+            "muted_foreground": "متن خنثی",
+            "border": "حاشیه",
+            "accent": "تأکید",
+            "accent_foreground": "متن تأکید"
+        },
+        "preview": {
+            "title": "پیش‌نمایش زنده",
+            "subtitle": "نمونه‌ای به سبک فروشگاه که پالت انتخابی را نشان می‌دهد.",
+            "nav": "فروشگاه",
+            "heading": "فصل جدید، ظاهری تازه",
+            "body": "تازه‌های این هفته را که برای شما انتخاب شده‌اند ببینید.",
+            "cta": "خرید کنید",
+            "muted": "ارسال رایگان بالای سقف مشخص"
+        },
+        "save": "ذخیرهٔ تغییرات",
+        "saving": "در حال ذخیره…",
+        "discard": "انصراف",
+        "unsaved": "تغییرات ذخیره‌نشده دارید",
+        "saveError": "ذخیره نشد. دوباره تلاش کنید.",
+        "invalidColor": "یک رنگ معتبر OKLCH وارد کنید، مثل oklch(60% 0.18 250)."
+    },
+    "Status": {
+        "active": "فعال",
+        "draft": "پیش‌نویس",
+        "outOfStock": "ناموجود",
+        "pending": "در انتظار",
+        "paid": "پرداخت‌شده",
+        "shipped": "ارسال‌شده",
+        "delivered": "تحویل‌شده",
+        "refunded": "بازگشت‌شده",
+        "cancelled": "لغوشده"
+    },
+    "DatePicker": {
+        "defaultFieldLabel": "تاریخ",
+        "operatorGroupLabel": "عملگر فیلتر",
+        "granularityGroupLabel": "بازه",
+        "changeOperator": "تغییر عملگر",
+        "clear": "پاک‌سازی فیلتر",
+        "pickADate": "انتخاب تاریخ",
+        "pickARange": "انتخاب بازه تاریخی",
+        "cancel": "انصراف",
+        "apply": "اعمال",
+        "placeholder": {
+            "gregorian": "مثال: May 2027، Q4، 05/20/2027",
+            "jalali": "مثال: اردیبهشت ۱۴۰۵، Q4، ۱۴۰۵/۰۲/۳۰"
+        },
+        "error": {
+            "empty": "لطفاً یک تاریخ وارد کنید",
+            "invalid": "نامعتبر است",
+            "ambiguous": "لطفاً یک سال ۳ یا ۴ رقمی وارد کنید"
+        },
+        "operator": {
+            "in": "در",
+            "before": "قبل از",
+            "after": "بعد از",
+            "within": "بین"
+        },
+        "granularity": {
+            "day": "روز",
+            "month": "ماه",
+            "quarter": "فصل",
+            "half_year": "نیم‌سال",
+            "year": "سال"
+        }
+    },
+    "Analytics": {
+        "reports": {
+            "overview": "بررسی اجمالی",
+            "revenue": "درآمد",
+            "orders": "سفارش‌ها",
+            "products": "محصولات",
+            "categories": "دسته‌ها",
+            "coupons": "کدهای تخفیف",
+            "taxes": "مالیات",
+            "stock": "انبار"
+        },
+        "metrics": {
+            "totalSales": "فروش کل",
+            "netSales": "فروش خالص",
+            "grossSales": "فروش ناخالص",
+            "orders": "سفارش‌ها",
+            "productsSold": "محصولات فروخته‌شده",
+            "variationsSold": "متغیرهای فروخته‌شده",
+            "itemsSold": "موارد فروخته‌شده",
+            "returns": "برگشتی",
+            "coupons": "کدهای تخفیف",
+            "shipping": "حمل و نقل",
+            "taxes": "مالیات",
+            "totalTax": "مجموع مالیات",
+            "orderTax": "مالیات سفارش",
+            "shippingTax": "مالیات حمل و نقل",
+            "aov": "میانگین مقدار سفارش",
+            "avgItems": "میانگین موارد هر سفارش",
+            "discountedOrders": "سفارش‌های تخفیف‌دار",
+            "amount": "مقدار"
+        },
+        "table": {
+            "date": "تاریخ",
+            "orderNumber": "سفارش",
+            "status": "وضعیت",
+            "customer": "مشتری",
+            "customerType": "نوع مشتری",
+            "products": "محصول‌ها",
+            "coupons": "کدهای تخفیف",
+            "refunded": "بازگشت",
+            "category": "دسته",
+            "productsCount": "محصولات",
+            "couponCode": "کد تخفیف",
+            "amountDiscounted": "مبلغ با تخفیف",
+            "created": "ایجاد شد",
+            "expires": "انقضا",
+            "type": "نوع",
+            "taxCode": "کد مالیات",
+            "rate": "نرخ",
+            "productTitle": "عنوان محصول",
+            "sku": "شناسه محصول",
+            "categories": "دسته‌ها",
+            "variations": "متغیرها",
+            "stock": "انبار",
+            "productVariation": "محصول / متغیر"
+        },
+        "compare": {
+            "label": "مقایسه",
+            "none": "بدون",
+            "previousPeriod": "دوره قبل",
+            "previousYear": "سال قبل",
+            "vsPrevPeriod": "نسبت به دوره قبل",
+            "vsPrevYear": "نسبت به سال قبل"
+        },
+        "interval": {
+            "label": "نمایش",
+            "auto": "خودکار",
+            "day": "روزانه",
+            "week": "هفتگی",
+            "month": "ماهانه"
+        },
+        "customerType": {
+            "new": "جدید",
+            "returning": "بازگشتی",
+            "guest": "مهمان"
+        },
+        "orderStatus": {
+            "draft": "پیش‌نویس",
+            "pending": "در انتظار پرداخت",
+            "on_hold": "در انتظار",
+            "processing": "در حال پردازش",
+            "completed": "تکمیل‌شده",
+            "cancelled": "لغوشده",
+            "refunded": "بازگشت‌داده‌شده",
+            "failed": "ناموفق"
+        },
+        "productStatus": {
+            "draft": "پیش‌نویس",
+            "publish": "منتشرشده",
+            "private": "خصوصی",
+            "pending": "در انتظار"
+        },
+        "stockStatus": {
+            "instock": "موجود",
+            "outofstock": "ناموجود",
+            "onbackorder": "پیش‌سفارش"
+        },
+        "stockFilter": {
+            "all": "همه",
+            "instock": "موجود",
+            "lowstock": "کمبود موجودی",
+            "outofstock": "ناموجود",
+            "onbackorder": "پیش‌سفارش"
+        },
+        "stockCounts": {
+            "total": "{n} مورد",
+            "instock": "{n} موجود",
+            "lowstock": "{n} کمبود موجودی",
+            "outofstock": "{n} ناموجود",
+            "onbackorder": "{n} پیش‌سفارش"
+        },
+        "couponType": {
+            "percent": "درصدی",
+            "fixed_cart": "مبلغ ثابت سبد",
+            "fixed_product": "مبلغ ثابت محصول",
+            "free_shipping": "ارسال رایگان"
+        },
+        "leaderboards": {
+            "topProducts": "محصولات برتر",
+            "topCategories": "دسته‌های برتر",
+            "units": "فروخته‌شده"
+        },
+        "dateRange": "بازه تاریخی",
+        "refresh": "تازه‌سازی",
+        "export": "دانلود",
+        "empty": "هیچ داده‌ای برای محدوده تاریخ انتخاب‌شده وجود ندارد",
+        "updated": "به‌روزرسانی {when}",
+        "pageOf": "صفحه {page} از {total}",
+        "rowsTotal": "{total} ردیف",
+        "prev": "قبلی",
+        "next": "بعدی",
+        "searchProducts": "جستجوی محصول",
+        "stockUnknown": "نامعلوم",
+        "totalsLabel": "جمع کل"
+    }
+}

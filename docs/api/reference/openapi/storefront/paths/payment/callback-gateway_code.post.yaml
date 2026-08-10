@@ -1,0 +1,32 @@
+operationId: paymentCallbackPost
+summary: Gateway webhook callback (POST)
+description: >
+    Server-to-server webhook from gateways that use POST callbacks instead of (or in addition to)
+    the GET return-URL hit. The adapter verifies the payload signature/HMAC before writing any
+    state. The response is `204` on success — the gateway never reads the body.
+tags: [Payment]
+security: []
+
+parameters:
+    - name: gateway_code
+      in: path
+      required: true
+      description: Stable adapter code (e.g. `zarinpal`, `irankish`, `bank_transfer`).
+      schema: { type: string }
+
+requestBody:
+    required: true
+    content:
+        application/json:
+            schema:
+                type: object
+                description: Gateway-specific payload (verified server-side via the adapter).
+                additionalProperties: true
+
+responses:
+    "204":
+        description: Webhook accepted and processed.
+    "400":
+        $ref: "../../../common/components/responses/BadRequest.yaml"
+    "401":
+        $ref: "../../../common/components/responses/Unauthorized.yaml"

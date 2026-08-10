@@ -1,0 +1,37 @@
+operationId: adminAttributesIndex
+summary: List attributes (admin)
+description: >
+    Paginated list of every catalog attribute on the unified TableView grammar. Terms live
+    under each attribute and are fetched separately via `GET /admin/attributes/{id}/terms`.
+
+    **TableView filterable fields**: `id`, `code`, `order_by`, `has_archives`, `created_at`.
+
+    **TableView orderable fields**: `id`, `code`, `created_at`.
+
+    Default page size is 100.
+tags: [Admin / Catalog / Attributes]
+
+parameters:
+    - $ref: "../../../common/components/parameters/table-view/Page.yaml"
+    - $ref: "../../../common/components/parameters/table-view/Limit500.yaml"
+    - $ref: "../../../common/components/parameters/table-view/Filter.yaml"
+    - $ref: "../../../common/components/parameters/table-view/FilterOr.yaml"
+    - $ref: "../../../common/components/parameters/table-view/Sort.yaml"
+    - $ref: "../../../common/components/parameters/LocaleHeader.yaml"
+    - { name: q, in: query, schema: { type: string, maxLength: 120 }, description: "Multi-column ILIKE across slug + translated name." }
+
+responses:
+    "200":
+        description: Paginated attribute list.
+        content:
+            application/json:
+                schema:
+                    type: object
+                    required: [data, meta]
+                    properties:
+                        data:
+                            type: array
+                            items: { $ref: "../../components/schemas/AdminAttribute.yaml" }
+                        meta: { $ref: "../../../common/components/schemas/PaginationMeta.yaml" }
+    "401": { $ref: "../../../common/components/responses/Unauthorized.yaml" }
+    "403": { $ref: "../../../common/components/responses/Forbidden.yaml" }
