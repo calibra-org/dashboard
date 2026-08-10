@@ -1,0 +1,39 @@
+name: SEO seven-engine hardening
+
+on:
+  push:
+    branches:
+      - agent/seo-seven-real-engines-20260811
+
+permissions:
+  contents: write
+
+jobs:
+  harden:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/seo-seven-real-engines-20260811
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: python3 .github/scripts/seo-seven-hardening.py
+      - run: pnpm exec biome format apps/api/app/services/seo/search_engines.ts apps/admin/src/features/seo/workspace.tsx --write
+      - run: pnpm --filter @calibra/api run typecheck
+      - run: pnpm --filter @calibra/admin run typecheck
+      - name: Commit hardening
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/api/app/services/seo/search_engines.ts apps/admin/src/features/seo/workspace.tsx
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "fix(seo): verify provider acceptance and expose truthful states"
+          git push origin HEAD:agent/seo-seven-real-engines-20260811
