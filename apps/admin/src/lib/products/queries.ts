@@ -1,0 +1,516 @@
+"use client";
+
+import type { AdminSchemas } from "@calibra/sdk";
+import type { Locale } from "@calibra/shared/i18n";
+import { keepPreviousData, useQueries, useQuery } from "@tanstack/react-query";
+import { useLocale } from "next-intl";
+
+import { type AdminProductDetailView, toAdminProductDetail } from "#/lib/adapters/product-detail";
+import { toAdminProduct } from "#/lib/adapters/products";
+import { apiGet } from "#/lib/queries/api-client";
+import { type TableViewQuery, tableViewQueryToSdkQuery } from "#/lib/table-view";
+import type { AdminBrand, AdminCategory, AdminProduct, AdminTag, ProductStatus } from "#/lib/types";
+
+type DetailEnvelope = { data: AdminSchemas["schemas"]["AdminProductDetail"] };
+
+type Schemas = AdminSchemas["schemas"];
+
+export type StockLevel = "instock" | "low" | "outofstock";
+export type CatalogVisibility = "visible" | "catalog" | "search" | "hidden";
+
+export interface ProductListMeta {
+    page: number;
+    limit: number;
+    total: number;
+    lastPage: number;
+}
+
+interface ProductListEnvelope {
+    data: Schemas["AdminProduct"][];
+    meta?: ProductListMeta;
+    facets?: Record<string, Record<string, number>>;
+}
+
+interface TaxonomyEnvelope {
+    data: { id: number; name: string; slug: string; image_url?: string | null }[];
+    meta?: ProductListMeta;
+}
+
+/**
+ * Inputs accepted by {@link useProductsList}. `query` carries the unified TableView grammar — the
+ * filterable columns `type` / `catalog_visibility` / `featured` ride inside `query.filter` as
+ * `filter[]` entries, NOT here. The fields below are the only true top-level extras the controller
+ * declares (`apps/api/app/controllers/admin/catalog/products_controller.ts`): bespoke predicates
+ * the runtime can't model as a column WHERE (pivot joins, stock aggregates, soft-delete scope,
+ * multi-column search, response-shape flags). Keys are the EXACT wire keys so params == URL == request.
+ *
+ * `status` stays an extra (not a `filter[]` column) because the tab strip's `trash` pseudo-value
+ * is expressed via `only_trashed`, not a `status` column value — keeping it bespoke avoids leaking
+ * that special case into the grammar.
+ */
+export interface ProductsListParams {
+    query?: TableViewQuery;
+    q?: string;
+    status?: ProductStatus | "any";
+    /** Multi-select facets ride as comma-joined extras (`"instock,onbackorder"` / `"5,8"`) so the
+     *  controller can split + `whereIn` against the inventory / pivot subqueries. */
+    stock_status?: string;
+    stock_level?: StockLevel;
+    category?: string;
+    brand?: string;
+    tag?: string;
+    on_sale?: boolean;
+    has_image?: boolean;
+    with_trashed?: boolean;
+    only_trashed?: boolean;
+    ids?: string;
+    include?: string;
+    /** When true, narrows to the current admin's starred products (server-side `favorites=1`). */
+    favorites?: boolean;
+}
+
+/**
+ * Top-level extras the products endpoint accepts. Keys mirror the controller's `compileStrict`
+ * extras verbatim; `satisfies` flags a typo'd key before it can 422.
+ */
+interface ProductsListExtras {
+    q?: string;
+    status?: ProductStatus;
+    stock_status?: string;
+    stock_level?: StockLevel;
+    category?: string;
+    brand?: string;
+    tag?: string;
+    on_sale?: boolean;
+    has_image?: boolean;
+    with_trashed?: boolean;
+    only_trashed?: boolean;
+    favorites?: boolean;
+    ids?: string;
+    include?: string;
+}
+
+export interface ProductsListResult {
+    data: AdminProduct[];
+    meta: ProductListMeta;
+    facets?: Record<string, Record<string, number>>;
+}
+
+/**
+ * Paginated admin products list. The query object handed to the SDK is byte-for-byte what the URL
+ * holds — both derive from {@link tableViewQueryToSdkQuery}. Status vocabulary is the API's
+ * (`draft | publish | pending | private`); `any` collapses to "no filter".
+ */
+export function useProductsList(
+    params: ProductsListParams = {},
+): ReturnType<typeof useQuery<ProductListEnvelope, Error, ProductsListResult>> {
+    const locale = useLocale() as Locale;
+    const query: TableViewQuery = params.query ?? { page: 1, limit: 20, filter: [], filterOr: [], sort: [] };
+    const status = params.status === undefined || params.status === "any" ? undefined : params.status;
+    const sdkQuery = tableViewQueryToSdkQuery(query, {
+        q: params.q,
+        status,
+        stock_status: params.stock_status,
+        stock_level: params.stock_level,
+        category: params.category,
+        brand: params.brand,
+        tag: params.tag,
+        on_sale: params.on_sale === true ? true : undefined,
+        has_image: params.has_image === true ? true : undefined,
+        with_trashed: params.with_trashed === true ? true : undefined,
+        only_trashed: params.only_trashed === true ? true : undefined,
+        favorites: params.favorites === true ? true : undefined,
+        ids: params.ids,
+        include: params.include,
+    } satisfies ProductsListExtras);
+
+    return useQuery<ProductListEnvelope, Error, ProductsListResult>({
+        queryKey: ["admin", "products", "list", { locale, sdkQuery }],
+        queryFn: () => apiGet<ProductListEnvelope>("products", { locale, query: sdkQuery }),
+        placeholderData: keepPreviousData,
+        select: (payload): ProductsListResult => {
+            const data = (payload.data ?? []).map(toAdminProduct);
+            const meta = payload.meta ?? { page: query.page, limit: query.limit, total: data.length, lastPage: 1 };
+            return { data, meta, facets: payload.facets };
+        },
+    });
+}
+
+interface AdminProductFacetEntry<T extends string | number = string> {
+    value: T;
+    label: string;
+    count?: number;
+}
+
+/**
+ * Lightweight facets query. Pulls all categories/brands/tags via their list endpoints (one shot,
+ * `limit=100`) and feeds them into the toolbar's faceted-filter options.
+ */
+export function useProductFacets() {
+    const locale = useLocale() as Locale;
+    return useQuery({
+        queryKey: ["admin", "product-facets", { locale }],
+        queryFn: async () => {
+            const [cats, brands, tags] = await Promise.all([
+                apiGet<TaxonomyEnvelope>("categories", { locale, query: { limit: 100 } }).catch(
+                    () => ({ data: [] }) as TaxonomyEnvelope,
+                ),
+                apiGet<TaxonomyEnvelope>("brands", { locale, query: { limit: 100 } }).catch(
+                    () => ({ data: [] }) as TaxonomyEnvelope,
+                ),
+                apiGet<TaxonomyEnvelope>("tags", { locale, query: { limit: 100 } }).catch(
+                    () => ({ data: [] }) as TaxonomyEnvelope,
+                ),
+            ]);
+            return {
+                categories: cats.data.map((row) => ({
+                    value: String(row.id),
+                    label: row.name,
+                    count: undefined as number | undefined,
+                })),
+                brands: brands.data.map((row) => ({
+                    value: String(row.id),
+                    label: row.name,
+                    count: undefined as number | undefined,
+                })),
+                tags: tags.data.map((row) => ({
+                    value: String(row.id),
+                    label: row.name,
+                    count: undefined as number | undefined,
+                })),
+            };
+        },
+        staleTime: 5 * 60 * 1000,
+    });
+}
+
+export type ProductFacetOption<T extends string | number = string> = AdminProductFacetEntry<T>;
+
+export type { AdminBrand, AdminCategory, AdminTag };
+
+/**
+ * Per-status row counts powering the WP-style status tabs. Calls the dedicated counts endpoint
+ * which returns `any | publish | draft | pending | private | trash` in one round-trip.
+ */
+export function useProductCountsByStatus() {
+    const locale = useLocale() as Locale;
+    return useQuery({
+        queryKey: ["admin", "product-counts", { locale }],
+        queryFn: async (): Promise<Partial<Record<"any" | "trash" | ProductStatus, number>>> => {
+            try {
+                const envelope = await apiGet<{ data: Record<string, number> }>("products/counts", {
+                    locale,
+                });
+                return envelope.data as Partial<Record<"any" | "trash" | ProductStatus, number>>;
+            } catch {
+                return {};
+            }
+        },
+        staleTime: 30 * 1000,
+    });
+}
+
+/**
+ * Fetches a single product's full detail payload, normalised into the view shape. The cache key
+ * scopes by id; consumers passing `initialData` from the server-rendered shell skip the
+ * first-paint round-trip.
+ */
+export function useProduct(
+    id: number | null,
+    options?: { initialData?: AdminProductDetailView },
+): ReturnType<typeof useQuery<DetailEnvelope, Error, AdminProductDetailView>> {
+    const locale = useLocale() as Locale;
+    return useQuery<DetailEnvelope, Error, AdminProductDetailView>({
+        queryKey: ["admin", "product", id, locale],
+        enabled: id !== null && id !== undefined,
+        queryFn: async () => apiGet<DetailEnvelope>(`products/${id}`, { locale }),
+        select: (envelope) => toAdminProductDetail(envelope.data),
+        initialData: options?.initialData
+            ? ({
+                  data: options.initialData as unknown as AdminSchemas["schemas"]["AdminProductDetail"],
+              } as DetailEnvelope)
+            : undefined,
+        staleTime: 5 * 1000,
+    });
+}
+
+export interface VariationView {
+    id: number;
+    sku: string | null;
+    gtin: string | null;
+    regularPriceMinor: number | null;
+    salePriceMinor: number | null;
+    saleStartsAt: string | null;
+    saleEndsAt: string | null;
+    weightGrams: number | null;
+    lengthMm: number | null;
+    widthMm: number | null;
+    heightMm: number | null;
+    imageMediaId: number | null;
+    virtual: boolean;
+    downloadable: boolean;
+    manageStockMode: "own" | "parent";
+    menuOrder: number;
+    status: "draft" | "active" | "inactive" | "archived";
+    pins: { attribute_id: number; term_id: number | null }[];
+    description: string | null;
+}
+
+/** Reads the variations list for a variable product. */
+export function useProductVariations(productId: number | null) {
+    const locale = useLocale() as Locale;
+    return useQuery<{ data: unknown[] }, Error, VariationView[]>({
+        queryKey: ["admin", "product-variations", productId, locale],
+        enabled: productId !== null && productId !== undefined,
+        queryFn: async () => apiGet<{ data: unknown[] }>(`products/${productId}/variations`, { locale }),
+        select: (envelope) =>
+            envelope.data.map((row) => {
+                const r = row as Record<string, unknown>;
+                return {
+                    id: Number(r.id),
+                    sku: (r.sku as string | null) ?? null,
+                    gtin: (r.gtin as string | null) ?? null,
+                    regularPriceMinor: r.regular_price === null || r.regular_price === undefined ? null : Number(r.regular_price),
+                    salePriceMinor: r.sale_price === null || r.sale_price === undefined ? null : Number(r.sale_price),
+                    saleStartsAt: (r.sale_starts_at as string | null) ?? null,
+                    saleEndsAt: (r.sale_ends_at as string | null) ?? null,
+                    weightGrams: (r.weight_grams as number | null) ?? null,
+                    lengthMm: (r.length_mm as number | null) ?? null,
+                    widthMm: (r.width_mm as number | null) ?? null,
+                    heightMm: (r.height_mm as number | null) ?? null,
+                    imageMediaId: (r.image_media_id as number | null) ?? null,
+                    virtual: Boolean(r.virtual),
+                    downloadable: Boolean(r.downloadable),
+                    manageStockMode: ((r.manage_stock_mode as string) ?? "own") as "own" | "parent",
+                    menuOrder: Number((r.menu_order as number | undefined) ?? 0),
+                    status: ((r.status as string | undefined) ?? "active") as VariationView["status"],
+                    pins: ((r.attribute_pins as { attribute_id: number; term_id: number | null }[] | undefined) ?? []).map(
+                        (p) => ({
+                            attribute_id: Number(p.attribute_id),
+                            term_id: p.term_id === null || p.term_id === undefined ? null : Number(p.term_id),
+                        }),
+                    ),
+                    description: (r.description as string | null) ?? null,
+                };
+            }),
+        staleTime: 10 * 1000,
+    });
+}
+
+/**
+ * Global attributes list — used by the Add-attribute popover on the Attributes card. Cached
+ * aggressively since the taxonomy rarely changes.
+ */
+export function useGlobalAttributes() {
+    const locale = useLocale() as Locale;
+    return useQuery<{ data: { id: number; name?: string; code?: string }[] }, Error, { id: number; name: string }[]>({
+        queryKey: ["admin", "attributes", "global", locale],
+        queryFn: async () => apiGet<{ data: { id: number; name?: string; code?: string }[] }>("attributes", { locale }),
+        select: (envelope) => envelope.data.map((row) => ({ id: Number(row.id), name: row.name ?? row.code ?? `#${row.id}` })),
+        staleTime: 5 * 60 * 1000,
+    });
+}
+
+/** Per-attribute terms list — used by the term chip picker on attribute-link rows. */
+export function useGlobalAttributeTerms(attributeId: number | null) {
+    const locale = useLocale() as Locale;
+    return useQuery<{ data: { id: number; name?: string; slug?: string }[] }, Error, { id: number; name: string }[]>({
+        queryKey: ["admin", "attributes", attributeId, "terms", locale],
+        enabled: attributeId !== null && attributeId !== undefined,
+        queryFn: async () =>
+            apiGet<{ data: { id: number; name?: string; slug?: string }[] }>(`attributes/${attributeId}/terms`, { locale }),
+        select: (envelope) => envelope.data.map((row) => ({ id: Number(row.id), name: row.name ?? row.slug ?? `#${row.id}` })),
+        staleTime: 60 * 1000,
+    });
+}
+
+/**
+ * Bulk variant of {@link useGlobalAttributeTerms} for a dynamic list of attribute ids — uses
+ * `useQueries` under the hood so the hook count stays stable across the same render even as the
+ * id list grows or shrinks. Returns a flat `{termId → name}` map across every loaded attribute.
+ */
+export function useAttributeTermsMap(attributeIds: number[]): Record<number, string> {
+    const locale = useLocale() as Locale;
+    const queries = useQueries({
+        queries: attributeIds.map((attributeId) => ({
+            queryKey: ["admin", "attributes", attributeId, "terms", locale] as const,
+            queryFn: async () =>
+                apiGet<{ data: { id: number; name?: string; slug?: string }[] }>(`attributes/${attributeId}/terms`, { locale }),
+            staleTime: 60 * 1000,
+        })),
+    });
+    const map: Record<number, string> = {};
+    for (const result of queries) {
+        const rows = result.data?.data ?? [];
+        for (const row of rows) {
+            const id = Number(row.id);
+            if (Number.isNaN(id)) continue;
+            map[id] = row.name ?? row.slug ?? `#${id}`;
+        }
+    }
+    return map;
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Taxonomy pickers (categories / tags / brands sidebar cards)               */
+/* -------------------------------------------------------------------------- */
+
+type SdkAdminTaxonomy = Schemas["AdminTaxonomy"];
+
+function dupLocalized(value: string | null | undefined): { fa: string; en: string } {
+    const safe = typeof value === "string" ? value : "";
+    return { fa: safe, en: safe };
+}
+
+function toPickerCategory(row: SdkAdminTaxonomy): AdminCategory {
+    return {
+        id: Number(row.id),
+        parentId: row.parent_id ?? null,
+        name: dupLocalized(row.name),
+        slug: dupLocalized(row.slug),
+        productCount: row.used_count ?? 0,
+        imageMediaId: row.image_media_id ?? null,
+        imageUrl: row.image_url ?? null,
+    };
+}
+
+function toPickerTag(row: SdkAdminTaxonomy): AdminTag {
+    return {
+        id: Number(row.id),
+        name: dupLocalized(row.name),
+        slug: dupLocalized(row.slug),
+        productCount: row.used_count ?? 0,
+    };
+}
+
+function toPickerBrand(row: SdkAdminTaxonomy): AdminBrand {
+    return {
+        id: Number(row.id),
+        name: dupLocalized(row.name),
+        slug: dupLocalized(row.slug),
+        productCount: row.used_count ?? 0,
+        imageMediaId: row.image_media_id ?? null,
+        logoUrl: row.image_url ?? null,
+    };
+}
+
+interface TaxonomyEnvelopeAdmin<T> {
+    data: T[];
+}
+
+export type TaxonomySort = "-used_count" | "used_count" | "menu_order" | "-menu_order";
+
+/**
+ * Translate the local `TaxonomySort` shorthand into the TableView wire form
+ * (`?sort[]=field:dir`). Kept colocated with the consumer hooks so it disappears when the
+ * picker UI eventually composes a `TableViewQuery` directly.
+ */
+function toTableViewSort(sort: TaxonomySort | undefined): string[] | undefined {
+    if (sort === undefined) return undefined;
+    const dir = sort.startsWith("-") ? "desc" : "asc";
+    const field = sort.replace(/^-/, "");
+    return [`${field}:${dir}`];
+}
+
+/**
+ * Fetches the full categories tree for the product-detail picker. Caps at 500 rows by default —
+ * the bulk seeder ships 56 leaves, so this comfortably covers any store the admin is going to
+ * curate by hand. `sort` defaults to the endpoint's `menu_order` default; pass `-used_count`
+ * to power the "Most used" tab without paying for a second query.
+ */
+export function useCategoriesTree(options?: { sort?: TaxonomySort; limit?: number }) {
+    const locale = useLocale() as Locale;
+    const sort = options?.sort;
+    const limit = options?.limit ?? 500;
+    return useQuery<TaxonomyEnvelopeAdmin<SdkAdminTaxonomy>, Error, AdminCategory[]>({
+        queryKey: ["admin", "categories", "picker", { locale, sort: sort ?? "", limit }],
+        queryFn: () =>
+            apiGet<TaxonomyEnvelopeAdmin<SdkAdminTaxonomy>>("categories", {
+                locale,
+                query: { limit, ...(sort !== undefined ? { "sort[]": toTableViewSort(sort) } : {}) },
+            }),
+        select: (envelope) => (envelope.data ?? []).map(toPickerCategory),
+        staleTime: 30 * 1000,
+    });
+}
+
+/** Top-N most-used categories for the "پر استفاده‌ها" tab. Cached server-side for 2m. */
+export function useMostUsedCategories(limit = 20) {
+    return useCategoriesTree({ sort: "-used_count", limit: limit });
+}
+
+/** Flat brands list. `parent_id` is always null upstream; the picker renders them at depth 0. */
+export function useBrandsList(options?: { sort?: TaxonomySort; limit?: number }) {
+    const locale = useLocale() as Locale;
+    const sort = options?.sort;
+    const limit = options?.limit ?? 500;
+    return useQuery<TaxonomyEnvelopeAdmin<SdkAdminTaxonomy>, Error, AdminBrand[]>({
+        queryKey: ["admin", "brands", "picker", { locale, sort: sort ?? "", limit }],
+        queryFn: () =>
+            apiGet<TaxonomyEnvelopeAdmin<SdkAdminTaxonomy>>("brands", {
+                locale,
+                query: { limit, ...(sort !== undefined ? { "sort[]": toTableViewSort(sort) } : {}) },
+            }),
+        select: (envelope) => (envelope.data ?? []).map(toPickerBrand),
+        staleTime: 30 * 1000,
+    });
+}
+
+/** Top-N most-used brands for the brand sidebar's "Most used" tab. */
+export function useMostUsedBrands(limit = 20) {
+    return useBrandsList({ sort: "-used_count", limit: limit });
+}
+
+/**
+ * Flat tags list — fetched up-front so the product-detail tags card can render every existing
+ * tag as a check-row (mirroring the brands picker), and so saved tag ids resolve to the right
+ * Persian name without a per-id round-trip.
+ */
+export function useTagsList(options?: { sort?: TaxonomySort; limit?: number }) {
+    const locale = useLocale() as Locale;
+    const sort = options?.sort;
+    const limit = options?.limit ?? 500;
+    return useQuery<TaxonomyEnvelopeAdmin<SdkAdminTaxonomy>, Error, AdminTag[]>({
+        queryKey: ["admin", "tags", "picker", { locale, sort: sort ?? "", limit }],
+        queryFn: () =>
+            apiGet<TaxonomyEnvelopeAdmin<SdkAdminTaxonomy>>("tags", {
+                locale,
+                query: { limit, ...(sort !== undefined ? { "sort[]": toTableViewSort(sort) } : {}) },
+            }),
+        select: (envelope) => (envelope.data ?? []).map(toPickerTag),
+        staleTime: 30 * 1000,
+    });
+}
+
+/** Top-N most-used tags for the tags sidebar's "Most used" tab. */
+export function useMostUsedTags(limit = 20) {
+    return useTagsList({ sort: "-used_count", limit: limit });
+}
+
+/**
+ * Debounced async slug availability check. The hook is intentionally NOT a `useMutation`; it's a
+ * read-after-blur predicate the form treats as a hint, not a write. Callers pass the current slug
+ * + locale and (when editing) the row's own id to exclude.
+ */
+export function useSlugAvailability(args: {
+    slug: string | null;
+    locale: Locale;
+    excludeId?: number;
+}): ReturnType<typeof useQuery<{ data: { available: boolean } }, Error, boolean>> {
+    const trimmed = args.slug?.trim() ?? "";
+    return useQuery<{ data: { available: boolean } }, Error, boolean>({
+        queryKey: ["admin", "products", "check-slug", args.locale, trimmed, args.excludeId ?? null],
+        enabled: trimmed.length > 0,
+        queryFn: async () =>
+            apiGet<{ data: { available: boolean } }>("products/check-slug", {
+                locale: args.locale,
+                query: {
+                    slug: trimmed,
+                    locale: args.locale,
+                    ...(args.excludeId !== undefined ? { excludeId: args.excludeId } : {}),
+                },
+            }),
+        select: (envelope) => envelope.data.available,
+        staleTime: 5 * 1000,
+    });
+}

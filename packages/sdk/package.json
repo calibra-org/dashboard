@@ -1,0 +1,42 @@
+{
+    "name": "@calibra/sdk",
+    "version": "0.0.0",
+    "private": true,
+    "license": "MIT",
+    "type": "module",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "source": "./src/index.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        }
+    },
+    "scripts": {
+        "build": "tsdown",
+        "dev": "tsdown --watch",
+        "codegen": "pnpm codegen:specs && pnpm codegen:storefront && pnpm codegen:admin && pnpm codegen:platform",
+        "codegen:specs": "pnpm --filter @calibra/api-docs run build:json",
+        "codegen:storefront": "openapi-typescript ../../docs/api/dist/storefront.v1.json -o src/generated/storefront.d.ts",
+        "codegen:admin": "openapi-typescript ../../docs/api/dist/admin.v1.json -o src/generated/admin.d.ts",
+        "codegen:platform": "openapi-typescript ../../docs/api/dist/platform.v1.json -o src/generated/platform.d.ts",
+        "codegen:check": "pnpm codegen && git diff --exit-code -- src/generated/",
+        "test": "vitest --run --passWithNoTests",
+        "test:coverage": "vitest --coverage --passWithNoTests",
+        "test:watch": "vitest",
+        "typecheck": "tsc --noEmit --emitDeclarationOnly false"
+    },
+    "dependencies": {
+        "openapi-fetch": "catalog:"
+    },
+    "devDependencies": {
+        "@calibra/typescript-config": "workspace:*",
+        "@types/node": "catalog:",
+        "msw": "catalog:",
+        "openapi-typescript": "catalog:",
+        "tsdown": "catalog:",
+        "typescript": "catalog:",
+        "vitest": "catalog:"
+    }
+}

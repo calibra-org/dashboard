@@ -1,0 +1,43 @@
+operationId: accountOrdersIndex
+summary: List the signed-in customer's orders
+description: >
+    Paginated list of the customer's own orders. Drafts are excluded — only orders that reached
+    `pending` or later appear. The customer scope and the draft/deleted exclusion are server-side
+    invariants the operator cannot bypass via the URL.
+
+
+    Filter, sort, and paginate via the unified TableView wire grammar.
+
+
+    **TableView filterable fields**: `id`, `order_number`, `status`, `created_at`.
+
+
+    **TableView orderable fields**: `id`, `order_number`, `grand_total`, `created_at`,
+    `date_paid_at`, `date_completed_at`.
+tags: [Account]
+security:
+    - BearerAuth: []
+
+parameters:
+    - $ref: "../../../common/components/parameters/table-view/Page.yaml"
+    - $ref: "../../../common/components/parameters/table-view/Limit.yaml"
+    - $ref: "../../../common/components/parameters/table-view/Filter.yaml"
+    - $ref: "../../../common/components/parameters/table-view/FilterOr.yaml"
+    - $ref: "../../../common/components/parameters/table-view/Sort.yaml"
+    - $ref: "../../../common/components/parameters/LocaleHeader.yaml"
+
+responses:
+    "200":
+        description: Paginated list of customer orders.
+        content:
+            application/json:
+                schema:
+                    type: object
+                    required: [data, meta]
+                    properties:
+                        data:
+                            type: array
+                            items: { $ref: "../../components/schemas/Order.yaml" }
+                        meta: { $ref: "../../../common/components/schemas/PaginationMeta.yaml" }
+    "401":
+        $ref: "../../../common/components/responses/Unauthorized.yaml"

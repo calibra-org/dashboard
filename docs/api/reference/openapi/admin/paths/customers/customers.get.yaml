@@ -1,0 +1,93 @@
+operationId: adminCustomersIndex
+summary: List customers (admin)
+description: >
+    Paginated list of customers. Simple per-column filters and sort go through the unified
+    TableView wire grammar (`filter[]=field:op:value`, `filterOr[]=…`, `sort[]=field:dir`).
+    Endpoint-specific extensions stay as top-level params for filters that don't fit the
+    grammar.
+
+
+    **TableView filterable fields**:
+        `id`, `first_name`, `last_name`, `is_paying_customer`, `country_default`, `status`,
+        `acquisition_channel`, `created_at`, `user_id`.
+
+
+    **TableView orderable fields**: `id`, `first_name`, `last_name`, `created_at`, `updated_at`.
+
+
+    **Endpoint extensions** (outside TableView):
+        - `q` — free-text search over `users.email`, `customers.first_name`, `last_name`,
+          `phone`, address `city`/`postcode`, and Iran `national_id`.
+        - `tab` — bespoke scope (any / account / guest / big / new / inactive / no_address /
+          trashed). The `big` bucket uses a 90th-percentile spend threshold over paid orders.
+        - `role` — restrict via the joined `users.role` (`customer` / `admin`).
+        - `tags`, `cities`, `regions` — multi-value joins through the respective pivot/related
+          tables.
+        - `opt_in_email`, `opt_in_sms`, `email_verified`, `has_national_id` — existence checks on
+          marketing prefs / iran profile.
+        - `with_orders`, `no_orders`, `order_count_{min,max}`, `lifetime_spend_{min,max}`,
+          `aov_{min,max}`, `last_order_{after,before}` — aggregate filters scoped through the orders table.
+        - `include_stats=true` folds per-customer lifetime metrics into each row via one
+          GROUP BY query.
+
+
+    All pre-TableView per-column query params (`is_paying_customer=`, `country=`, `countries=`,
+    `statuses=`, `acquisition_channels=`, `created=`, `sort=`, `perPage=`, `search=`) are no
+    longer accepted at their original shape — `is_paying_customer` / `country` / `statuses` /
+    `acquisition_channels` / `created` move to `filter[]`, `sort` moves to `sort[]`, `perPage`
+    becomes `limit`, and `search` becomes `q`.
+tags: [Admin / Customers]
+
+parameters:
+    - $ref: "../../../common/components/parameters/table-view/Page.yaml"
+    - $ref: "../../../common/components/parameters/table-view/Limit.yaml"
+    - $ref: "../../../common/components/parameters/table-view/Filter.yaml"
+    - $ref: "../../../common/components/parameters/table-view/FilterOr.yaml"
+    - $ref: "../../../common/components/parameters/table-view/Sort.yaml"
+    - $ref: "../../../common/components/parameters/LocaleHeader.yaml"
+    - { name: q, in: query, schema: { type: string, maxLength: 120 }, description: Free-text search across the customer's joined identity columns. }
+    - { name: include_stats, in: query, schema: { type: boolean } }
+    - {
+          name: tab,
+          in: query,
+          schema:
+              {
+                  type: string,
+                  enum: [any, account, guest, big, new, inactive, no_address, trashed],
+              },
+          description: Selects the tab bucket. Counterpart of the `/counts` endpoint.,
+      }
+    - { name: role, in: query, schema: { type: string, enum: [customer, admin] }, description: Restrict via the joined `users.role`. Defaults to `customer` + null user. }
+    - { name: cities, in: query, schema: { type: string }, description: "Comma-separated city names (case-insensitive)." }
+    - { name: regions, in: query, schema: { type: string } }
+    - { name: tags, in: query, schema: { type: string }, description: "Comma-separated tag names." }
+    - { name: email_verified, in: query, schema: { type: boolean } }
+    - { name: opt_in_email, in: query, schema: { type: boolean } }
+    - { name: opt_in_sms, in: query, schema: { type: boolean } }
+    - { name: last_order_after, in: query, schema: { type: string, maxLength: 60 }, description: "Inclusive ISO date-time lower bound on the customer's most-recent counted order date." }
+    - { name: last_order_before, in: query, schema: { type: string, maxLength: 60 }, description: "Inclusive ISO date-time upper bound on the customer's most-recent counted order date." }
+    - { name: order_count_min, in: query, schema: { type: integer, minimum: 0 } }
+    - { name: order_count_max, in: query, schema: { type: integer, minimum: 0 } }
+    - { name: lifetime_spend_min, in: query, schema: { type: integer, minimum: 0 } }
+    - { name: lifetime_spend_max, in: query, schema: { type: integer, minimum: 0 } }
+    - { name: aov_min, in: query, schema: { type: integer, minimum: 0 } }
+    - { name: aov_max, in: query, schema: { type: integer, minimum: 0 } }
+    - { name: has_national_id, in: query, schema: { type: boolean } }
+    - { name: with_orders, in: query, schema: { type: boolean } }
+    - { name: no_orders, in: query, schema: { type: boolean } }
+
+responses:
+    "200":
+        description: Paginated customer list.
+        content:
+            application/json:
+                schema:
+                    type: object
+                    required: [data, meta]
+                    properties:
+                        data:
+                            type: array
+                            items: { $ref: "../../components/schemas/AdminCustomer.yaml" }
+                        meta: { $ref: "../../../common/components/schemas/PaginationMeta.yaml" }
+    "401": { $ref: "../../../common/components/responses/Unauthorized.yaml" }
+    "403": { $ref: "../../../common/components/responses/Forbidden.yaml" }

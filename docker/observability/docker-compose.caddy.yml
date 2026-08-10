@@ -1,0 +1,38 @@
+# Caddy reverse proxy for the prod-parity per-spin stack. Terminates TLS for every service
+# UI behind `https://<service>.<slug>.spin.localhost`, using Caddy's internal CA.
+#
+# The CA itself (root + intermediate cert/key) is host-bound — bind-mounted from
+# `~/.calibra/caddy-ca/` into the Caddy data dir's `pki/authorities/local/` subpath. That
+# means the same root signs leaf certs across every spin on this host, so trusting the root
+# once (see `packages/spin/README.md`) is permanent: `pnpm spin stop --purge` no longer rotates the
+# CA, a new slug reuses it, and the operator's browser keeps the green lock forever. Leaf
+# certs (per-hostname, short-lived) still live in the per-spin `caddy_data` volume and rotate
+# with `--purge` — which is fine because they're signed by the shared, trusted intermediate.
+#
+# The api / admin / web routes target `host.docker.internal` because those processes run on
+# the host via HMR, not in containers. Other services join the spin's default compose network
+# and are reached container-to-container by service name.
+
+services:
+    caddy:
+        image: caddy:2.8-alpine
+        restart: unless-stopped
+        ports:
+            - "${CADDY_HTTP_PORT}:80"
+            - "${CADDY_HTTPS_PORT}:443"
+        volumes:
+            - ${SPIN_CONFIG_DIR}/Caddyfile:/etc/caddy/Caddyfile:ro
+            - ${CALIBRA_CADDY_CA_DIR}:/data/caddy/pki/authorities/local
+            - caddy_data:/data
+            - caddy_config:/config
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
+        healthcheck:
+            test: ["CMD", "wget", "--quiet", "--spider", "http://localhost:80"]
+            interval: 10s
+            timeout: 3s
+            retries: 5
+
+volumes:
+    caddy_data:
+    caddy_config:

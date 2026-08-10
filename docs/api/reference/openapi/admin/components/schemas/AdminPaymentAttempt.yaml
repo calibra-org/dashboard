@@ -1,0 +1,34 @@
+title: AdminPaymentAttempt
+description: >
+    `payment_attempts` row — matches `PaymentAttemptTransformer.forList()` for list endpoints
+    and `forDetail()` (adds `gateway_payload`) for detail. `idempotency_key` is never picked
+    by the transformer, so it cannot leak. Read-only on the admin surface.
+type: object
+properties:
+    id: { type: integer }
+    order_id: { type: integer }
+    gateway_id: { type: integer }
+    gateway_code: { type: [string, "null"] }
+    status:
+        type: string
+        enum: [initiated, awaiting_callback, verified, failed, cancelled, refunded]
+    amount_minor: { type: integer }
+    currency: { type: string }
+    gateway_authority: { type: [string, "null"] }
+    gateway_transaction_id: { type: [string, "null"] }
+    error_code: { type: [string, "null"] }
+    error_message: { type: [string, "null"] }
+    initiated_at: { type: [string, "null"], format: date-time }
+    verified_at: { type: [string, "null"], format: date-time }
+    created_at: { type: [string, "null"], format: date-time }
+    gateway_payload:
+        type: object
+        description: PSP response payload. Present on `forDetail()` only.
+        additionalProperties: true
+required:
+    - id
+    - order_id
+    - gateway_id
+    - status
+    - amount_minor
+    - currency

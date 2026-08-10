@@ -1,0 +1,50 @@
+import { BaseTransformer } from "@adonisjs/core/transformers";
+
+import type ProductCategory from "#models/product_category";
+import { pickVariantUrl } from "#services/media_variants";
+import { pickTranslation } from "#transformers/i18n_helpers";
+
+export default class ProductCategoryTransformer extends BaseTransformer<ProductCategory> {
+    constructor(
+        resource: ProductCategory,
+        protected locale: string = "fa",
+    ) {
+        super(resource);
+    }
+
+    toObject() {
+        const c = this.resource;
+        const translation = pickTranslation(c.translations, this.locale);
+        const extras = (c as unknown as { $extras?: { used_count?: number | string } }).$extras;
+        const usedCount = extras?.used_count;
+        return {
+            id: Number(c.id),
+            parent_id: c.parentId === null ? null : Number(c.parentId),
+            display: c.display,
+            image_media_id: c.imageMediaId === null ? null : Number(c.imageMediaId),
+            image_url: pickVariantUrl(c.image, "thumbnail"),
+            menu_order: c.menuOrder,
+            used_count: usedCount === undefined || usedCount === null ? null : Number(usedCount),
+            name: translation?.name ?? null,
+            slug: translation?.slug ?? null,
+            description: translation?.description ?? null,
+            locale: translation?.locale ?? this.locale,
+        };
+    }
+
+    forAdmin() {
+        const c = this.resource;
+        return {
+            ...this.toObject(),
+            translations: (c.translations ?? []).map((row) => ({
+                locale: row.locale,
+                name: row.name,
+                slug: row.slug,
+                description: row.description,
+            })),
+            attributes: c.attributes ?? {},
+            created_at: c.createdAt?.toISO(),
+            updated_at: c.updatedAt?.toISO(),
+        };
+    }
+}

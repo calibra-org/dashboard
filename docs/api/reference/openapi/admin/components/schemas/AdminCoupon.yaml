@@ -1,0 +1,88 @@
+title: AdminCoupon
+description: >
+    Coupon row — matches `CouponTransformer.forAdmin()` exactly (or `summary()` for list
+    endpoints). Carries every rule the discounter consults: discount type, money/percent
+    amounts, activation window, minimum/maximum cart spend, usage limits, individual-use flag,
+    free-shipping flag, sale-item exclusion, and product/category/email constraints.
+type: object
+properties:
+    id: { type: integer }
+    code: { type: string, examples: ["WELCOME10", "FREESHIP"] }
+    discount_type:
+        type: string
+        enum: [fixed_cart, fixed_product, percent, free_shipping]
+    amount_minor:
+        type: [integer, "null"]
+        description: Money amount for `fixed_*` types. Null for percent / free-shipping.
+    amount_percent:
+        type: [number, "null"]
+        description: 0–100. Set only when `discount_type=percent`.
+    status: { type: string, enum: [active, disabled] }
+    starts_at: { type: [string, "null"], format: date-time }
+    expires_at: { type: [string, "null"], format: date-time }
+    minimum_amount: { type: [integer, "null"] }
+    maximum_amount: { type: [integer, "null"] }
+    individual_use: { type: boolean }
+    exclude_sale_items: { type: boolean }
+    usage_limit_global: { type: [integer, "null"] }
+    usage_limit_per_user: { type: [integer, "null"] }
+    limit_usage_to_x_items: { type: [integer, "null"] }
+    free_shipping: { type: boolean }
+    translations:
+        type: array
+        description: Localised descriptions; folded into `forAdmin()` only (not the list view).
+        items:
+            type: object
+            required: [locale]
+            properties:
+                locale: { type: string }
+                description: { type: [string, "null"] }
+    product_constraints:
+        type: array
+        items:
+            type: object
+            required: [product_id, mode]
+            properties:
+                product_id: { type: integer }
+                mode: { type: string, enum: [include, exclude] }
+    category_constraints:
+        type: array
+        items:
+            type: object
+            required: [category_id, mode]
+            properties:
+                category_id: { type: integer }
+                mode: { type: string, enum: [include, exclude] }
+    brand_constraints:
+        type: array
+        items:
+            type: object
+            required: [brand_id, mode]
+            properties:
+                brand_id: { type: integer }
+                mode: { type: string, enum: [include, exclude] }
+    product_constraints_count: { type: integer, description: "Sidecar count, list view only." }
+    category_constraints_count: { type: integer, description: "Sidecar count, list view only." }
+    brand_constraints_count: { type: integer, description: "Sidecar count, list view only." }
+    email_restrictions_count: { type: integer, description: "Sidecar count, list view only." }
+    redemptions_count: { type: integer, description: "Sidecar count, list view only." }
+    recent_redemptions_7d: { type: integer, description: "Sidecar count, list view only." }
+    description_fa: { type: [string, "null"], description: "Locale-fa description for list rendering." }
+    description_en: { type: [string, "null"], description: "Locale-en description for list rendering." }
+    email_restrictions:
+        type: array
+        items: { type: string, description: "Email or glob pattern (e.g. `*@example.com`)." }
+    attributes:
+        type: object
+        additionalProperties: true
+    deleted_at: { type: [string, "null"], format: date-time }
+    created_at: { type: [string, "null"], format: date-time }
+    updated_at: { type: [string, "null"], format: date-time }
+required:
+    - id
+    - code
+    - discount_type
+    - status
+    - individual_use
+    - exclude_sale_items
+    - free_shipping

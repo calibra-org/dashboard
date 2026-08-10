@@ -1,0 +1,47 @@
+{
+    "name": "@calibra/shared",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "main": "./src/index.ts",
+    "types": "./src/index.ts",
+    "exports": {
+        ".": {
+            "types": "./src/index.ts",
+            "import": "./src/index.ts"
+        },
+        "./i18n": {
+            "types": "./src/i18n.ts",
+            "import": "./src/i18n.ts"
+        },
+        "./digits": {
+            "types": "./src/digits.ts",
+            "import": "./src/digits.ts"
+        },
+        "./money": {
+            "types": "./src/money.ts",
+            "import": "./src/money.ts"
+        },
+        "./jalali": {
+            "types": "./src/jalali.ts",
+            "import": "./src/jalali.ts"
+        },
+        "./import-fields": {
+            "types": "./src/import-fields.ts",
+            "import": "./src/import-fields.ts"
+        }
+    },
+    "scripts": {
+        "typecheck": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@mohammadxali/jalaali-js": "catalog:",
+        "clsx": "catalog:",
+        "tailwind-merge": "catalog:"
+    },
+    "devDependencies": {
+        "@calibra/typescript-config": "workspace:*",
+        "@types/node": "catalog:",
+        "typescript": "catalog:"
+    }
+}
