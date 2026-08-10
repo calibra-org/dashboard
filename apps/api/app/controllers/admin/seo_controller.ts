@@ -271,7 +271,13 @@ export default class AdminSeoController {
                       credential_env_ref: payload.credential_env_ref,
                   }),
               }
-            : await seoService.saveIntegration(payload, await actorId(ctx));
+            : await seoService.saveIntegration(
+                  {
+                      ...payload,
+                      provider: payload.provider as "indexnow" | "google_merchant" | "openai_searchbot" | "manual_import",
+                  },
+                  await actorId(ctx),
+              );
         await recordAudit({
             ctx,
             action: "seo.integration.patch",
