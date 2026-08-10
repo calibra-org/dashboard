@@ -198,11 +198,7 @@ async function jsonRequest(url: string, init: RequestInit = {}, timeoutMs = 12_0
     }
 }
 
-async function textRequest(
-    url: string,
-    init: RequestInit = {},
-    timeoutMs = 12_000,
-): Promise<{ status: number; body: string }> {
+async function textRequest(url: string, init: RequestInit = {}, timeoutMs = 12_000): Promise<{ status: number; body: string }> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
@@ -333,9 +329,7 @@ async function resolveGoogleProperty(configuration: JsonObject, token: string): 
     const payload = (await jsonRequest("https://www.googleapis.com/webmasters/v3/sites", {
         headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
     })) as { siteEntry?: Array<{ siteUrl?: string; permissionLevel?: string }> };
-    const entries = (payload.siteEntry ?? []).filter(
-        (entry) => entry.siteUrl && entry.permissionLevel !== "siteUnverifiedUser",
-    );
+    const entries = (payload.siteEntry ?? []).filter((entry) => entry.siteUrl && entry.permissionLevel !== "siteUnverifiedUser");
     const normalizedBase = normalizedUrlPrefix(baseUrl);
     const exact = entries.find((entry) => {
         if (!entry.siteUrl || entry.siteUrl.startsWith("sc-domain:")) return false;
@@ -445,9 +439,11 @@ async function discoverYandexHost(configuration: JsonObject, token: string) {
     const userId =
         configuredUserId ??
         stringValue(
-            ((await jsonRequest("https://api.webmaster.yandex.net/v4/user", { headers })) as {
-                user_id?: number | string;
-            }).user_id,
+            (
+                (await jsonRequest("https://api.webmaster.yandex.net/v4/user", { headers })) as {
+                    user_id?: number | string;
+                }
+            ).user_id,
         );
     if (!userId) {
         throw new Exception("Yandex Webmaster did not return a user_id", {
