@@ -107,6 +107,12 @@ contains(serviceFile, "more_results_available", "Brave rank probing must paginat
 contains(serviceFile, "No rank is written", "Brave must explicitly avoid fabricated not-found ranks");
 contains(serviceFile, "Baidu accepted zero URLs", "Baidu HTTP success must still verify accepted URL count");
 contains(serviceFile, "IndexNow key file does not exactly match", "IndexNow must verify the public proof file before submission");
+contains(
+    serviceFile,
+    "same hostname as the submitted site",
+    "IndexNow proof fetch must be same-host to avoid SSRF and scope mistakes",
+);
+contains(serviceFile, "America/Los_Angeles", "Google Search Console date windows must follow Pacific Time semantics");
 contains(serviceFile, "verification_pending", "HTTP 202 IndexNow responses must remain pending, not connected");
 contains(
     serviceFile,
@@ -114,7 +120,7 @@ contains(
     "Connected state must require completed provider verification",
 );
 contains(serviceFile, 'status: "error"', "Provider failures must be persisted as an error state");
-contains(serviceFile, 'split(secret).join("[REDACTED]")', "Provider errors must redact runtime secrets");
+contains(serviceFile, "redactProviderError", "Provider errors must redact runtime secrets and credential bundle fields");
 contains(serviceFile, "process.env[credentialEnvRef]", "Secrets must be resolved from runtime environment variables");
 notContains(serviceFile, "Math.random", "Search-engine runtime must not synthesize provider data with Math.random");
 notContains(serviceFile, "fakeRank", "Search-engine runtime must not contain fake rank helpers");
@@ -146,6 +152,11 @@ contains(
     migrationFile,
     "ALTER COLUMN country TYPE varchar(3)",
     "Google Search Console alpha-3 country values must fit the schema",
+);
+contains(
+    migrationFile,
+    "device IN ('all','desktop','mobile','tablet')",
+    "Database device constraint must allow truthful aggregate provider observations",
 );
 
 contains(commandFile, 'static commandName = "seo:sync-search-engines"', "Recurring sync command must be available to cron");

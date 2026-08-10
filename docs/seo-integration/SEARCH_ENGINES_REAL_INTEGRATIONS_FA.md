@@ -34,7 +34,7 @@ Connector از API رسمی Search Console استفاده می‌کند:
 
 - لیست Propertyهای قابل دسترسی را می‌خواند.
 - اگر `configuration.property` مشخص نشده باشد، Property تأییدشده منطبق با `seo.base_url` را پیدا می‌کند؛ URL-prefix و `sc-domain:` هر دو پشتیبانی می‌شوند.
-- Search Analytics را با ابعاد `query`, `device`, `country` می‌خواند.
+- Search Analytics را با ابعاد `query`, `device`, `country` و بازه تاریخ بر اساس Pacific Time می‌خواند.
 - `position` را به‌عنوان **Average Position** اعشاری ذخیره می‌کند.
 - Country سه‌حرفی Provider حفظ می‌شود؛ Device نیز در صورت وجود Provider حفظ می‌شود.
 - داده Search Analytics الزاماً سرشماری همه Queryها نیست و Connector آن را به‌عنوان Top Rows دوره انتخابی گزارش می‌کند.
@@ -123,7 +123,7 @@ Connector از Endpoint رسمی Naver IndexNow استفاده می‌کند.
 قبل از Submission:
 
 - Key باید ۸ تا ۱۲۸ کاراکتر و مطابق قاعده Naver از حروف Hex، عدد و `-` باشد.
-- `keyLocation` عمومی Fetch می‌شود.
+- `keyLocation` عمومی Fetch می‌شود و برای جلوگیری از SSRF/Scope اشتباه باید روی همان Host و در Root سایت باشد.
 - محتوای فایل باید دقیقاً برابر Key Runtime باشد.
 
 بعد از Submission:

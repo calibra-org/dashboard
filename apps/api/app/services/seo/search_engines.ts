@@ -139,6 +139,25 @@ function inferredLocale(phrase: string): "fa" | "en" {
     return /[\u0600-\u06FF]/u.test(phrase) ? "fa" : "en";
 }
 
+function redactProviderError(message: string, secret: string): string {
+    const sensitive = new Set<string>([secret]);
+    try {
+        const parsed = JSON.parse(secret) as unknown;
+        if (parsed && typeof parsed === "object") {
+            const record = parsed as JsonObject;
+            for (const key of ["access_token", "refresh_token", "client_secret", "client_id"]) {
+                const value = stringValue(record[key]);
+                if (value && value.length >= 4) sensitive.add(value);
+            }
+        }
+    } catch {
+        /** Plain token/API-key secrets are already covered by the full secret value. */
+    }
+    let redacted = message;
+    for (const value of sensitive) redacted = redacted.split(value).join("[REDACTED]");
+    return redacted;
+}
+
 function integerSetting(value: unknown, fallback: number, min: number, max: number): number {
     const parsed = Math.trunc(Number(value));
     if (!Number.isFinite(parsed)) return fallback;
@@ -222,29 +241,29 @@ async function resolveGoogleAccessToken(secret: string): Promise<string> {
 
     if (!bundle) return secret;
     const accessToken = stringValue(bundle.access_token);
-    if (accessToken) return accessToken;
-
     const clientId = stringValue(bundle.client_id);
     const clientSecret = stringValue(bundle.client_secret);
     const refreshToken = stringValue(bundle.refresh_token);
-    if (!clientId || !clientSecret || !refreshToken) {
-        throw new Error("Google credential JSON must contain access_token or client_id/client_secret/refresh_token");
-    }
 
-    const body = new URLSearchParams({
-        client_id: clientId,
-        client_secret: clientSecret,
-        refresh_token: refreshToken,
-        grant_type: "refresh_token",
-    });
-    const payload = (await jsonRequest("https://oauth2.googleapis.com/token", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body,
-    })) as { access_token?: string };
-    const refreshed = stringValue(payload.access_token);
-    if (!refreshed) throw new Error("Google OAuth refresh succeeded without an access_token");
-    return refreshed;
+    /** Prefer a refresh flow when the long-lived bundle is available. */
+    if (clientId && clientSecret && refreshToken) {
+        const body = new URLSearchParams({
+            client_id: clientId,
+            client_secret: clientSecret,
+            refresh_token: refreshToken,
+            grant_type: "refresh_token",
+        });
+        const payload = (await jsonRequest("https://oauth2.googleapis.com/token", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body,
+        })) as { access_token?: string };
+        const refreshed = stringValue(payload.access_token);
+        if (!refreshed) throw new Error("Google OAuth refresh succeeded without an access_token");
+        return refreshed;
+    }
+    if (accessToken) return accessToken;
+    throw new Error("Google credential JSON must contain access_token or client_id/client_secret/refresh_token");
 }
 
 async function textRequest(url: string, init: RequestInit = {}, timeoutMs = 12_000): Promise<{ status: number; body: string }> {
@@ -410,8 +429,9 @@ async function syncGoogle(configuration: JsonObject, secret: string) {
     const siteUrl = await resolveGoogleProperty(configuration, token);
     const days = integerSetting(configuration.days, 7, 1, 30);
     const rowLimit = integerSetting(configuration.sync_limit, 1_000, 1, 25_000);
-    const end = DateTime.utc().minus({ days: 1 }).toISODate()!;
-    const start = DateTime.fromISO(end)
+    /** Search Console interprets date boundaries in Pacific Time. */
+    const end = DateTime.now().setZone("America/Los_Angeles").minus({ days: 1 }).toISODate()!;
+    const start = DateTime.fromISO(end, { zone: "America/Los_Angeles" })
         .minus({ days: days - 1 })
         .toISODate()!;
     const payload = (await jsonRequest(
@@ -737,9 +757,20 @@ async function submitIndexNowTarget(configuration: JsonObject, key: string, endp
     const siteUrl = await resolveSiteUrl(configuration);
     const siteHostname = hostname(siteUrl);
     const keyLocation = stringValue(configuration.key_location) ?? `${siteUrl}/${key}.txt`;
+    const proofUrl = new URL(keyLocation);
+    if (proofUrl.protocol !== "https:" && proofUrl.protocol !== "http:") {
+        throw new Error("IndexNow keyLocation must use HTTP or HTTPS");
+    }
+    if (proofUrl.hostname.toLowerCase() !== siteHostname) {
+        throw new Error("IndexNow keyLocation must be hosted on the same hostname as the submitted site");
+    }
+    const pathSegments = proofUrl.pathname.split("/").filter(Boolean);
+    if (pathSegments.length !== 1) {
+        throw new Error("This connector submits the site root, so IndexNow keyLocation must be a root-level proof file");
+    }
 
     /** Fail before submission when the public proof file cannot validate this key. */
-    const proof = await textRequest(keyLocation);
+    const proof = await textRequest(proofUrl.toString());
     if (proof.body.replace(/^\uFEFF/, "").trim() !== key) {
         throw new Error("IndexNow key file does not exactly match the configured runtime key");
     }
@@ -889,7 +920,7 @@ class SeoSearchEngineService {
             });
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
-            const safeMessage = message.split(secret).join("[REDACTED]");
+            const safeMessage = redactProviderError(message, secret);
             await persistIntegration({
                 provider: input.provider,
                 status: "error",

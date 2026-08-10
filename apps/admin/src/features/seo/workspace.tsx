@@ -1555,6 +1555,10 @@ function IntegrationCard({
     const [envRef, setEnvRef] = useState(item.credential_env_ref ?? "");
     const supportsKeyLocation = item.provider === "naver_search_advisor" || item.provider === "seznam_indexnow";
     const [keyLocation, setKeyLocation] = useState(String(item.configuration.key_location ?? ""));
+    const syncEvidence =
+        item.configuration.last_sync_evidence && typeof item.configuration.last_sync_evidence === "object"
+            ? (item.configuration.last_sync_evidence as Record<string, unknown>)
+            : null;
     return (
         <div className="rounded-xl border p-4">
             <div className="flex items-start justify-between gap-2">
@@ -1598,6 +1602,11 @@ function IntegrationCard({
             {item.last_synced_at ? (
                 <p className="mt-2 text-muted-foreground text-xs">
                     آخرین پاسخ موفق: {new Date(item.last_synced_at).toLocaleString("fa-IR")}
+                </p>
+            ) : null}
+            {syncEvidence ? (
+                <p dir="ltr" className="mt-2 break-words rounded-md bg-muted/60 p-2 text-muted-foreground text-xs">
+                    Evidence: {formatSyncEvidence(syncEvidence)}
                 </p>
             ) : null}
             {item.last_error ? (
@@ -1787,6 +1796,26 @@ function ConnectionBadge({ status }: { status: string }) {
                       : "قطع"}
         </Badge>
     );
+}
+
+function formatSyncEvidence(evidence: Record<string, unknown>) {
+    const preferred = [
+        "mode",
+        "imported",
+        "checked",
+        "found",
+        "submitted",
+        "target",
+        "property",
+        "host_id",
+        "status_code",
+        "verification_pending",
+    ];
+    const parts = preferred.flatMap((key) => {
+        const value = evidence[key];
+        return value === null || value === undefined || typeof value === "object" ? [] : [`${key}=${String(value)}`];
+    });
+    return parts.length > 0 ? parts.join(" · ") : "provider response verified";
 }
 
 function providerLabel(provider: string) {
