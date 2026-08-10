@@ -1,143 +1,152 @@
 # یکپارچه‌سازی واقعی ۷ موتور جستجو در Calibra SEO
 
-> وضعیت: پیاده‌سازی اجرایی، بدون داده نمایشی. این سند مرز دقیق «داده رتبه واقعی»، «داده وبمستر» و «ارسال URL» را مشخص می‌کند.
+> وضعیت: پیاده‌سازی اجرایی با مرزبندی صریح قابلیت‌ها. هیچ موتور جستجویی صرفاً برای نمایش «متصل» نمی‌شود و هیچ رتبه‌ای برای موتوری که منبع Rank معتبر ندارد ساخته نمی‌شود.
 
-## اصل ضد داده جعلی
+## تعریف «واقعی» در این ماژول
 
-Calibra یک Provider را فقط زمانی `connected` ثبت می‌کند که در همان درخواست پیکربندی، یک درخواست واقعی به سرویس رسمی Provider با موفقیت پاسخ بگیرد. ارسال `status: connected` از UI به‌تنهایی هیچ اتصالی ایجاد نمی‌کند.
+برای هفت موتور جستجو سه نوع قابلیت از هم جدا شده است:
 
-Secret داخل دیتابیس ذخیره نمی‌شود. فقط نام Environment Variable در `credential_env_ref` ذخیره می‌شود و مقدار Secret در Runtime از `process.env` خوانده می‌شود.
+1. **Webmaster average position**: داده Position مستقیماً از API رسمی ابزار وبمستر موتور جستجو می‌آید.
+2. **API SERP observation**: جایگاه Domain از ترتیب واقعی نتایج API رسمی Search مشاهده می‌شود؛ این مقدار معادل معیار Webmaster نیست.
+3. **URL submission**: URL واقعاً به Endpoint رسمی موتور ارسال می‌شود، اما این عملیات Rank یا Index شدن را تضمین نمی‌کند.
 
-اگر Environment Variable وجود نداشته باشد، وضعیت حداکثر `configured` است. اگر سرویس رسمی خطا برگرداند، وضعیت `error` و `last_error` ثبت می‌شود. `last_synced_at` فقط بعد از درخواست موفق به‌روز می‌شود.
+`connected` فقط بعد از پاسخ موفق و قابل‌اعتبار Provider ثبت می‌شود. مقدار `status: connected` که Client بفرستد نادیده گرفته می‌شود.
 
-## ۷ موتور واقعی
+Secret در دیتابیس ذخیره نمی‌شود. دیتابیس فقط نام Environment Variable را در `credential_env_ref` نگه می‌دارد و Secret در Runtime از `process.env` خوانده می‌شود. خطاهای Provider با حذف Secret در `last_error` ذخیره می‌شوند.
 
-| موتور | Provider داخلی | منبع واقعی | Rank Tracking | URL Submission | Credential |
+## ماتریس هفت موتور
+
+| موتور | Provider داخلی | Rank/Position واقعی در Calibra | Analytics | Submission در این Connector | Credential |
 |---|---|---|---|---|---|
-| Google | `google_search_console` | Search Console API / Search Analytics | بله؛ Average Position | از این Connector خیر | OAuth Access Token |
-| Microsoft Bing | `bing_webmaster` | Bing Webmaster API / GetQueryStats | بله؛ AvgImpressionPosition | API رسمی قابلیت Submission دارد | API Key |
-| Yandex | `yandex_webmaster` | Yandex Webmaster API / Popular Search Queries | بله؛ AVG_SHOW_POSITION | API/IndexNow قابل پشتیبانی است | OAuth Token |
-| Baidu | `baidu_search_resource` | Baidu Search Resource URL Submission | خیر؛ Rank API عمومی معتبر در این Connector ادعا نمی‌شود | بله | Submission Token |
-| Brave Search | `brave_search` | Brave Web Search API | بله؛ جایگاه واقعی Domain در پنجره نتایج API | خیر | Subscription Token |
-| Naver | `naver_search_advisor` | Naver Search Advisor / IndexNow | خیر؛ Rank جعلی تولید نمی‌شود | بله | IndexNow Key |
-| Seznam.cz | `seznam_indexnow` | Seznam IndexNow endpoint | خیر؛ Rank جعلی تولید نمی‌شود | بله | IndexNow Key |
+| Google | `google_search_console` | `webmaster_average` از Search Console | بله | خیر | OAuth access token یا JSON refresh bundle |
+| Microsoft Bing | `bing_webmaster` | `webmaster_average` از Webmaster API | بله | خیر | API Key |
+| Yandex | `yandex_webmaster` | `webmaster_average` از Webmaster API | بله | خیر | OAuth Token |
+| Baidu | `baidu_search_resource` | ندارد | خیر | بله؛ URL submission | Submission Token |
+| Brave Search | `brave_search` | `api_serp_observation` از Web Search API | خیر | خیر | Subscription Token |
+| Naver | `naver_search_advisor` | ندارد | خیر | بله؛ IndexNow | IndexNow Key |
+| Seznam.cz | `seznam_indexnow` | ندارد | خیر | بله؛ IndexNow | IndexNow Key |
 
-`IndexNow` به‌تنهایی موتور جستجو نیست و در شمارش هفت‌گانه قرار نمی‌گیرد. همین قاعده برای `google_merchant`، `openai_searchbot` و `manual_import` برقرار است.
+`IndexNow` عمومی، `google_merchant`، `openai_searchbot` و `manual_import` ابزار/Integration هستند و در شمارش «۷ موتور» قرار نمی‌گیرند.
 
-## رفتار هر Connector
+## Google Search Console
 
-### Google
+Connector از API رسمی Search Console استفاده می‌کند:
 
-Endpointهای رسمی استفاده‌شده:
+- لیست Propertyهای قابل دسترسی را می‌خواند.
+- اگر `configuration.property` مشخص نشده باشد، Property تأییدشده منطبق با `seo.base_url` را پیدا می‌کند؛ URL-prefix و `sc-domain:` هر دو پشتیبانی می‌شوند.
+- Search Analytics را با ابعاد `query`, `device`, `country` می‌خواند.
+- `position` را به‌عنوان **Average Position** اعشاری ذخیره می‌کند.
+- Country سه‌حرفی Provider حفظ می‌شود؛ Device نیز در صورت وجود Provider حفظ می‌شود.
+- داده Search Analytics الزاماً سرشماری همه Queryها نیست و Connector آن را به‌عنوان Top Rows دوره انتخابی گزارش می‌کند.
 
-- `GET https://www.googleapis.com/webmasters/v3/sites`
-- `POST https://www.googleapis.com/webmasters/v3/sites/{siteUrl}/searchAnalytics/query`
+### Credential
 
-اگر `configuration.property` داده نشده باشد، Connector ابتدا Propertyهای واقعی Search Console را می‌خواند، Property تأییدشده منطبق با `seo.base_url` را پیدا می‌کند و سپس Search Analytics را Query می‌کند. Domain Property با فرم `sc-domain:example.com` و URL-prefix Property هر دو پشتیبانی می‌شوند.
+دو شکل Runtime پشتیبانی می‌شود:
 
-`position` یک مقدار Average و اعشاری است. به همین دلیل ستون‌های Position در دیتابیس به `numeric(8,2)` ارتقا یافته‌اند. Search Console همه ردیف‌ها را تضمین نمی‌کند؛ بنابراین داده واردشده به‌عنوان Top Rows سرویس در دوره انتخابی تلقی می‌شود، نه سرشماری کامل همه Queryها.
+- مقدار Env یک OAuth Access Token آماده باشد؛ یا
+- مقدار Env یک JSON شامل `client_id`, `client_secret`, `refresh_token` باشد. در این حالت API در Runtime با OAuth Token Endpoint یک Access Token تازه می‌گیرد.
 
-پیشنهاد Env:
-
-```text
-CALIBRA_SEO_GOOGLE_ACCESS_TOKEN
-```
-
-### Microsoft Bing
-
-Endpoint رسمی:
+نمونه نام Env:
 
 ```text
-GET https://ssl.bing.com/webmaster/api.svc/json/GetQueryStats
+CALIBRA_SEO_GOOGLE_CREDENTIAL
 ```
 
-Connector `Query` و `AvgImpressionPosition` واقعی را می‌خواند. برای هر Query جدیدترین رکورد زمانی نگه داشته و در `seo_keywords` ثبت می‌کند.
+نمونه شکل مقدار JSON، بدون Secret واقعی:
 
-پیشنهاد Env:
+```json
+{"client_id":"...","client_secret":"...","refresh_token":"..."}
+```
+
+## Microsoft Bing Webmaster
+
+Connector از `GetQueryStats` در Bing Webmaster API استفاده می‌کند و `Query` و `AvgImpressionPosition` واقعی را می‌خواند. برای یک Query، جدیدترین رکورد زمانی Provider انتخاب می‌شود.
+
+چون این Endpoint Dimension دستگاه را در این مسیر به Calibra تحویل نمی‌دهد، رکورد واردشده با `device=all` ثبت می‌شود؛ به‌جای اینکه به‌اشتباه Desktop فرض شود.
+
+نمونه Env:
 
 ```text
 CALIBRA_SEO_BING_API_KEY
 ```
 
-### Yandex
+## Yandex Webmaster
 
-Endpointهای رسمی:
+Connector:
 
-- `GET https://api.webmaster.yandex.net/v4/user`
-- `GET https://api.webmaster.yandex.net/v4/user/{user-id}/hosts`
-- `GET https://api.webmaster.yandex.net/v4/user/{user-id}/hosts/{host-id}/search-queries/popular`
+- در صورت نبود `user_id` آن را از API رسمی کاربر کشف می‌کند.
+- در صورت نبود `host_id` Hostهای Webmaster را می‌خواند و Host تأییدشده منطبق با `seo.base_url` را انتخاب می‌کند.
+- Popular Search Queries را می‌خواند.
+- `AVG_SHOW_POSITION` را به‌صورت اعشاری ذخیره می‌کند.
+- چون درخواست فعلی با `device_type_indicator=ALL` اجرا می‌شود، داده با `device=all` ذخیره می‌شود.
 
-اگر `user_id` و `host_id` به‌صورت دستی داده نشده باشند، Connector آن‌ها را از API رسمی کشف می‌کند و Host تأییدشده منطبق با `seo.base_url` را انتخاب می‌کند. مقدار `AVG_SHOW_POSITION` ذخیره می‌شود.
-
-پیشنهاد Env:
+نمونه Env:
 
 ```text
 CALIBRA_SEO_YANDEX_OAUTH_TOKEN
 ```
 
-### Baidu
+## Brave Search
 
-Endpoint رسمی URL Submission:
+Brave در این معماری به‌عنوان Search Console معرفی نشده است. Connector از **Web Search API رسمی Brave** استفاده می‌کند:
 
-```text
-POST http://data.zz.baidu.com/urls?site={host}&token={token}
-Content-Type: text/plain
-```
+- عبارت‌های Track‌شده را Search می‌کند.
+- نتایج واقعی API را به‌ترتیب بررسی می‌کند.
+- فقط اگر Host فروشگاه واقعاً در پنجره نتایج بررسی‌شده وجود داشته باشد Position ثبت می‌کند.
+- اگر Host پیدا نشود عدد ساختگی مانند `0` یا `100+` ذخیره نمی‌شود.
+- اگر هنوز Keyword برای Track وجود نداشته باشد، یک Query واقعی `site:domain` برای اعتبارسنجی Credential اجرا می‌شود و هیچ Rank ساخته نمی‌شود.
 
-این Connector عمداً Rank تولید نمی‌کند. موفقیت فقط یعنی سرویس رسمی Baidu درخواست URL را پذیرفته است؛ پذیرش URL معادل تضمین Index یا Rank نیست.
+Position Brave از نوع `api_serp_observation` است و نباید با Average Position سرویس‌های Webmaster مقایسه مستقیم شود.
 
-پیشنهاد Env:
-
-```text
-CALIBRA_SEO_BAIDU_SUBMISSION_TOKEN
-```
-
-### Brave Search
-
-Endpoint رسمی:
-
-```text
-GET https://api.search.brave.com/res/v1/web/search
-X-Subscription-Token: ...
-```
-
-Brave Webmaster Search Console عمومی مشابه Google/Bing ندارد، اما API رسمی نتایج Search دارد. Connector عبارت‌های موجود در `seo_keywords` را با API رسمی Search می‌کند و فقط اگر Domain فروشگاه واقعاً در پنجره نتایج بررسی‌شده پیدا شود Position ثبت می‌کند.
-
-اگر Domain پیدا نشود، عدد ساختگی مانند `100+` یا `0` ذخیره نمی‌شود. نتیجه «پیدا نشد در پنجره بررسی‌شده» باقی می‌ماند.
-
-پیشنهاد Env:
+نمونه Env:
 
 ```text
 CALIBRA_SEO_BRAVE_SUBSCRIPTION_TOKEN
 ```
 
-### Naver
+## Baidu Search Resource
 
-Endpoint رسمی IndexNow:
+Connector درخواست واقعی URL Submission را به سرویس Baidu می‌فرستد و صرفاً HTTP 200 را کافی نمی‌داند؛ Response JSON را Parse می‌کند و `success >= 1` را برای موفقیت لازم می‌داند.
+
+اگر Baidu صفر URL بپذیرد وضعیت `connected` ثبت نمی‌شود. Submission صرفاً Discovery/Crawl را تسریع می‌کند و تضمین Index یا Rank نیست.
+
+نمونه Env:
 
 ```text
-POST https://searchadvisor.naver.com/indexnow
+CALIBRA_SEO_BAIDU_SUBMISSION_TOKEN
 ```
 
-Connector یک درخواست واقعی IndexNow ارسال می‌کند. Key باید طبق قواعد Naver روی Domain قابل تأیید باشد. HTTP 200/202 موفق تلقی می‌شود؛ خطاهای 400/403/422/429/5xx اتصال را موفق نشان نمی‌دهند.
+## Naver Search Advisor / IndexNow
 
-پیشنهاد Env:
+Connector از Endpoint رسمی Naver IndexNow استفاده می‌کند.
+
+قبل از Submission:
+
+- Key باید ۸ تا ۱۲۸ کاراکتر و مطابق قاعده Naver از حروف Hex، عدد و `-` باشد.
+- `keyLocation` عمومی Fetch می‌شود.
+- محتوای فایل باید دقیقاً برابر Key Runtime باشد.
+
+بعد از Submission:
+
+- HTTP 200 => پاسخ موفق Provider و امکان `connected`.
+- HTTP 202 => درخواست دریافت شده اما Validation Key هنوز Pending است؛ Calibra وضعیت را `configured` نگه می‌دارد، نه `connected`.
+- 4xx/5xx => `error` با `last_error` قابل مشاهده.
+
+در UI می‌توان `configuration.key_location` را تنظیم کرد. خود Calibra فایل Proof را به‌صورت جادویی ایجاد نمی‌کند؛ فایل باید روی Host واقعی فروشگاه در URL عمومی تعیین‌شده وجود داشته باشد.
+
+نمونه Env:
 
 ```text
 CALIBRA_SEO_NAVER_INDEXNOW_KEY
 ```
 
-### Seznam.cz
+## Seznam.cz / IndexNow
 
-Endpoint مشارکت‌کننده رسمی IndexNow:
+Connector درخواست واقعی را به Endpoint اختصاصی Seznam.cz می‌فرستد. همان Proof File عمومی و State Machine مربوط به 200/202 اعمال می‌شود.
 
-```text
-POST https://search.seznam.cz/indexnow
-```
+Seznam نیز از این Connector Rank دریافت نمی‌کند؛ فقط URL Submission واقعی دارد. Submission به IndexNow تضمین Index شدن نیست.
 
-Connector یک درخواست واقعی به endpoint خود Seznam می‌فرستد. این عمل URL را برای Discovery/Refresh معرفی می‌کند و تضمین Index یا Rank نیست.
-
-پیشنهاد Env:
+نمونه Env:
 
 ```text
 CALIBRA_SEO_SEZNAM_INDEXNOW_KEY
@@ -147,50 +156,93 @@ CALIBRA_SEO_SEZNAM_INDEXNOW_KEY
 
 ```text
 disconnected
-  └─ credential_env_ref ثبت شده ولی Secret Runtime نیست → configured
-       └─ Secret موجود + درخواست رسمی موفق → connected
-       └─ Secret موجود + درخواست رسمی ناموفق → error
-connected
-  └─ درخواست بعدی ناموفق → error
+  ├─ نام Env ثبت نشده → disconnected
+  └─ نام Env ثبت شده ولی Secret در Runtime نیست → configured
+
+configured / connected / error
+  ├─ Provider request + verification موفق → connected
+  ├─ Provider response = IndexNow 202 → configured (validation pending)
+  └─ Provider request/validation ناموفق → error
+
 هر وضعیت
   └─ disable صریح → disabled
 ```
 
-هیچ مسیر UI یا API اجازه ندارد بدون پاسخ واقعی Provider، `connected` را نهایی کند.
+`last_synced_at` فقط پس از Verification موفق به‌روز می‌شود. Evidence غیرحساس آخرین Sync در `configuration.last_sync_evidence` ثبت می‌شود و Secret داخل Evidence قرار نمی‌گیرد.
 
-## داده Rank
+## مدل داده Rank
 
-فیلدهای `current_position`، `previous_position` و `best_position` اعشاری هستند تا Average Position سرویس‌هایی مانند Google و Yandex بدون گرد کردن مخرب ذخیره شود.
+فیلدهای زیر `numeric(8,2)` هستند تا Average Position Providerها بدون گرد کردن مخرب ذخیره شود:
 
-`source` مشخص می‌کند Observation از کجا آمده است، از جمله:
+- `current_position`
+- `previous_position`
+- `best_position`
 
-- `google_search_console`
-- `bing_webmaster`
-- `yandex_webmaster`
-- `brave_search`
-- `manual`
+`country` تا سه کاراکتر نگه‌داری می‌شود تا Country Codeهای Search Console جا شوند.
 
-برای Baidu/Naver/Seznam Rank Observation ساخته نمی‌شود چون Connector فعلی منبع Rank رسمی قابل اتکایی برای آن‌ها ندارد.
+Deviceهای معتبر:
 
-## شواهد Sync
+- `all`
+- `desktop`
+- `mobile`
+- `tablet`
 
-پس از Sync موفق، `configuration.last_sync_evidence` فقط Metadata غیرحساس نتیجه را نگه می‌دارد؛ مانند تعداد Queryهای Import شده، Property/Host انتخاب‌شده، نوع عملیات یا تعداد URLهای ارسال‌شده. Secret، Token و API Key در Evidence ذخیره نمی‌شوند.
+برای Bing/Yandex که داده فعلی Aggregate است، `all` ثبت می‌شود؛ هیچ داده Aggregate به‌طور مصنوعی Desktop نام‌گذاری نمی‌شود.
 
-## نکات عملیاتی
+APIهای Webmaster فعلی Dimension زبان محتوا ارائه نمی‌کنند؛ Calibra برای Queryهای فارسی/عربی از وجود حروف Unicode فارسی/عربی جهت انتخاب Locale `fa` استفاده می‌کند و بقیه را `en` می‌گذارد. این یک Metadata inference داخلی است، نه ادعای Provider درباره زبان Query.
 
-1. ابتدا `seo.base_url` را روی URL واقعی Storefront تنظیم کنید.
-2. Secret هر Provider را به Environment Runtime API اضافه کنید.
-3. در SEO Settings فقط نام Environment Variable را در کارت همان Provider ثبت کنید.
-4. ثبت پیکربندی در موتورهای هفت‌گانه، همان لحظه درخواست واقعی Provider را اجرا می‌کند.
-5. `connected` را فقط وقتی معتبر بدانید که `last_synced_at` موجود و `last_error` خالی باشد.
-6. نرخ Sync را متناسب با Quota سرویس‌ها تنظیم کنید؛ Brave به‌ازای Query درخواست Search واقعی مصرف می‌کند.
-7. IndexNow/URL Submission فقط Discovery را سریع‌تر می‌کند و نباید به‌عنوان تضمین Indexing یا Ranking گزارش شود.
+## همگام‌سازی دوره‌ای
 
-## تست و کنترل کیفیت
+فرمان زیر برای Cron خارجی اضافه شده است:
 
-- Registry باید دقیقاً ۷ Engine یکتا داشته باشد.
-- Utility Providerها نباید در شمارش Engineها قرار بگیرند.
-- فقط Google/Bing/Yandex/Brave دارای `native_rank_tracking=true` هستند.
-- Baidu/Naver/Seznam نباید Rank ساختگی بسازند.
-- وضعیت `connected` فقط از مسیر Request موفق Provider ایجاد می‌شود.
-- CI باید migration، TypeScript، Unit Tests و کل API suite را پاس کند.
+```text
+node ace seo:sync-search-engines
+```
+
+این فرمان تمام Tenantها را بررسی می‌کند و فقط Connectorهای Rank/Analytics را Sync می‌کند:
+
+- Google
+- Bing
+- Yandex
+- Brave
+
+Baidu/Naver/Seznam عمداً در Cron Analytics دوباره Submit نمی‌شوند؛ URL Submission باید در اثر تغییر URL/Content انجام شود، نه صرفاً برای اینکه Integration «فعال» به نظر برسد.
+
+این فرمان Scheduler داخلی ایجاد نمی‌کند. زیرساخت Deployment باید آن را با Cadence مناسب، مثلاً روزانه، فراخوانی کند.
+
+## کنترل ضد نمایش الکی
+
+CI مستقل `SEO Engines` و دستور زیر دائماً Invariantهای هفت موتور را بررسی می‌کنند:
+
+```text
+pnpm run verify:seo-engines
+```
+
+Verifier موارد زیر را Fail می‌کند:
+
+- تعداد موتور غیر از دقیقاً ۷ باشد.
+- Utility Providerها به‌عنوان Search Engine شمرده شوند.
+- Endpointهای Runtime واقعی حذف شوند.
+- Google/Bing/Yandex/Brave Semantics رتبه اشتباه شوند.
+- Baidu/Naver/Seznam به‌صورت جعلی Rank Source معرفی شوند.
+- Decimal Position یا Country سه‌حرفی از Schema حذف شود.
+- UI Evidence/Error یا تفاوت Rank Semantics را پنهان کند.
+- Cron Analytics شروع به Re-submit کردن موتورهای Submission-only کند.
+
+Unit Test رجیستری نیز مستقل از Verifier وجود دارد.
+
+## راه‌اندازی عملیاتی
+
+1. `seo.base_url` را روی URL واقعی Storefront همان Tenant قرار دهید.
+2. Property/Domain را در سرویس Provider واقعاً Verify کنید.
+3. Secret هر Provider را در Environment Runtime API قرار دهید.
+4. در کارت Integration فقط **نام** Env Variable را وارد کنید.
+5. برای Naver/Seznam فایل Key را در Host عمومی قرار دهید و `key_location` را در صورت نیاز تنظیم کنید.
+6. دکمه «ذخیره و بررسی اتصال واقعی» را اجرا کنید.
+7. فقط وضعیت `متصل واقعی` همراه با `last_synced_at` را اتصال موفق تلقی کنید.
+8. `last_error` را برای خطای Credential، Property، Quota یا Provider بررسی کنید.
+9. Cron Rank/Analytics را در زیرساخت Deployment فعال کنید.
+
+## محدودیت Live Verification
+
+کد و CI می‌توانند تضمین کنند که مسیر Runtime واقعی است و Status جعلی ساخته نمی‌شود، اما Live Handshake با Propertyهای واقعی Google/Bing/Yandex/Baidu/Brave/Naver/Seznam فقط زمانی قابل انجام است که Credential و Ownership واقعی همان سایت در Environment Deployment موجود باشد. بدون Credential واقعی، رفتار صحیح Integration باقی‌ماندن در `disconnected/configured/error` است، نه نمایش سبز ساختگی.
