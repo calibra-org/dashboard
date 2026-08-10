@@ -1,6 +1,6 @@
 import { test } from "@japa/runner";
 
-import { SEO_SEARCH_ENGINES, isSeoSearchEngineProvider } from "#services/seo/search_engines";
+import { isSeoSearchEngineProvider, SEO_SEARCH_ENGINES } from "#services/seo/search_engines";
 
 const byEngine = new Map(SEO_SEARCH_ENGINES.map((item) => [item.engine, item]));
 
