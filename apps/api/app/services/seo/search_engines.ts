@@ -19,7 +19,7 @@ export const SEO_SEARCH_ENGINES = [
         rankKind: "webmaster_average",
         analytics: true,
         submission: false,
-        credentialKind: "oauth_access_token",
+        credentialKind: "oauth_access_token_or_refresh_bundle",
     },
     {
         engine: "bing",
@@ -211,6 +211,42 @@ async function jsonRequest(url: string, init: RequestInit = {}, timeoutMs = 12_0
     }
 }
 
+async function resolveGoogleAccessToken(secret: string): Promise<string> {
+    let bundle: JsonObject | null = null;
+    try {
+        const parsed = JSON.parse(secret) as unknown;
+        if (parsed && typeof parsed === "object") bundle = parsed as JsonObject;
+    } catch {
+        /** A plain string is treated as an already-issued OAuth access token. */
+    }
+
+    if (!bundle) return secret;
+    const accessToken = stringValue(bundle.access_token);
+    if (accessToken) return accessToken;
+
+    const clientId = stringValue(bundle.client_id);
+    const clientSecret = stringValue(bundle.client_secret);
+    const refreshToken = stringValue(bundle.refresh_token);
+    if (!clientId || !clientSecret || !refreshToken) {
+        throw new Error("Google credential JSON must contain access_token or client_id/client_secret/refresh_token");
+    }
+
+    const body = new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        refresh_token: refreshToken,
+        grant_type: "refresh_token",
+    });
+    const payload = (await jsonRequest("https://oauth2.googleapis.com/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body,
+    })) as { access_token?: string };
+    const refreshed = stringValue(payload.access_token);
+    if (!refreshed) throw new Error("Google OAuth refresh succeeded without an access_token");
+    return refreshed;
+}
+
 async function textRequest(url: string, init: RequestInit = {}, timeoutMs = 12_000): Promise<{ status: number; body: string }> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -369,7 +405,8 @@ async function resolveGoogleProperty(configuration: JsonObject, token: string): 
     });
 }
 
-async function syncGoogle(configuration: JsonObject, token: string) {
+async function syncGoogle(configuration: JsonObject, secret: string) {
+    const token = await resolveGoogleAccessToken(secret);
     const siteUrl = await resolveGoogleProperty(configuration, token);
     const days = integerSetting(configuration.days, 7, 1, 30);
     const rowLimit = integerSetting(configuration.sync_limit, 1_000, 1, 25_000);

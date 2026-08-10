@@ -1553,6 +1553,8 @@ function IntegrationCard({
     saving: boolean;
 }) {
     const [envRef, setEnvRef] = useState(item.credential_env_ref ?? "");
+    const supportsKeyLocation = item.provider === "naver_search_advisor" || item.provider === "seznam_indexnow";
+    const [keyLocation, setKeyLocation] = useState(String(item.configuration.key_location ?? ""));
     return (
         <div className="rounded-xl border p-4">
             <div className="flex items-start justify-between gap-2">
@@ -1584,6 +1586,15 @@ function IntegrationCard({
                 onChange={(event) => setEnvRef(event.target.value)}
                 placeholder="ENV_VARIABLE_NAME"
             />
+            {supportsKeyLocation ? (
+                <Input
+                    dir="ltr"
+                    className="mt-2 h-8 text-xs"
+                    value={keyLocation}
+                    onChange={(event) => setKeyLocation(event.target.value)}
+                    placeholder="https://example.com/<INDEXNOW_KEY>.txt"
+                />
+            ) : null}
             {item.last_synced_at ? (
                 <p className="mt-2 text-muted-foreground text-xs">
                     آخرین پاسخ موفق: {new Date(item.last_synced_at).toLocaleString("fa-IR")}
@@ -1603,7 +1614,10 @@ function IntegrationCard({
                         provider: item.provider,
                         credential_env_ref: envRef || null,
                         status: envRef ? "configured" : "disconnected",
-                        configuration: item.configuration,
+                        configuration: {
+                            ...item.configuration,
+                            ...(supportsKeyLocation ? { key_location: keyLocation || undefined } : {}),
+                        },
                     })
                 }
                 disabled={saving}
