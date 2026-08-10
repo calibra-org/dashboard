@@ -15,22 +15,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Assemble transfer blobs
+      - name: Assemble transfer blob
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p .transfer-output
-          shopt -s nullglob
-          for dir in .transfer/blob-*; do
-            [ -d "$dir" ] || continue
-            id="$(basename "$dir")"
-            cat "$dir"/*.part | tr -d '\r\n' | base64 --decode | gzip -d > ".transfer-output/$id"
-          done
+          dir=.transfer/blob-sidebar
+          cat "$dir"/*.part | tr -d '\r\n' | base64 --decode | gzip -d > .transfer-output/blob-sidebar
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .transfer-output
+          git add .transfer-output/blob-sidebar
           if git diff --cached --quiet; then
             exit 0
           fi
-          git commit -m "chore: assemble phase1 transfer blobs"
+          git commit -m "chore: assemble phase1 sidebar blob"
           git push origin "HEAD:${GITHUB_REF_NAME}"
