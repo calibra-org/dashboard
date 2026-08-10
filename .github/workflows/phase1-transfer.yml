@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Assemble selected transfer blob
+      - name: Run selected transfer task
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -23,6 +23,20 @@ jobs:
           set -euo pipefail
           id="$(tr -d '\r\n' < .transfer/READY)"
           test -n "$id"
+          if [ "$id" = "step4-sdk-codegen" ]; then
+            mkdir -p /tmp/calibra-sdk-input /tmp/calibra-sdk-output /tmp/calibra-codegen
+            cat .transfer/sdk-openapi/*.part | tr -d '\r\n' | base64 --decode > /tmp/calibra-openapi.tar.bz2
+            tar -xjf /tmp/calibra-openapi.tar.bz2 -C /tmp/calibra-sdk-input
+            cd /tmp/calibra-codegen
+            npm init -y >/dev/null
+            npm install --no-save @redocly/cli@2.31.2 openapi-typescript@7.13.0 >/dev/null
+            npx redocly bundle /tmp/calibra-sdk-input/docs/api/reference/openapi/admin.v1.yaml -o /tmp/admin.v1.json --ext json
+            npx redocly bundle /tmp/calibra-sdk-input/docs/api/reference/openapi/storefront.v1.yaml -o /tmp/storefront.v1.json --ext json
+            npx openapi-typescript /tmp/admin.v1.json -o /tmp/calibra-sdk-output/admin.d.ts
+            npx openapi-typescript /tmp/storefront.v1.json -o /tmp/calibra-sdk-output/storefront.d.ts
+            sha256sum /tmp/calibra-sdk-output/*.d.ts | tee /tmp/calibra-sdk-output/SHA256SUMS
+            exit 0
+          fi
           mkdir -p .transfer-output
           sha="$(awk -v id="$id" '$1 == id { print $2 }' .transfer/MANIFEST)"
           codec="$(awk -v id="$id" '$1 == id { print $3 }' .transfer/MANIFEST)"
@@ -44,8 +58,14 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add ".transfer-output/blob-$id"
-          if git diff --cached --quiet; then
-            exit 0
-          fi
+          if git diff --cached --quiet; then exit 0; fi
           git commit -m "chore: assemble phase1 $id blob"
           git push origin "HEAD:${GITHUB_REF_NAME}"
+      - name: Upload Step 4 generated SDK
+        if: ${{ hashFiles('.transfer/READY') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: step4-sdk-generated
+          path: /tmp/calibra-sdk-output
+          if-no-files-found: ignore
+          retention-days: 1
