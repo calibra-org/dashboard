@@ -108,7 +108,11 @@ contains(serviceFile, "No rank is written", "Brave must explicitly avoid fabrica
 contains(serviceFile, "Baidu accepted zero URLs", "Baidu HTTP success must still verify accepted URL count");
 contains(serviceFile, "IndexNow key file does not exactly match", "IndexNow must verify the public proof file before submission");
 contains(serviceFile, "verification_pending", "HTTP 202 IndexNow responses must remain pending, not connected");
-contains(serviceFile, 'status: verificationPending ? "configured" : "connected"', "Connected state must require completed provider verification");
+contains(
+    serviceFile,
+    'status: verificationPending ? "configured" : "connected"',
+    "Connected state must require completed provider verification",
+);
 contains(serviceFile, 'status: "error"', "Provider failures must be persisted as an error state");
 contains(serviceFile, 'split(secret).join("[REDACTED]")', "Provider errors must redact runtime secrets");
 contains(serviceFile, "process.env[credentialEnvRef]", "Secrets must be resolved from runtime environment variables");
@@ -120,7 +124,11 @@ contains(controllerFile, "seoSearchEngineService.configureAndSync", "Engine PATC
 contains(controllerFile, "isSeoSearchEngineProvider", "Engine integrations must be separated from utility providers");
 contains(validatorFile, '"seznam"', "Keyword validator must accept the seventh search engine");
 contains(validatorFile, '"all"', "Keyword validator must preserve aggregate webmaster device semantics");
-contains(typesFile, 'rank_kind: "webmaster_average" | "api_serp_observation" | "none"', "Admin types must expose truthful rank semantics");
+contains(
+    typesFile,
+    'rank_kind: "webmaster_average" | "api_serp_observation" | "none"',
+    "Admin types must expose truthful rank semantics",
+);
 contains(workspaceFile, "میانگین رتبه وبمستر", "UI must label provider average positions accurately");
 contains(workspaceFile, "رتبه مشاهده‌شده API", "UI must distinguish Brave API result position from webmaster rank");
 contains(workspaceFile, "بدون رتبه ساختگی", "UI must expose engines that intentionally have no rank source");
@@ -134,10 +142,18 @@ for (const provider of expected.map(([, provider]) => provider)) {
 for (const column of ["current_position", "previous_position", "best_position"]) {
     contains(migrationFile, `ALTER COLUMN ${column} TYPE numeric(8,2)`, `${column} must preserve provider decimal positions`);
 }
-contains(migrationFile, "ALTER COLUMN country TYPE varchar(3)", "Google Search Console alpha-3 country values must fit the schema");
+contains(
+    migrationFile,
+    "ALTER COLUMN country TYPE varchar(3)",
+    "Google Search Console alpha-3 country values must fit the schema",
+);
 
 contains(commandFile, 'static commandName = "seo:sync-search-engines"', "Recurring sync command must be available to cron");
-contains(commandFile, "native_rank_tracking || item.capabilities.webmaster_analytics", "Scheduled sync must target analytics/rank connectors");
+contains(
+    commandFile,
+    "native_rank_tracking || item.capabilities.webmaster_analytics",
+    "Scheduled sync must target analytics/rank connectors",
+);
 notContains(commandFile, 'provider: "baidu_search_resource"', "Scheduled analytics sync must not resubmit Baidu URLs");
 notContains(commandFile, 'provider: "naver_search_advisor"', "Scheduled analytics sync must not resubmit Naver URLs");
 notContains(commandFile, 'provider: "seznam_indexnow"', "Scheduled analytics sync must not resubmit Seznam URLs");
