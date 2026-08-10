@@ -10,11 +10,11 @@ def replace_once(text: str, old: str, new: str, label: str) -> str:
 
 service_path = Path("apps/api/app/services/seo/search_engines.ts")
 service = service_path.read_text()
-service = replace_once(
-    service,
+# Google and Yandex both use OAuth access tokens; only the first registry entry is Google.
+service = service.replace(
     '        credentialKind: "oauth_access_token",',
     '        credentialKind: "oauth_access_token_or_refresh_bundle",',
-    "google credential kind",
+    1,
 )
 service = replace_once(
     service,
