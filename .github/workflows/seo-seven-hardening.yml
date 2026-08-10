@@ -26,6 +26,7 @@ jobs:
       - run: python3 .github/scripts/seo-seven-hardening.py
       - run: pnpm exec biome format apps/api/app/services/seo/search_engines.ts apps/admin/src/features/seo/workspace.tsx --write
       - run: pnpm --filter @calibra/api run typecheck
+      - run: pnpm --filter @calibra/sdk run build
       - run: pnpm --filter @calibra/admin run typecheck
       - name: Commit hardening
         run: |
