@@ -18,7 +18,7 @@
         "lint:biome:fix": "biome lint . --write && biome check . --write",
         "lint:tokens": "node scripts/lint-tokens.mjs --scope=apps/admin/src --level=error",
         "lint:ws": "pnpm dlx sherif@latest --ignore-rule root-package-dependencies",
-        "lint:ws:fix": "pnpm dlx sherif@latest --fix",
+        "verify:seo-engines": "node scripts/verify-seo-search-engines.mjs",
         "spin": "node scripts/spin.mjs",
         "test": "turbo run test",
         "typecheck": "turbo run typecheck"
