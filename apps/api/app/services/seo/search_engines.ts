@@ -5,9 +5,10 @@ import SettingsService from "#services/settings_service";
 import { currentTenantId, currentTrx } from "#services/tenant_context";
 
 /**
- * Seven concrete search engines. Utility protocols/feed/crawler controls such as generic
- * IndexNow, Google Merchant, OAI-SearchBot and manual import intentionally live outside
- * this registry: they are not search engines and must never inflate the engine count.
+ * Seven concrete search engines. Generic IndexNow, Merchant feeds, crawler policy and
+ * manual imports are utilities and intentionally do not count as search engines.
+ * Capability flags describe what this connector actually implements, not everything
+ * the upstream provider might offer.
  */
 export const SEO_SEARCH_ENGINES = [
     {
@@ -25,7 +26,7 @@ export const SEO_SEARCH_ENGINES = [
         label: "Microsoft Bing",
         nativeRank: true,
         analytics: true,
-        submission: true,
+        submission: false,
         credentialKind: "api_key",
     },
     {
@@ -34,7 +35,7 @@ export const SEO_SEARCH_ENGINES = [
         label: "Yandex",
         nativeRank: true,
         analytics: true,
-        submission: true,
+        submission: false,
         credentialKind: "oauth_access_token",
     },
     {
@@ -142,9 +143,9 @@ function escapeSiteUrl(value: string): string {
     return encodeURIComponent(value);
 }
 
-function siteHost(value: string): string {
+function hostname(value: string): string {
     try {
-        return new URL(value).hostname.replace(/^www\./, "").toLowerCase();
+        return new URL(value).hostname.toLowerCase();
     } catch {
         throw new Exception("SEO integration requires a valid site URL", {
             status: 422,
@@ -153,9 +154,13 @@ function siteHost(value: string): string {
     }
 }
 
+function normalizedHostname(value: string): string {
+    return hostname(value).replace(/^www\./, "");
+}
+
 function hostsMatch(left: string, right: string): boolean {
     try {
-        return siteHost(left) === siteHost(right);
+        return normalizedHostname(left) === normalizedHostname(right);
     } catch {
         return false;
     }
@@ -193,7 +198,11 @@ async function jsonRequest(url: string, init: RequestInit = {}, timeoutMs = 12_0
     }
 }
 
-async function textRequest(url: string, init: RequestInit = {}, timeoutMs = 12_000): Promise<{ status: number; body: string }> {
+async function textRequest(
+    url: string,
+    init: RequestInit = {},
+    timeoutMs = 12_000,
+): Promise<{ status: number; body: string }> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
@@ -255,8 +264,9 @@ async function observeKeyword(input: {
 }) {
     const phrase = input.phrase.trim();
     if (!phrase || !Number.isFinite(input.position) || input.position < 1) return;
+
     const trx = currentTrx();
-    const tenantId = currentTenantId();
+    const tenantId = Number(currentTenantId());
     const locale = input.locale === "en" ? "en" : "fa";
     const device = input.device ?? "desktop";
     const country = input.country?.trim().slice(0, 3).toLowerCase() || null;
@@ -277,7 +287,7 @@ async function observeKeyword(input: {
         const best = numberValue(existing.best_position);
         await trx
             .from("seo_keywords")
-            .where("id", existing.id)
+            .where("id", Number(existing.id))
             .update({
                 previous_position: previous,
                 current_position: input.position,
@@ -319,11 +329,13 @@ async function resolveGoogleProperty(configuration: JsonObject, token: string): 
     if (explicit) return explicit;
 
     const baseUrl = await resolveSiteUrl(configuration);
-    const baseHost = siteHost(baseUrl);
+    const baseHost = normalizedHostname(baseUrl);
     const payload = (await jsonRequest("https://www.googleapis.com/webmasters/v3/sites", {
         headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
     })) as { siteEntry?: Array<{ siteUrl?: string; permissionLevel?: string }> };
-    const entries = (payload.siteEntry ?? []).filter((entry) => entry.siteUrl && entry.permissionLevel !== "siteUnverifiedUser");
+    const entries = (payload.siteEntry ?? []).filter(
+        (entry) => entry.siteUrl && entry.permissionLevel !== "siteUnverifiedUser",
+    );
     const normalizedBase = normalizedUrlPrefix(baseUrl);
     const exact = entries.find((entry) => {
         if (!entry.siteUrl || entry.siteUrl.startsWith("sc-domain:")) return false;
@@ -334,8 +346,10 @@ async function resolveGoogleProperty(configuration: JsonObject, token: string): 
         }
     });
     if (exact?.siteUrl) return exact.siteUrl;
+
     const domain = entries.find((entry) => entry.siteUrl === `sc-domain:${baseHost}`);
     if (domain?.siteUrl) return domain.siteUrl;
+
     const sameHost = entries.find((entry) =>
         Boolean(entry.siteUrl && !entry.siteUrl.startsWith("sc-domain:") && hostsMatch(entry.siteUrl, baseUrl)),
     );
@@ -360,7 +374,13 @@ async function syncGoogle(configuration: JsonObject, token: string) {
         {
             method: "POST",
             headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-            body: JSON.stringify({ startDate: start, endDate: end, dimensions: ["query"], rowLimit, dataState: "final" }),
+            body: JSON.stringify({
+                startDate: start,
+                endDate: end,
+                dimensions: ["query"],
+                rowLimit,
+                dataState: "final",
+            }),
         },
     )) as { rows?: Array<{ keys?: string[]; position?: number }> };
 
@@ -372,7 +392,13 @@ async function syncGoogle(configuration: JsonObject, token: string) {
         await observeKeyword({ phrase, engine: "google", source: "google_search_console", position });
         imported += 1;
     }
-    return { mode: "webmaster_analytics", imported, property: siteUrl, period: { start, end }, position_kind: "average" };
+    return {
+        mode: "webmaster_analytics",
+        imported,
+        property: siteUrl,
+        period: { start, end },
+        position_kind: "average",
+    };
 }
 
 function bingDateValue(value: unknown): number {
@@ -391,6 +417,7 @@ async function syncBing(configuration: JsonObject, apiKey: string) {
     const payload = (await jsonRequest(url.toString())) as {
         d?: Array<{ Query?: string; AvgImpressionPosition?: number; Date?: string }>;
     };
+
     const latest = new Map<string, { position: number; date: number }>();
     for (const row of payload.d ?? []) {
         const phrase = row.Query?.trim();
@@ -400,10 +427,16 @@ async function syncBing(configuration: JsonObject, apiKey: string) {
         const previous = latest.get(phrase);
         if (!previous || date >= previous.date) latest.set(phrase, { position, date });
     }
+
     for (const [phrase, row] of latest) {
         await observeKeyword({ phrase, engine: "bing", source: "bing_webmaster", position: row.position });
     }
-    return { mode: "webmaster_analytics", imported: latest.size, site_url: siteUrl, position_kind: "average_impression" };
+    return {
+        mode: "webmaster_analytics",
+        imported: latest.size,
+        site_url: siteUrl,
+        position_kind: "average_impression",
+    };
 }
 
 async function discoverYandexHost(configuration: JsonObject, token: string) {
@@ -412,8 +445,9 @@ async function discoverYandexHost(configuration: JsonObject, token: string) {
     const userId =
         configuredUserId ??
         stringValue(
-            ((await jsonRequest("https://api.webmaster.yandex.net/v4/user", { headers })) as { user_id?: number | string })
-                .user_id,
+            ((await jsonRequest("https://api.webmaster.yandex.net/v4/user", { headers })) as {
+                user_id?: number | string;
+            }).user_id,
         );
     if (!userId) {
         throw new Exception("Yandex Webmaster did not return a user_id", {
@@ -460,6 +494,7 @@ async function syncYandex(configuration: JsonObject, token: string) {
     url.searchParams.append("query_indicator", "AVG_SHOW_POSITION");
     url.searchParams.set("device_type_indicator", "ALL");
     url.searchParams.set("limit", String(limit));
+
     const payload = (await jsonRequest(url.toString(), {
         headers: { Authorization: `OAuth ${token}`, Accept: "application/json" },
     })) as { queries?: Array<{ query_text?: string; indicators?: Record<string, number> }> };
@@ -472,14 +507,19 @@ async function syncYandex(configuration: JsonObject, token: string) {
         await observeKeyword({ phrase, engine: "yandex", source: "yandex_webmaster", position });
         imported += 1;
     }
-    return { mode: "webmaster_analytics", imported, user_id: userId, host_id: hostId, position_kind: "average_show" };
+    return {
+        mode: "webmaster_analytics",
+        imported,
+        user_id: userId,
+        host_id: hostId,
+        position_kind: "average_show",
+    };
 }
 
 function resultHostMatches(resultUrl: string, targetHost: string): boolean {
     try {
-        const host = new URL(resultUrl).hostname.replace(/^www\./, "").toLowerCase();
-        const expected = targetHost.replace(/^www\./, "").toLowerCase();
-        return host === expected || host.endsWith(`.${expected}`);
+        const host = normalizedHostname(resultUrl);
+        return host === targetHost || host.endsWith(`.${targetHost}`);
     } catch {
         return false;
     }
@@ -488,7 +528,7 @@ function resultHostMatches(resultUrl: string, targetHost: string): boolean {
 async function braveKeywordSeeds(limit: number): Promise<DbRow[]> {
     return (await currentTrx()
         .from("seo_keywords")
-        .where("tenant_id", currentTenantId())
+        .where("tenant_id", Number(currentTenantId()))
         .select("phrase", "locale", "device")
         .min("updated_at as oldest_updated_at")
         .groupBy("phrase", "locale", "device")
@@ -498,7 +538,7 @@ async function braveKeywordSeeds(limit: number): Promise<DbRow[]> {
 
 async function syncBrave(configuration: JsonObject, apiKey: string) {
     const baseUrl = await resolveSiteUrl(configuration);
-    const targetHost = siteHost(baseUrl);
+    const targetHost = normalizedHostname(baseUrl);
     const keywordLimit = integerSetting(configuration.sync_limit, 10, 1, 50);
     const maxPages = integerSetting(configuration.max_pages, 2, 1, 5);
     const country = (stringValue(configuration.country) ?? "US").slice(0, 2).toUpperCase();
@@ -511,6 +551,7 @@ async function syncBrave(configuration: JsonObject, apiKey: string) {
         const phrase = String(row.phrase ?? "").trim();
         if (!phrase) continue;
         checked += 1;
+
         let position: number | null = null;
         let matchedUrl: string | null = null;
         for (let page = 0; page < maxPages && position === null; page += 1) {
@@ -532,6 +573,7 @@ async function syncBrave(configuration: JsonObject, apiKey: string) {
             }
             if (!payload.query?.more_results_available) break;
         }
+
         if (position !== null) {
             found += 1;
             await observeKeyword({
@@ -546,6 +588,7 @@ async function syncBrave(configuration: JsonObject, apiKey: string) {
             });
         }
     }
+
     return {
         mode: "serp_probe",
         checked,
@@ -558,9 +601,9 @@ async function syncBrave(configuration: JsonObject, apiKey: string) {
 
 async function submitBaidu(configuration: JsonObject, token: string) {
     const siteUrl = await resolveSiteUrl(configuration);
-    const host = siteHost(siteUrl);
+    const siteHostname = hostname(siteUrl);
     const url = new URL("http://data.zz.baidu.com/urls");
-    url.searchParams.set("site", host);
+    url.searchParams.set("site", siteHostname);
     url.searchParams.set("token", token);
     const result = await textRequest(url.toString(), {
         method: "POST",
@@ -572,10 +615,10 @@ async function submitBaidu(configuration: JsonObject, token: string) {
 
 async function submitIndexNowTarget(configuration: JsonObject, key: string, endpoint: string, target: string) {
     const siteUrl = await resolveSiteUrl(configuration);
-    const host = siteHost(siteUrl);
+    const siteHostname = hostname(siteUrl);
     const keyLocation = stringValue(configuration.key_location) ?? `${siteUrl}/${key}.txt`;
     const payload = {
-        host,
+        host: siteHostname,
         key,
         keyLocation,
         urlList: [`${siteUrl}/`],
@@ -610,7 +653,7 @@ async function runSync(provider: SeoSearchEngineProvider, configuration: JsonObj
 async function findIntegration(provider: SeoSearchEngineProvider): Promise<DbRow | null> {
     const row = await currentTrx()
         .from("seo_integrations")
-        .where("tenant_id", currentTenantId())
+        .where("tenant_id", Number(currentTenantId()))
         .where("provider", provider)
         .first();
     return (row as DbRow | undefined) ?? null;
@@ -628,7 +671,7 @@ async function persistIntegration(input: {
     await currentTrx()
         .table("seo_integrations")
         .insert({
-            tenant_id: currentTenantId(),
+            tenant_id: Number(currentTenantId()),
             provider: input.provider,
             status: input.status,
             configuration: JSON.stringify(input.configuration),
@@ -646,7 +689,7 @@ class SeoSearchEngineService {
     async integrations() {
         const rows = (await currentTrx()
             .from("seo_integrations")
-            .where("tenant_id", currentTenantId())
+            .where("tenant_id", Number(currentTenantId()))
             .whereIn(
                 "provider",
                 SEO_SEARCH_ENGINES.map((item) => item.provider),
@@ -658,9 +701,8 @@ class SeoSearchEngineService {
     }
 
     /**
-     * Saves configuration and performs a real provider request when a runtime secret exists.
-     * Client-supplied `connected` is deliberately ignored: only a successful provider response
-     * can transition an engine to connected. This prevents decorative/fake connection states.
+     * Client-supplied `connected` is never trusted. A connector becomes connected only
+     * after its official provider endpoint answers successfully during this request.
      */
     async configureAndSync(input: SeoSearchEngineIntegrationInput) {
         const current = await findIntegration(input.provider);
@@ -706,7 +748,6 @@ class SeoSearchEngineService {
                 lastSyncedAt: syncedAt,
                 lastError: null,
             });
-            return serializeIntegration(await findIntegration(input.provider), input.provider);
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             await persistIntegration({
@@ -717,12 +758,13 @@ class SeoSearchEngineService {
                 lastSyncedAt: current ? iso(current.last_synced_at) : null,
                 lastError: message.slice(0, 2_000),
             });
-            if (error instanceof Exception) throw error;
-            throw new Exception(`Search engine sync failed for ${input.provider}: ${message}`, {
-                status: 502,
-                code: "E_SEO_SEARCH_ENGINE_SYNC",
-            });
         }
+
+        /**
+         * Tenant middleware rolls back all writes for 4xx/5xx responses. Returning the
+         * persisted `error` state with HTTP 200 keeps last_error truthful and visible.
+         */
+        return serializeIntegration(await findIntegration(input.provider), input.provider);
     }
 }
 
