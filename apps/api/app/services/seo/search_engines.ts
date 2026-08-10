@@ -541,6 +541,25 @@ async function syncBrave(configuration: JsonObject, apiKey: string) {
     const searchLang = (stringValue(configuration.search_lang) ?? "fa").toLowerCase();
     const rows = await braveKeywordSeeds(keywordLimit);
 
+    /** A newly configured Brave connector may not have tracked keywords yet. */
+    if (rows.length === 0) {
+        const url = new URL("https://api.search.brave.com/res/v1/web/search");
+        url.searchParams.set("q", `site:${targetHost}`);
+        url.searchParams.set("count", "1");
+        url.searchParams.set("country", country);
+        url.searchParams.set("search_lang", searchLang);
+        await jsonRequest(url.toString(), {
+            headers: { Accept: "application/json", "X-Subscription-Token": apiKey },
+        });
+        return {
+            mode: "credential_probe",
+            checked: 0,
+            found: 0,
+            target_host: targetHost,
+            note: "Brave API credentials were verified; add tracked keywords before rank probing.",
+        };
+    }
+
     let checked = 0;
     let found = 0;
     for (const row of rows) {
@@ -606,13 +625,40 @@ async function submitBaidu(configuration: JsonObject, token: string) {
         headers: { "Content-Type": "text/plain" },
         body: `${siteUrl}/`,
     });
-    return { mode: "url_submission", submitted: 1, status_code: result.status, target: "baidu" };
+    let payload: { success?: number; remain?: number; not_same_site?: string[]; not_valid?: string[] };
+    try {
+        payload = JSON.parse(result.body) as typeof payload;
+    } catch {
+        throw new Error("Baidu URL submission returned a non-JSON response");
+    }
+    const success = numberValue(payload.success) ?? 0;
+    if (success < 1) {
+        const rejected = [...(payload.not_same_site ?? []), ...(payload.not_valid ?? [])].length;
+        throw new Error(`Baidu accepted zero URLs${rejected ? `; rejected=${rejected}` : ""}`);
+    }
+    return {
+        mode: "url_submission",
+        submitted: success,
+        remain: numberValue(payload.remain),
+        status_code: result.status,
+        target: "baidu",
+    };
 }
 
 async function submitIndexNowTarget(configuration: JsonObject, key: string, endpoint: string, target: string) {
+    if (!/^[A-Za-z0-9-]{8,128}$/.test(key)) {
+        throw new Error("IndexNow key must be 8-128 letters, digits, or hyphens");
+    }
     const siteUrl = await resolveSiteUrl(configuration);
     const siteHostname = hostname(siteUrl);
     const keyLocation = stringValue(configuration.key_location) ?? `${siteUrl}/${key}.txt`;
+
+    /** Fail before submission when the public proof file cannot validate this key. */
+    const proof = await textRequest(keyLocation);
+    if (proof.body.replace(/^\uFEFF/, "").trim() !== key) {
+        throw new Error("IndexNow key file does not exactly match the configured runtime key");
+    }
+
     const payload = {
         host: siteHostname,
         key,
@@ -624,7 +670,13 @@ async function submitIndexNowTarget(configuration: JsonObject, key: string, endp
         headers: { "Content-Type": "application/json; charset=utf-8" },
         body: JSON.stringify(payload),
     });
-    return { mode: "indexnow_submission", submitted: 1, status_code: response.status, target };
+    return {
+        mode: "indexnow_submission",
+        submitted: 1,
+        status_code: response.status,
+        target,
+        verification_pending: response.status === 202,
+    };
 }
 
 async function runSync(provider: SeoSearchEngineProvider, configuration: JsonObject, secret: string) {
@@ -702,7 +754,8 @@ class SeoSearchEngineService {
      */
     async configureAndSync(input: SeoSearchEngineIntegrationInput) {
         const current = await findIntegration(input.provider);
-        const configuration = input.configuration ?? (current ? asJson(current.configuration) : {});
+        const rawConfiguration = input.configuration ?? (current ? asJson(current.configuration) : {});
+        const { last_sync_evidence: _previousEvidence, ...configuration } = rawConfiguration;
         const credentialEnvRef =
             input.credential_env_ref === undefined
                 ? stringValue(current?.credential_env_ref)
@@ -735,24 +788,30 @@ class SeoSearchEngineService {
 
         try {
             const evidence = await runSync(input.provider, configuration, secret);
+            const verificationPending =
+                Boolean(evidence) &&
+                typeof evidence === "object" &&
+                "verification_pending" in evidence &&
+                evidence.verification_pending === true;
             const syncedAt = DateTime.utc().toISO();
             await persistIntegration({
                 provider: input.provider,
-                status: "connected",
+                status: verificationPending ? "configured" : "connected",
                 configuration: { ...configuration, last_sync_evidence: evidence },
                 credentialEnvRef,
-                lastSyncedAt: syncedAt,
+                lastSyncedAt: verificationPending ? (current ? iso(current.last_synced_at) : null) : syncedAt,
                 lastError: null,
             });
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
+            const safeMessage = message.split(secret).join("[REDACTED]");
             await persistIntegration({
                 provider: input.provider,
                 status: "error",
                 configuration,
                 credentialEnvRef,
                 lastSyncedAt: current ? iso(current.last_synced_at) : null,
-                lastError: message.slice(0, 2_000),
+                lastError: safeMessage.slice(0, 2_000),
             });
         }
 

@@ -1530,7 +1530,8 @@ function IntegrationsSection({
             <CardHeader>
                 <CardTitle className="text-base">اتصال‌ها</CardTitle>
                 <CardDescription>
-                    برای سرویس‌هایی که Token می‌خواهند فقط نام متغیر محیطی ذخیره می‌شود، نه مقدار Secret.
+                    هفت موتور واقعی فقط پس از پاسخ موفق سرویس مبدا «متصل» می‌شوند؛ Secret ذخیره نمی‌شود و فقط نام متغیر محیطی
+                    نگه‌داری می‌شود.
                 </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -1556,13 +1557,21 @@ function IntegrationCard({
         <div className="rounded-xl border p-4">
             <div className="flex items-start justify-between gap-2">
                 <div>
-                    <p className="font-medium text-sm">{providerLabel(item.provider)}</p>
+                    <p className="font-medium text-sm">{item.label ?? providerLabel(item.provider)}</p>
                     <p className="mt-1 text-muted-foreground text-xs">
                         {item.credential_configured ? "متغیر محیطی در Runtime پیدا شد" : "Credential تأیید نشده"}
                     </p>
                 </div>
                 <ConnectionBadge status={item.status} />
             </div>
+            {item.capabilities ? (
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                    {item.capabilities.native_rank_tracking ? <Badge variant="secondary">رتبه واقعی</Badge> : null}
+                    {item.capabilities.webmaster_analytics ? <Badge variant="secondary">داده وبمستر</Badge> : null}
+                    {item.capabilities.url_submission ? <Badge variant="secondary">ارسال URL واقعی</Badge> : null}
+                    {!item.capabilities.native_rank_tracking ? <Badge variant="outline">بدون رتبه ساختگی</Badge> : null}
+                </div>
+            ) : null}
             <Input
                 dir="ltr"
                 className="mt-3 h-8 text-xs"
@@ -1570,6 +1579,16 @@ function IntegrationCard({
                 onChange={(event) => setEnvRef(event.target.value)}
                 placeholder="ENV_VARIABLE_NAME"
             />
+            {item.last_synced_at ? (
+                <p className="mt-2 text-muted-foreground text-xs">
+                    آخرین پاسخ موفق: {new Date(item.last_synced_at).toLocaleString("fa-IR")}
+                </p>
+            ) : null}
+            {item.last_error ? (
+                <p dir="ltr" className="mt-2 break-words rounded-md bg-danger/10 p-2 text-danger text-xs">
+                    {item.last_error}
+                </p>
+            ) : null}
             <Button
                 variant="outline"
                 size="sm"
@@ -1584,7 +1603,8 @@ function IntegrationCard({
                 }
                 disabled={saving}
             >
-                ثبت پیکربندی
+                {saving ? <Loader2 className="size-4 animate-spin" /> : <RefreshCcw className="size-4" />}
+                {item.capabilities ? "ذخیره و بررسی اتصال واقعی" : "ثبت پیکربندی"}
             </Button>
         </div>
     );
@@ -1723,18 +1743,29 @@ function AuditSection() {
 function ConnectionBadge({ status }: { status: string }) {
     const connected = status === "connected";
     const configured = status === "configured";
+    const failed = status === "error";
     return (
         <Badge
             variant="outline"
             className={
                 connected
                     ? "border-success/25 bg-success/10 text-success-foreground"
-                    : configured
-                      ? "border-info/25 bg-info/10 text-info-foreground"
-                      : "text-muted-foreground"
+                    : failed
+                      ? "border-danger/25 bg-danger/10 text-danger"
+                      : configured
+                        ? "border-info/25 bg-info/10 text-info-foreground"
+                        : "text-muted-foreground"
             }
         >
-            {connected ? "متصل" : configured ? "پیکربندی‌شده" : status === "disabled" ? "غیرفعال" : "قطع"}
+            {connected
+                ? "متصل واقعی"
+                : failed
+                  ? "خطای اتصال"
+                  : configured
+                    ? "پیکربندی‌شده"
+                    : status === "disabled"
+                      ? "غیرفعال"
+                      : "قطع"}
         </Badge>
     );
 }
@@ -1742,7 +1773,12 @@ function ConnectionBadge({ status }: { status: string }) {
 function providerLabel(provider: string) {
     const labels: Record<string, string> = {
         google_search_console: "Google Search Console",
-        bing_webmaster: "Bing Webmaster",
+        bing_webmaster: "Microsoft Bing Webmaster",
+        yandex_webmaster: "Yandex Webmaster",
+        baidu_search_resource: "Baidu Search Resource",
+        brave_search: "Brave Search",
+        naver_search_advisor: "Naver Search Advisor",
+        seznam_indexnow: "Seznam.cz",
         indexnow: "IndexNow",
         google_merchant: "Google Merchant",
         openai_searchbot: "OAI-SearchBot",
