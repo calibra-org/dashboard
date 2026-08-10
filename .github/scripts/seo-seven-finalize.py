@@ -1,0 +1,177 @@
+from pathlib import Path
+
+
+def replace_once(text: str, old: str, new: str, label: str) -> str:
+    count = text.count(old)
+    if count != 1:
+        raise SystemExit(f"{label}: expected exactly one match, found {count}")
+    return text.replace(old, new, 1)
+
+
+service_path = Path("apps/api/app/services/seo/search_engines.ts")
+service = service_path.read_text()
+service = replace_once(
+    service,
+    "    const tenantId = currentTenantId();",
+    "    const tenantId = Number(currentTenantId());",
+    "tenant id observation",
+)
+service = service.replace('.where("tenant_id", currentTenantId())', '.where("tenant_id", Number(currentTenantId()))')
+service = service.replace('tenant_id: currentTenantId(),', 'tenant_id: Number(currentTenantId()),')
+service = replace_once(
+    service,
+    '.where("id", existing.id)',
+    '.where("id", Number(existing.id))',
+    "existing keyword id",
+)
+old_error = '''            if (error instanceof Exception) throw error;
+            throw new Exception(`Search engine sync failed for ${input.provider}: ${message}`, {
+                status: 502,
+                code: "E_SEO_SEARCH_ENGINE_SYNC",
+            });'''
+new_error = '''            /**
+             * The tenant middleware rolls back all writes when the response is 4xx/5xx.
+             * Return the persisted error state with HTTP 200 so `status=error` and
+             * `last_error` remain truthful and visible instead of being rolled back.
+             */
+            return serializeIntegration(await findIntegration(input.provider), input.provider);'''
+service = replace_once(service, old_error, new_error, "persistent provider error state")
+service_path.write_text(service)
+
+controller_path = Path("apps/api/app/controllers/admin/seo_controller.ts")
+controller = controller_path.read_text()
+controller = replace_once(
+    controller,
+    ': await seoService.saveIntegration(payload, await actorId(ctx));',
+    ''': await seoService.saveIntegration(
+                  {
+                      ...payload,
+                      provider: payload.provider as "indexnow" | "google_merchant" | "openai_searchbot" | "manual_import",
+                  },
+                  await actorId(ctx),
+              );''',
+    "legacy provider narrowing",
+)
+controller_path.write_text(controller)
+
+ui_path = Path("apps/admin/src/features/seo/workspace.tsx")
+ui = ui_path.read_text()
+ui = replace_once(
+    ui,
+    '''                <CardDescription>
+                    برای سرویس‌هایی که Token می‌خواهند فقط نام متغیر محیطی ذخیره می‌شود، نه مقدار Secret.
+                </CardDescription>''',
+    '''                <CardDescription>
+                    هفت موتور واقعی فقط پس از پاسخ موفق سرویس مبدا «متصل» می‌شوند. مقدار Secret ذخیره نمی‌شود و فقط نام
+                    متغیر محیطی نگه‌داری می‌شود.
+                </CardDescription>''',
+    "integration section description",
+)
+ui = replace_once(
+    ui,
+    '<p className="font-medium text-sm">{providerLabel(item.provider)}</p>',
+    '<p className="font-medium text-sm">{item.label ?? providerLabel(item.provider)}</p>',
+    "provider display label",
+)
+ui = replace_once(
+    ui,
+    '''            <Input
+                dir="ltr"
+                className="mt-3 h-8 text-xs"
+                value={envRef}
+                onChange={(event) => setEnvRef(event.target.value)}
+                placeholder="ENV_VARIABLE_NAME"
+            />
+            <Button''',
+    '''            {item.capabilities ? (
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                    {item.capabilities.native_rank_tracking ? <Badge variant="secondary">رتبه واقعی</Badge> : null}
+                    {item.capabilities.webmaster_analytics ? <Badge variant="secondary">داده وبمستر</Badge> : null}
+                    {item.capabilities.url_submission ? <Badge variant="secondary">ارسال URL واقعی</Badge> : null}
+                    {!item.capabilities.native_rank_tracking ? <Badge variant="outline">بدون رتبه ساختگی</Badge> : null}
+                </div>
+            ) : null}
+            <Input
+                dir="ltr"
+                className="mt-3 h-8 text-xs"
+                value={envRef}
+                onChange={(event) => setEnvRef(event.target.value)}
+                placeholder="ENV_VARIABLE_NAME"
+            />
+            {item.last_synced_at ? (
+                <p className="mt-2 text-muted-foreground text-xs">
+                    آخرین پاسخ موفق: {new Date(item.last_synced_at).toLocaleString("fa-IR")}
+                </p>
+            ) : null}
+            {item.last_error ? (
+                <p dir="ltr" className="mt-2 break-words rounded-md bg-danger/10 p-2 text-danger text-xs">
+                    {item.last_error}
+                </p>
+            ) : null}
+            <Button''',
+    "integration evidence display",
+)
+ui = replace_once(
+    ui,
+    '''            >
+                ثبت پیکربندی
+            </Button>''',
+    '''            >
+                {saving ? <Loader2 className="size-4 animate-spin" /> : <RefreshCcw className="size-4" />}
+                {item.credential_configured ? "ذخیره و همگام‌سازی واقعی" : "ذخیره پیکربندی"}
+            </Button>''',
+    "integration sync button",
+)
+old_badge = '''function ConnectionBadge({ status }: { status: string }) {
+    const connected = status === "connected";
+    const configured = status === "configured";
+    return (
+        <Badge
+            variant="outline"
+            className={
+                connected
+                    ? "border-success/25 bg-success/10 text-success-foreground"
+                    : configured
+                      ? "border-info/25 bg-info/10 text-info-foreground"
+                      : "text-muted-foreground"
+            }
+        >
+            {connected ? "متصل" : configured ? "پیکربندی‌شده" : status === "disabled" ? "غیرفعال" : "قطع"}
+        </Badge>
+    );
+}'''
+new_badge = '''function ConnectionBadge({ status }: { status: string }) {
+    const connected = status === "connected";
+    const configured = status === "configured";
+    const failed = status === "error";
+    return (
+        <Badge
+            variant="outline"
+            className={
+                connected
+                    ? "border-success/25 bg-success/10 text-success-foreground"
+                    : failed
+                      ? "border-danger/25 bg-danger/10 text-danger"
+                      : configured
+                        ? "border-info/25 bg-info/10 text-info-foreground"
+                        : "text-muted-foreground"
+            }
+        >
+            {connected ? "متصل واقعی" : failed ? "خطای اتصال" : configured ? "پیکربندی‌شده" : status === "disabled" ? "غیرفعال" : "قطع"}
+        </Badge>
+    );
+}'''
+ui = replace_once(ui, old_badge, new_badge, "connection badge")
+old_labels = '''        google_search_console: "Google Search Console",
+        bing_webmaster: "Bing Webmaster",
+        indexnow: "IndexNow",'''
+new_labels = '''        google_search_console: "Google Search Console",
+        bing_webmaster: "Microsoft Bing Webmaster",
+        yandex_webmaster: "Yandex Webmaster",
+        baidu_search_resource: "Baidu Search Resource",
+        brave_search: "Brave Search",
+        naver_search_advisor: "Naver Search Advisor",
+        seznam_indexnow: "Seznam.cz",
+        indexnow: "IndexNow",'''
+ui = replace_once(ui, old_labels, new_labels, "provider labels")
+ui_path.write_text(ui)
