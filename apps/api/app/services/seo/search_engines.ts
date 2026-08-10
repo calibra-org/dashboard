@@ -323,9 +323,7 @@ async function resolveGoogleProperty(configuration: JsonObject, token: string): 
     const payload = (await jsonRequest("https://www.googleapis.com/webmasters/v3/sites", {
         headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
     })) as { siteEntry?: Array<{ siteUrl?: string; permissionLevel?: string }> };
-    const entries = (payload.siteEntry ?? []).filter(
-        (entry) => entry.siteUrl && entry.permissionLevel !== "siteUnverifiedUser",
-    );
+    const entries = (payload.siteEntry ?? []).filter((entry) => entry.siteUrl && entry.permissionLevel !== "siteUnverifiedUser");
     const normalizedBase = normalizedUrlPrefix(baseUrl);
     const exact = entries.find((entry) => {
         if (!entry.siteUrl || entry.siteUrl.startsWith("sc-domain:")) return false;
@@ -338,8 +336,8 @@ async function resolveGoogleProperty(configuration: JsonObject, token: string): 
     if (exact?.siteUrl) return exact.siteUrl;
     const domain = entries.find((entry) => entry.siteUrl === `sc-domain:${baseHost}`);
     if (domain?.siteUrl) return domain.siteUrl;
-    const sameHost = entries.find(
-        (entry) => Boolean(entry.siteUrl && !entry.siteUrl.startsWith("sc-domain:") && hostsMatch(entry.siteUrl, baseUrl)),
+    const sameHost = entries.find((entry) =>
+        Boolean(entry.siteUrl && !entry.siteUrl.startsWith("sc-domain:") && hostsMatch(entry.siteUrl, baseUrl)),
     );
     if (sameHost?.siteUrl) return sameHost.siteUrl;
 
@@ -354,7 +352,9 @@ async function syncGoogle(configuration: JsonObject, token: string) {
     const days = integerSetting(configuration.days, 7, 1, 30);
     const rowLimit = integerSetting(configuration.sync_limit, 1_000, 1, 25_000);
     const end = DateTime.utc().minus({ days: 1 }).toISODate()!;
-    const start = DateTime.fromISO(end).minus({ days: days - 1 }).toISODate()!;
+    const start = DateTime.fromISO(end)
+        .minus({ days: days - 1 })
+        .toISODate()!;
     const payload = (await jsonRequest(
         `https://www.googleapis.com/webmasters/v3/sites/${escapeSiteUrl(siteUrl)}/searchAnalytics/query`,
         {
@@ -411,7 +411,10 @@ async function discoverYandexHost(configuration: JsonObject, token: string) {
     const configuredUserId = stringValue(configuration.user_id);
     const userId =
         configuredUserId ??
-        stringValue(((await jsonRequest("https://api.webmaster.yandex.net/v4/user", { headers })) as { user_id?: number | string }).user_id);
+        stringValue(
+            ((await jsonRequest("https://api.webmaster.yandex.net/v4/user", { headers })) as { user_id?: number | string })
+                .user_id,
+        );
     if (!userId) {
         throw new Exception("Yandex Webmaster did not return a user_id", {
             status: 422,
@@ -423,10 +426,9 @@ async function discoverYandexHost(configuration: JsonObject, token: string) {
     if (configuredHostId) return { userId, hostId: configuredHostId };
 
     const baseUrl = await resolveSiteUrl(configuration);
-    const hosts = (await jsonRequest(
-        `https://api.webmaster.yandex.net/v4/user/${encodeURIComponent(userId)}/hosts`,
-        { headers },
-    )) as {
+    const hosts = (await jsonRequest(`https://api.webmaster.yandex.net/v4/user/${encodeURIComponent(userId)}/hosts`, {
+        headers,
+    })) as {
         hosts?: Array<{ host_id?: string; ascii_host_url?: string; unicode_host_url?: string; verified?: boolean }>;
     };
     const match = (hosts.hosts ?? []).find(
@@ -664,7 +666,9 @@ class SeoSearchEngineService {
         const current = await findIntegration(input.provider);
         const configuration = input.configuration ?? (current ? asJson(current.configuration) : {});
         const credentialEnvRef =
-            input.credential_env_ref === undefined ? stringValue(current?.credential_env_ref) : stringValue(input.credential_env_ref);
+            input.credential_env_ref === undefined
+                ? stringValue(current?.credential_env_ref)
+                : stringValue(input.credential_env_ref);
 
         if (input.status === "disabled") {
             await persistIntegration({
