@@ -134,7 +134,7 @@ export interface SeoKeyword {
     search_engine: SeoSearchEngine;
     country: string | null;
     city: string | null;
-    device: "desktop" | "mobile" | "tablet";
+    device: "all" | "desktop" | "mobile" | "tablet";
     current_position: number | null;
     previous_position: number | null;
     best_position: number | null;
@@ -177,6 +177,7 @@ export interface SeoRedirect {
 
 export interface SeoSearchEngineCapabilities {
     native_rank_tracking: boolean;
+    rank_kind: "webmaster_average" | "api_serp_observation" | "none";
     webmaster_analytics: boolean;
     url_submission: boolean;
     credential_kind: string;

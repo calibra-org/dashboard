@@ -62,7 +62,7 @@ export interface SeoKeywordInput {
     search_engine?: string;
     country?: string | null;
     city?: string | null;
-    device?: "desktop" | "mobile" | "tablet";
+    device?: "all" | "desktop" | "mobile" | "tablet";
     current_position?: number | null;
     search_volume?: number | null;
     difficulty?: number | null;

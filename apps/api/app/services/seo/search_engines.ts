@@ -16,6 +16,7 @@ export const SEO_SEARCH_ENGINES = [
         provider: "google_search_console",
         label: "Google",
         nativeRank: true,
+        rankKind: "webmaster_average",
         analytics: true,
         submission: false,
         credentialKind: "oauth_access_token",
@@ -25,6 +26,7 @@ export const SEO_SEARCH_ENGINES = [
         provider: "bing_webmaster",
         label: "Microsoft Bing",
         nativeRank: true,
+        rankKind: "webmaster_average",
         analytics: true,
         submission: false,
         credentialKind: "api_key",
@@ -34,6 +36,7 @@ export const SEO_SEARCH_ENGINES = [
         provider: "yandex_webmaster",
         label: "Yandex",
         nativeRank: true,
+        rankKind: "webmaster_average",
         analytics: true,
         submission: false,
         credentialKind: "oauth_access_token",
@@ -43,6 +46,7 @@ export const SEO_SEARCH_ENGINES = [
         provider: "baidu_search_resource",
         label: "Baidu",
         nativeRank: false,
+        rankKind: "none",
         analytics: false,
         submission: true,
         credentialKind: "submission_token",
@@ -52,6 +56,7 @@ export const SEO_SEARCH_ENGINES = [
         provider: "brave_search",
         label: "Brave Search",
         nativeRank: true,
+        rankKind: "api_serp_observation",
         analytics: false,
         submission: false,
         credentialKind: "subscription_token",
@@ -61,6 +66,7 @@ export const SEO_SEARCH_ENGINES = [
         provider: "naver_search_advisor",
         label: "Naver",
         nativeRank: false,
+        rankKind: "none",
         analytics: false,
         submission: true,
         credentialKind: "indexnow_key",
@@ -70,6 +76,7 @@ export const SEO_SEARCH_ENGINES = [
         provider: "seznam_indexnow",
         label: "Seznam.cz",
         nativeRank: false,
+        rankKind: "none",
         analytics: false,
         submission: true,
         credentialKind: "indexnow_key",
@@ -89,6 +96,7 @@ export interface SeoSearchEngineIntegrationInput {
 
 type DbRow = Record<string, unknown>;
 type JsonObject = Record<string, unknown>;
+type SeoDevice = "all" | "desktop" | "mobile" | "tablet";
 
 const providerSet = new Set<string>(SEO_SEARCH_ENGINES.map((item) => item.provider));
 const settings = new SettingsService();
@@ -124,6 +132,11 @@ function numberValue(value: unknown): number | null {
     if (value === null || value === undefined || value === "") return null;
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : null;
+}
+
+function inferredLocale(phrase: string): "fa" | "en" {
+    /** Search webmaster APIs do not expose a content-language dimension. */
+    return /[\u0600-\u06FF]/u.test(phrase) ? "fa" : "en";
 }
 
 function integerSetting(value: unknown, fallback: number, min: number, max: number): number {
@@ -227,6 +240,7 @@ function serializeIntegration(row: DbRow | null, provider: SeoSearchEngineProvid
         last_error: row?.last_error ? String(row.last_error) : null,
         capabilities: {
             native_rank_tracking: definition.nativeRank,
+            rank_kind: definition.rankKind,
             webmaster_analytics: definition.analytics,
             url_submission: definition.submission,
             credential_kind: definition.credentialKind,
@@ -255,7 +269,7 @@ async function observeKeyword(input: {
     position: number;
     locale?: "fa" | "en";
     country?: string | null;
-    device?: "desktop" | "mobile" | "tablet";
+    device?: SeoDevice;
     targetUrl?: string | null;
 }) {
     const phrase = input.phrase.trim();
@@ -263,8 +277,8 @@ async function observeKeyword(input: {
 
     const trx = currentTrx();
     const tenantId = Number(currentTenantId());
-    const locale = input.locale === "en" ? "en" : "fa";
-    const device = input.device ?? "desktop";
+    const locale = input.locale ?? inferredLocale(phrase);
+    const device = input.device ?? "all";
     const country = input.country?.trim().slice(0, 3).toLowerCase() || null;
     const now = DateTime.utc().toSQL();
 
@@ -371,7 +385,7 @@ async function syncGoogle(configuration: JsonObject, token: string) {
             body: JSON.stringify({
                 startDate: start,
                 endDate: end,
-                dimensions: ["query"],
+                dimensions: ["query", "device", "country"],
                 rowLimit,
                 dataState: "final",
             }),
@@ -381,9 +395,21 @@ async function syncGoogle(configuration: JsonObject, token: string) {
     let imported = 0;
     for (const row of payload.rows ?? []) {
         const phrase = row.keys?.[0]?.trim();
+        const deviceValue = row.keys?.[1]?.trim().toLowerCase();
+        const country = row.keys?.[2]?.trim().toLowerCase() || null;
         const position = numberValue(row.position);
         if (!phrase || position === null || position < 1) continue;
-        await observeKeyword({ phrase, engine: "google", source: "google_search_console", position });
+        const device: SeoDevice =
+            deviceValue === "mobile" || deviceValue === "tablet" || deviceValue === "desktop" ? deviceValue : "all";
+        await observeKeyword({
+            phrase,
+            engine: "google",
+            source: "google_search_console",
+            position,
+            locale: inferredLocale(phrase),
+            country,
+            device,
+        });
         imported += 1;
     }
     return {
@@ -423,7 +449,14 @@ async function syncBing(configuration: JsonObject, apiKey: string) {
     }
 
     for (const [phrase, row] of latest) {
-        await observeKeyword({ phrase, engine: "bing", source: "bing_webmaster", position: row.position });
+        await observeKeyword({
+            phrase,
+            engine: "bing",
+            source: "bing_webmaster",
+            position: row.position,
+            locale: inferredLocale(phrase),
+            device: "all",
+        });
     }
     return {
         mode: "webmaster_analytics",
@@ -500,7 +533,14 @@ async function syncYandex(configuration: JsonObject, token: string) {
         const phrase = row.query_text?.trim();
         const position = numberValue(row.indicators?.AVG_SHOW_POSITION);
         if (!phrase || position === null || position < 1) continue;
-        await observeKeyword({ phrase, engine: "yandex", source: "yandex_webmaster", position });
+        await observeKeyword({
+            phrase,
+            engine: "yandex",
+            source: "yandex_webmaster",
+            position,
+            locale: inferredLocale(phrase),
+            device: "all",
+        });
         imported += 1;
     }
     return {
@@ -598,7 +638,10 @@ async function syncBrave(configuration: JsonObject, apiKey: string) {
                 position,
                 locale: row.locale === "en" ? "en" : "fa",
                 country,
-                device: row.device === "mobile" || row.device === "tablet" ? row.device : "desktop",
+                device:
+                    row.device === "mobile" || row.device === "tablet" || row.device === "desktop" || row.device === "all"
+                        ? row.device
+                        : "all",
                 targetUrl: matchedUrl,
             });
         }
@@ -646,8 +689,13 @@ async function submitBaidu(configuration: JsonObject, token: string) {
 }
 
 async function submitIndexNowTarget(configuration: JsonObject, key: string, endpoint: string, target: string) {
-    if (!/^[A-Za-z0-9-]{8,128}$/.test(key)) {
-        throw new Error("IndexNow key must be 8-128 letters, digits, or hyphens");
+    const keyPattern = target === "naver" ? /^[A-Fa-f0-9-]{8,128}$/ : /^[A-Za-z0-9-]{8,128}$/;
+    if (!keyPattern.test(key)) {
+        throw new Error(
+            target === "naver"
+                ? "Naver IndexNow key must be 8-128 hexadecimal characters or hyphens"
+                : "IndexNow key must be 8-128 letters, digits, or hyphens",
+        );
     }
     const siteUrl = await resolveSiteUrl(configuration);
     const siteHostname = hostname(siteUrl);

@@ -1566,7 +1566,12 @@ function IntegrationCard({
             </div>
             {item.capabilities ? (
                 <div className="mt-3 flex flex-wrap gap-1.5">
-                    {item.capabilities.native_rank_tracking ? <Badge variant="secondary">رتبه واقعی</Badge> : null}
+                    {item.capabilities.rank_kind === "webmaster_average" ? (
+                        <Badge variant="secondary">میانگین رتبه وبمستر</Badge>
+                    ) : null}
+                    {item.capabilities.rank_kind === "api_serp_observation" ? (
+                        <Badge variant="secondary">رتبه مشاهده‌شده API</Badge>
+                    ) : null}
                     {item.capabilities.webmaster_analytics ? <Badge variant="secondary">داده وبمستر</Badge> : null}
                     {item.capabilities.url_submission ? <Badge variant="secondary">ارسال URL واقعی</Badge> : null}
                     {!item.capabilities.native_rank_tracking ? <Badge variant="outline">بدون رتبه ساختگی</Badge> : null}
