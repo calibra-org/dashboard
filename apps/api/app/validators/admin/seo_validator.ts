@@ -4,6 +4,7 @@ import { SEO_ENGINE_PROFILES, SEO_ENTITY_KINDS } from "#services/seo/domain";
 
 const nullableText = (max: number) => vine.string().trim().maxLength(max).optional().nullable();
 const positiveId = vine.number().positive().withoutDecimals();
+const searchEngines = ["google", "bing", "yandex", "baidu", "brave", "naver", "seznam"] as const;
 
 export const adminSeoEntityListValidator = vine.compile(
     vine.object({
@@ -78,11 +79,11 @@ export const adminSeoKeywordValidator = vine.compile(
         target_entity_kind: vine.enum(SEO_ENTITY_KINDS).optional().nullable(),
         target_entity_id: positiveId.optional().nullable(),
         target_url: nullableText(2000),
-        search_engine: vine.string().trim().minLength(1).maxLength(24).optional(),
-        country: nullableText(2),
+        search_engine: vine.enum(searchEngines).optional(),
+        country: nullableText(3),
         city: nullableText(120),
         device: vine.enum(["desktop", "mobile", "tablet"] as const).optional(),
-        current_position: vine.number().min(1).withoutDecimals().optional().nullable(),
+        current_position: vine.number().min(1).optional().nullable(),
         search_volume: vine.number().min(0).withoutDecimals().optional().nullable(),
         difficulty: vine.number().min(0).max(100).withoutDecimals().optional().nullable(),
         source: vine.string().trim().maxLength(32).optional(),
@@ -96,11 +97,11 @@ export const adminSeoKeywordUpdateValidator = vine.compile(
         target_entity_kind: vine.enum(SEO_ENTITY_KINDS).optional().nullable(),
         target_entity_id: positiveId.optional().nullable(),
         target_url: nullableText(2000),
-        search_engine: vine.string().trim().minLength(1).maxLength(24).optional(),
-        country: nullableText(2),
+        search_engine: vine.enum(searchEngines).optional(),
+        country: nullableText(3),
         city: nullableText(120),
         device: vine.enum(["desktop", "mobile", "tablet"] as const).optional(),
-        current_position: vine.number().min(1).withoutDecimals().optional().nullable(),
+        current_position: vine.number().min(1).optional().nullable(),
         search_volume: vine.number().min(0).withoutDecimals().optional().nullable(),
         difficulty: vine.number().min(0).max(100).withoutDecimals().optional().nullable(),
         source: vine.string().trim().maxLength(32).optional(),
@@ -144,6 +145,11 @@ export const adminSeoIntegrationValidator = vine.compile(
         provider: vine.enum([
             "google_search_console",
             "bing_webmaster",
+            "yandex_webmaster",
+            "baidu_search_resource",
+            "brave_search",
+            "naver_search_advisor",
+            "seznam_indexnow",
             "indexnow",
             "google_merchant",
             "openai_searchbot",
