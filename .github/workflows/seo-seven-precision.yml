@@ -24,7 +24,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: python3 .github/scripts/seo-seven-precision.py
-      - run: pnpm exec biome format apps/api/app/services/seo/search_engines.ts apps/api/app/validators/admin/seo_validator.ts apps/admin/src/features/seo/types.ts apps/admin/src/features/seo/workspace.tsx --write
+      - run: python3 .github/scripts/seo-seven-precision-fix.py
+      - run: pnpm exec biome format apps/api/app/services/seo/search_engines.ts apps/api/app/services/seo/seo_service.ts apps/api/app/validators/admin/seo_validator.ts apps/admin/src/features/seo/types.ts apps/admin/src/features/seo/workspace.tsx --write
       - run: pnpm --filter @calibra/api run typecheck
       - run: pnpm --filter @calibra/sdk run build
       - run: pnpm --filter @calibra/admin run typecheck
@@ -32,7 +33,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add apps/api/app/services/seo/search_engines.ts apps/api/app/validators/admin/seo_validator.ts apps/admin/src/features/seo/types.ts apps/admin/src/features/seo/workspace.tsx
+          git add apps/api/app/services/seo/search_engines.ts apps/api/app/services/seo/seo_service.ts apps/api/app/validators/admin/seo_validator.ts apps/admin/src/features/seo/types.ts apps/admin/src/features/seo/workspace.tsx
           if git diff --cached --quiet; then
             exit 0
           fi
