@@ -105,6 +105,12 @@ contains(serviceFile, "AVG_SHOW_POSITION", "Yandex average display position must
 contains(serviceFile, "AvgImpressionPosition", "Bing average impression position must come from provider data");
 contains(serviceFile, "more_results_available", "Brave rank probing must paginate only while real results remain");
 contains(serviceFile, "No rank is written", "Brave must explicitly avoid fabricated not-found ranks");
+contains(
+    serviceFile,
+    '.where("source", "manual").orWhere("search_engine", "brave")',
+    "Brave probes must use tracked/manual keyword seeds, not every imported provider query",
+);
+contains(serviceFile, 'device: "all"', "Brave observations must not invent a device dimension");
 contains(serviceFile, "Baidu accepted zero URLs", "Baidu HTTP success must still verify accepted URL count");
 contains(serviceFile, "IndexNow key file does not exactly match", "IndexNow must verify the public proof file before submission");
 contains(
@@ -127,6 +133,11 @@ notContains(serviceFile, "fakeRank", "Search-engine runtime must not contain fak
 notContains(serviceFile, "mockRank", "Search-engine runtime must not contain mock rank helpers");
 
 contains(controllerFile, "seoSearchEngineService.configureAndSync", "Engine PATCH must execute the real provider runtime");
+contains(
+    "apps/api/app/services/seo/seo_service.ts",
+    "E_SEO_PROVIDER_POSITION_READ_ONLY",
+    "Provider-owned positions must be protected from silent manual edits",
+);
 contains(controllerFile, "isSeoSearchEngineProvider", "Engine integrations must be separated from utility providers");
 contains(validatorFile, '"seznam"', "Keyword validator must accept the seventh search engine");
 contains(validatorFile, '"all"', "Keyword validator must preserve aggregate webmaster device semantics");
@@ -139,6 +150,8 @@ contains(workspaceFile, "میانگین رتبه وبمستر", "UI must label p
 contains(workspaceFile, "رتبه مشاهده‌شده API", "UI must distinguish Brave API result position from webmaster rank");
 contains(workspaceFile, "بدون رتبه ساختگی", "UI must expose engines that intentionally have no rank source");
 contains(workspaceFile, "خطای اتصال", "UI must surface failed provider connections");
+contains(workspaceFile, "۷ موتور جستجو", "UI must separate exactly seven search engines from utility integrations");
+contains(workspaceFile, "keywordPositionSourceLabel", "Rank rows must expose their real provider/manual source semantics");
 contains(workspaceFile, "last_error", "UI must display provider error evidence");
 contains(workspaceFile, "key_location", "Naver/Seznam must allow configuration of a real public IndexNow proof location");
 

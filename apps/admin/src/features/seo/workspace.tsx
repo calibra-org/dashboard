@@ -1042,12 +1042,13 @@ function KeywordRow({
     onDelete: () => void;
 }) {
     const delta = row.current_position && row.previous_position ? row.previous_position - row.current_position : 0;
+    const providerOwned = ["google_search_console", "bing_webmaster", "yandex_webmaster", "brave_search"].includes(row.source);
     return (
         <TableRow>
             <TableCell>
                 <p className="font-medium text-sm">{row.phrase}</p>
                 <p className="mt-1 text-muted-foreground text-xs">
-                    {row.search_engine} · {row.device}
+                    {row.search_engine} · {row.device} · {keywordPositionSourceLabel(row.source)}
                 </p>
             </TableCell>
             <TableCell className="max-w-48 truncate text-muted-foreground text-xs">
@@ -1059,6 +1060,8 @@ function KeywordRow({
                     min={1}
                     className="h-8 w-20"
                     defaultValue={row.current_position ?? ""}
+                    disabled={providerOwned}
+                    title={providerOwned ? "این Position از Provider واقعی آمده و فقط با Sync بعدی تغییر می‌کند." : undefined}
                     onBlur={(event) => {
                         const value = event.target.value ? Number(event.target.value) : null;
                         if (value !== row.current_position) onUpdate({ current_position: value });
@@ -1525,6 +1528,8 @@ function IntegrationsSection({
     onSave: (value: Partial<SeoIntegration> & { provider: string }) => void;
     saving: boolean;
 }) {
+    const searchEngines = data.filter((item) => Boolean(item.capabilities));
+    const utilities = data.filter((item) => !item.capabilities);
     return (
         <Card>
             <CardHeader>
@@ -1534,10 +1539,32 @@ function IntegrationsSection({
                     نگه‌داری می‌شود.
                 </CardDescription>
             </CardHeader>
-            <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {data.map((item) => (
-                    <IntegrationCard key={item.provider} item={item} onSave={onSave} saving={saving} />
-                ))}
+            <CardContent className="space-y-5">
+                <div>
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                        <p className="font-medium text-sm">۷ موتور جستجو</p>
+                        <Badge variant={searchEngines.length === 7 ? "secondary" : "destructive"}>
+                            {searchEngines.length} / 7
+                        </Badge>
+                    </div>
+                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                        {searchEngines.map((item) => (
+                            <IntegrationCard key={item.provider} item={item} onSave={onSave} saving={saving} />
+                        ))}
+                    </div>
+                </div>
+                {utilities.length > 0 ? (
+                    <div className="border-t pt-4">
+                        <p className="mb-2 font-medium text-muted-foreground text-sm">
+                            ابزارهای مکمل — خارج از شمارش موتورهای جستجو
+                        </p>
+                        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                            {utilities.map((item) => (
+                                <IntegrationCard key={item.provider} item={item} onSave={onSave} saving={saving} />
+                            ))}
+                        </div>
+                    </div>
+                ) : null}
             </CardContent>
         </Card>
     );
@@ -1568,7 +1595,7 @@ function IntegrationCard({
                         {item.credential_configured ? "متغیر محیطی در Runtime پیدا شد" : "Credential تأیید نشده"}
                     </p>
                 </div>
-                <ConnectionBadge status={item.status} />
+                <ConnectionBadge status={item.status} verifiedEngine={Boolean(item.capabilities)} />
             </div>
             {item.capabilities ? (
                 <div className="mt-3 flex flex-wrap gap-1.5">
@@ -1768,7 +1795,7 @@ function AuditSection() {
     );
 }
 
-function ConnectionBadge({ status }: { status: string }) {
+function ConnectionBadge({ status, verifiedEngine = false }: { status: string; verifiedEngine?: boolean }) {
     const connected = status === "connected";
     const configured = status === "configured";
     const failed = status === "error";
@@ -1786,7 +1813,9 @@ function ConnectionBadge({ status }: { status: string }) {
             }
         >
             {connected
-                ? "متصل واقعی"
+                ? verifiedEngine
+                    ? "متصل واقعی"
+                    : "وضعیت متصل ثبت‌شده"
                 : failed
                   ? "خطای اتصال"
                   : configured
@@ -1796,6 +1825,17 @@ function ConnectionBadge({ status }: { status: string }) {
                       : "قطع"}
         </Badge>
     );
+}
+
+function keywordPositionSourceLabel(source: string) {
+    const labels: Record<string, string> = {
+        google_search_console: "میانگین Search Console",
+        bing_webmaster: "میانگین Bing Webmaster",
+        yandex_webmaster: "میانگین Yandex Webmaster",
+        brave_search: "مشاهده Brave API",
+        manual: "ورودی دستی",
+    };
+    return labels[source] ?? source;
 }
 
 function formatSyncEvidence(evidence: Record<string, unknown>) {

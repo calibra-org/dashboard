@@ -811,6 +811,15 @@ export class SeoService {
         if (!row) throw new Exception("SEO keyword not found", { status: 404, code: "E_SEO_KEYWORD_NOT_FOUND" });
         const currentPosition = nullableNumeric(row.current_position);
         const nextPosition = input.current_position === undefined ? currentPosition : input.current_position;
+        const providerOwnedRank = new Set(["google_search_console", "bing_webmaster", "yandex_webmaster", "brave_search"]).has(
+            String(row.source),
+        );
+        if (providerOwnedRank && input.current_position !== undefined && input.source !== "manual") {
+            throw new Exception("Provider-owned SEO positions are read-only; set source=manual for an explicit override", {
+                status: 409,
+                code: "E_SEO_PROVIDER_POSITION_READ_ONLY",
+            });
+        }
         const update: Record<string, unknown> = { updated_at: DateTime.utc().toSQL() };
         const directFields = [
             "phrase",

@@ -622,9 +622,10 @@ async function braveKeywordSeeds(limit: number): Promise<DbRow[]> {
     return (await currentTrx()
         .from("seo_keywords")
         .where("tenant_id", Number(currentTenantId()))
-        .select("phrase", "locale", "device")
+        .where((query) => query.where("source", "manual").orWhere("search_engine", "brave"))
+        .select("phrase", "locale")
         .min("updated_at as oldest_updated_at")
-        .groupBy("phrase", "locale", "device")
+        .groupBy("phrase", "locale")
         .orderBy("oldest_updated_at", "asc")
         .limit(limit)) as DbRow[];
 }
@@ -634,7 +635,8 @@ async function syncBrave(configuration: JsonObject, apiKey: string) {
     const targetHost = normalizedHostname(baseUrl);
     const keywordLimit = integerSetting(configuration.sync_limit, 10, 1, 50);
     const maxPages = integerSetting(configuration.max_pages, 2, 1, 5);
-    const country = (stringValue(configuration.country) ?? "US").slice(0, 2).toUpperCase();
+    const countryInput = (stringValue(configuration.country) ?? "ALL").toUpperCase();
+    const country = countryInput === "ALL" ? "ALL" : countryInput.slice(0, 2);
     const searchLang = (stringValue(configuration.search_lang) ?? "fa").toLowerCase();
     const rows = await braveKeywordSeeds(keywordLimit);
 
@@ -695,10 +697,8 @@ async function syncBrave(configuration: JsonObject, apiKey: string) {
                 position,
                 locale: row.locale === "en" ? "en" : "fa",
                 country,
-                device:
-                    row.device === "mobile" || row.device === "tablet" || row.device === "desktop" || row.device === "all"
-                        ? row.device
-                        : "all",
+                /** Brave Web Search API has no device dimension; never invent one from a source row. */
+                device: "all",
                 targetUrl: matchedUrl,
             });
         }
