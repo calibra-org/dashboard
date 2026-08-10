@@ -3,6 +3,7 @@ import type { HttpContext } from "@adonisjs/core/http";
 
 import { recordAudit } from "#services/admin_audit_log_service";
 import { SEO_ENTITY_KINDS, type SeoEntityKind, type SeoSiteSettings } from "#services/seo/domain";
+import { isSeoSearchEngineProvider, seoSearchEngineService } from "#services/seo/search_engines";
 import { seoService } from "#services/seo/seo_service";
 import {
     adminSeoAuditRunValidator,
@@ -254,18 +255,32 @@ export default class AdminSeoController {
     }
 
     async integrations() {
-        return seoService.integrations();
+        const [legacy, engines] = await Promise.all([seoService.integrations(), seoSearchEngineService.integrations()]);
+        const utilities = legacy.data.filter((item) => !isSeoSearchEngineProvider(String(item.provider)));
+        return { data: [...engines, ...utilities] };
     }
 
     async integrationUpdate(ctx: HttpContext) {
         const payload = await ctx.request.validateUsing(adminSeoIntegrationValidator);
-        const result = await seoService.saveIntegration(payload, await actorId(ctx));
+        const result = isSeoSearchEngineProvider(payload.provider)
+            ? {
+                  data: await seoSearchEngineService.configureAndSync({
+                      provider: payload.provider,
+                      status: payload.status,
+                      configuration: payload.configuration,
+                      credential_env_ref: payload.credential_env_ref,
+                  }),
+              }
+            : await seoService.saveIntegration(payload, await actorId(ctx));
         await recordAudit({
             ctx,
             action: "seo.integration.patch",
             entityKind: "seo_integration",
             entityId: null,
-            payload: { provider: payload.provider, status: payload.status },
+            payload: {
+                provider: payload.provider,
+                status: String((result.data as Record<string, unknown>).status ?? payload.status ?? "configured"),
+            },
         });
         return result;
     }
