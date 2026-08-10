@@ -2,6 +2,15 @@ export type SeoEntityKind = "product" | "category" | "brand" | "attribute" | "co
 export type SeoEngineProfile = "k20" | "k21";
 export type SeoSeverity = "info" | "warning" | "critical";
 export type SeoIssueStatus = "open" | "ignored" | "resolved" | "regressed";
+export type SeoSearchEngine = "google" | "bing" | "yandex" | "baidu" | "brave" | "naver" | "seznam";
+export type SeoSearchEngineProvider =
+    | "google_search_console"
+    | "bing_webmaster"
+    | "yandex_webmaster"
+    | "baidu_search_resource"
+    | "brave_search"
+    | "naver_search_advisor"
+    | "seznam_indexnow";
 
 export interface Paginated<T> {
     data: T[];
@@ -122,7 +131,7 @@ export interface SeoKeyword {
     target_entity_kind: SeoEntityKind | null;
     target_entity_id: number | null;
     target_url: string | null;
-    search_engine: string;
+    search_engine: SeoSearchEngine;
     country: string | null;
     city: string | null;
     device: "desktop" | "mobile" | "tablet";
@@ -166,12 +175,22 @@ export interface SeoRedirect {
     last_hit_at: string | null;
 }
 
+export interface SeoSearchEngineCapabilities {
+    native_rank_tracking: boolean;
+    webmaster_analytics: boolean;
+    url_submission: boolean;
+    credential_kind: string;
+}
+
 export interface SeoIntegration {
     provider: string;
+    engine?: SeoSearchEngine;
+    label?: string;
     status: "disconnected" | "configured" | "connected" | "error" | "disabled";
     configuration: Record<string, unknown>;
     credential_env_ref: string | null;
     credential_configured: boolean;
+    capabilities?: SeoSearchEngineCapabilities;
     last_synced_at?: string | null;
     last_error?: string | null;
 }
