@@ -1,4 +1,5 @@
 import { DiskSpaceCheck, HealthChecks, MemoryHeapCheck } from "@adonisjs/core/health";
+import app from "@adonisjs/core/services/app";
 import { DbCheck } from "@adonisjs/lucid/database";
 import db from "@adonisjs/lucid/services/db";
 import { RedisCheck } from "@adonisjs/redis";
@@ -8,7 +9,8 @@ import redis from "@adonisjs/redis/services/main";
  * Readiness checks for `/health/ready`. The probe reports degraded when any of the
  * required dependencies is unhealthy:
  *
- *   - `DiskSpaceCheck` — bounded so a runaway export disk doesn't 503 us in dev.
+ *   - `DiskSpaceCheck` — uses the strict production defaults, while test runs avoid
+ *     coupling API correctness to the transient root-disk occupancy of hosted CI runners.
  *   - `MemoryHeapCheck` — flags slow GC pressure before the container OOMs.
  *   - `DbCheck` — pings Postgres on the default Lucid connection; the api is unusable
  *     without it.
@@ -19,8 +21,22 @@ import redis from "@adonisjs/redis/services/main";
  * `HealthCheckResult` with structured metadata — the report renderer maps them straight
  * to JSON.
  */
+const diskSpaceCheck = new DiskSpaceCheck();
+
+/**
+ * GitHub-hosted runners can arrive with >80% of their root disk already occupied before
+ * the application starts. The default DiskSpaceCheck failure threshold is 80%, which
+ * makes `/health/ready` nondeterministic in the functional suite even when Postgres,
+ * Redis, and the application are healthy. Keep the production defaults untouched and
+ * relax only NODE_ENV=test so the test measures Calibra readiness rather than runner
+ * image pressure.
+ */
+if (app.inTest) {
+    diskSpaceCheck.warnWhenExceeds(95).failWhenExceeds(99);
+}
+
 export const healthChecks = new HealthChecks().register([
-    new DiskSpaceCheck(),
+    diskSpaceCheck,
     /**
      * The default failure threshold (300 MB) is tight for a Node.js api warmed up by the
      * full functional test suite — fresh allocations push past it on CI without the heap
