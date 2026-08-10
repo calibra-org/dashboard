@@ -55,9 +55,28 @@ jobs:
             test -d "$dir"
             cat "$dir"/*.part | tr -d '\r\n' | base64 --decode | gzip -d > ".transfer-output/blob-$id"
           fi
+
+          if [ "$id" = "step4-codegen" ]; then
+            rm -rf /tmp/calibra-sdk-input /tmp/calibra-sdk-output /tmp/calibra-codegen
+            mkdir -p /tmp/calibra-sdk-input /tmp/calibra-sdk-output /tmp/calibra-codegen .transfer-output/step4-codegen
+            tar -xf ".transfer-output/blob-$id" -C /tmp/calibra-sdk-input
+            cd /tmp/calibra-codegen
+            npm init -y >/dev/null
+            npm install --no-save @redocly/cli@2.31.2 openapi-typescript@7.13.0 >/dev/null
+            npx redocly bundle /tmp/calibra-sdk-input/docs/api/reference/openapi/admin.v1.yaml -o /tmp/admin.v1.json --ext json
+            npx redocly bundle /tmp/calibra-sdk-input/docs/api/reference/openapi/storefront.v1.yaml -o /tmp/storefront.v1.json --ext json
+            npx redocly bundle /tmp/calibra-sdk-input/docs/api/reference/openapi/platform.v1.yaml -o /tmp/platform.v1.json --ext json
+            npx openapi-typescript /tmp/admin.v1.json -o "${GITHUB_WORKSPACE}/.transfer-output/step4-codegen/admin.d.ts"
+            npx openapi-typescript /tmp/storefront.v1.json -o "${GITHUB_WORKSPACE}/.transfer-output/step4-codegen/storefront.d.ts"
+            npx openapi-typescript /tmp/platform.v1.json -o "${GITHUB_WORKSPACE}/.transfer-output/step4-codegen/platform.d.ts"
+            cd "${GITHUB_WORKSPACE}"
+            sha256sum .transfer-output/step4-codegen/*.d.ts > .transfer-output/step4-codegen/SHA256SUMS
+          fi
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add ".transfer-output/blob-$id"
+          if [ "$id" = "step4-codegen" ]; then git add .transfer-output/step4-codegen; fi
           if git diff --cached --quiet; then exit 0; fi
           git commit -m "chore: assemble phase1 $id blob"
           git push origin "HEAD:${GITHUB_REF_NAME}"
