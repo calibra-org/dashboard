@@ -24,7 +24,7 @@ jobs:
           for dir in .transfer/blob-*; do
             [ -d "$dir" ] || continue
             id="$(basename "$dir")"
-            cat "$dir"/*.part | tr -d '\r\n' | base64 --decode > ".transfer-output/$id"
+            cat "$dir"/*.part | tr -d '\r\n' | base64 --decode | gzip -d > ".transfer-output/$id"
           done
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
