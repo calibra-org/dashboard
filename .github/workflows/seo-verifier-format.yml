@@ -1,0 +1,37 @@
+name: SEO verifier formatter
+
+on:
+  push:
+    branches:
+      - agent/seo-seven-real-engines-20260811
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/seo-seven-real-engines-20260811
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec biome format scripts/verify-seo-search-engines.mjs --write
+      - run: pnpm run verify:seo-engines
+      - name: Commit formatter output
+        run: |
+          if git diff --quiet; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/verify-seo-search-engines.mjs
+          git commit -m "style(seo): format seven-engine verifier"
+          git push origin HEAD:agent/seo-seven-real-engines-20260811
