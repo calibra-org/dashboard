@@ -1,5 +1,8 @@
 import { test } from "@japa/runner";
+import { DateTime } from "luxon";
 
+import { OrderStatus } from "#enums/order_status";
+import { PaymentAttemptStatus } from "#enums/payment_attempt_status";
 import Order from "#models/order";
 import PaymentAttempt from "#models/payment_attempt";
 import PaymentGateway from "#models/payment_gateway";
@@ -55,8 +58,6 @@ test.group("Payment init idempotency", (group) => {
         const order = await submitCodOrder(client, "same-order@example.test");
         const gateway = await PaymentGateway.findByOrFail("code", "cod");
 
-        // checkout/submit already created the first COD attempt. Use a fresh key to exercise the
-        // service's explicit init replay contract without depending on checkout-submit idempotency.
         const first = await paymentService.init(order, gateway.id, "payment-init-same-order");
         const second = await paymentService.init(order, gateway.id, "payment-init-same-order");
 
@@ -79,6 +80,45 @@ test.group("Payment init idempotency", (group) => {
         assert.notEqual(Number(first.attempt.id), Number(second.attempt.id));
         const rows = await PaymentAttempt.query().where("idempotency_key", key);
         assert.lengthOf(rows, 2);
+    });
+
+    test("different key reuses an already-live PSP session instead of creating a second one", async ({ client, assert }) => {
+        const order = await submitCodOrder(client, "active-session@example.test");
+        const gateway = await PaymentGateway.findByOrFail("code", "cod");
+
+        const active = new PaymentAttempt();
+        active.orderId = order.id;
+        active.gatewayId = gateway.id;
+        active.gatewayCodeSnapshot = gateway.code;
+        active.status = PaymentAttemptStatus.AwaitingCallback;
+        active.amountMinor = Number(order.grandTotal);
+        active.currency = order.currency;
+        active.gatewayAuthority = "ACTIVE-AUTHORITY-0001";
+        active.gatewayPayload = { redirect_url: "https://psp.example.test/session/ACTIVE-AUTHORITY-0001" };
+        active.idempotencyKey = "first-browser-request";
+        active.initiatedAt = DateTime.utc();
+        await active.save();
+
+        const before = await PaymentAttempt.query().where("order_id", Number(order.id));
+        const replay = await paymentService.init(order, gateway.id, "different-browser-request");
+        const after = await PaymentAttempt.query().where("order_id", Number(order.id));
+
+        assert.equal(Number(replay.attempt.id), Number(active.id));
+        assert.equal(replay.redirect_url, "https://psp.example.test/session/ACTIVE-AUTHORITY-0001");
+        assert.lengthOf(after, before.length, "a second live PSP attempt must not be minted");
+    });
+
+    test("processing orders cannot be charged again with a new init", async ({ client, assert }) => {
+        const order = await submitCodOrder(client, "already-processing@example.test");
+        const gateway = await PaymentGateway.findByOrFail("code", "cod");
+        order.status = OrderStatus.Processing;
+        await order.save();
+        const before = await PaymentAttempt.query().where("order_id", Number(order.id));
+
+        await assert.rejects(() => paymentService.init(order, gateway.id, "charge-again"), /Order is no longer payable/);
+
+        const after = await PaymentAttempt.query().where("order_id", Number(order.id));
+        assert.lengthOf(after, before.length);
     });
 
     test("rejects overlong keys before creating an attempt", async ({ client, assert }) => {
