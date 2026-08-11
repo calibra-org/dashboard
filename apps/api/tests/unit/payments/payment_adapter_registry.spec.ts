@@ -9,35 +9,57 @@ test.group("PaymentAdapterRegistry", (group) => {
         await resetPhase08();
     });
 
-    test("resolves every shipped gateway code", async ({ assert }) => {
-        const codes = ["zarinpal", "idpay", "nextpay", "payir", "zibal", "cod", "bank_transfer"];
-        for (const code of codes) {
-            const adapter = paymentAdapterRegistry.get(code);
-            assert.equal(adapter.code, code);
-        }
+    test("resolves every approved and legacy gateway code", async ({ assert }) => {
+        const codes = [
+            "mellat",
+            "sadad",
+            "parsian",
+            "zarinpal",
+            "bitpay",
+            "digipay",
+            "snapppay",
+            "azkivam",
+            "card_to_card",
+            "cod",
+            "idpay",
+            "nextpay",
+            "payir",
+            "zibal",
+            "bank_transfer",
+        ];
+        for (const code of codes) assert.equal(paymentAdapterRegistry.get(code).code, code);
     });
 
     test("unknown code throws GatewayNotConfigured", async ({ assert }) => {
         assert.throws(() => paymentAdapterRegistry.get("not_a_real_gateway"), /not_a_real_gateway/);
     });
 
-    test("stub PSPs advertise the capabilities they would support if implemented", async ({ assert }) => {
-        const zarinpal = paymentAdapterRegistry.get("zarinpal");
-        assert.deepEqual(zarinpal.capabilities, { redirect: true, refunds: false, partial_refunds: false });
-
-        const zibal = paymentAdapterRegistry.get("zibal");
-        assert.deepEqual(zibal.capabilities, { redirect: true, refunds: true, partial_refunds: false });
+    test("concrete provider adapters advertise redirect capability", async ({ assert }) => {
+        for (const code of ["mellat", "parsian", "zarinpal"]) {
+            assert.deepEqual(paymentAdapterRegistry.get(code).capabilities, {
+                redirect: true,
+                refunds: false,
+                partial_refunds: false,
+            });
+        }
     });
 
-    test("resolveForCode on a stub gateway throws E_GATEWAY_NOT_IMPLEMENTED — even when the row is enabled", async ({
-        assert,
-    }) => {
+    test("stub catalog method stays fail-closed even if its database row is forced enabled", async ({ assert }) => {
+        const sadad = await PaymentGateway.findByOrFail("code", "sadad");
+        sadad.enabled = true;
+        await sadad.save();
+
+        await assert.rejects(() => paymentAdapterRegistry.resolveForCode("sadad"), /not yet implemented/);
+        await assert.rejects(() => paymentAdapterRegistry.resolveForGatewayId(sadad.id), /not yet implemented/);
+    });
+
+    test("implemented provider is resolvable after tenant enables it", async ({ assert }) => {
         const zarinpal = await PaymentGateway.findByOrFail("code", "zarinpal");
         zarinpal.enabled = true;
         await zarinpal.save();
-
-        await assert.rejects(() => paymentAdapterRegistry.resolveForCode("zarinpal"), /not yet implemented/);
-        await assert.rejects(() => paymentAdapterRegistry.resolveForGatewayId(zarinpal.id), /not yet implemented/);
+        const result = await paymentAdapterRegistry.resolveForCode("zarinpal");
+        assert.equal(result.adapter.code, "zarinpal");
+        assert.equal(result.gateway.code, "zarinpal");
     });
 
     test("disabled live gateway throws GatewayNotConfigured", async ({ assert }) => {
