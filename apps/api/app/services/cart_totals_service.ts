@@ -60,6 +60,7 @@ export interface CartTotalsResult {
     shippingTaxTotal: number;
     discountTotal: number;
     discountTaxTotal: number;
+    perCouponDiscounts: DiscounterResult["perCouponDiscounts"];
     taxTotal: number;
     grandTotal: number;
     needsShipping: boolean;
@@ -174,6 +175,7 @@ export function calculateCartTotals(input: CartTotalsInput): CartTotalsResult {
         shippingTaxTotal,
         discountTotal: input.discounterResult.discountTotal,
         discountTaxTotal: input.discounterResult.discountTaxTotal,
+        perCouponDiscounts: input.discounterResult.perCouponDiscounts,
         taxTotal,
         grandTotal,
         needsShipping,

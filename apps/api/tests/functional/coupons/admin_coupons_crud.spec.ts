@@ -97,7 +97,7 @@ test.group("/api/v1/admin/coupons", (group) => {
 
     test("soft-delete blocks future apply but preserves history", async ({ client, assert }) => {
         const admin = await createAdmin();
-        const coupon = await CouponFactory.merge({ code: "DEL" }).create();
+        const coupon = await CouponFactory.merge({ code: "DELX" }).create();
         const product = await createTaxableProduct({ regularPrice: 100_000 });
         const order = await makeDraftOrder({ productId: Number(product.id), quantity: 1, price: 100_000 });
         await CouponRedemption.create({
@@ -117,13 +117,13 @@ test.group("/api/v1/admin/coupons", (group) => {
         assert.equal(Number(firstRow?.$extras.count ?? 0), 1);
 
         /** New apply against the soft-deleted code fails 404. */
-        const failed = await client.post("/api/v1/cart/coupons").json({ code: "DEL" });
+        const failed = await client.post("/api/v1/cart/coupons").json({ code: "DELX" });
         failed.assertStatus(404);
     });
 
     test("batch endpoint creates + updates + deletes in one call", async ({ client, assert }) => {
         const admin = await createAdmin();
-        const existing = await CouponFactory.merge({ code: "OLD", amountPercent: "5.00" }).create();
+        const existing = await CouponFactory.merge({ code: "OLDX", amountPercent: "5.00" }).create();
         const toDelete = await CouponFactory.merge({ code: "GONE" }).create();
 
         const r = await client

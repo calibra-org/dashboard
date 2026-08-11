@@ -20,12 +20,12 @@ test.group("DELETE /api/v1/cart/coupons/:code", (group) => {
 
     test("removes an applied coupon and recomputes totals", async ({ client, assert }) => {
         const product = await createTaxableProduct({ regularPrice: 1_000_000 });
-        await CouponFactory.merge({ code: "P10" }).create();
+        await CouponFactory.merge({ code: "PCT10" }).create();
         const added = await client.post("/api/v1/cart/items").json({ product_id: Number(product.id), quantity: 1 });
         const token = tokenFromResponse(added);
-        await client.post("/api/v1/cart/coupons").cookie("cart_token", token).json({ code: "P10" });
+        await client.post("/api/v1/cart/coupons").cookie("cart_token", token).json({ code: "PCT10" });
 
-        const removed = await client.delete("/api/v1/cart/coupons/P10").cookie("cart_token", token);
+        const removed = await client.delete("/api/v1/cart/coupons/PCT10").cookie("cart_token", token);
         removed.assertStatus(200);
         removed.assertAgainstApiSpec();
         const body = removed.body().data;

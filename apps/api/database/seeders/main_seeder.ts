@@ -4,6 +4,7 @@ import db from "@adonisjs/lucid/services/db";
 import { DateTime } from "luxon";
 
 import AttributesSeeder from "#database/seed_modules/0002_attributes_seeder";
+import CouponsDemoSeeder from "#database/seed_modules/0006_coupons_demo_seeder";
 import BulkDatasetSeeder, { type BulkSeederOptions } from "#database/seed_modules/0010_bulk_dataset_seeder";
 import { type BrandingSettingsInput, brandingSettingRows } from "#services/storefront_branding_service";
 import { runWithTenant } from "#services/tenant_context";
@@ -204,6 +205,8 @@ export default class MainSeeder extends BaseSeeder {
             await runWithTenant(BigInt(tenantId), trx, async () => {
                 await new AttributesSeeder(trx).run();
                 await new BulkDatasetSeeder(trx).setOptions(volumes).run();
+                /** Coupon demos depend on the catalog/category tree created above. */
+                await new CouponsDemoSeeder(trx).run();
             });
         });
     }

@@ -109,8 +109,8 @@ export default class CouponsDemoSeeder extends BaseSeeder {
             await CouponTranslation.create({ couponId: coupon.id, locale, description });
         }
 
+        await CouponCategoryConstraint.query().where("coupon_id", couponId).delete();
         if (row.categoryName && apparelCategoryId !== null && row.categoryName === "پوشاک") {
-            await CouponCategoryConstraint.query().where("coupon_id", couponId).delete();
             await CouponCategoryConstraint.create({
                 couponId: coupon.id,
                 categoryId: apparelCategoryId,
@@ -118,8 +118,8 @@ export default class CouponsDemoSeeder extends BaseSeeder {
             });
         }
 
+        await CouponEmailRestriction.query().where("coupon_id", couponId).delete();
         if (row.emailRestrictions && row.emailRestrictions.length > 0) {
-            await CouponEmailRestriction.query().where("coupon_id", couponId).delete();
             for (const pattern of row.emailRestrictions) {
                 await CouponEmailRestriction.create({ couponId: coupon.id, emailPattern: pattern });
             }

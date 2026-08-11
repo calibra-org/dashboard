@@ -85,7 +85,35 @@ export default class DiscounterService implements Discounter {
         }
 
         const snapshots = await loadSnapshots(input.appliedCoupons);
-        return computeDiscounts(input, snapshots);
+        /**
+         * Re-evaluate every applied coupon against current state on every totals pass. A coupon may
+         * have expired, been disabled, crossed a usage limit, or had its constraints changed after
+         * it was first added to the cart. Stale cart rows must never keep granting a discount.
+         */
+        const candidates = pickActiveCoupons(sortCouponsByType(snapshots));
+        const eligible: CouponSnapshot[] = [];
+        const customer = input.customer ?? null;
+        for (const snapshot of candidates) {
+            const globalRedemptionCount = snapshot.usageLimitGlobal === null ? 0 : await countRedemptions(snapshot.id);
+            const perUserRedemptionCount =
+                snapshot.usageLimitPerUser === null
+                    ? 0
+                    : await countRedemptions(snapshot.id, {
+                          customerId: customer?.customerId,
+                          email: customer?.email,
+                      });
+            const eligibility = checkEligibility({
+                coupon: snapshot,
+                items: input.items,
+                itemsTotal: input.itemsTotal,
+                otherAppliedCouponIds: candidates.filter((other) => other.id !== snapshot.id).map((other) => other.id),
+                customer,
+                globalRedemptionCount,
+                perUserRedemptionCount,
+            });
+            if (eligibility.ok) eligible.push(snapshot);
+        }
+        return computeDiscounts(input, eligible);
     }
 }
 
@@ -97,6 +125,7 @@ export default class DiscounterService implements Discounter {
  */
 export function computeDiscounts(input: DiscounterInput, snapshots: CouponSnapshot[]): DiscounterResult {
     const perLine = new Map<string, number>();
+    const perCouponDiscounts = new Map<string, { discount: number; discountTax: number }>();
     /**
      * Running remaining eligible subtotal per line — `fixed_product → percent → fixed_cart` order
      * means each subsequent stage discounts what's left after the prior ones. Initialized to the
@@ -117,8 +146,12 @@ export function computeDiscounts(input: DiscounterInput, snapshots: CouponSnapsh
         if (coupon.freeShipping || coupon.discountType === "free_shipping") {
             freeShipping = true;
         }
-        if (coupon.discountType === "free_shipping") continue;
-        applyCouponToLines(coupon, input.items, remaining, perLine);
+        const before = sumMapValues(perLine);
+        if (coupon.discountType !== "free_shipping") {
+            applyCouponToLines(coupon, input.items, remaining, perLine);
+        }
+        const discount = Math.max(0, sumMapValues(perLine) - before);
+        perCouponDiscounts.set(coupon.code, { discount, discountTax: 0 });
     }
 
     const discountTotal = sumMapValues(perLine);
@@ -127,6 +160,7 @@ export function computeDiscounts(input: DiscounterInput, snapshots: CouponSnapsh
         discountTaxTotal: 0,
         freeShipping,
         perLineDiscounts: perLine,
+        perCouponDiscounts,
     };
 }
 
@@ -136,6 +170,20 @@ export function computeDiscounts(input: DiscounterInput, snapshots: CouponSnapsh
  * uses this to fail-fast on bad codes; the order_finalizer uses the same routine inside the
  * `FOR UPDATE` window to catch races.
  */
+export function checkRedemptionLimits(args: {
+    coupon: CouponSnapshot;
+    globalRedemptionCount: number;
+    perUserRedemptionCount: number;
+}): EligibilityResult {
+    if (args.coupon.usageLimitGlobal !== null && args.globalRedemptionCount >= args.coupon.usageLimitGlobal) {
+        return { ok: false, reason: "usage_limit_global_reached" };
+    }
+    if (args.coupon.usageLimitPerUser !== null && args.perUserRedemptionCount >= args.coupon.usageLimitPerUser) {
+        return { ok: false, reason: "usage_limit_per_user_reached" };
+    }
+    return { ok: true };
+}
+
 export function checkEligibility(args: {
     coupon: CouponSnapshot;
     items: ReadonlyArray<DiscounterItem>;
@@ -178,14 +226,11 @@ export function checkEligibility(args: {
         }
     }
 
-    if (args.coupon.usageLimitGlobal !== null && args.globalRedemptionCount >= args.coupon.usageLimitGlobal) {
-        return { ok: false, reason: "usage_limit_global_reached" };
-    }
-    if (args.coupon.usageLimitPerUser !== null && args.perUserRedemptionCount >= args.coupon.usageLimitPerUser) {
-        return { ok: false, reason: "usage_limit_per_user_reached" };
-    }
-
-    return { ok: true };
+    return checkRedemptionLimits({
+        coupon: args.coupon,
+        globalRedemptionCount: args.globalRedemptionCount,
+        perUserRedemptionCount: args.perUserRedemptionCount,
+    });
 }
 
 /**
@@ -255,14 +300,15 @@ export async function countRedemptions(
     options: { client?: TransactionClientContract; customerId?: number | null; email?: string | null } = {},
 ): Promise<number> {
     const query = (options.client ?? db).from("coupon_redemptions").where("coupon_id", couponId);
-    if (options.customerId !== undefined || options.email !== undefined) {
+    const identityScoped = options.customerId !== undefined || options.email !== undefined;
+    const customerId = options.customerId ?? null;
+    const email = options.email?.trim() || null;
+    /** Anonymous carts without a stable identity defer per-user enforcement to checkout. */
+    if (identityScoped && customerId === null && email === null) return 0;
+    if (identityScoped) {
         query.andWhere((q) => {
-            if (options.customerId !== undefined && options.customerId !== null) {
-                q.orWhere("customer_id", options.customerId);
-            }
-            if (options.email) {
-                q.orWhereRaw("lower(email_snapshot) = lower(?)", [options.email]);
-            }
+            if (customerId !== null) q.orWhere("customer_id", customerId);
+            if (email) q.orWhereRaw("lower(email_snapshot) = lower(?)", [email]);
         });
     }
     const rows = await query.count("* as count");
@@ -510,5 +556,6 @@ function emptyResult(): DiscounterResult {
         discountTaxTotal: 0,
         freeShipping: false,
         perLineDiscounts: new Map(),
+        perCouponDiscounts: new Map(),
     };
 }

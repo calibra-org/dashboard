@@ -147,6 +147,9 @@ test.group("Discounter — sort order", () => {
         assert.equal(a.discountTotal, b.discountTotal);
         /** 1m − 100k = 900k, then 10% off = 90k off → 810k remaining, then 50k fixed_cart → total disc = 240k. */
         assert.equal(a.discountTotal, 100_000 + 90_000 + 50_000);
+        assert.equal(a.perCouponDiscounts.get("FP")?.discount, 100_000);
+        assert.equal(a.perCouponDiscounts.get("P10")?.discount, 90_000);
+        assert.equal(a.perCouponDiscounts.get("FC")?.discount, 50_000);
     });
 });
 

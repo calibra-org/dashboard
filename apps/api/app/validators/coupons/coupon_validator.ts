@@ -3,6 +3,7 @@ import vine from "@vinejs/vine";
 const DISCOUNT_TYPES = ["percent", "fixed_cart", "fixed_product", "free_shipping"] as const;
 const STATUSES = ["active", "disabled"] as const;
 const CONSTRAINT_MODES = ["include", "exclude"] as const;
+const COUPON_CODE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9-]*$/;
 
 /**
  * Common field block reused by both create and update validators. Optional everywhere; the
@@ -11,10 +12,10 @@ const CONSTRAINT_MODES = ["include", "exclude"] as const;
  * is enforced by the DB CHECK constraint — duplicating the rule here would drift over time.
  */
 const couponFields = {
-    code: vine.string().trim().minLength(2).maxLength(64),
+    code: vine.string().trim().minLength(4).maxLength(64).regex(COUPON_CODE_PATTERN),
     discount_type: vine.enum(DISCOUNT_TYPES),
     amount_minor: vine.number().min(0).max(Number.MAX_SAFE_INTEGER).nullable().optional(),
-    amount_percent: vine.number().min(0).max(100).nullable().optional(),
+    amount_percent: vine.number().min(0.01).max(100).nullable().optional(),
     starts_at: vine
         .date({ formats: { utc: true } })
         .nullable()
@@ -73,7 +74,7 @@ export const updateCouponValidator = vine.compile(
     vine.object({
         ...couponFields,
         /** Code is immutable post-create — admins remove + recreate if they need to rename. */
-        code: vine.string().trim().minLength(2).maxLength(64).optional(),
+        code: vine.string().trim().minLength(4).maxLength(64).regex(COUPON_CODE_PATTERN).optional(),
         discount_type: vine.enum(DISCOUNT_TYPES).optional(),
     }),
 );
@@ -91,7 +92,7 @@ export const batchCouponValidator = vine.compile(
                 vine.object({
                     id: vine.number().positive(),
                     ...couponFields,
-                    code: vine.string().trim().minLength(2).maxLength(64).optional(),
+                    code: vine.string().trim().minLength(4).maxLength(64).regex(COUPON_CODE_PATTERN).optional(),
                     discount_type: vine.enum(DISCOUNT_TYPES).optional(),
                 }),
             )

@@ -15,7 +15,7 @@ import OrderAddressIranExtension from "#models/order_address_iran_extension";
 import OrderCouponLine from "#models/order_coupon_line";
 import OrderLineItem from "#models/order_line_item";
 import type User from "#models/user";
-import { checkEligibility, countRedemptions, loadSnapshotForUpdate } from "#services/discounter_service";
+import { checkRedemptionLimits, countRedemptions, loadSnapshotForUpdate } from "#services/discounter_service";
 import { recordOrderFinalized } from "#services/metrics/domain_metrics";
 import { OrderFactory } from "#services/order_factory";
 import { orderStateMachine } from "#services/order_state_machine";
@@ -266,31 +266,17 @@ export class OrderFinalizer {
             const perUserCount =
                 snapshot.usageLimitPerUser === null ? 0 : await countRedemptions(couponId, { client: trx, customerId, email });
 
-            /** Eligibility re-runs without item state — we only re-check the limit gates here. */
-            const result = checkEligibility({
+            /**
+             * Only the mutable counters need the submit-time race check. Do not feed a synthetic
+             * product into full eligibility: product/category constraints can fail before the limit
+             * gate and accidentally let an exhausted constrained coupon through.
+             */
+            const result = checkRedemptionLimits({
                 coupon: snapshot,
-                items: [
-                    {
-                        lineKey: "1",
-                        productId: 0,
-                        variationId: null,
-                        quantity: 1,
-                        priceSnapshot: 0,
-                        lineSubtotal: 0,
-                        categoryIds: [],
-                        tagIds: [],
-                    },
-                ],
-                itemsTotal: Number(order.itemsTotal),
-                otherAppliedCouponIds: [],
-                customer: { customerId, email },
                 globalRedemptionCount: globalCount,
                 perUserRedemptionCount: perUserCount,
             });
-            if (
-                !result.ok &&
-                (result.reason === "usage_limit_global_reached" || result.reason === "usage_limit_per_user_reached")
-            ) {
+            if (!result.ok) {
                 throw new Exception(`Coupon ${line.codeSnapshot} limit reached`, {
                     status: 409,
                     code: "E_COUPON_LIMIT_EXHAUSTED",
