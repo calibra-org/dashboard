@@ -6,7 +6,6 @@ import { DateTime } from "luxon";
 
 import { OrderStatus } from "#enums/order_status";
 import { PaymentAttemptStatus } from "#enums/payment_attempt_status";
-import { GatewayNotConfiguredException } from "#exceptions/payment_exceptions";
 import Order from "#models/order";
 import PaymentAttempt from "#models/payment_attempt";
 import { recordPaymentAttempt, recordPaymentPhase } from "#services/metrics/domain_metrics";
@@ -97,12 +96,7 @@ export class PaymentService {
 
         let initResult: Awaited<ReturnType<typeof adapter.init>>;
         try {
-            initResult = await adapter.init({
-                order,
-                attempt,
-                settings: runtimeSettings,
-                return_url: returnUrl,
-            });
+            initResult = await adapter.init({ order, attempt, settings: runtimeSettings, return_url: returnUrl });
         } catch (error) {
             attempt.status = PaymentAttemptStatus.Failed;
             attempt.errorCode = this.errorCodeFromException(error);
@@ -124,7 +118,6 @@ export class PaymentService {
                 redirect_url: initResult.redirect_url,
             };
             if (initResult.authority) attempt.gatewayAuthority = initResult.authority;
-
             if (adapter.capabilities.redirect) {
                 if (!initResult.redirect_url) {
                     attempt.status = PaymentAttemptStatus.Failed;
@@ -139,79 +132,43 @@ export class PaymentService {
                 attempt.verifiedAt = DateTime.utc();
                 await attempt.save();
                 if (order.status === OrderStatus.Pending) {
-                    await orderStateMachine.transition(order, OrderStatus.OnHold, {
-                        reason: `payment.${gateway.code}.no_redirect`,
-                        trx,
-                    });
+                    await orderStateMachine.transition(order, OrderStatus.OnHold, { reason: `payment.${gateway.code}.no_redirect`, trx });
                 }
             }
         });
-
         await this.linkLatest(order, attempt);
         recordPaymentAttempt(gateway.code, attempt.status);
         recordPaymentPhase(gateway.code, "init", Number(process.hrtime.bigint() - initStartedAt) / 1e9);
         return { attempt, redirect_url: initResult.redirect_url };
     }
 
-    /**
-     * Complete a previously initialized PSP payment. Gateway disablement intentionally does not
-     * block this path: an operator may stop new checkouts while shoppers are already at the PSP.
-     */
+    /** Complete a previously initialized PSP payment, even if the gateway was disabled afterward. */
     async verifyCallback(gatewayCode: string, request: HttpContext["request"]): Promise<PaymentCallbackResult> {
         const callbackStartedAt = process.hrtime.bigint();
         const successUrl = await this.settings.get<string>("general", "checkout_return_url_success", DEFAULT_RETURN_SUCCESS);
         const failedUrl = await this.settings.get<string>("general", "checkout_return_url_failed", DEFAULT_RETURN_FAILED);
-
         const { adapter, gateway } = await paymentAdapterRegistry.resolveForCallbackCode(gatewayCode);
         const runtimeSettings = paymentGatewayCredentialsService.runtimeSettings(gateway);
-        if (!adapter.parseCallback || !adapter.verify) {
-            throw new GatewayNotConfiguredException(gatewayCode, `Gateway "${gatewayCode}" does not support callbacks`);
-        }
         const parsed = adapter.parseCallback({ request, settings: runtimeSettings });
         if (!parsed.authority) {
-            return {
-                order: undefined as unknown as Order,
-                attempt: null,
-                redirect: this.attachReason(failedUrl, "missing_authority"),
-            };
+            return { order: undefined as unknown as Order, attempt: null, redirect: this.attachReason(failedUrl, "missing_authority") };
         }
-
         const rawBody = request.raw() ?? JSON.stringify(request.all() ?? {});
         const eventId = String(parsed.authority);
-
         const result = await withTenantTransaction(async (trx) => {
             const attempt = await PaymentAttempt.query({ client: trx })
                 .where("gateway_id", Number(gateway.id))
                 .where("gateway_authority", String(parsed.authority))
                 .forUpdate()
                 .first();
-            if (!attempt) {
-                throw new Exception("No matching payment attempt found for callback", {
-                    status: 404,
-                    code: "E_PAYMENT_ATTEMPT_NOT_FOUND",
-                });
-            }
+            if (!attempt) throw new Exception("No matching payment attempt found for callback", { status: 404, code: "E_PAYMENT_ATTEMPT_NOT_FOUND" });
             const order = await Order.query({ client: trx }).where("id", Number(attempt.orderId)).forUpdate().firstOrFail();
-            const ledger = await webhookIdempotencyService.record(
-                {
-                    provider: gatewayCode,
-                    eventId,
-                    eventKind: `payment.callback.${parsed.status}`,
-                    paymentAttemptId: attempt.id,
-                    orderId: order.id,
-                    rawBody,
-                },
-                trx,
-            );
+            const ledger = await webhookIdempotencyService.record({ provider: gatewayCode, eventId, eventKind: `payment.callback.${parsed.status}`, paymentAttemptId: attempt.id, orderId: order.id, rawBody }, trx);
             if (ledger.replayed) {
-                const replayedRedirect =
-                    ledger.existing.outcome === "verified"
-                        ? this.attachOrderKey(successUrl, order)
-                        : this.attachReason(failedUrl, `replayed_${ledger.existing.outcome}`);
-                return { order, attempt, redirect: replayedRedirect };
+                const redirect = ledger.existing.outcome === "verified" ? this.attachOrderKey(successUrl, order) : this.attachReason(failedUrl, `replayed_${ledger.existing.outcome}`);
+                return { order, attempt, redirect };
             }
             const ledgerRow = ledger.inserted;
-
             if (parsed.status === "cancelled" || parsed.status === "failed") {
                 if (attempt.status !== PaymentAttemptStatus.Verified) {
                     attempt.status = parsed.status === "cancelled" ? PaymentAttemptStatus.Cancelled : PaymentAttemptStatus.Failed;
@@ -219,96 +176,40 @@ export class PaymentService {
                     attempt.errorCode = parsed.status === "cancelled" ? "psp_cancelled" : "psp_failed";
                     await attempt.save();
                 }
-                if (order.status === OrderStatus.Pending) {
-                    await orderStateMachine.transition(order, OrderStatus.Failed, {
-                        reason: `payment.${gatewayCode}.${parsed.status}`,
-                        trx,
-                    });
-                }
+                if (order.status === OrderStatus.Pending) await orderStateMachine.transition(order, OrderStatus.Failed, { reason: `payment.${gatewayCode}.${parsed.status}`, trx });
                 await webhookIdempotencyService.finalize(ledgerRow, parsed.status, { trx });
                 return { order, attempt, redirect: this.attachReason(failedUrl, `psp_${parsed.status}`) };
             }
-
             if (attempt.status === PaymentAttemptStatus.Verified) {
-                Sentry.captureMessage("webhook_out_of_order", {
-                    level: "warning",
-                    tags: {
-                        gateway: gatewayCode,
-                        order_id: String(order.id),
-                        attempt_id: String(attempt.id),
-                        prior_status: attempt.status,
-                    },
-                });
+                Sentry.captureMessage("webhook_out_of_order", { level: "warning", tags: { gateway: gatewayCode, order_id: String(order.id), attempt_id: String(attempt.id), prior_status: attempt.status } });
                 await webhookIdempotencyService.finalize(ledgerRow, "verified_out_of_order", { trx });
                 return { order, attempt, redirect: this.attachOrderKey(successUrl, order) };
             }
-
-            const verifyResult = await adapter.verify({
-                attempt,
-                callback: parsed,
-                settings: runtimeSettings,
-            });
-            const amountMismatch =
-                verifyResult.ok &&
-                verifyResult.amount_minor !== undefined &&
-                verifyResult.amount_minor !== Number(attempt.amountMinor);
-
+            const verifyResult = await adapter.verify({ attempt, callback: parsed, settings: runtimeSettings });
+            const amountMismatch = verifyResult.ok && verifyResult.amount_minor !== undefined && verifyResult.amount_minor !== Number(attempt.amountMinor);
             if (!verifyResult.ok || amountMismatch) {
-                if (amountMismatch) {
-                    Sentry.captureMessage("payment_amount_mismatch", {
-                        level: "error",
-                        tags: {
-                            gateway: gatewayCode,
-                            order_id: String(order.id),
-                            attempt_id: String(attempt.id),
-                        },
-                        extra: {
-                            expected_minor: Number(attempt.amountMinor),
-                            received_minor: (verifyResult as { amount_minor: number }).amount_minor,
-                        },
-                    });
-                }
+                if (amountMismatch) Sentry.captureMessage("payment_amount_mismatch", { level: "error", tags: { gateway: gatewayCode, order_id: String(order.id), attempt_id: String(attempt.id) }, extra: { expected_minor: Number(attempt.amountMinor), received_minor: (verifyResult as { amount_minor: number }).amount_minor } });
                 attempt.status = PaymentAttemptStatus.Failed;
                 attempt.errorCode = amountMismatch ? "amount_mismatch" : (verifyResult as { error_code: string }).error_code;
-                attempt.errorMessage = amountMismatch
-                    ? `expected ${attempt.amountMinor}, got ${(verifyResult as { amount_minor: number }).amount_minor}`
-                    : (verifyResult as { error_message: string }).error_message;
+                attempt.errorMessage = amountMismatch ? `expected ${attempt.amountMinor}, got ${(verifyResult as { amount_minor: number }).amount_minor}` : (verifyResult as { error_message: string }).error_message;
                 attempt.gatewayPayload = (verifyResult.payload as Record<string, unknown>) ?? {};
                 await attempt.save();
-                if (order.status === OrderStatus.Pending) {
-                    await orderStateMachine.transition(order, OrderStatus.Failed, {
-                        reason: amountMismatch
-                            ? `payment.${gatewayCode}.amount_mismatch`
-                            : `payment.${gatewayCode}.verify_failed`,
-                        trx,
-                    });
-                }
-                await webhookIdempotencyService.finalize(ledgerRow, amountMismatch ? "amount_mismatch" : "verify_failed", {
-                    trx,
-                });
-                return {
-                    order,
-                    attempt,
-                    redirect: this.attachReason(failedUrl, amountMismatch ? "amount_mismatch" : "verify_failed"),
-                };
+                if (order.status === OrderStatus.Pending) await orderStateMachine.transition(order, OrderStatus.Failed, { reason: amountMismatch ? `payment.${gatewayCode}.amount_mismatch` : `payment.${gatewayCode}.verify_failed`, trx });
+                await webhookIdempotencyService.finalize(ledgerRow, amountMismatch ? "amount_mismatch" : "verify_failed", { trx });
+                return { order, attempt, redirect: this.attachReason(failedUrl, amountMismatch ? "amount_mismatch" : "verify_failed") };
             }
-
             attempt.status = PaymentAttemptStatus.Verified;
             attempt.gatewayTransactionId = verifyResult.transaction_id;
             attempt.verifiedAt = DateTime.utc();
             attempt.gatewayPayload = (verifyResult.payload as Record<string, unknown>) ?? {};
             await attempt.save();
-
             order.useTransaction(trx);
             order.transactionId = verifyResult.transaction_id;
             await order.save();
-            if (order.status === OrderStatus.Pending) {
-                await orderStateMachine.transition(order, OrderStatus.Processing, { reason: "payment_verified", trx });
-            }
+            if (order.status === OrderStatus.Pending) await orderStateMachine.transition(order, OrderStatus.Processing, { reason: "payment_verified", trx });
             await webhookIdempotencyService.finalize(ledgerRow, "verified", { trx });
             return { order, attempt, redirect: this.attachOrderKey(successUrl, order) };
         });
-
         if (result.attempt) {
             await this.linkLatest(result.order, result.attempt);
             recordPaymentAttempt(gatewayCode, result.attempt.status);
@@ -317,39 +218,18 @@ export class PaymentService {
         if (result.attempt?.status === PaymentAttemptStatus.Verified) {
             paymentGatewayCredentialsService.markHealthy(gateway, DateTime.utc().toISO() ?? new Date().toISOString());
             await gateway.save();
-            await emitter.emit("payment:verified", {
-                orderId: Number(result.order.id),
-                attemptId: Number(result.attempt.id),
-                transactionId: result.attempt.gatewayTransactionId ?? "",
-            });
+            await emitter.emit("payment:verified", { orderId: Number(result.order.id), attemptId: Number(result.attempt.id), transactionId: result.attempt.gatewayTransactionId ?? "" });
         }
         return result;
     }
 
     async refund(order: Order, amountMinor: number, reason?: string): Promise<PaymentRefundResult> {
         const refundStartedAt = process.hrtime.bigint();
-        const attempt = await PaymentAttempt.query()
-            .where("order_id", Number(order.id))
-            .where("status", PaymentAttemptStatus.Verified)
-            .orderBy("verified_at", "desc")
-            .first();
-        if (!attempt) {
-            return { ok: false, error_code: "no_verified_attempt", error_message: "Order has no verified payment to refund" };
-        }
+        const attempt = await PaymentAttempt.query().where("order_id", Number(order.id)).where("status", PaymentAttemptStatus.Verified).orderBy("verified_at", "desc").first();
+        if (!attempt) return { ok: false, error_code: "no_verified_attempt", error_message: "Order has no verified payment to refund" };
         const { adapter, gateway } = await paymentAdapterRegistry.resolveForHistoricalGatewayId(attempt.gatewayId);
-        if (!adapter.refund || !adapter.capabilities.refunds) {
-            return {
-                ok: false,
-                error_code: "refunds_unsupported",
-                error_message: `Gateway "${gateway.code}" does not support refunds`,
-            };
-        }
-        const result = await adapter.refund({
-            attempt,
-            amount_minor: amountMinor,
-            reason,
-            settings: paymentGatewayCredentialsService.runtimeSettings(gateway),
-        });
+        if (!adapter.refund || !adapter.capabilities.refunds) return { ok: false, error_code: "refunds_unsupported", error_message: `Gateway "${gateway.code}" does not support refunds` };
+        const result = await adapter.refund({ attempt, amount_minor: amountMinor, reason, settings: paymentGatewayCredentialsService.runtimeSettings(gateway) });
         if (result.ok) recordPaymentAttempt(gateway.code, PaymentAttemptStatus.Refunded);
         recordPaymentPhase(gateway.code, "refund", Number(process.hrtime.bigint() - refundStartedAt) / 1e9);
         return result;
@@ -367,47 +247,24 @@ export class PaymentService {
     }
 
     private attachReason(url: string, reason: string): string {
-        try {
-            const u = new URL(url);
-            u.searchParams.set("reason", reason);
-            return u.toString();
-        } catch {
-            const sep = url.includes("?") ? "&" : "?";
-            return `${url}${sep}reason=${encodeURIComponent(reason)}`;
-        }
+        try { const u = new URL(url); u.searchParams.set("reason", reason); return u.toString(); } catch { const sep = url.includes("?") ? "&" : "?"; return `${url}${sep}reason=${encodeURIComponent(reason)}`; }
     }
 
     private attachOrderKey(url: string, order: Order): string {
-        try {
-            const u = new URL(url);
-            if (order.orderKey) u.searchParams.set("order_key", order.orderKey);
-            return u.toString();
-        } catch {
-            const sep = url.includes("?") ? "&" : "?";
-            return order.orderKey ? `${url}${sep}order_key=${encodeURIComponent(order.orderKey)}` : url;
-        }
+        try { const u = new URL(url); if (order.orderKey) u.searchParams.set("key", order.orderKey); return u.toString(); } catch { if (!order.orderKey) return url; const sep = url.includes("?") ? "&" : "?"; return `${url}${sep}key=${encodeURIComponent(order.orderKey)}`; }
     }
 
     private async linkLatest(order: Order, attempt: PaymentAttempt): Promise<void> {
-        if (!order || !attempt?.id) return;
-        order.lastPaymentAttemptId = attempt.id;
+        order.paymentAttemptId = attempt.id;
+        order.paymentGatewayIdSnapshot = attempt.gatewayId;
+        order.paymentMethodCodeSnapshot = attempt.gatewayCodeSnapshot;
         await order.save();
     }
 
     private errorCodeFromException(error: unknown): string {
-        const message = (error as Error)?.message ?? "";
-        if (/abort|timeout|TimeoutError/i.test(message) || (error as { name?: string })?.name === "TimeoutError") {
-            return "gateway_timeout";
-        }
-        if (/ENETUNREACH|ECONNREFUSED|EAI_AGAIN|fetch failed/i.test(message)) return "gateway_unreachable";
+        if (error && typeof error === "object" && "code" in error && typeof (error as { code?: unknown }).code === "string") return (error as { code: string }).code;
         return "gateway_error";
     }
 }
 
 export const paymentService = new PaymentService();
-
-declare module "@adonisjs/core/types" {
-    interface EventsList {
-        "payment:verified": { orderId: number; attemptId: number; transactionId: string };
-    }
-}
