@@ -85,6 +85,7 @@ export class PaymentGatewayCredentialsService {
     markError(gateway: PaymentGateway, message: string): void {
         const attrs = this.attributes(gateway);
         attrs.health_status = "error";
+        attrs.last_verified_at = null;
         attrs.last_error = message.slice(0, 500);
         gateway.attributes = attrs;
     }
