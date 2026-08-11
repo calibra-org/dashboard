@@ -121,7 +121,7 @@ export function PaymentGatewayDetailView({ code }: { code: string }) {
                         "rounded-lg border px-4 py-3 text-sm",
                         message.tone === "error"
                             ? "border-destructive/30 bg-destructive/5 text-destructive"
-                            : "border-emerald-500/25 bg-emerald-500/5",
+                            : "border-success/40 bg-success/10",
                     )}
                 >
                     {message.text}
@@ -242,7 +242,7 @@ export function PaymentGatewayDetailView({ code }: { code: string }) {
                     </Card>
 
                     {stub ? (
-                        <Card className="border-amber-500/30">
+                        <Card className="border-warning/40">
                             <CardContent className="flex gap-3 p-5 text-sm leading-6">
                                 <Info className="mt-1 size-4 shrink-0" aria-hidden="true" />
                                 <div>

@@ -230,7 +230,7 @@ export function PaymentsView() {
                         "rounded-lg border px-4 py-3 text-sm",
                         message.tone === "error"
                             ? "border-destructive/30 bg-destructive/5 text-destructive"
-                            : "border-emerald-500/25 bg-emerald-500/5 text-foreground",
+                            : "border-success/40 bg-success/10 text-foreground",
                     )}
                 >
                     {message.text}
@@ -284,7 +284,7 @@ export function PaymentsView() {
                                 </div>
 
                                 {gateway.implementationStatus === "stub" ? (
-                                    <div className="flex items-start gap-2 rounded-lg border border-amber-500/25 bg-amber-500/5 p-3 text-muted-foreground text-xs leading-5">
+                                    <div className="flex items-start gap-2 rounded-lg border border-warning/40 bg-warning/10 p-3 text-muted-foreground text-xs leading-5">
                                         <Info className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
                                         <span>
                                             {fa
