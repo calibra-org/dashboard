@@ -20,10 +20,7 @@ export default class AdminPaymentGatewaysController {
         await ensurePaymentGatewayCatalog();
         const parsed = await ctx.request.validateUsing(adminPaymentGatewayListValidator);
         const { data: rows, meta } = await adminPaymentGatewaysView.run<PaymentGateway>(PaymentGateway.query(), parsed);
-        return {
-            data: rows.map((row) => new PaymentGatewayTransformer(row).forAdmin()),
-            meta,
-        };
+        return { data: rows.map((row) => new PaymentGatewayTransformer(row).forAdmin()), meta };
     }
 
     async show(ctx: HttpContext) {
@@ -41,19 +38,25 @@ export default class AdminPaymentGatewaysController {
     async update(ctx: HttpContext) {
         const gateway = await this.findOrFail(ctx.params.id);
         const payload = await ctx.request.validateUsing(adminPaymentGatewayUpdateValidator);
-        const credentialsChanged = Boolean(payload.settings);
+        const credentialMutation = payload.settings
+            ? paymentGatewayCredentialsService.hasCredentialMutation(gateway.code, payload.settings)
+            : false;
 
-        if (payload.settings) paymentGatewayCredentialsService.applySettingsPatch(gateway, payload.settings);
+        if (payload.settings) {
+            paymentGatewayCredentialsService.applySettingsPatch(gateway, payload.settings);
+            if (credentialMutation) gateway.enabled = false;
+        }
         if (payload.ordering !== undefined) gateway.ordering = payload.ordering;
-        if (payload.enabled !== undefined) {
-            if (payload.enabled) {
-                this.assertImplementedAndConfigured(gateway);
-                if (credentialsChanged || paymentGatewayCredentialsService.health(gateway).status !== "healthy") {
-                    await this.verifyAndPersist(gateway, ctx, false);
-                }
-                this.assertVerified(gateway);
+
+        if (payload.enabled === true) {
+            this.assertImplementedAndConfigured(gateway);
+            if (credentialMutation || paymentGatewayCredentialsService.health(gateway).status !== "healthy") {
+                await this.verifyAndPersist(gateway, ctx, false);
             }
-            gateway.enabled = payload.enabled;
+            this.assertVerified(gateway);
+            gateway.enabled = true;
+        } else if (payload.enabled === false) {
+            gateway.enabled = false;
         }
 
         await gateway.save();
@@ -66,7 +69,7 @@ export default class AdminPaymentGatewaysController {
                 gateway: gateway.code,
                 enabled: payload.enabled,
                 ordering: payload.ordering,
-                credentials_changed: credentialsChanged,
+                credentials_changed: credentialMutation,
                 health_status: paymentGatewayCredentialsService.health(gateway).status,
             },
         });
@@ -90,6 +93,7 @@ export default class AdminPaymentGatewaysController {
                 });
             }
         } catch (error) {
+            gateway.enabled = false;
             await gateway.save();
             if (audit) {
                 await recordAudit({
@@ -138,9 +142,7 @@ export default class AdminPaymentGatewaysController {
             throw new Exception("Payment gateway not found", { status: 404, code: "E_NOT_FOUND" });
         }
         const row = await PaymentGateway.find(numericId);
-        if (!row) {
-            throw new Exception("Payment gateway not found", { status: 404, code: "E_NOT_FOUND" });
-        }
+        if (!row) throw new Exception("Payment gateway not found", { status: 404, code: "E_NOT_FOUND" });
         return row;
     }
 }
