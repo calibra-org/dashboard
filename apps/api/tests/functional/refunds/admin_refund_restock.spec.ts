@@ -61,6 +61,29 @@ test.group("POST /api/v1/admin/orders/:order_id/refunds (restock)", (group) => {
         assert.equal(top.quantityDelta, 1);
     });
 
+    test("amount-only refund cannot request restock without explicit line quantities", async ({ client, assert }) => {
+        const admin = await adminUser();
+        const product = await createTaxableProduct({ regularPrice: 1_000_000 });
+        const order = await makeDraftOrder({
+            customerId: null,
+            productId: Number(product.id),
+            quantity: 2,
+            price: 1_000_000,
+        });
+        await advanceOrderTo(order, OrderStatus.Processing);
+        const itemBefore = await InventoryItem.query().where("product_id", Number(product.id)).firstOrFail();
+        const before = itemBefore.stockQuantity;
+
+        const response = await client
+            .post(`/api/v1/admin/orders/${order.id}/refunds`)
+            .loginAs(admin)
+            .json({ amount_minor: 1_000_000, restock_requested: true });
+        response.assertStatus(422);
+
+        const itemAfter = await InventoryItem.query().where("product_id", Number(product.id)).firstOrFail();
+        assert.equal(itemAfter.stockQuantity, before);
+    });
+
     test("restock_requested=false leaves inventory untouched", async ({ client, assert }) => {
         const admin = await adminUser();
         const product = await createTaxableProduct({ regularPrice: 1_000_000 });
