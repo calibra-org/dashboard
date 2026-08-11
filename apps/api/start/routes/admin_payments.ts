@@ -8,6 +8,7 @@ const AdminPaymentAttemptsController = () => import("#controllers/admin/payment_
 router
     .group(() => {
         router.get("/payment-gateways", [AdminPaymentGatewaysController, "index"]).as("admin.payment_gateways.index");
+        router.post("/payment-gateways/bulk", [AdminPaymentGatewaysController, "bulk"]).as("admin.payment_gateways.bulk");
         router.get("/payment-gateways/:id", [AdminPaymentGatewaysController, "show"]).as("admin.payment_gateways.show");
         router.patch("/payment-gateways/:id", [AdminPaymentGatewaysController, "update"]).as("admin.payment_gateways.update");
 
