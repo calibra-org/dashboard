@@ -10,6 +10,9 @@ import { UnimplementedPspGateway } from "#services/adapters/unimplemented_psp_ga
 import { zarinpalGateway } from "#services/adapters/zarinpal_gateway";
 import { readImplementationStatus } from "#transformers/payment_gateway_transformer";
 
+type CallbackPaymentAdapter = PaymentAdapter &
+    Required<Pick<PaymentAdapter, "parseCallback" | "verify">>;
+
 /**
  * Singleton registry of payment adapters. Concrete adapters are registered only when Calibra has
  * an actual protocol implementation. A catalog row may still exist as `stub` so operators can see
@@ -60,8 +63,12 @@ export class PaymentAdapterRegistry {
      * disabled after the shopper has been redirected to the PSP; disabling must block only *new*
      * payment initializations, never strand an in-flight callback.
      */
-    async resolveForCallbackCode(code: string): Promise<{ adapter: PaymentAdapter; gateway: PaymentGateway }> {
-        return this.resolveHistoricalForCode(code, "verify");
+    async resolveForCallbackCode(code: string): Promise<{ adapter: CallbackPaymentAdapter; gateway: PaymentGateway }> {
+        const { adapter, gateway } = await this.resolveHistoricalForCode(code, "verify");
+        if (!adapter.parseCallback || !adapter.verify) {
+            throw new GatewayNotConfiguredException(code, `Gateway "${code}" does not support callbacks`);
+        }
+        return { adapter: adapter as CallbackPaymentAdapter, gateway };
     }
 
     /**
