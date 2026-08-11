@@ -40,6 +40,7 @@ function inputFactory(overrides: Partial<CartTotalsInput> & { discounterResult?:
             discountTaxTotal: 0,
             freeShipping: false,
             perLineDiscounts: new Map(),
+            perCouponDiscounts: new Map(),
         },
         pricesIncludeTax: overrides.pricesIncludeTax ?? true,
         rateProvider: overrides.rateProvider ?? (() => [STANDARD_VAT]),
@@ -110,6 +111,7 @@ test.group("cart_totals_service", () => {
                     discountTaxTotal: 0,
                     freeShipping: true,
                     perLineDiscounts: new Map(),
+                    perCouponDiscounts: new Map(),
                 };
             },
         };
@@ -136,6 +138,7 @@ test.group("cart_totals_service", () => {
                     discountTaxTotal: 100_000,
                     freeShipping: false,
                     perLineDiscounts: new Map([["1", 1_100_000]]),
+                    perCouponDiscounts: new Map([["TEST", { discount: 1_100_000, discountTax: 100_000 }]]),
                 },
             }),
         );

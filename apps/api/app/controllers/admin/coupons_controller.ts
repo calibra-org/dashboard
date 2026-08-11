@@ -224,8 +224,11 @@ export default class AdminCouponsController {
      */
     async codeCheck(ctx: HttpContext) {
         const code = String(ctx.request.input("code", "")).trim().toUpperCase();
-        if (code.length < 2 || code.length > 64) {
+        if (code.length < 4 || code.length > 64) {
             return { data: { available: false, suggestion: null, reason: "invalid_length" } };
+        }
+        if (!/^[A-Z0-9][A-Z0-9-]*$/.test(code)) {
+            return { data: { available: false, suggestion: null, reason: "invalid_format" } };
         }
         const existing = await Coupon.query().where("code", code).first();
         if (!existing) return { data: { available: true, suggestion: null } };
@@ -289,6 +292,7 @@ export default class AdminCouponsController {
 
     async store(ctx: HttpContext) {
         const payload = await ctx.request.validateUsing(createCouponValidator);
+        assertCouponWindow(payload);
         const coupon = await withTenantTransaction(async (trx) => {
             const created = await Coupon.create(this.buildAttributes(payload, "create"), { client: trx });
             await this.writeRelations(trx, created.id, payload);
@@ -303,6 +307,7 @@ export default class AdminCouponsController {
         const coupon = await Coupon.query().where("id", Number(ctx.params.id)).whereNull("deleted_at").first();
         if (!coupon) throw notFound();
         const payload = await ctx.request.validateUsing(updateCouponValidator);
+        assertCouponWindow(payload, coupon);
 
         await withTenantTransaction(async (trx) => {
             coupon.useTransaction(trx);
@@ -337,6 +342,7 @@ export default class AdminCouponsController {
 
         await withTenantTransaction(async (trx) => {
             for (const row of payload.create ?? []) {
+                assertCouponWindow(row);
                 const created = await Coupon.create(this.buildAttributes(row as CreatePayload, "create"), { client: trx });
                 await this.writeRelations(trx, created.id, row as CreatePayload);
                 result.created.push(Number(created.id));
@@ -344,6 +350,7 @@ export default class AdminCouponsController {
             for (const row of payload.update ?? []) {
                 const coupon = await Coupon.query({ client: trx }).where("id", row.id).whereNull("deleted_at").first();
                 if (!coupon) continue;
+                assertCouponWindow(row, coupon);
                 coupon.merge(this.buildAttributes(row as UpdatePayload, "update"));
                 await coupon.save();
                 await this.writeRelations(trx, coupon.id, row as UpdatePayload);
@@ -514,6 +521,31 @@ export default class AdminCouponsController {
             .preload("brandConstraints")
             .preload("emailRestrictions")
             .first();
+    }
+}
+
+function assertCouponWindow(
+    payload: { starts_at?: Date | null; expires_at?: Date | null },
+    current?: { startsAt?: DateTime | null; expiresAt?: DateTime | null },
+): void {
+    const startsAt =
+        payload.starts_at === undefined
+            ? (current?.startsAt ?? null)
+            : payload.starts_at === null
+              ? null
+              : DateTime.fromJSDate(payload.starts_at);
+    const expiresAt =
+        payload.expires_at === undefined
+            ? (current?.expiresAt ?? null)
+            : payload.expires_at === null
+              ? null
+              : DateTime.fromJSDate(payload.expires_at);
+
+    if (startsAt && expiresAt && startsAt.toMillis() >= expiresAt.toMillis()) {
+        throw new Exception("Coupon starts_at must be earlier than expires_at", {
+            status: 422,
+            code: "E_COUPON_DATE_WINDOW",
+        });
     }
 }
 

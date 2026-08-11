@@ -21,19 +21,19 @@ test.group("POST /api/v1/cart/coupons", (group) => {
 
     test("apply a valid coupon and see totals reduced", async ({ client, assert }) => {
         const product = await createTaxableProduct({ regularPrice: 1_000_000 });
-        await CouponFactory.merge({ code: "P10", amountPercent: "10.00" }).create();
+        await CouponFactory.merge({ code: "PCT10", amountPercent: "10.00" }).create();
 
         const added = await client.post("/api/v1/cart/items").json({ product_id: Number(product.id), quantity: 1 });
         const token = tokenFromResponse(added);
         const before = added.body().data.totals;
 
-        const applied = await client.post("/api/v1/cart/coupons").cookie("cart_token", token).json({ code: "P10" });
+        const applied = await client.post("/api/v1/cart/coupons").cookie("cart_token", token).json({ code: "PCT10" });
 
         applied.assertStatus(200);
         applied.assertAgainstApiSpec();
         const after = applied.body().data;
         assert.equal(after.applied_coupons.length, 1);
-        assert.equal(after.applied_coupons[0].code, "P10");
+        assert.equal(after.applied_coupons[0].code, "PCT10");
         assert.equal(after.totals.discount_total, 100_000);
         assert.isAtMost(after.totals.grand_total, before.grand_total);
     });
@@ -50,10 +50,10 @@ test.group("POST /api/v1/cart/coupons", (group) => {
 
     test("disabled coupon returns 422 with reason=disabled", async ({ client, assert }) => {
         const product = await createTaxableProduct({ regularPrice: 1_000_000 });
-        await CouponFactory.merge({ code: "OFF", status: "disabled" }).create();
+        await CouponFactory.merge({ code: "OFFX", status: "disabled" }).create();
         const added = await client.post("/api/v1/cart/items").json({ product_id: Number(product.id), quantity: 1 });
         const token = tokenFromResponse(added);
-        const result = await client.post("/api/v1/cart/coupons").cookie("cart_token", token).json({ code: "OFF" });
+        const result = await client.post("/api/v1/cart/coupons").cookie("cart_token", token).json({ code: "OFFX" });
         result.assertStatus(422);
         assert.equal(result.body().error, "disabled");
     });
@@ -61,12 +61,12 @@ test.group("POST /api/v1/cart/coupons", (group) => {
     test("expired coupon returns 422 with reason=expired", async ({ client, assert }) => {
         const product = await createTaxableProduct({ regularPrice: 1_000_000 });
         await CouponFactory.merge({
-            code: "OLD",
+            code: "OLDX",
             expiresAt: DateTime.utc().minus({ days: 1 }),
         }).create();
         const added = await client.post("/api/v1/cart/items").json({ product_id: Number(product.id), quantity: 1 });
         const token = tokenFromResponse(added);
-        const result = await client.post("/api/v1/cart/coupons").cookie("cart_token", token).json({ code: "OLD" });
+        const result = await client.post("/api/v1/cart/coupons").cookie("cart_token", token).json({ code: "OLDX" });
         result.assertStatus(422);
         assert.equal(result.body().error, "expired");
     });
@@ -84,16 +84,49 @@ test.group("POST /api/v1/cart/coupons", (group) => {
 
     test("applying the same code twice is idempotent", async ({ client, assert }) => {
         const product = await createTaxableProduct({ regularPrice: 1_000_000 });
-        await CouponFactory.merge({ code: "DUP", amountPercent: "5.00" }).create();
+        await CouponFactory.merge({ code: "DUPX", amountPercent: "5.00" }).create();
         const added = await client.post("/api/v1/cart/items").json({ product_id: Number(product.id), quantity: 1 });
         const token = tokenFromResponse(added);
-        const a = await client.post("/api/v1/cart/coupons").cookie("cart_token", token).json({ code: "DUP" });
+        const a = await client.post("/api/v1/cart/coupons").cookie("cart_token", token).json({ code: "DUPX" });
         a.assertStatus(200);
         a.assertAgainstApiSpec();
-        const b = await client.post("/api/v1/cart/coupons").cookie("cart_token", token).json({ code: "DUP" });
+        const b = await client.post("/api/v1/cart/coupons").cookie("cart_token", token).json({ code: "DUPX" });
         b.assertStatus(200);
         b.assertAgainstApiSpec();
         assert.equal(b.body().data.applied_coupons.length, 1);
+    });
+
+    test("soft-deleted applied coupon stops discounting on the next cart recompute", async ({ client, assert }) => {
+        const product = await createTaxableProduct({ regularPrice: 1_000_000 });
+        const coupon = await CouponFactory.merge({ code: "GONE10", amountPercent: "10.00" }).create();
+        const added = await client.post("/api/v1/cart/items").json({ product_id: Number(product.id), quantity: 1 });
+        const token = tokenFromResponse(added);
+
+        const applied = await client.post("/api/v1/cart/coupons").cookie("cart_token", token).json({ code: "GONE10" });
+        applied.assertStatus(200);
+        assert.equal(applied.body().data.totals.discount_total, 100_000);
+
+        coupon.deletedAt = DateTime.utc();
+        await coupon.save();
+
+        const refreshed = await client.get("/api/v1/cart").cookie("cart_token", token);
+        refreshed.assertStatus(200);
+        assert.equal(refreshed.body().data.totals.discount_total, 0);
+    });
+
+    test("normal coupon cannot stack after an individual_use coupon", async ({ client, assert }) => {
+        const product = await createTaxableProduct({ regularPrice: 1_000_000 });
+        await CouponFactory.merge({ code: "SOLO", individualUse: true, amountPercent: "20.00" }).create();
+        await CouponFactory.merge({ code: "STACK", amountPercent: "10.00" }).create();
+        const added = await client.post("/api/v1/cart/items").json({ product_id: Number(product.id), quantity: 1 });
+        const token = tokenFromResponse(added);
+
+        const first = await client.post("/api/v1/cart/coupons").cookie("cart_token", token).json({ code: "SOLO" });
+        first.assertStatus(200);
+
+        const second = await client.post("/api/v1/cart/coupons").cookie("cart_token", token).json({ code: "STACK" });
+        second.assertStatus(422);
+        assert.equal(second.body().error, "individual_use_conflict");
     });
 
     test("case-insensitive lookup resolves welcome10 to WELCOME10", async ({ client, assert }) => {

@@ -131,7 +131,7 @@ test.group("GET /api/v1/admin/coupons/code-check", (group) => {
         assert.equal(body.data.suggestion, "WELCOME-2");
     });
 
-    test("returns invalid_length when below the 2-char floor", async ({ client, assert }) => {
+    test("returns invalid_length when below the 4-char floor", async ({ client, assert }) => {
         const admin = await createAdmin();
         const response = await client.get("/api/v1/admin/coupons/code-check").qs({ code: "A" }).withGuard("api").loginAs(admin);
         response.assertStatus(200);

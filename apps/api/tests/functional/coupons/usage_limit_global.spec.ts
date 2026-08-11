@@ -18,7 +18,7 @@ test.group("usage_limit_global", (group) => {
     });
 
     test("ledger at the limit blocks new apply attempts with reason=usage_limit_global_reached", async ({ client, assert }) => {
-        const coupon = await CouponFactory.merge({ code: "G1", usageLimitGlobal: 1 }).create();
+        const coupon = await CouponFactory.merge({ code: "GL01", usageLimitGlobal: 1 }).create();
         const product = await createTaxableProduct({ regularPrice: 1_000_000 });
         const existingOrder = await makeDraftOrder({ productId: Number(product.id), quantity: 1, price: 1_000_000 });
         await CouponRedemption.create({
@@ -31,20 +31,20 @@ test.group("usage_limit_global", (group) => {
         const added = await client.post("/api/v1/cart/items").json({ product_id: Number(product.id), quantity: 1 });
         const token = added.cookie("cart_token")?.value as string;
 
-        const result = await client.post("/api/v1/cart/coupons").cookie("cart_token", token).json({ code: "G1" });
+        const result = await client.post("/api/v1/cart/coupons").cookie("cart_token", token).json({ code: "GL01" });
         result.assertStatus(422);
         assert.equal(result.body().error, "usage_limit_global_reached");
     });
 
     test("ledger below the limit allows the apply through", async ({ client, assert }) => {
-        await CouponFactory.merge({ code: "G2", usageLimitGlobal: 5 }).create();
+        await CouponFactory.merge({ code: "GL02", usageLimitGlobal: 5 }).create();
         const product = await createTaxableProduct({ regularPrice: 1_000_000 });
         const added = await client.post("/api/v1/cart/items").json({ product_id: Number(product.id), quantity: 1 });
         const token = added.cookie("cart_token")?.value as string;
 
-        const result = await client.post("/api/v1/cart/coupons").cookie("cart_token", token).json({ code: "G2" });
+        const result = await client.post("/api/v1/cart/coupons").cookie("cart_token", token).json({ code: "GL02" });
         result.assertStatus(200);
         result.assertAgainstApiSpec();
-        assert.equal(result.body().data.applied_coupons[0].code, "G2");
+        assert.equal(result.body().data.applied_coupons[0].code, "GL02");
     });
 });

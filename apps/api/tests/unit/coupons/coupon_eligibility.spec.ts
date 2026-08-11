@@ -2,7 +2,7 @@ import { test } from "@japa/runner";
 import { DateTime } from "luxon";
 
 import type { DiscounterItem } from "#contracts/discounter";
-import { type CouponSnapshot, checkEligibility } from "#services/discounter_service";
+import { type CouponSnapshot, checkEligibility, checkRedemptionLimits } from "#services/discounter_service";
 
 function snap(overrides: Partial<CouponSnapshot>): CouponSnapshot {
     return {
@@ -24,6 +24,7 @@ function snap(overrides: Partial<CouponSnapshot>): CouponSnapshot {
         freeShipping: false,
         productConstraints: [],
         categoryConstraints: [],
+        brandConstraints: [],
         emailRestrictions: [],
         ...overrides,
     };
@@ -40,6 +41,7 @@ function items(): DiscounterItem[] {
             lineSubtotal: 1_000_000,
             categoryIds: [10],
             tagIds: [],
+            brandIds: [20],
             onSale: false,
         },
     ];
@@ -136,6 +138,33 @@ test.group("Eligibility — each reason", () => {
         });
         assert.isFalse(result.ok);
         if (!result.ok) assert.equal(result.reason, "no_eligible_items");
+    });
+
+    test("brand include/exclude constraints affect real item eligibility", ({ assert }) => {
+        const included = checkEligibility({
+            coupon: snap({ brandConstraints: [{ brandId: 20, mode: "include" }] }),
+            items: items(),
+            itemsTotal: 1_000_000,
+            otherAppliedCouponIds: [],
+            customer: null,
+            globalRedemptionCount: 0,
+            perUserRedemptionCount: 0,
+            now: NOW,
+        });
+        assert.isTrue(included.ok);
+
+        const excluded = checkEligibility({
+            coupon: snap({ brandConstraints: [{ brandId: 20, mode: "exclude" }] }),
+            items: items(),
+            itemsTotal: 1_000_000,
+            otherAppliedCouponIds: [],
+            customer: null,
+            globalRedemptionCount: 0,
+            perUserRedemptionCount: 0,
+            now: NOW,
+        });
+        assert.isFalse(excluded.ok);
+        if (!excluded.ok) assert.equal(excluded.reason, "no_eligible_items");
     });
 
     test("only_sale_items when every eligible item is on sale and exclude_sale_items is set", ({ assert }) => {
@@ -240,5 +269,20 @@ test.group("Eligibility — each reason", () => {
             now: NOW,
         });
         assert.isTrue(result.ok);
+    });
+});
+
+test.group("Coupon redemption limit gate", () => {
+    test("detects an exhausted constrained coupon without synthetic item eligibility", ({ assert }) => {
+        const result = checkRedemptionLimits({
+            coupon: snap({
+                usageLimitGlobal: 1,
+                productConstraints: [{ productId: 999, mode: "include" }],
+            }),
+            globalRedemptionCount: 1,
+            perUserRedemptionCount: 0,
+        });
+        assert.isFalse(result.ok);
+        if (!result.ok) assert.equal(result.reason, "usage_limit_global_reached");
     });
 });

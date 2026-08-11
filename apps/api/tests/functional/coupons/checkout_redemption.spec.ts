@@ -83,6 +83,52 @@ test.group("Checkout + coupon redemption", (group) => {
         assert.equal(Number(redemptions[0]!.orderId), orderId);
     });
 
+    test("submit revalidates coupon status after draft creation", async ({ client, assert }) => {
+        const coupon = await CouponFactory.merge({ code: "DRAFT10", amountPercent: "10.00" }).create();
+        const product = await createTaxableProduct({ regularPrice: 1_000_000 });
+        const regionId = await iranRegionId();
+        const gateway = await PaymentGateway.findByOrFail("code", "cod");
+        const seeded = await client.post("/api/v1/cart/items").json({ product_id: Number(product.id), quantity: 1 });
+        const token = tokenFromResponse(seeded);
+
+        const applied = await client.post("/api/v1/cart/coupons").cookie("cart_token", token).json({ code: "DRAFT10" });
+        applied.assertStatus(200);
+        await client
+            .post("/api/v1/cart/customer")
+            .cookie("cart_token", token)
+            .json({ country: "IR", region_id: regionId, postcode: "1234567890" });
+        const draft = await client
+            .put("/api/v1/checkout")
+            .cookie("cart_token", token)
+            .json({
+                billing_address: {
+                    first_name: "S",
+                    last_name: "T",
+                    address_line_1: "Vali-Asr 1",
+                    city: "Tehran",
+                    country: "IR",
+                    region_id: regionId,
+                    postcode: "1234567890",
+                    phone: "+989121234567",
+                    email: "buyer@example.test",
+                },
+                payment_gateway_id: Number(gateway.id),
+            });
+        draft.assertStatus(200);
+
+        coupon.status = "disabled";
+        await coupon.save();
+
+        const finalize = await client
+            .post("/api/v1/checkout/submit")
+            .cookie("cart_token", token)
+            .header("Idempotency-Key", "redeem-DRAFT10");
+        finalize.assertStatus(409);
+
+        const redemptions = await CouponRedemption.query().where("coupon_id", Number(coupon.id));
+        assert.equal(redemptions.length, 0, "invalidated draft coupon must never enter the redemption ledger");
+    });
+
     test("usage_limit_global=1 cannot be exceeded across two distinct submits", async ({ client, assert }) => {
         await CouponFactory.merge({ code: "ONCE", amountPercent: "10.00", usageLimitGlobal: 1 }).create();
         const productA = await createTaxableProduct({ regularPrice: 1_000_000 });

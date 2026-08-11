@@ -29,12 +29,11 @@ export interface CouponTestResult {
  * Synthetic-cart eligibility + discount calculation for the admin "Quick test" panel. Builds the
  * same {@link CouponSnapshot} / {@link DiscounterInput} shape the cart pipeline uses, then calls
  * the existing eligibility check and discount math — no DB writes, no redemption inserts. Brand
- * constraints are folded into the same `productConstraints` set so the existing item-eligibility
- * logic enforces them without a parallel code path.
+ * constraints are carried as their own dimension and evaluated by the same item-eligibility routine.
  */
 export async function runCouponTest(coupon: Coupon, payload: CouponTestPayload, i18n: I18n): Promise<CouponTestResult> {
     const productIds = payload.line_items.map((i) => i.product_id);
-    const products = await Product.query().whereIn("id", productIds).preload("categories");
+    const products = await Product.query().whereIn("id", productIds).preload("categories").preload("brands");
     const productById = new Map<number, Product>();
     for (const p of products) productById.set(Number(p.id), p);
 
@@ -43,6 +42,7 @@ export async function runCouponTest(coupon: Coupon, payload: CouponTestPayload, 
         const price = row.price_minor ?? Number(product?.regularPrice ?? product?.salePrice ?? 0);
         const lineSubtotal = price * row.quantity;
         const categoryIds = (product?.categories ?? []).map((c) => Number(c.id));
+        const brandIds = (product?.brands ?? []).map((b) => Number(b.id));
         const onSale =
             product?.salePrice !== undefined &&
             product?.salePrice !== null &&
@@ -56,6 +56,7 @@ export async function runCouponTest(coupon: Coupon, payload: CouponTestPayload, 
             lineSubtotal,
             categoryIds,
             tagIds: [],
+            brandIds,
             onSale,
         };
     });
@@ -69,6 +70,10 @@ export async function runCouponTest(coupon: Coupon, payload: CouponTestPayload, 
     }));
     const categoryConstraints = (coupon.categoryConstraints ?? []).map((row) => ({
         categoryId: Number(row.categoryId),
+        mode: row.mode as "include" | "exclude",
+    }));
+    const brandConstraints = (coupon.brandConstraints ?? []).map((row) => ({
+        brandId: Number(row.brandId),
         mode: row.mode as "include" | "exclude",
     }));
     const emailRestrictions = (coupon.emailRestrictions ?? []).map((row) => row.emailPattern);
@@ -92,6 +97,7 @@ export async function runCouponTest(coupon: Coupon, payload: CouponTestPayload, 
         freeShipping: coupon.freeShipping,
         productConstraints,
         categoryConstraints,
+        brandConstraints,
         emailRestrictions,
     };
 

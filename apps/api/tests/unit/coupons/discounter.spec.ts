@@ -36,6 +36,7 @@ function coupon(overrides: Partial<CouponSnapshot>): CouponSnapshot {
         freeShipping: false,
         productConstraints: [],
         categoryConstraints: [],
+        brandConstraints: [],
         emailRestrictions: [],
         ...overrides,
     };
@@ -113,6 +114,25 @@ test.group("Discounter — fixed_cart", () => {
         assert.isAtLeast(largest, middle);
     });
 
+    test("exclude_sale_items keeps fixed_cart allocation off sale lines", ({ assert }) => {
+        const items = [
+            item({ lineKey: "sale", quantity: 1, priceSnapshot: 100_000, onSale: true }),
+            item({ lineKey: "regular", quantity: 1, priceSnapshot: 100_000, onSale: false }),
+        ];
+        const { input: i, snapshots } = input(items, [
+            coupon({
+                code: "NOSALE",
+                discountType: "fixed_cart",
+                amountMinor: 50_000,
+                amountPercent: null,
+                excludeSaleItems: true,
+            }),
+        ]);
+        const result = computeDiscounts(i, snapshots);
+        assert.equal(result.perLineDiscounts.get("sale") ?? 0, 0);
+        assert.equal(result.perLineDiscounts.get("regular") ?? 0, 50_000);
+    });
+
     test("coupon worth more than the cart caps at remaining subtotal", ({ assert }) => {
         const items = [item({ lineKey: "1", quantity: 1, priceSnapshot: 10_000 })];
         const { input: i, snapshots } = input(items, [
@@ -147,6 +167,9 @@ test.group("Discounter — sort order", () => {
         assert.equal(a.discountTotal, b.discountTotal);
         /** 1m − 100k = 900k, then 10% off = 90k off → 810k remaining, then 50k fixed_cart → total disc = 240k. */
         assert.equal(a.discountTotal, 100_000 + 90_000 + 50_000);
+        assert.equal(a.perCouponDiscounts.get("FP")?.discount, 100_000);
+        assert.equal(a.perCouponDiscounts.get("P10")?.discount, 90_000);
+        assert.equal(a.perCouponDiscounts.get("FC")?.discount, 50_000);
     });
 });
 

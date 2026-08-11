@@ -3,6 +3,7 @@ import { Exception } from "@adonisjs/core/exceptions";
 import type db from "@adonisjs/lucid/services/db";
 import type { TransactionClientContract } from "@adonisjs/lucid/types/database";
 
+import type { DiscounterItem } from "#contracts/discounter";
 import { OrderStatus } from "#enums/order_status";
 import type Cart from "#models/cart";
 import CartItem from "#models/cart_item";
@@ -14,11 +15,14 @@ import OrderAddress from "#models/order_address";
 import OrderAddressIranExtension from "#models/order_address_iran_extension";
 import OrderCouponLine from "#models/order_coupon_line";
 import OrderLineItem from "#models/order_line_item";
+import Product from "#models/product";
+import ProductVariation from "#models/product_variation";
 import type User from "#models/user";
 import { checkEligibility, countRedemptions, loadSnapshotForUpdate } from "#services/discounter_service";
 import { recordOrderFinalized } from "#services/metrics/domain_metrics";
 import { OrderFactory } from "#services/order_factory";
 import { orderStateMachine } from "#services/order_state_machine";
+import { resolvePrice } from "#services/price_resolver";
 import { withTenantTransaction } from "#services/tenant_context";
 
 const ORDER_KEY_BYTES = 20;
@@ -237,18 +241,26 @@ export class OrderFinalizer {
     }
 
     /**
-     * For each coupon line on the draft, lock the coupon row, re-validate the limits, and INSERT
-     * the redemption row. UNIQUE `(coupon_id, order_id)` makes the INSERT idempotent under
-     * `Idempotency-Key` replay — a retry of the same order returns the existing row instead of
-     * double-counting. Limit re-validation throws E_COUPON_LIMIT_EXHAUSTED on race loss; the
-     * surrounding transaction rolls back so no half-finalized order survives.
+     * For each coupon line on the draft, lock the coupon row, re-validate the complete live
+     * eligibility state, and INSERT the redemption row. This matters because status/dates/catalog
+     * constraints can change after draft creation just as usage counters can change concurrently.
+     * UNIQUE `(coupon_id, order_id)` keeps idempotency replays from double-counting.
      */
     private async writeRedemptionLedger(order: Order, trx: TransactionClientContract): Promise<void> {
-        const lines = await OrderCouponLine.query({ client: trx }).where("order_id", Number(order.id));
+        /** Deterministic coupon lock order avoids A→B / B→A deadlocks across concurrent orders. */
+        const lines = await OrderCouponLine.query({ client: trx })
+            .where("order_id", Number(order.id))
+            .orderBy("coupon_id", "asc")
+            .orderBy("id", "asc");
         if (lines.length === 0) return;
 
         const customerId = order.customerId === null || order.customerId === undefined ? null : Number(order.customerId);
         const email = order.billingEmail ?? null;
+        const couponItems = await this.loadCouponEligibilityItems(order, trx);
+        const itemsTotal = couponItems.reduce((sum, item) => sum + item.lineSubtotal, 0);
+        const appliedCouponIds = lines
+            .map((line) => (line.couponId === null || line.couponId === undefined ? null : Number(line.couponId)))
+            .filter((id): id is number => id !== null);
 
         for (const line of lines) {
             if (line.couponId === null || line.couponId === undefined) continue;
@@ -266,32 +278,21 @@ export class OrderFinalizer {
             const perUserCount =
                 snapshot.usageLimitPerUser === null ? 0 : await countRedemptions(couponId, { client: trx, customerId, email });
 
-            /** Eligibility re-runs without item state — we only re-check the limit gates here. */
             const result = checkEligibility({
                 coupon: snapshot,
-                items: [
-                    {
-                        lineKey: "1",
-                        productId: 0,
-                        variationId: null,
-                        quantity: 1,
-                        priceSnapshot: 0,
-                        lineSubtotal: 0,
-                        categoryIds: [],
-                        tagIds: [],
-                    },
-                ],
-                itemsTotal: Number(order.itemsTotal),
-                otherAppliedCouponIds: [],
+                items: couponItems,
+                itemsTotal,
+                otherAppliedCouponIds: appliedCouponIds.filter((id) => id !== couponId),
                 customer: { customerId, email },
                 globalRedemptionCount: globalCount,
                 perUserRedemptionCount: perUserCount,
             });
-            if (
-                !result.ok &&
-                (result.reason === "usage_limit_global_reached" || result.reason === "usage_limit_per_user_reached")
-            ) {
-                throw new Exception(`Coupon ${line.codeSnapshot} limit reached`, {
+            if (!result.ok) {
+                /**
+                 * Keep the established checkout conflict code for backward compatibility. The
+                 * message records the precise stable eligibility reason for diagnostics/UI retry.
+                 */
+                throw new Exception(`Coupon ${line.codeSnapshot} is no longer eligible: ${result.reason}`, {
                     status: 409,
                     code: "E_COUPON_LIMIT_EXHAUSTED",
                 });
@@ -318,6 +319,53 @@ export class OrderFinalizer {
                 { client: trx },
             );
         }
+    }
+
+    private async loadCouponEligibilityItems(order: Order, trx: TransactionClientContract): Promise<DiscounterItem[]> {
+        const orderItems = await OrderLineItem.query({ client: trx }).where("order_id", Number(order.id));
+        const productIds = [...new Set(orderItems.map((line) => Number(line.productId)).filter((id) => id > 0))];
+        const products =
+            productIds.length === 0
+                ? ([] as Product[])
+                : await Product.query({ client: trx })
+                      .whereIn("id", productIds)
+                      .preload("categories")
+                      .preload("tags")
+                      .preload("brands");
+        const productById = new Map(products.map((product) => [Number(product.id), product]));
+
+        const variationIds = [
+            ...new Set(
+                orderItems
+                    .map((line) => (line.variationId === null ? null : Number(line.variationId)))
+                    .filter((id): id is number => id !== null),
+            ),
+        ];
+        const variations =
+            variationIds.length === 0
+                ? ([] as ProductVariation[])
+                : await ProductVariation.query({ client: trx }).whereIn("id", variationIds);
+        const variationById = new Map(variations.map((variation) => [Number(variation.id), variation]));
+
+        return orderItems.map((line) => {
+            const productId = Number(line.productId);
+            const variationId = line.variationId === null ? null : Number(line.variationId);
+            const product = productById.get(productId);
+            const variation = variationId === null ? null : (variationById.get(variationId) ?? null);
+            const priceSnapshot = Number(line.priceSnapshot);
+            return {
+                lineKey: String(line.id),
+                productId,
+                variationId,
+                quantity: line.quantity,
+                priceSnapshot,
+                lineSubtotal: priceSnapshot * line.quantity,
+                categoryIds: (product?.categories ?? []).map((category) => Number(category.id)),
+                tagIds: (product?.tags ?? []).map((tag) => Number(tag.id)),
+                brandIds: (product?.brands ?? []).map((brand) => Number(brand.id)),
+                onSale: product ? resolvePrice(product, variation).onSale : false,
+            };
+        });
     }
 
     /**

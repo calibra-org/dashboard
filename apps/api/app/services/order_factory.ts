@@ -226,7 +226,11 @@ export class OrderFactory {
         const products =
             productIds.length === 0
                 ? ([] as Product[])
-                : await Product.query({ client: trx }).whereIn("id", productIds).preload("categories").preload("tags");
+                : await Product.query({ client: trx })
+                      .whereIn("id", productIds)
+                      .preload("categories")
+                      .preload("tags")
+                      .preload("brands");
         const productMap = new Map(products.map((p) => [Number(p.id), p]));
         const variationIds = snapshots.map((s) => s.variationId).filter((v): v is number => v !== null);
         const variations =
@@ -251,6 +255,7 @@ export class OrderFactory {
                 requiresShipping: true,
                 categoryIds: ((product?.categories ?? []) as Array<{ id: bigint | number }>).map((c) => Number(c.id)),
                 tagIds: ((product?.tags ?? []) as Array<{ id: bigint | number }>).map((t) => Number(t.id)),
+                brandIds: ((product?.brands ?? []) as Array<{ id: bigint | number }>).map((b) => Number(b.id)),
                 onSale,
             };
         });
@@ -357,38 +362,39 @@ export class OrderFactory {
 
     /**
      * Snapshot one `order_coupon_lines` row per applied coupon, distributing the discounter's
-     * total across the codes. Allocation is simple: the cart's `discountTotal` goes to the single
-     * applied coupon, or splits evenly when several stack, with the rounding residual landing on
-     * the first row. `discount_tax` is always 0 — line tax already gets recomputed on the
-     * post-discount base in the totals service, so this column is reserved for future
-     * tax-inclusive carts that need a separate audit field.
+     * exact amount produced by the discount engine for each canonical code. Never split the
+     * aggregate evenly: stacked percent/fixed coupons commonly contribute different amounts, and
+     * the order snapshot is an audit record that must preserve the actual calculation.
      */
     private async writeCouponLines(
         order: Order,
         cart: Cart,
-        totals: { discountTotal: number; discountTaxTotal: number },
+        totals: {
+            discountTotal: number;
+            discountTaxTotal: number;
+            perCouponDiscounts: Map<string, { discount: number; discountTax: number }>;
+        },
         trx: TransactionClientContract,
     ): Promise<void> {
         await cart.useTransaction(trx).load("appliedCoupons");
         if (cart.appliedCoupons.length === 0) return;
 
-        const codes = cart.appliedCoupons.map((row) => ({
-            couponId: Number(row.couponId),
-            code: row.codeSnapshot,
-        }));
-        /** Equal split when multiple coupons stack; residual goes to the first row. */
-        const share = Math.floor(totals.discountTotal / codes.length);
-        let residual = totals.discountTotal - share * codes.length;
-
+        const codes = cart.appliedCoupons
+            .map((row) => ({
+                couponId: Number(row.couponId),
+                code: row.codeSnapshot,
+            }))
+            .filter((entry) => totals.perCouponDiscounts.has(entry.code));
+        if (codes.length === 0) return;
         for (const entry of codes) {
+            const allocation = totals.perCouponDiscounts.get(entry.code) ?? { discount: 0, discountTax: 0 };
             const line = new OrderCouponLine();
             line.useTransaction(trx);
             line.orderId = order.id;
             line.couponId = entry.couponId;
             line.codeSnapshot = entry.code;
-            line.discount = share + residual;
-            line.discountTax = 0;
-            residual = 0;
+            line.discount = allocation.discount;
+            line.discountTax = allocation.discountTax;
             await line.save();
         }
     }

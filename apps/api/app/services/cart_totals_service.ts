@@ -32,6 +32,8 @@ export interface CartTotalsItem {
     categoryIds?: number[];
     /** Optional tag ids — passed through to the discounter only. */
     tagIds?: number[];
+    /** Optional brand ids — passed through to coupon eligibility. */
+    brandIds?: number[];
     /** True when the snapshot price reflects an active sale — passed through to the discounter. */
     onSale?: boolean;
 }
@@ -60,6 +62,7 @@ export interface CartTotalsResult {
     shippingTaxTotal: number;
     discountTotal: number;
     discountTaxTotal: number;
+    perCouponDiscounts: DiscounterResult["perCouponDiscounts"];
     taxTotal: number;
     grandTotal: number;
     needsShipping: boolean;
@@ -174,6 +177,7 @@ export function calculateCartTotals(input: CartTotalsInput): CartTotalsResult {
         shippingTaxTotal,
         discountTotal: input.discounterResult.discountTotal,
         discountTaxTotal: input.discounterResult.discountTaxTotal,
+        perCouponDiscounts: input.discounterResult.perCouponDiscounts,
         taxTotal,
         grandTotal,
         needsShipping,
@@ -250,6 +254,7 @@ function buildDiscounterInput(
         lineSubtotal: item.priceSnapshot * item.quantity,
         categoryIds: item.categoryIds ?? [],
         tagIds: item.tagIds ?? [],
+        brandIds: item.brandIds ?? [],
         onSale: item.onSale ?? false,
     }));
     return {

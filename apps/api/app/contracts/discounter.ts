@@ -24,8 +24,10 @@ export interface DiscounterItem {
     lineSubtotal: number;
     /** Category ids the line belongs to — used to match coupon category include/exclude constraints. */
     categoryIds: number[];
-    /** Product tag ids the line carries — used to match coupon tag include/exclude lists. */
+    /** Product tag ids the line carries — available to discount extensions. */
     tagIds: number[];
+    /** Product brand ids — used by the coupon brand include/exclude rules exposed in admin. */
+    brandIds?: number[];
     /** True when `priceSnapshot` reflects an active sale price — drives `exclude_sale_items`. */
     onSale?: boolean;
 }
@@ -54,6 +56,11 @@ export interface DiscounterInput {
     customer?: DiscounterCustomerContext | null;
 }
 
+export interface DiscounterCouponDiscount {
+    discount: number;
+    discountTax: number;
+}
+
 export interface DiscounterResult {
     /** Total of all discounts applied to line subtotals. */
     discountTotal: number;
@@ -63,6 +70,8 @@ export interface DiscounterResult {
     freeShipping: boolean;
     /** Per-line discount allocation keyed by `DiscounterItem.lineKey`, in minor units. */
     perLineDiscounts: Map<string, number>;
+    /** Exact allocation per canonical coupon code; order snapshots must never guess/split totals. */
+    perCouponDiscounts: Map<string, DiscounterCouponDiscount>;
 }
 
 export interface Discounter {
@@ -86,6 +95,7 @@ export class NoopDiscounter implements Discounter {
             discountTaxTotal: 0,
             freeShipping: false,
             perLineDiscounts: new Map(),
+            perCouponDiscounts: new Map(),
         };
     }
 }

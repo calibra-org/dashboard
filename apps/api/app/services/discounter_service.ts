@@ -11,6 +11,7 @@ import type {
     DiscounterResult,
 } from "#contracts/discounter";
 import Coupon, { type CouponDiscountType } from "#models/coupon";
+import CouponBrandConstraint from "#models/coupon_brand_constraint";
 import CouponCategoryConstraint from "#models/coupon_category_constraint";
 import CouponEmailRestriction from "#models/coupon_email_restriction";
 import CouponProductConstraint from "#models/coupon_product_constraint";
@@ -70,6 +71,7 @@ export interface CouponSnapshot {
     freeShipping: boolean;
     productConstraints: ReadonlyArray<{ productId: number; mode: "include" | "exclude" }>;
     categoryConstraints: ReadonlyArray<{ categoryId: number; mode: "include" | "exclude" }>;
+    brandConstraints: ReadonlyArray<{ brandId: number; mode: "include" | "exclude" }>;
     emailRestrictions: ReadonlyArray<string>;
 }
 
@@ -85,7 +87,35 @@ export default class DiscounterService implements Discounter {
         }
 
         const snapshots = await loadSnapshots(input.appliedCoupons);
-        return computeDiscounts(input, snapshots);
+        /**
+         * Re-evaluate every applied coupon against current state on every totals pass. A coupon may
+         * have expired, been disabled, crossed a usage limit, or had its constraints changed after
+         * it was first added to the cart. Stale cart rows must never keep granting a discount.
+         */
+        const candidates = pickActiveCoupons(sortCouponsByType(snapshots));
+        const eligible: CouponSnapshot[] = [];
+        const customer = input.customer ?? null;
+        for (const snapshot of candidates) {
+            const globalRedemptionCount = snapshot.usageLimitGlobal === null ? 0 : await countRedemptions(snapshot.id);
+            const perUserRedemptionCount =
+                snapshot.usageLimitPerUser === null
+                    ? 0
+                    : await countRedemptions(snapshot.id, {
+                          customerId: customer?.customerId,
+                          email: customer?.email,
+                      });
+            const eligibility = checkEligibility({
+                coupon: snapshot,
+                items: input.items,
+                itemsTotal: input.itemsTotal,
+                otherAppliedCouponIds: candidates.filter((other) => other.id !== snapshot.id).map((other) => other.id),
+                customer,
+                globalRedemptionCount,
+                perUserRedemptionCount,
+            });
+            if (eligibility.ok) eligible.push(snapshot);
+        }
+        return computeDiscounts(input, eligible);
     }
 }
 
@@ -97,6 +127,7 @@ export default class DiscounterService implements Discounter {
  */
 export function computeDiscounts(input: DiscounterInput, snapshots: CouponSnapshot[]): DiscounterResult {
     const perLine = new Map<string, number>();
+    const perCouponDiscounts = new Map<string, { discount: number; discountTax: number }>();
     /**
      * Running remaining eligible subtotal per line — `fixed_product → percent → fixed_cart` order
      * means each subsequent stage discounts what's left after the prior ones. Initialized to the
@@ -117,8 +148,12 @@ export function computeDiscounts(input: DiscounterInput, snapshots: CouponSnapsh
         if (coupon.freeShipping || coupon.discountType === "free_shipping") {
             freeShipping = true;
         }
-        if (coupon.discountType === "free_shipping") continue;
-        applyCouponToLines(coupon, input.items, remaining, perLine);
+        const before = sumMapValues(perLine);
+        if (coupon.discountType !== "free_shipping") {
+            applyCouponToLines(coupon, input.items, remaining, perLine);
+        }
+        const discount = Math.max(0, sumMapValues(perLine) - before);
+        perCouponDiscounts.set(coupon.code, { discount, discountTax: 0 });
     }
 
     const discountTotal = sumMapValues(perLine);
@@ -127,6 +162,7 @@ export function computeDiscounts(input: DiscounterInput, snapshots: CouponSnapsh
         discountTaxTotal: 0,
         freeShipping,
         perLineDiscounts: perLine,
+        perCouponDiscounts,
     };
 }
 
@@ -136,6 +172,20 @@ export function computeDiscounts(input: DiscounterInput, snapshots: CouponSnapsh
  * uses this to fail-fast on bad codes; the order_finalizer uses the same routine inside the
  * `FOR UPDATE` window to catch races.
  */
+export function checkRedemptionLimits(args: {
+    coupon: CouponSnapshot;
+    globalRedemptionCount: number;
+    perUserRedemptionCount: number;
+}): EligibilityResult {
+    if (args.coupon.usageLimitGlobal !== null && args.globalRedemptionCount >= args.coupon.usageLimitGlobal) {
+        return { ok: false, reason: "usage_limit_global_reached" };
+    }
+    if (args.coupon.usageLimitPerUser !== null && args.perUserRedemptionCount >= args.coupon.usageLimitPerUser) {
+        return { ok: false, reason: "usage_limit_per_user_reached" };
+    }
+    return { ok: true };
+}
+
 export function checkEligibility(args: {
     coupon: CouponSnapshot;
     items: ReadonlyArray<DiscounterItem>;
@@ -178,14 +228,11 @@ export function checkEligibility(args: {
         }
     }
 
-    if (args.coupon.usageLimitGlobal !== null && args.globalRedemptionCount >= args.coupon.usageLimitGlobal) {
-        return { ok: false, reason: "usage_limit_global_reached" };
-    }
-    if (args.coupon.usageLimitPerUser !== null && args.perUserRedemptionCount >= args.coupon.usageLimitPerUser) {
-        return { ok: false, reason: "usage_limit_per_user_reached" };
-    }
-
-    return { ok: true };
+    return checkRedemptionLimits({
+        coupon: args.coupon,
+        globalRedemptionCount: args.globalRedemptionCount,
+        perUserRedemptionCount: args.perUserRedemptionCount,
+    });
 }
 
 /**
@@ -200,14 +247,17 @@ export async function loadSnapshots(
     if (contexts.length === 0) return [];
 
     const ids = contexts.map((c) => c.id);
-    const couponsQuery = Coupon.query({ client }).whereIn("id", ids);
+    const couponsQuery = Coupon.query({ client }).whereIn("id", ids).whereNull("deleted_at");
     const coupons = await couponsQuery;
 
     const productConstraints = await CouponProductConstraint.query({ client }).whereIn("coupon_id", ids);
     const categoryConstraints = await CouponCategoryConstraint.query({ client }).whereIn("coupon_id", ids);
+    const brandConstraints = await CouponBrandConstraint.query({ client }).whereIn("coupon_id", ids);
     const emailRestrictions = await CouponEmailRestriction.query({ client }).whereIn("coupon_id", ids);
 
-    return coupons.map((coupon) => toSnapshot(coupon, productConstraints, categoryConstraints, emailRestrictions));
+    return coupons.map((coupon) =>
+        toSnapshot(coupon, productConstraints, categoryConstraints, brandConstraints, emailRestrictions),
+    );
 }
 
 /**
@@ -224,9 +274,10 @@ export async function loadSnapshotByCode(code: string, client?: TransactionClien
     const couponId = Number(coupon.id);
     const productConstraints = await CouponProductConstraint.query({ client }).where("coupon_id", couponId);
     const categoryConstraints = await CouponCategoryConstraint.query({ client }).where("coupon_id", couponId);
+    const brandConstraints = await CouponBrandConstraint.query({ client }).where("coupon_id", couponId);
     const emailRestrictions = await CouponEmailRestriction.query({ client }).where("coupon_id", couponId);
 
-    return toSnapshot(coupon, productConstraints, categoryConstraints, emailRestrictions);
+    return toSnapshot(coupon, productConstraints, categoryConstraints, brandConstraints, emailRestrictions);
 }
 
 /**
@@ -240,9 +291,10 @@ export async function loadSnapshotForUpdate(couponId: number, trx: TransactionCl
 
     const productConstraints = await CouponProductConstraint.query({ client: trx }).where("coupon_id", couponId);
     const categoryConstraints = await CouponCategoryConstraint.query({ client: trx }).where("coupon_id", couponId);
+    const brandConstraints = await CouponBrandConstraint.query({ client: trx }).where("coupon_id", couponId);
     const emailRestrictions = await CouponEmailRestriction.query({ client: trx }).where("coupon_id", couponId);
 
-    return toSnapshot(coupon, productConstraints, categoryConstraints, emailRestrictions);
+    return toSnapshot(coupon, productConstraints, categoryConstraints, brandConstraints, emailRestrictions);
 }
 
 /**
@@ -255,14 +307,15 @@ export async function countRedemptions(
     options: { client?: TransactionClientContract; customerId?: number | null; email?: string | null } = {},
 ): Promise<number> {
     const query = (options.client ?? db).from("coupon_redemptions").where("coupon_id", couponId);
-    if (options.customerId !== undefined || options.email !== undefined) {
+    const identityScoped = options.customerId !== undefined || options.email !== undefined;
+    const customerId = options.customerId ?? null;
+    const email = options.email?.trim() || null;
+    /** Anonymous carts without a stable identity defer per-user enforcement to checkout. */
+    if (identityScoped && customerId === null && email === null) return 0;
+    if (identityScoped) {
         query.andWhere((q) => {
-            if (options.customerId !== undefined && options.customerId !== null) {
-                q.orWhere("customer_id", options.customerId);
-            }
-            if (options.email) {
-                q.orWhereRaw("lower(email_snapshot) = lower(?)", [options.email]);
-            }
+            if (customerId !== null) q.orWhere("customer_id", customerId);
+            if (email) q.orWhereRaw("lower(email_snapshot) = lower(?)", [email]);
         });
     }
     const rows = await query.count("* as count");
@@ -279,6 +332,7 @@ function toSnapshot(
     coupon: Coupon,
     productConstraints: ReadonlyArray<CouponProductConstraint>,
     categoryConstraints: ReadonlyArray<CouponCategoryConstraint>,
+    brandConstraints: ReadonlyArray<CouponBrandConstraint>,
     emailRestrictions: ReadonlyArray<CouponEmailRestriction>,
 ): CouponSnapshot {
     return {
@@ -304,6 +358,9 @@ function toSnapshot(
         categoryConstraints: categoryConstraints
             .filter((c) => Number(c.couponId) === Number(coupon.id))
             .map((c) => ({ categoryId: Number(c.categoryId), mode: c.mode as "include" | "exclude" })),
+        brandConstraints: brandConstraints
+            .filter((c) => Number(c.couponId) === Number(coupon.id))
+            .map((c) => ({ brandId: Number(c.brandId), mode: c.mode as "include" | "exclude" })),
         emailRestrictions: emailRestrictions.filter((c) => Number(c.couponId) === Number(coupon.id)).map((c) => c.emailPattern),
     };
 }
@@ -318,9 +375,8 @@ function applyCouponToLines(
     remaining: Map<string, number>,
     perLine: Map<string, number>,
 ): void {
-    const eligible = items.filter((item) => isItemEligible(item, coupon));
+    const eligible = items.filter((item) => isItemEligible(item, coupon) && (!coupon.excludeSaleItems || !item.onSale));
     if (eligible.length === 0) return;
-    if (coupon.excludeSaleItems && eligible.every((item) => item.onSale)) return;
 
     switch (coupon.discountType) {
         case "fixed_product":
@@ -452,21 +508,26 @@ function isItemEligible(item: DiscounterItem, coupon: CouponSnapshot): boolean {
     const productExcludes = coupon.productConstraints.filter((c) => c.mode === "exclude");
     const categoryIncludes = coupon.categoryConstraints.filter((c) => c.mode === "include");
     const categoryExcludes = coupon.categoryConstraints.filter((c) => c.mode === "exclude");
+    const brandIncludes = coupon.brandConstraints.filter((c) => c.mode === "include");
+    const brandExcludes = coupon.brandConstraints.filter((c) => c.mode === "exclude");
+    const itemBrandIds = item.brandIds ?? [];
 
     if (productExcludes.some((c) => c.productId === item.productId)) return false;
     if (categoryExcludes.some((c) => item.categoryIds.includes(c.categoryId))) return false;
+    if (brandExcludes.some((c) => itemBrandIds.includes(c.brandId))) return false;
 
     const hasProductInclude = productIncludes.length > 0;
     const hasCategoryInclude = categoryIncludes.length > 0;
-    if (!hasProductInclude && !hasCategoryInclude) return true;
+    const hasBrandInclude = brandIncludes.length > 0;
+    if (!hasProductInclude && !hasCategoryInclude && !hasBrandInclude) return true;
 
     const productMatch = hasProductInclude && productIncludes.some((c) => c.productId === item.productId);
     const categoryMatch = hasCategoryInclude && categoryIncludes.some((c) => item.categoryIds.includes(c.categoryId));
+    const brandMatch = hasBrandInclude && brandIncludes.some((c) => itemBrandIds.includes(c.brandId));
     /**
-     * Match either set when present — the WC convention is that include lists are unioned, not
-     * intersected, so a coupon "for product A OR category B" works as customers expect.
+     * Include dimensions are unioned: product A OR category B OR brand C. Excludes always win.
      */
-    return productMatch || categoryMatch;
+    return productMatch || categoryMatch || brandMatch;
 }
 
 function matchEmailPattern(pattern: string, email: string): boolean {
@@ -510,5 +571,6 @@ function emptyResult(): DiscounterResult {
         discountTaxTotal: 0,
         freeShipping: false,
         perLineDiscounts: new Map(),
+        perCouponDiscounts: new Map(),
     };
 }
