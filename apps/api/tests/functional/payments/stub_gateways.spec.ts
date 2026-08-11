@@ -55,7 +55,10 @@ test.group("Stub PSP gateways", (group) => {
         assert.isFalse(reloaded.enabled, "stub gateway should still be disabled after the rejected PATCH");
     });
 
-    test("admin PATCH accepts preparatory credentials on a stub but stores them encrypted and masked", async ({ client, assert }) => {
+    test("admin PATCH accepts preparatory credentials on a stub but stores them encrypted and masked", async ({
+        client,
+        assert,
+    }) => {
         const admin = await createAdmin();
         const sadad = await PaymentGateway.findByOrFail("code", "sadad");
 
