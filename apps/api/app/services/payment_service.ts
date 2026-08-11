@@ -76,6 +76,7 @@ export class PaymentService {
         }
 
         const { adapter, gateway } = await paymentAdapterRegistry.resolveForGatewayId(gatewayId);
+        const runtimeSettings = paymentGatewayCredentialsService.runtimeSettings(gateway);
         const returnUrl = await this.buildCallbackUrl(gateway.code, order);
         const attempt = await withTenantTransaction(async (trx) => {
             const row = new PaymentAttempt();
@@ -99,7 +100,7 @@ export class PaymentService {
             initResult = await adapter.init({
                 order,
                 attempt,
-                settings: (gateway.settings as Record<string, unknown>) ?? {},
+                settings: runtimeSettings,
                 return_url: returnUrl,
             });
         } catch (error) {
@@ -134,10 +135,6 @@ export class PaymentService {
                 }
                 await attempt.save();
             } else {
-                /**
-                 * cod / bank_transfer: no PSP callback ever arrives, so we mark the attempt
-                 * verified inline and transition the order to on_hold. Treasury reconciles offline.
-                 */
                 attempt.status = PaymentAttemptStatus.Verified;
                 attempt.verifiedAt = DateTime.utc();
                 await attempt.save();
@@ -151,36 +148,26 @@ export class PaymentService {
         });
 
         await this.linkLatest(order, attempt);
-
         recordPaymentAttempt(gateway.code, attempt.status);
         recordPaymentPhase(gateway.code, "init", Number(process.hrtime.bigint() - initStartedAt) / 1e9);
-
         return { attempt, redirect_url: initResult.redirect_url };
     }
 
     /**
-     * Verify-callback flow: parse the PSP query/body, lock the matching attempt row, re-check
-     * amount + idempotency, call adapter.verify, and transition the order. Returns the URL the
-     * storefront should redirect the user to.
-     *
-     * Concurrency: the FOR UPDATE on the order row inside this transaction serialises against
-     * `refund_service.create` (which also locks the order row), so a refund + verify race
-     * deadlocks at the DB layer with the second arrival waiting. The refund service additionally
-     * wraps its work in an `@adonisjs/lock` keyed by `order:<id>` for faster fail-on-contention;
-     * we don't double-wrap the callback because the PSP is unauthenticated and the limiter
-     * already throttles, and adding a Redis lock here makes the test memory store interact
-     * badly with the redirect-response semantics.
+     * Complete a previously initialized PSP payment. Gateway disablement intentionally does not
+     * block this path: an operator may stop new checkouts while shoppers are already at the PSP.
      */
     async verifyCallback(gatewayCode: string, request: HttpContext["request"]): Promise<PaymentCallbackResult> {
         const callbackStartedAt = process.hrtime.bigint();
         const successUrl = await this.settings.get<string>("general", "checkout_return_url_success", DEFAULT_RETURN_SUCCESS);
         const failedUrl = await this.settings.get<string>("general", "checkout_return_url_failed", DEFAULT_RETURN_FAILED);
 
-        const { adapter, gateway } = await paymentAdapterRegistry.resolveForCode(gatewayCode);
+        const { adapter, gateway } = await paymentAdapterRegistry.resolveForCallbackCode(gatewayCode);
+        const runtimeSettings = paymentGatewayCredentialsService.runtimeSettings(gateway);
         if (!adapter.parseCallback || !adapter.verify) {
             throw new GatewayNotConfiguredException(gatewayCode, `Gateway "${gatewayCode}" does not support callbacks`);
         }
-        const parsed = adapter.parseCallback({ request, settings: (gateway.settings as Record<string, unknown>) ?? {} });
+        const parsed = adapter.parseCallback({ request, settings: runtimeSettings });
         if (!parsed.authority) {
             return {
                 order: undefined as unknown as Order,
@@ -205,13 +192,6 @@ export class PaymentService {
                 });
             }
             const order = await Order.query({ client: trx }).where("id", Number(attempt.orderId)).forUpdate().firstOrFail();
-
-            /**
-             * Idempotency ledger gate. INSERT inside the transaction; a duplicate raises a
-             * unique-violation which the service maps to `replayed: true`. On replay we read
-             * the prior outcome and short-circuit to the matching redirect — no second pass
-             * through verify, no double state transition, no double Sentry capture.
-             */
             const ledger = await webhookIdempotencyService.record(
                 {
                     provider: gatewayCode,
@@ -249,14 +229,6 @@ export class PaymentService {
                 return { order, attempt, redirect: this.attachReason(failedUrl, `psp_${parsed.status}`) };
             }
 
-            /**
-             * Out-of-order delivery handling: the attempt is already in a terminal state
-             * (verified, refunded, voided, …) but the ledger had no row for this event yet.
-             * That can happen when a refund webhook lands before the success webhook, or when
-             * two unrelated callbacks share an authority across gateway resets. We finalise
-             * the ledger row with the existing attempt status and serve the success URL —
-             * no double-verification, no double-transition.
-             */
             if (attempt.status === PaymentAttemptStatus.Verified) {
                 Sentry.captureMessage("webhook_out_of_order", {
                     level: "warning",
@@ -271,18 +243,11 @@ export class PaymentService {
                 return { order, attempt, redirect: this.attachOrderKey(successUrl, order) };
             }
 
-            const verifyResult = await adapter.verify!({
+            const verifyResult = await adapter.verify({
                 attempt,
                 callback: parsed,
-                settings: (gateway.settings as Record<string, unknown>) ?? {},
+                settings: runtimeSettings,
             });
-
-            /**
-             * Amount guard: PSPs occasionally echo back a different amount than we sent (sandbox
-             * weirdness or attacker tampering). Checked before the success branch so the
-             * commit path stays single-track — verify-success-with-mismatch is treated as a
-             * verify-failure with a tagged error code.
-             */
             const amountMismatch =
                 verifyResult.ok &&
                 verifyResult.amount_minor !== undefined &&
@@ -290,12 +255,6 @@ export class PaymentService {
 
             if (!verifyResult.ok || amountMismatch) {
                 if (amountMismatch) {
-                    /**
-                     * Amount mismatch is a HIGH-severity tampering signal — the PSP echoed a
-                     * different amount than we sent, which in production means either a sandbox
-                     * bug, a PSP misconfiguration, or active forgery. Capture as `error` so
-                     * GlitchTip flags it for the on-call channel.
-                     */
                     Sentry.captureMessage("payment_amount_mismatch", {
                         level: "error",
                         tags: {
@@ -343,14 +302,9 @@ export class PaymentService {
             order.useTransaction(trx);
             order.transactionId = verifyResult.transaction_id;
             await order.save();
-
             if (order.status === OrderStatus.Pending) {
-                await orderStateMachine.transition(order, OrderStatus.Processing, {
-                    reason: "payment_verified",
-                    trx,
-                });
+                await orderStateMachine.transition(order, OrderStatus.Processing, { reason: "payment_verified", trx });
             }
-
             await webhookIdempotencyService.finalize(ledgerRow, "verified", { trx });
             return { order, attempt, redirect: this.attachOrderKey(successUrl, order) };
         });
@@ -372,11 +326,6 @@ export class PaymentService {
         return result;
     }
 
-    /**
-     * Call the adapter's `refund` if available. Phase 07 wires this in place of its placeholder
-     * gateway stub. Returns `ok: false` (not throwing) when the gateway doesn't support refunds,
-     * so partial-refund flows can fall through to manual reconciliation gracefully.
-     */
     async refund(order: Order, amountMinor: number, reason?: string): Promise<PaymentRefundResult> {
         const refundStartedAt = process.hrtime.bigint();
         const attempt = await PaymentAttempt.query()
@@ -387,7 +336,7 @@ export class PaymentService {
         if (!attempt) {
             return { ok: false, error_code: "no_verified_attempt", error_message: "Order has no verified payment to refund" };
         }
-        const { adapter, gateway } = await paymentAdapterRegistry.resolveForGatewayId(attempt.gatewayId);
+        const { adapter, gateway } = await paymentAdapterRegistry.resolveForHistoricalGatewayId(attempt.gatewayId);
         if (!adapter.refund || !adapter.capabilities.refunds) {
             return {
                 ok: false,
@@ -399,11 +348,9 @@ export class PaymentService {
             attempt,
             amount_minor: amountMinor,
             reason,
-            settings: (gateway.settings as Record<string, unknown>) ?? {},
+            settings: paymentGatewayCredentialsService.runtimeSettings(gateway),
         });
-        if (result.ok) {
-            recordPaymentAttempt(gateway.code, PaymentAttemptStatus.Refunded);
-        }
+        if (result.ok) recordPaymentAttempt(gateway.code, PaymentAttemptStatus.Refunded);
         recordPaymentPhase(gateway.code, "refund", Number(process.hrtime.bigint() - refundStartedAt) / 1e9);
         return result;
     }
@@ -452,9 +399,7 @@ export class PaymentService {
         if (/abort|timeout|TimeoutError/i.test(message) || (error as { name?: string })?.name === "TimeoutError") {
             return "gateway_timeout";
         }
-        if (/ENETUNREACH|ECONNREFUSED|EAI_AGAIN|fetch failed/i.test(message)) {
-            return "gateway_unreachable";
-        }
+        if (/ENETUNREACH|ECONNREFUSED|EAI_AGAIN|fetch failed/i.test(message)) return "gateway_unreachable";
         return "gateway_error";
     }
 }
