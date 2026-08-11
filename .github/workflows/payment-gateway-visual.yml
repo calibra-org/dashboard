@@ -10,30 +10,8 @@ permissions:
 
 jobs:
     visual:
-        runs-on: ubuntu-latest
-        services:
-            postgres:
-                image: postgres:17-alpine
-                env:
-                    POSTGRES_USER: postgres
-                    POSTGRES_PASSWORD: postgres
-                    POSTGRES_DB: calibra_visual
-                ports:
-                    - 5432:5432
-                options: >-
-                    --health-cmd "pg_isready -U postgres"
-                    --health-interval 5s
-                    --health-timeout 5s
-                    --health-retries 20
-            redis:
-                image: redis:7-alpine
-                ports:
-                    - 6379:6379
-                options: >-
-                    --health-cmd "redis-cli ping"
-                    --health-interval 5s
-                    --health-timeout 5s
-                    --health-retries 20
+        runs-on: ubuntu-24.04
+        timeout-minutes: 20
         steps:
             - uses: actions/checkout@v4
             - uses: pnpm/action-setup@v4
@@ -44,55 +22,53 @@ jobs:
                   node-version: 24.14.0
                   cache: pnpm
             - run: pnpm install --frozen-lockfile
-            - run: pnpm --filter @calibra/admin exec playwright install chromium --with-deps
-            - name: Configure development runtime
+            - name: Install Chromium
+              run: pnpm --filter @calibra/admin exec playwright install --with-deps chromium
+            - name: Prepare local env
               shell: bash
               run: |
+                  cp apps/api/.env.example apps/api/.env
+                  cp apps/admin/.env.example apps/admin/.env.local
                   APP_KEY=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
-                  cat > apps/api/.env <<ENV
-                  TZ=UTC
-                  PORT=3333
-                  HOST=0.0.0.0
-                  LOG_LEVEL=info
-                  APP_KEY=$APP_KEY
-                  NODE_ENV=development
-                  DB_HOST=127.0.0.1
-                  DB_PORT=5432
-                  DB_USER=postgres
-                  DB_PASSWORD=postgres
-                  DB_DATABASE=calibra_visual
-                  REDIS_HOST=127.0.0.1
-                  REDIS_PORT=6379
-                  REDIS_PASSWORD=
-                  REDIS_DB=0
-                  ENV
-                  cat > apps/admin/.env.local <<'ENV'
-                  CALIBRA_API_URL=http://127.0.0.1:3333
-                  NEXT_PUBLIC_CALIBRA_API_URL=http://127.0.0.1:3333
-                  ENV
-            - name: Migrate and seed
+                  sed -i "s/^APP_KEY=.*/APP_KEY=$APP_KEY/" apps/api/.env
+                  sed -i 's/^QUEUE_DRIVER=.*/QUEUE_DRIVER=sync/' apps/api/.env
+                  sed -i 's/^TRANSMIT_TRANSPORT=.*/TRANSMIT_TRANSPORT=none/' apps/api/.env
+                  sed -i 's/^LIMITER_STORE=.*/LIMITER_STORE=memory/' apps/api/.env
+                  sed -i 's/^CACHE_DRIVER=.*/CACHE_DRIVER=memory/' apps/api/.env
+                  sed -i 's/^MAIL_NOTIFICATIONS_ENABLED=.*/MAIL_NOTIFICATIONS_ENABLED=false/' apps/api/.env
+                  sed -i 's#^ALLOWED_ORIGINS=.*#ALLOWED_ORIGINS=http://aurora.admin.localhost:3001,http://localhost:3001#' apps/api/.env
+            - name: Start Postgres and Redis
               shell: bash
               run: |
-                  pnpm --filter @calibra/api exec node ace migration:run --force
-                  pnpm --filter @calibra/api exec node ace db:seed || true
-            - name: Start API
+                  cd apps/api
+                  docker compose up -d --wait db redis
+            - name: Bootstrap database
               shell: bash
               run: |
-                  (cd apps/api && node ace serve --watch > /tmp/calibra-api.log 2>&1) &
-                  for i in $(seq 1 90); do
-                      if curl --fail --silent http://127.0.0.1:3333/health/live >/dev/null; then
+                  pnpm --filter @calibra/api exec node ace db:bootstrap-roles
+                  pnpm --filter @calibra/api exec node ace migration:run --connection=postgres_admin
+                  set +e
+                  pnpm --filter @calibra/api exec node ace db:seed --connection=postgres_admin
+                  seed_status=$?
+                  set -e
+                  echo "Demo seed exit status: $seed_status"
+            - name: Start API and admin
+              shell: bash
+              run: |
+                  NEXT_PUBLIC_ADMIN_ROOT=admin.localhost NEXT_PUBLIC_DEV_TENANT=aurora pnpm exec turbo run dev --filter=@calibra/api --filter=@calibra/admin --env-mode=loose > /tmp/payment-gateway-servers.log 2>&1 &
+                  for i in $(seq 1 120); do
+                      if curl -fsS http://localhost:3333/health/live >/dev/null 2>&1 && curl -fsS -H 'Host: aurora.admin.localhost:3001' http://127.0.0.1:3001/fa/login >/dev/null 2>&1; then
                           exit 0
                       fi
                       sleep 2
                   done
-                  tail -n 160 /tmp/calibra-api.log || true
+                  cat /tmp/payment-gateway-servers.log
                   exit 1
             - name: Capture real admin UI
               working-directory: apps/admin
               env:
-                  ADMIN_LOGIN_EMAIL: admin@aurora.test
-                  ADMIN_LOGIN_PASSWORD: admin
-                  ADMIN_PORT: "3001"
+                  ADMIN_LOGIN_EMAIL: admin@bulk.calibra.dev
+                  ADMIN_LOGIN_PASSWORD: Passw0rd1!
                   BASE_URL: http://aurora.admin.localhost:3001
               run: pnpm exec playwright test tests/e2e/payment-gateway-visual.spec.ts --workers=1
             - name: Upload browser screenshots
