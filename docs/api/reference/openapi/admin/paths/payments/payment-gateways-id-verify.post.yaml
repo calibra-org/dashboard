@@ -1,0 +1,34 @@
+summary: Verify payment gateway connection
+operationId: verifyPaymentGatewayConnection
+tags:
+    - Admin / Payments
+parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+          type: integer
+          minimum: 1
+responses:
+    "200":
+        description: Provider-backed connection verification succeeded. The returned gateway has `health_status=healthy` and a fresh `last_verified_at` value. Verification never enables the gateway by itself.
+        content:
+            application/json:
+                schema:
+                    type: object
+                    required: [data]
+                    properties:
+                        data:
+                            $ref: "../../components/schemas/AdminPaymentGateway.yaml"
+    "401":
+        $ref: "../../../common/components/responses/Unauthorized.yaml"
+    "403":
+        $ref: "../../../common/components/responses/Forbidden.yaml"
+    "404":
+        $ref: "../../../common/components/responses/NotFound.yaml"
+    "422":
+        description: Gateway is a stub, required merchant credentials are missing, or the provider rejected/timed out during the connection probe. Failed probes persist bounded non-secret health diagnostics.
+        content:
+            application/json:
+                schema:
+                    $ref: "../../../common/components/schemas/ErrorResponse.yaml"
