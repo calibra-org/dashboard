@@ -13,13 +13,8 @@ const DEFAULT_CALLBACK_BASE = "http://localhost:3333";
 const CONNECTION_PROBE_AMOUNT_MINOR = 100_000;
 
 /**
- * Performs a real provider handshake before an online gateway may become active.
- *
- * Redirect PSPs do not expose a universal read-only credential endpoint. The least-invasive
- * provider-backed proof available across Mellat, Parsian and ZarinPal is therefore a payment-init
- * handshake with a small probe amount. The returned authority is never presented to a shopper and
- * no capture/verify call is made, so the probe cannot debit a card. Offline methods are verified
- * locally because they have no remote PSP connection.
+ * Performs a provider-backed handshake before an online gateway may become active.
+ * Offline methods are the only gateways allowed to pass verification locally.
  */
 export class PaymentGatewayConnectionVerifier {
     constructor(private readonly settings = new SettingsService()) {}
@@ -49,8 +44,12 @@ export class PaymentGatewayConnectionVerifier {
 
         const adapter = paymentAdapterRegistry.get(gateway.code);
         if (!adapter.capabilities.redirect) {
-            paymentGatewayCredentialsService.markHealthy(gateway, this.nowIso());
-            return;
+            paymentGatewayCredentialsService.markError(gateway, "connection_probe_unsupported");
+            throw new Exception(`Payment gateway "${gateway.code}" has no reviewed provider connection probe`, {
+                status: 422,
+                code: "E_PAYMENT_GATEWAY_CONNECTION_PROBE_UNSUPPORTED",
+                cause: { gateway: gateway.code },
+            });
         }
 
         const callbackBase = await this.settings.get<string>("payments", "callback_base_url", DEFAULT_CALLBACK_BASE);
