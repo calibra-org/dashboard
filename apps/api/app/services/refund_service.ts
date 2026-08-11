@@ -42,16 +42,16 @@ export interface RefundCreateOptions {
  *
  *  1. `SELECT … FOR UPDATE` on the order (so two parallel refund requests serialize).
  *  2. Idempotency-Key short-circuit — if a refund row with `(order_id, idempotency_key)` already
- *     exists, return it without re-issuing.
+ *     exists, return it without re-issuing or re-emitting domain side effects.
  *  3. Validate the request body: `amount_minor` XOR `line_items[]`, both > 0, both ≤ outstanding.
  *  4. Allocate the refund_number from `refund_number_seq`.
  *  5. Insert `order_refunds` + (optionally) `order_refund_line_items` rows.
- *  6. If `restock_requested` → call {@link InventoryService.increment} per refunded line.
+ *  6. If `restock_requested` → call {@link InventoryService.increment} per explicitly refunded line.
  *  7. PSP refund hook — `paymentService.refund()` dispatches to the gateway adapter; failures are
  *     recorded on `attributes.gateway_refund` but do not block the booking.
  *  8. If `sum(refunds.amount_minor) >= order.grand_total` → transition the order to `refunded`.
  *  9. Append an internal audit note (`"Refund #{number} for {amount} {currency}. Reason: {reason}"`).
- * 10. Commit, then emit `order:refunded`.
+ * 10. Commit, then emit `order:refunded` exactly once for a newly-created refund.
  */
 export class RefundService {
     constructor(private readonly inventory = new InventoryService()) {}
@@ -62,6 +62,15 @@ export class RefundService {
             throw new Exception("Order not found", { status: 404, code: "E_NOT_FOUND" });
         }
 
+        const idempotencyKey = opts.idempotencyKey?.trim() || null;
+        if (idempotencyKey && idempotencyKey.length > 64) {
+            throw new Exception("Idempotency-Key must be at most 64 characters", {
+                status: 422,
+                code: "E_REFUND_IDEMPOTENCY_KEY_INVALID",
+            });
+        }
+        const normalizedOpts: RefundCreateOptions = { ...opts, idempotencyKey };
+
         /**
          * Order-scoped distributed lock. Serialises concurrent admin refunds AND any in-flight
          * `payment_service.verifyCallback` on the same order. The DB-level `FOR UPDATE` row lock
@@ -70,7 +79,7 @@ export class RefundService {
          */
         const [acquired, value] = await lock
             .createLock(`order:${numericOrderId}`, "30s")
-            .runImmediately(() => this.createInsideLock(numericOrderId, payload, opts));
+            .runImmediately(() => this.createInsideLock(numericOrderId, payload, normalizedOpts));
         if (!acquired) {
             throw new ResourceConflictException("order is being processed concurrently", {
                 resource: "orders",
@@ -78,16 +87,18 @@ export class RefundService {
                 code: "E_CONCURRENT_PROCESSING",
             });
         }
-        const { refund, customerId } = value;
+        const { refund, customerId, created } = value;
 
-        /** Fire after commit so listeners observe persisted state. */
-        await emitter.emit("order:refunded", {
-            tenantId: Number(refund.tenantId),
-            orderId: Number(refund.orderId),
-            refundId: Number(refund.id),
-            amountMinor: Number(refund.amountMinor),
-            customerId,
-        });
+        /** Fire after commit only for the first booking; retries must not duplicate side effects. */
+        if (created) {
+            await emitter.emit("order:refunded", {
+                tenantId: Number(refund.tenantId),
+                orderId: Number(refund.orderId),
+                refundId: Number(refund.id),
+                amountMinor: Number(refund.amountMinor),
+                customerId,
+            });
+        }
 
         return refund;
     }
@@ -101,7 +112,7 @@ export class RefundService {
         numericOrderId: number,
         payload: RefundInput,
         opts: RefundCreateOptions,
-    ): Promise<{ refund: OrderRefund; customerId: number | null }> {
+    ): Promise<{ refund: OrderRefund; customerId: number | null; created: boolean }> {
         return withTenantTransaction(async (trx) => {
             /** Row-lock the order — concurrent refunds on the same order serialize here. */
             const orderRow = await trx.from("orders").where("id", numericOrderId).forUpdate().first();
@@ -120,18 +131,32 @@ export class RefundService {
                     return {
                         refund: existing,
                         customerId: order.customerId === null || order.customerId === undefined ? null : Number(order.customerId),
+                        created: false,
                     };
                 }
             }
 
             this.assertOrderRefundable(order);
 
-            const hasAmount = payload.amountMinor !== undefined && payload.amountMinor !== null;
+            const amountInput = payload.amountMinor;
+            const hasAmount = amountInput !== undefined && amountInput !== null;
             const hasLines = (payload.lineItems?.length ?? 0) > 0;
             if (hasAmount === hasLines) {
                 throw new Exception("Refund body must contain either amount_minor or line_items, never both", {
                     status: 422,
                     code: "E_REFUND_INPUT_INVALID",
+                });
+            }
+            if (payload.restockRequested && !hasLines) {
+                throw new Exception("Restocking requires line_items so inventory quantities are explicit", {
+                    status: 422,
+                    code: "E_REFUND_RESTOCK_REQUIRES_LINES",
+                });
+            }
+            if (hasAmount && !Number.isSafeInteger(amountInput)) {
+                throw new Exception("Refund amount must be an integer minor-unit value", {
+                    status: 422,
+                    code: "E_REFUND_AMOUNT_INVALID",
                 });
             }
 
@@ -146,7 +171,10 @@ export class RefundService {
             }
 
             const lineInputs = hasLines ? (payload.lineItems as RefundLineItemInput[]) : [];
-            const resolvedAmount = hasAmount ? (payload.amountMinor as number) : this.sumLineAmounts(lineInputs);
+            if (hasLines) {
+                await this.validateLineQuantities(numericOrderId, lineInputs, trx);
+            }
+            const resolvedAmount = hasAmount ? amountInput : this.sumLineAmounts(lineInputs);
 
             if (resolvedAmount <= 0) {
                 throw new Exception("Refund amount must be positive", {
@@ -162,11 +190,8 @@ export class RefundService {
             }
 
             let lineTaxTotal = 0;
-            if (hasLines) {
-                await this.validateLineQuantities(numericOrderId, lineInputs, trx);
-                for (const line of lineInputs) {
-                    lineTaxTotal += Number(line.refundTaxMinor ?? 0);
-                }
+            for (const line of lineInputs) {
+                lineTaxTotal += Number(line.refundTaxMinor ?? 0);
             }
 
             const refundNumber = await this.allocateRefundNumber(trx);
@@ -192,7 +217,7 @@ export class RefundService {
             }
 
             if (refund.restockRequested) {
-                await this.restock(refund.id, numericOrderId, lineInputs, hasLines, trx);
+                await this.restock(refund.id, numericOrderId, lineInputs, trx);
             }
 
             await this.callGatewayRefund(order, refund, trx);
@@ -212,6 +237,7 @@ export class RefundService {
             return {
                 refund,
                 customerId: order.customerId === null || order.customerId === undefined ? null : Number(order.customerId),
+                created: true,
             };
         });
     }
@@ -228,12 +254,7 @@ export class RefundService {
         return Number(row?.sum ?? 0);
     }
 
-    /**
-     * Sum the per-line amounts the caller declared on a line-item refund. Per-line amounts are
-     * optional in the payload — when omitted, the line is assumed to be a zero-money line (only
-     * useful for restock-only refunds; the service still requires the rolled-up refund amount > 0
-     * so an all-zero payload 422s).
-     */
+    /** Sum the explicit money allocation declared for a line-item refund. */
     private sumLineAmounts(lines: RefundLineItemInput[]): number {
         let sum = 0;
         for (const line of lines) {
@@ -243,17 +264,58 @@ export class RefundService {
     }
 
     /**
-     * For each refunded line, verify it belongs to the order AND the requested quantity does not
-     * exceed (source.quantity − sum(prior refund_line_items.quantity for that line)). Issues are
-     * 422s so the admin client can surface them per-line in form errors.
+     * For each refunded line, verify it belongs to the order, appears only once in this request,
+     * carries integer minor-unit values, and does not exceed the remaining refundable quantity.
      */
     private async validateLineQuantities(
         orderId: number,
         lines: RefundLineItemInput[],
         trx: TransactionClientContract,
     ): Promise<void> {
+        const seenLineIds = new Set<number>();
         for (const requested of lines) {
             const sourceId = Number(requested.orderLineItemId);
+            if (!Number.isSafeInteger(sourceId) || sourceId <= 0) {
+                throw new Exception("Refund line item id must be a positive integer", {
+                    status: 422,
+                    code: "E_REFUND_LINE_INVALID",
+                });
+            }
+            if (seenLineIds.has(sourceId)) {
+                throw new Exception(`Line item ${sourceId} appears more than once in the same refund`, {
+                    status: 422,
+                    code: "E_REFUND_LINE_DUPLICATE",
+                });
+            }
+            seenLineIds.add(sourceId);
+
+            if (!Number.isSafeInteger(requested.quantity) || requested.quantity <= 0) {
+                throw new Exception("Refund quantity must be a positive integer", {
+                    status: 422,
+                    code: "E_REFUND_LINE_QUANTITY_INVALID",
+                });
+            }
+            if (
+                requested.refundAmountMinor !== undefined &&
+                requested.refundAmountMinor !== null &&
+                (!Number.isSafeInteger(requested.refundAmountMinor) || requested.refundAmountMinor < 0)
+            ) {
+                throw new Exception("refund_amount_minor must be a non-negative integer minor-unit value", {
+                    status: 422,
+                    code: "E_REFUND_LINE_AMOUNT_INVALID",
+                });
+            }
+            if (
+                requested.refundTaxMinor !== undefined &&
+                requested.refundTaxMinor !== null &&
+                (!Number.isSafeInteger(requested.refundTaxMinor) || requested.refundTaxMinor < 0)
+            ) {
+                throw new Exception("refund_tax_minor must be a non-negative integer minor-unit value", {
+                    status: 422,
+                    code: "E_REFUND_LINE_AMOUNT_INVALID",
+                });
+            }
+
             const source = await OrderLineItem.query({ client: trx }).where("id", sourceId).where("order_id", orderId).first();
             if (!source) {
                 throw new Exception(`Line item ${sourceId} does not belong to this order`, {
@@ -295,32 +357,24 @@ export class RefundService {
     }
 
     /**
-     * Restock loop. Resolves each refunded line's source row to (product_id, variation_id, qty)
-     * and calls {@link InventoryService.increment} with a `kind: 'return'` ref. `manage_stock=false`
-     * targets are no-ops (the inventory service handles that internally), so this loop is safe to
-     * run even for line items whose product isn't tracked.
+     * Restock loop. A restock is always line-item-scoped: amount-only refunds have no inventory
+     * quantity mapping and are rejected before this method is reached.
      */
     private async restock(
         refundId: bigint | number,
         orderId: number,
         lines: RefundLineItemInput[],
-        hasLines: boolean,
         trx: TransactionClientContract,
     ): Promise<void> {
-        const sources = hasLines
-            ? await Promise.all(
-                  lines.map(async (l) => ({
-                      line: await OrderLineItem.query({ client: trx })
-                          .where("id", Number(l.orderLineItemId))
-                          .where("order_id", orderId)
-                          .first(),
-                      quantity: l.quantity,
-                  })),
-              )
-            : (await OrderLineItem.query({ client: trx }).where("order_id", orderId)).map((line) => ({
-                  line,
-                  quantity: line.quantity,
-              }));
+        const sources = await Promise.all(
+            lines.map(async (line) => ({
+                line: await OrderLineItem.query({ client: trx })
+                    .where("id", Number(line.orderLineItemId))
+                    .where("order_id", orderId)
+                    .first(),
+                quantity: line.quantity,
+            })),
+        );
 
         for (const entry of sources) {
             const sourceLine = entry.line;

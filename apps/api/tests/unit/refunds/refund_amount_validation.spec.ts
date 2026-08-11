@@ -72,6 +72,26 @@ test.group("refund_service.create — amount validation", (group) => {
         assert.equal(thrown?.code, "E_REFUND_EXCEEDS_OUTSTANDING");
     });
 
+    test("fractional minor-unit amount → 422", async ({ assert }) => {
+        const product = await createTaxableProduct({ regularPrice: 1_000_000 });
+        const order = await makeDraftOrder({
+            customerId: null,
+            productId: Number(product.id),
+            quantity: 1,
+            price: 1_000_000,
+        });
+        await advanceOrderTo(order, OrderStatus.Processing);
+
+        let thrown: { status?: number; code?: string } | null = null;
+        try {
+            await refundService.create(order.id, { amountMinor: 1_000.5 });
+        } catch (e) {
+            thrown = e as { status?: number; code?: string };
+        }
+        assert.equal(thrown?.status, 422);
+        assert.equal(thrown?.code, "E_REFUND_AMOUNT_INVALID");
+    });
+
     test("line quantity exceeds outstanding → 422", async ({ assert }) => {
         const product = await createTaxableProduct({ regularPrice: 1_000_000 });
         const order = await makeDraftOrder({
@@ -96,7 +116,33 @@ test.group("refund_service.create — amount validation", (group) => {
         assert.equal(thrown?.code, "E_REFUND_LINE_QUANTITY_EXCEEDS");
     });
 
-    test("negative amount → 422 (validator catches before service)", async ({ assert }) => {
+    test("duplicate source line in one refund → 422", async ({ assert }) => {
+        const product = await createTaxableProduct({ regularPrice: 1_000_000 });
+        const order = await makeDraftOrder({
+            customerId: null,
+            productId: Number(product.id),
+            quantity: 2,
+            price: 1_000_000,
+        });
+        await advanceOrderTo(order, OrderStatus.Processing);
+        const line = (await order.related("lineItems").query()).at(0)!;
+
+        let thrown: { status?: number; code?: string } | null = null;
+        try {
+            await refundService.create(order.id, {
+                lineItems: [
+                    { orderLineItemId: line.id, quantity: 1, refundAmountMinor: 500_000 },
+                    { orderLineItemId: line.id, quantity: 1, refundAmountMinor: 500_000 },
+                ],
+            });
+        } catch (e) {
+            thrown = e as { status?: number; code?: string };
+        }
+        assert.equal(thrown?.status, 422);
+        assert.equal(thrown?.code, "E_REFUND_LINE_DUPLICATE");
+    });
+
+    test("negative amount → 422", async ({ assert }) => {
         const product = await createTaxableProduct({ regularPrice: 1_000_000 });
         const order = await makeDraftOrder({
             customerId: null,
