@@ -80,6 +80,12 @@ export const ORDER_TRANSITIONS: ReadonlyArray<OrderTransition> = [
     { from: OrderStatus.Completed, to: OrderStatus.Refunded, effects: [] },
     /** failed → pending: customer retries via the pay-link. Re-reserves stock. */
     { from: OrderStatus.Failed, to: OrderStatus.Pending, effects: ["reserve_stock"] },
+    /**
+     * failed → processing: late/out-of-order PSP success for the same still-reserved payment.
+     * A `pending → failed` gateway decline does not release stock, so recovery must NOT reserve
+     * a second time; it only stamps the paid timestamp and records the successful final state.
+     */
+    { from: OrderStatus.Failed, to: OrderStatus.Processing, effects: ["set_paid_at"] },
 ];
 
 /** Map lookup: `(from, to)` → effects, or `null` for illegal transitions. */
