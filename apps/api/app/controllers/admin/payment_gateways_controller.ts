@@ -1,5 +1,7 @@
 import { Exception } from "@adonisjs/core/exceptions";
 import type { HttpContext } from "@adonisjs/core/http";
+import db from "@adonisjs/lucid/services/db";
+import { DateTime } from "luxon";
 
 import { GatewayNotImplementedException } from "#exceptions/payment_exceptions";
 import PaymentGateway from "#models/payment_gateway";
@@ -7,6 +9,7 @@ import { recordAudit } from "#services/admin_audit_log_service";
 import { ensurePaymentGatewayCatalog } from "#services/payment_gateway_catalog_service";
 import { paymentGatewayConnectionVerifier } from "#services/payment_gateway_connection_verifier";
 import { paymentGatewayCredentialsService } from "#services/payment_gateway_credentials_service";
+import { currentTenantId } from "#services/tenant_context";
 import { adminPaymentGatewaysView } from "#table_views/admin/payment_gateways";
 import PaymentGatewayTransformer, { readImplementationStatus } from "#transformers/payment_gateway_transformer";
 import {
@@ -94,7 +97,7 @@ export default class AdminPaymentGatewaysController {
             }
         } catch (error) {
             gateway.enabled = false;
-            await gateway.save();
+            await this.persistFailedVerification(gateway);
             if (audit) {
                 await recordAudit({
                     ctx,
@@ -109,6 +112,34 @@ export default class AdminPaymentGatewaysController {
                 });
             }
             throw error;
+        }
+    }
+
+    /**
+     * A failed controller response is rolled back by tenant_context_middleware. Verification
+     * diagnostics are different: operators must see the failed probe and a previously-enabled
+     * gateway must stay disabled. Persist that fail-closed state on the privileged connection with
+     * an explicit tenant predicate, so no RLS bypass can cross tenant boundaries.
+     */
+    private async persistFailedVerification(gateway: PaymentGateway): Promise<void> {
+        const tenantId = Number(currentTenantId());
+        const updated = await db
+            .connection("postgres_admin")
+            .from("payment_gateways")
+            .where("id", Number(gateway.id))
+            .where("tenant_id", tenantId)
+            .update({
+                enabled: false,
+                settings: gateway.settings,
+                attributes: gateway.attributes,
+                updated_at: DateTime.utc().toSQL(),
+            });
+        if (Number(updated) !== 1) {
+            throw new Exception("Payment gateway verification state could not be persisted", {
+                status: 500,
+                code: "E_PAYMENT_GATEWAY_STATE_PERSIST_FAILED",
+                cause: { gateway: gateway.code },
+            });
         }
     }
 
