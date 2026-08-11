@@ -3,18 +3,17 @@ import type { HttpContext } from "@adonisjs/core/http";
 
 import { GatewayNotImplementedException } from "#exceptions/payment_exceptions";
 import PaymentGateway from "#models/payment_gateway";
+import { paymentGatewayCredentialsService } from "#services/payment_gateway_credentials_service";
+import { withTenantTransaction } from "#services/tenant_context";
 import { adminPaymentGatewaysView } from "#table_views/admin/payment_gateways";
 import PaymentGatewayTransformer, { readImplementationStatus } from "#transformers/payment_gateway_transformer";
 import {
+    adminPaymentGatewayBulkValidator,
     adminPaymentGatewayListValidator,
     adminPaymentGatewayUpdateValidator,
 } from "#validators/admin/payment_gateway_validator";
 
-/**
- * Admin CRUD over `payment_gateways`. Read-side masks sensitive setting keys
- * (`merchant_id`, `api_key`, …) via {@link PaymentGatewayTransformer}; the underlying values
- * round-trip safely because PATCH treats missing keys as "leave existing value alone".
- */
+/** Admin configuration surface for tenant payment gateways. */
 export default class AdminPaymentGatewaysController {
     async index(ctx: HttpContext) {
         const parsed = await ctx.request.validateUsing(adminPaymentGatewayListValidator);
@@ -33,27 +32,57 @@ export default class AdminPaymentGatewaysController {
     async update(ctx: HttpContext) {
         const gateway = await this.findOrFail(ctx.params.id);
         const payload = await ctx.request.validateUsing(adminPaymentGatewayUpdateValidator);
-        if (payload.enabled === true && readImplementationStatus(gateway) === "stub") {
-            /**
-             * Operator cannot flip a stub gateway to enabled — neither the storefront submit
-             * flow nor a stray PSP callback could complete against it, so the toggle is
-             * load-bearing dishonesty. A future PSP integration ships a real adapter and bumps
-             * the seed row's `implementation_status` to `"live"` in the same PR.
-             */
-            throw new GatewayNotImplementedException(gateway.code, "enable");
-        }
-        if (payload.enabled !== undefined) gateway.enabled = payload.enabled;
+
+        if (payload.settings) paymentGatewayCredentialsService.applySettingsPatch(gateway, payload.settings);
         if (payload.ordering !== undefined) gateway.ordering = payload.ordering;
-        if (payload.settings) {
-            const existing = (gateway.settings as Record<string, unknown>) ?? {};
-            gateway.settings = { ...existing, ...payload.settings };
+        if (payload.enabled !== undefined) {
+            if (payload.enabled) this.assertCanEnable(gateway);
+            gateway.enabled = payload.enabled;
         }
-        if (payload.supports) {
-            const existing = (gateway.supports as Record<string, unknown>) ?? {};
-            gateway.supports = { ...existing, ...payload.supports };
-        }
+
+        /** Capability flags come from the registered adapter/catalog, never an operator-supplied PATCH. */
         await gateway.save();
         return { data: new PaymentGatewayTransformer(gateway).forAdmin() };
+    }
+
+    /**
+     * Multi-select enable/disable. Validation happens for the full set before any row is saved; the
+     * transaction makes the operation all-or-nothing so one unconfigured PSP cannot leave half the
+     * checkout methods toggled.
+     */
+    async bulk(ctx: HttpContext) {
+        const payload = await ctx.request.validateUsing(adminPaymentGatewayBulkValidator);
+        const ids = [...new Set(payload.ids.map(Number))];
+        const rows = await withTenantTransaction(async (trx) => {
+            const gateways = await PaymentGateway.query({ client: trx }).whereIn("id", ids).forUpdate();
+            if (gateways.length !== ids.length) {
+                throw new Exception("One or more payment gateways were not found", { status: 404, code: "E_NOT_FOUND" });
+            }
+            if (payload.enabled) {
+                for (const gateway of gateways) this.assertCanEnable(gateway);
+            }
+            for (const gateway of gateways) {
+                gateway.useTransaction(trx);
+                gateway.enabled = payload.enabled;
+                await gateway.save();
+            }
+            return gateways;
+        });
+        return { data: rows.map((row) => new PaymentGatewayTransformer(row).forAdmin()) };
+    }
+
+    private assertCanEnable(gateway: PaymentGateway): void {
+        if (readImplementationStatus(gateway) === "stub") {
+            throw new GatewayNotImplementedException(gateway.code, "enable");
+        }
+        const missing = paymentGatewayCredentialsService.missingRequired(gateway);
+        if (missing.length > 0) {
+            throw new Exception(`Payment gateway "${gateway.code}" is missing required credentials`, {
+                status: 422,
+                code: "E_PAYMENT_GATEWAY_CREDENTIALS_REQUIRED",
+                cause: { gateway: gateway.code, missing },
+            });
+        }
     }
 
     private async findOrFail(id: unknown): Promise<PaymentGateway> {
