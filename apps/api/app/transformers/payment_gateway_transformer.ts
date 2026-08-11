@@ -1,8 +1,10 @@
 import { BaseTransformer } from "@adonisjs/core/transformers";
 
 import type PaymentGateway from "#models/payment_gateway";
+import { gatewayCredentialKeys, gatewayDefinition, type GatewayImplementationStatus } from "#services/payment_gateway_catalog";
+import { paymentGatewayCredentialsService } from "#services/payment_gateway_credentials_service";
 
-/** Setting keys treated as secret. Always masked on GET, accepted as-is on PATCH. */
+/** Backwards-compatible export used by tests/other modules; catalog-specific keys are added dynamically. */
 const SENSITIVE_KEYS = new Set([
     "merchant_id",
     "api_key",
@@ -12,13 +14,17 @@ const SENSITIVE_KEYS = new Set([
     "private_key",
     "password",
     "token",
+    "terminal_id",
+    "terminal_key",
+    "username",
+    "login_account",
+    "card_number",
 ]);
-const MASK = "***";
 
 /**
- * Owns `/api/v1/admin/payment-gateways/*` response shape. The default `forList` masks every
- * sensitive setting key so a leaked admin GET response never spills credentials; PATCH accepts
- * the unmasked value when admins want to rotate.
+ * Owns `/api/v1/admin/payment-gateways/*` response shape. Merchant secrets are never serialized:
+ * credential fields are represented only as `***`/empty sentinels and the encrypted ciphertext
+ * stays inside the model's private attributes bag.
  */
 export default class PaymentGatewayTransformer extends BaseTransformer<PaymentGateway> {
     toObject() {
@@ -39,38 +45,39 @@ export default class PaymentGatewayTransformer extends BaseTransformer<PaymentGa
 
     forAdmin() {
         const gateway = this.resource;
+        const definition = gatewayDefinition(gateway.code);
+        const attrs = ((gateway.attributes as Record<string, unknown> | null) ?? {}) as Record<string, unknown>;
+        const health = paymentGatewayCredentialsService.health(gateway);
         return {
             ...this.forStorefront(),
-            settings: this.maskedSettings(gateway),
+            category: definition?.category ?? (typeof attrs.category === "string" ? attrs.category : "legacy"),
+            admin_visible: definition?.adminVisible ?? attrs.admin_visible !== false,
+            credential_fields: (definition?.credentialFields ?? []).map((field) => ({ ...field })),
+            settings: paymentGatewayCredentialsService.maskedSettings(gateway),
+            health_status: health.status,
+            last_verified_at: health.lastVerifiedAt,
+            last_error: health.lastError,
             created_at: gateway.createdAt?.toISO() ?? null,
             updated_at: gateway.updatedAt?.toISO() ?? null,
         };
-    }
-
-    private maskedSettings(gateway: PaymentGateway): Record<string, unknown> {
-        const raw = (gateway.settings as Record<string, unknown>) ?? {};
-        const masked: Record<string, unknown> = {};
-        for (const [key, value] of Object.entries(raw)) {
-            if (SENSITIVE_KEYS.has(key)) {
-                masked[key] = typeof value === "string" && value.length > 0 ? MASK : "";
-            } else {
-                masked[key] = value;
-            }
-        }
-        return masked;
     }
 }
 
 export { SENSITIVE_KEYS };
 
 /**
- * Reads the `attributes.implementation_status` flag — `"stub"` means the registry resolves the
- * code but every lifecycle method throws `E_GATEWAY_NOT_IMPLEMENTED`; `"live"` means the
- * adapter is a real integration (cod, bank_transfer today). Unknown values fall back to
- * `"stub"` defensively — a misconfigured attribute should never silently let an unverified PSP
- * pose as live.
+ * Fail closed: unknown/missing values are `stub`. `implemented` means a concrete adapter exists but
+ * a tenant may still be unconfigured/unverified; `live` is reserved for offline methods or
+ * provider-verified integrations.
  */
-export function readImplementationStatus(gateway: PaymentGateway): "stub" | "live" {
+export function readImplementationStatus(gateway: PaymentGateway): GatewayImplementationStatus {
     const attrs = (gateway.attributes as Record<string, unknown> | null) ?? {};
-    return attrs.implementation_status === "live" ? "live" : "stub";
+    const raw = attrs.implementation_status;
+    if (raw === "live" || raw === "implemented") return raw;
+    const definition = gatewayDefinition(gateway.code);
+    return definition?.implementationStatus ?? "stub";
+}
+
+export function expectedGatewayCredentialKeys(gateway: PaymentGateway): readonly string[] {
+    return gatewayCredentialKeys(gateway.code);
 }
