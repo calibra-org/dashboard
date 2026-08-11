@@ -20,7 +20,10 @@ export class CardToCardGateway implements PaymentAdapter {
     readonly capabilities: PaymentAdapterCapabilities = { redirect: false, refunds: false, partial_refunds: false };
 
     async init(args: InitArgs): Promise<InitResult> {
-        const settings = paymentGatewayCredentialsService.runtimeSettingsFromStored("card_to_card", args.settings) as CardToCardSettings;
+        const settings = paymentGatewayCredentialsService.runtimeSettingsFromStored(
+            "card_to_card",
+            args.settings,
+        ) as CardToCardSettings;
         const cardNumber = settings.card_number?.trim() ?? "";
         const cardHolder = settings.card_holder?.trim() ?? "";
         if (!cardNumber || !cardHolder) throw new Error("card_to_card card_number and card_holder are required");

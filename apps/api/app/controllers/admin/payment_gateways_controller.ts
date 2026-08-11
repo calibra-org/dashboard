@@ -7,7 +7,10 @@ import { ensurePaymentGatewayCatalog } from "#services/payment_gateway_catalog_s
 import { paymentGatewayCredentialsService } from "#services/payment_gateway_credentials_service";
 import { adminPaymentGatewaysView } from "#table_views/admin/payment_gateways";
 import PaymentGatewayTransformer, { readImplementationStatus } from "#transformers/payment_gateway_transformer";
-import { adminPaymentGatewayListValidator, adminPaymentGatewayUpdateValidator } from "#validators/admin/payment_gateway_validator";
+import {
+    adminPaymentGatewayListValidator,
+    adminPaymentGatewayUpdateValidator,
+} from "#validators/admin/payment_gateway_validator";
 
 /** Admin configuration surface for tenant payment gateways. */
 export default class AdminPaymentGatewaysController {

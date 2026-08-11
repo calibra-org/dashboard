@@ -6749,24 +6749,36 @@ export interface components {
         };
         /**
          * AdminPaymentGateway
-         * @description Payment gateway registry row — matches `PaymentGatewayTransformer.forAdmin()` exactly. The base `forStorefront()` shape (`id`, `code`, `enabled`, `ordering`, `supports`, `implementation_status`) is augmented with `settings` (sensitive keys masked to `"***"` on GET; PATCH accepts unmasked values for rotation) and audit timestamps.
+         * @description Tenant payment-gateway registry row. Secret credential values are never returned: configured credential fields contain the `***` sentinel and unconfigured fields are empty strings.
          */
         AdminPaymentGateway: {
             id: number;
-            /** @description Stable adapter code (e.g. `bank_transfer`, `zarinpal`). */
+            /** @description Stable adapter code (for example `mellat`, `parsian`, `zarinpal`, `cod`). */
             code: string;
             enabled: boolean;
             ordering: number;
-            /** @description Adapter-reported capability flags (`refunds`, `partial_refunds`, …). */
+            /** @description Server-owned adapter capability flags (`refunds`, `partial_refunds`, ...). */
             supports: {
                 [key: string]: unknown;
             };
             /**
-             * @description `"stub"` — the registry knows about the PSP but every lifecycle method throws `E_GATEWAY_NOT_IMPLEMENTED`; the admin UI disables the enable toggle and the storefront refuses to submit against the row. `"live"` — the adapter is a real integration (today: `cod`, `bank_transfer`). PSP integrations land via follow-up PRs that ship a real adapter and bump this field to `"live"`.
+             * @description `stub` has no usable adapter and cannot be enabled; `implemented` has a concrete protocol adapter but still needs tenant merchant credentials/provider verification; `live` is an offline method or a provider-verified integration.
              * @enum {string}
              */
-            implementation_status: "stub" | "live";
-            /** @description Free-form per-gateway settings. Sensitive keys masked to `"***"` on GET. */
+            implementation_status: "stub" | "implemented" | "live";
+            /** @enum {string} */
+            category: "bank" | "psp" | "bnpl" | "offline" | "legacy";
+            admin_visible: boolean;
+            credential_fields: {
+                key: string;
+                required: boolean;
+            }[];
+            /** @enum {string} */
+            health_status: "unconfigured" | "configured" | "healthy" | "error";
+            /** Format: date-time */
+            last_verified_at: string | null;
+            last_error: string | null;
+            /** @description Non-secret gateway settings plus credential mask sentinels. The reserved encrypted credential ciphertext is never serialized by the transformer. */
             settings: {
                 [key: string]: unknown;
             };

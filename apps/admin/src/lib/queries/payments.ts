@@ -92,10 +92,12 @@ const GATEWAY_COPY: Record<string, { title: LocalizedGatewayCopy; description: L
 };
 
 function copyFor(code: string) {
-    return GATEWAY_COPY[code] ?? {
-        title: { fa: code, en: code },
-        description: { fa: "", en: "" },
-    };
+    return (
+        GATEWAY_COPY[code] ?? {
+            title: { fa: code, en: code },
+            description: { fa: "", en: "" },
+        }
+    );
 }
 
 export function toAdminPaymentGateway(input: SdkAdminPaymentGateway): AdminPaymentGateway {
@@ -176,7 +178,9 @@ export function useBulkUpdatePaymentGateways() {
         mutationFn: async ({ ids, enabled }: { ids: number[]; enabled: boolean }) => {
             const results: PaymentGatewayEnvelope[] = [];
             for (const id of ids) {
-                results.push(await apiMutate<PaymentGatewayEnvelope>("PATCH", `payment-gateways/${id}`, { locale, body: { enabled } }));
+                results.push(
+                    await apiMutate<PaymentGatewayEnvelope>("PATCH", `payment-gateways/${id}`, { locale, body: { enabled } }),
+                );
             }
             return results;
         },

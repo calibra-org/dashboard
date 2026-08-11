@@ -72,7 +72,11 @@ export function PaymentGatewayDetailView({ code }: { code: string }) {
     }
 
     if (gateway === null) {
-        return <div className="rounded-xl border border-dashed py-16 text-center text-sm text-muted-foreground">{fa ? "درگاه پیدا نشد." : "Gateway not found."}</div>;
+        return (
+            <div className="rounded-xl border border-dashed py-16 text-center text-sm text-muted-foreground">
+                {fa ? "درگاه پیدا نشد." : "Gateway not found."}
+            </div>
+        );
     }
 
     const stub = gateway.implementationStatus === "stub";
@@ -90,7 +94,12 @@ export function PaymentGatewayDetailView({ code }: { code: string }) {
             });
             setMessage({ tone: "success", text: fa ? "پیکربندی امن درگاه ذخیره شد." : "Secure gateway configuration saved." });
         } catch {
-            setMessage({ tone: "error", text: fa ? "ذخیره پیکربندی ناموفق بود. اطلاعات پذیرنده و وضعیت Adapter را بررسی کنید." : "Configuration save failed. Check merchant credentials and adapter status." });
+            setMessage({
+                tone: "error",
+                text: fa
+                    ? "ذخیره پیکربندی ناموفق بود. اطلاعات پذیرنده و وضعیت Adapter را بررسی کنید."
+                    : "Configuration save failed. Check merchant credentials and adapter status.",
+            });
         }
     }
 
@@ -107,7 +116,14 @@ export function PaymentGatewayDetailView({ code }: { code: string }) {
             />
 
             {message ? (
-                <div className={cn("rounded-lg border px-4 py-3 text-sm", message.tone === "error" ? "border-destructive/30 bg-destructive/5 text-destructive" : "border-emerald-500/25 bg-emerald-500/5")}>
+                <div
+                    className={cn(
+                        "rounded-lg border px-4 py-3 text-sm",
+                        message.tone === "error"
+                            ? "border-destructive/30 bg-destructive/5 text-destructive"
+                            : "border-emerald-500/25 bg-emerald-500/5",
+                    )}
+                >
                     {message.text}
                 </div>
             ) : null}
@@ -117,19 +133,43 @@ export function PaymentGatewayDetailView({ code }: { code: string }) {
                     <Card>
                         <CardHeader>
                             <CardTitle>{fa ? "وضعیت و نمایش در صفحه پرداخت" : "Checkout availability"}</CardTitle>
-                            <CardDescription>{fa ? "چند درگاه می‌توانند هم‌زمان فعال باشند. درگاه بدون Adapter واقعی یا اطلاعات پذیرنده کامل فعال نمی‌شود." : "Multiple gateways may be active at once. A gateway without a real adapter or complete merchant credentials cannot be enabled."}</CardDescription>
+                            <CardDescription>
+                                {fa
+                                    ? "چند درگاه می‌توانند هم‌زمان فعال باشند. درگاه بدون Adapter واقعی یا اطلاعات پذیرنده کامل فعال نمی‌شود."
+                                    : "Multiple gateways may be active at once. A gateway without a real adapter or complete merchant credentials cannot be enabled."}
+                            </CardDescription>
                         </CardHeader>
                         <CardContent className="grid gap-5 md:grid-cols-2">
                             <div className="flex items-center justify-between rounded-lg border p-4 md:col-span-2">
                                 <div>
-                                    <Label htmlFor={`enabled-${gateway.code}`} className="text-sm font-medium">{fa ? "فعال در پرداخت" : "Enabled at checkout"}</Label>
-                                    <p className="mt-1 text-xs text-muted-foreground">{enableBlocked ? (fa ? "ابتدا الزامات پیکربندی را تکمیل کنید." : "Complete configuration requirements first.") : (fa ? "این روش به مشتری نمایش داده می‌شود." : "Customers will see this payment method.")}</p>
+                                    <Label htmlFor={`enabled-${gateway.code}`} className="text-sm font-medium">
+                                        {fa ? "فعال در پرداخت" : "Enabled at checkout"}
+                                    </Label>
+                                    <p className="mt-1 text-xs text-muted-foreground">
+                                        {enableBlocked
+                                            ? fa
+                                                ? "ابتدا الزامات پیکربندی را تکمیل کنید."
+                                                : "Complete configuration requirements first."
+                                            : fa
+                                              ? "این روش به مشتری نمایش داده می‌شود."
+                                              : "Customers will see this payment method."}
+                                    </p>
                                 </div>
-                                <Switch id={`enabled-${gateway.code}`} checked={enabled && !enableBlocked} disabled={enableBlocked} onCheckedChange={setEnabled} />
+                                <Switch
+                                    id={`enabled-${gateway.code}`}
+                                    checked={enabled && !enableBlocked}
+                                    disabled={enableBlocked}
+                                    onCheckedChange={setEnabled}
+                                />
                             </div>
                             <div className="flex flex-col gap-2">
                                 <Label htmlFor="gateway-ordering">{fa ? "اولویت نمایش" : "Checkout order"}</Label>
-                                <Input id="gateway-ordering" inputMode="numeric" value={ordering} onChange={(event) => setOrdering(event.target.value.replace(/\D/g, ""))} />
+                                <Input
+                                    id="gateway-ordering"
+                                    inputMode="numeric"
+                                    value={ordering}
+                                    onChange={(event) => setOrdering(event.target.value.replace(/\D/g, ""))}
+                                />
                             </div>
                             <div className="flex flex-col gap-2">
                                 <Label>{fa ? "کد داخلی Adapter" : "Adapter code"}</Label>
@@ -141,11 +181,23 @@ export function PaymentGatewayDetailView({ code }: { code: string }) {
                     <Card>
                         <CardHeader>
                             <CardTitle>{fa ? "اطلاعات اتصال پذیرنده" : "Merchant connection credentials"}</CardTitle>
-                            <CardDescription>{fa ? "مقادیر محرمانه پس از ذخیره با رمزنگاری authenticated در پایگاه داده نگهداری و در خواندن مجدد فقط به‌صورت ماسک نمایش داده می‌شوند." : "Sensitive values are stored with authenticated encryption and are returned only as masks."}</CardDescription>
+                            <CardDescription>
+                                {fa
+                                    ? "مقادیر محرمانه پس از ذخیره با رمزنگاری authenticated در پایگاه داده نگهداری و در خواندن مجدد فقط به‌صورت ماسک نمایش داده می‌شوند."
+                                    : "Sensitive values are stored with authenticated encryption and are returned only as masks."}
+                            </CardDescription>
                         </CardHeader>
                         <CardContent className="grid grid-cols-1 gap-5 md:grid-cols-2">
                             {gateway.credentialFields.length === 0 ? (
-                                <div className="rounded-lg border border-dashed p-5 text-sm text-muted-foreground md:col-span-2">{stub ? (fa ? "فیلدهای پذیرنده تا دریافت مستندات رسمی این سرویس تعریف نمی‌شوند." : "Merchant fields stay undefined until official provider documentation is available.") : (fa ? "این روش به اطلاعات اتصال خارجی نیاز ندارد." : "This method does not require remote merchant credentials.")}</div>
+                                <div className="rounded-lg border border-dashed p-5 text-sm text-muted-foreground md:col-span-2">
+                                    {stub
+                                        ? fa
+                                            ? "فیلدهای پذیرنده تا دریافت مستندات رسمی این سرویس تعریف نمی‌شوند."
+                                            : "Merchant fields stay undefined until official provider documentation is available."
+                                        : fa
+                                          ? "این روش به اطلاعات اتصال خارجی نیاز ندارد."
+                                          : "This method does not require remote merchant credentials."}
+                                </div>
                             ) : (
                                 gateway.credentialFields.map((field) => {
                                     const copy = FIELD_COPY[field.key] ?? { fa: field.key, en: field.key };
@@ -163,12 +215,25 @@ export function PaymentGatewayDetailView({ code }: { code: string }) {
                                                 spellCheck={false}
                                                 value={value}
                                                 onFocus={(event) => {
-                                                    if (event.currentTarget.value === "***") setSettings((current) => ({ ...current, [field.key]: "" }));
+                                                    if (event.currentTarget.value === "***")
+                                                        setSettings((current) => ({ ...current, [field.key]: "" }));
                                                 }}
-                                                onChange={(event) => setSettings((current) => ({ ...current, [field.key]: event.target.value }))}
+                                                onChange={(event) =>
+                                                    setSettings((current) => ({ ...current, [field.key]: event.target.value }))
+                                                }
                                                 placeholder={value === "***" ? "••••••••" : undefined}
                                             />
-                                            <p className="text-[11px] text-muted-foreground">{value === "***" ? (fa ? "مقدار قبلی محفوظ است؛ برای تغییر، مقدار جدید را وارد کنید." : "Existing value is preserved; type a new value to replace it.") : copy.hintFa && fa ? copy.hintFa : copy.hintEn && !fa ? copy.hintEn : null}</p>
+                                            <p className="text-[11px] text-muted-foreground">
+                                                {value === "***"
+                                                    ? fa
+                                                        ? "مقدار قبلی محفوظ است؛ برای تغییر، مقدار جدید را وارد کنید."
+                                                        : "Existing value is preserved; type a new value to replace it."
+                                                    : copy.hintFa && fa
+                                                      ? copy.hintFa
+                                                      : copy.hintEn && !fa
+                                                        ? copy.hintEn
+                                                        : null}
+                                            </p>
                                         </div>
                                     );
                                 })
@@ -181,8 +246,14 @@ export function PaymentGatewayDetailView({ code }: { code: string }) {
                             <CardContent className="flex gap-3 p-5 text-sm leading-6">
                                 <Info className="mt-1 size-4 shrink-0" aria-hidden="true" />
                                 <div>
-                                    <p className="font-medium">{fa ? "فعال‌سازی عمداً قفل است" : "Activation is intentionally locked"}</p>
-                                    <p className="mt-1 text-muted-foreground">{fa ? "کالیبرا برای این سرویس Adapter ساختگی تولید نمی‌کند. پس از دریافت قرارداد/مستندات Merchant رسمی و تست Sandbox، Adapter در یک تغییر مستقل به حالت عملیاتی ارتقا داده می‌شود." : "Calibra never fabricates a provider adapter. Once official merchant documentation and sandbox validation are available, the adapter can be promoted in a dedicated change."}</p>
+                                    <p className="font-medium">
+                                        {fa ? "فعال‌سازی عمداً قفل است" : "Activation is intentionally locked"}
+                                    </p>
+                                    <p className="mt-1 text-muted-foreground">
+                                        {fa
+                                            ? "کالیبرا برای این سرویس Adapter ساختگی تولید نمی‌کند. پس از دریافت قرارداد/مستندات Merchant رسمی و تست Sandbox، Adapter در یک تغییر مستقل به حالت عملیاتی ارتقا داده می‌شود."
+                                            : "Calibra never fabricates a provider adapter. Once official merchant documentation and sandbox validation are available, the adapter can be promoted in a dedicated change."}
+                                    </p>
                                 </div>
                             </CardContent>
                         </Card>
@@ -195,10 +266,44 @@ export function PaymentGatewayDetailView({ code }: { code: string }) {
                             <CardTitle className="text-sm">{fa ? "سلامت اتصال" : "Connection health"}</CardTitle>
                         </CardHeader>
                         <CardContent className="flex flex-col gap-4 text-sm">
-                            <StatusRow label={fa ? "Adapter" : "Adapter"} value={gateway.implementationStatus === "stub" ? (fa ? "قفل" : "Locked") : gateway.implementationStatus === "implemented" ? (fa ? "پیاده‌سازی‌شده" : "Implemented") : (fa ? "عملیاتی" : "Live")} tone={gateway.implementationStatus === "stub" ? "warning" : "success"} />
-                            <StatusRow label={fa ? "پیکربندی" : "Configuration"} value={healthLabel(gateway.healthStatus, fa)} tone={gateway.healthStatus === "error" ? "danger" : gateway.healthStatus === "healthy" ? "success" : "neutral"} />
-                            <StatusRow label={fa ? "صفحه پرداخت" : "Checkout"} value={gateway.enabled ? (fa ? "فعال" : "Enabled") : (fa ? "غیرفعال" : "Disabled")} tone={gateway.enabled ? "success" : "neutral"} />
-                            {gateway.lastError ? <div className="rounded-md bg-destructive/5 p-3 text-xs text-destructive">{gateway.lastError}</div> : null}
+                            <StatusRow
+                                label={fa ? "Adapter" : "Adapter"}
+                                value={
+                                    gateway.implementationStatus === "stub"
+                                        ? fa
+                                            ? "قفل"
+                                            : "Locked"
+                                        : gateway.implementationStatus === "implemented"
+                                          ? fa
+                                              ? "پیاده‌سازی‌شده"
+                                              : "Implemented"
+                                          : fa
+                                            ? "عملیاتی"
+                                            : "Live"
+                                }
+                                tone={gateway.implementationStatus === "stub" ? "warning" : "success"}
+                            />
+                            <StatusRow
+                                label={fa ? "پیکربندی" : "Configuration"}
+                                value={healthLabel(gateway.healthStatus, fa)}
+                                tone={
+                                    gateway.healthStatus === "error"
+                                        ? "danger"
+                                        : gateway.healthStatus === "healthy"
+                                          ? "success"
+                                          : "neutral"
+                                }
+                            />
+                            <StatusRow
+                                label={fa ? "صفحه پرداخت" : "Checkout"}
+                                value={gateway.enabled ? (fa ? "فعال" : "Enabled") : fa ? "غیرفعال" : "Disabled"}
+                                tone={gateway.enabled ? "success" : "neutral"}
+                            />
+                            {gateway.lastError ? (
+                                <div className="rounded-md bg-destructive/5 p-3 text-xs text-destructive">
+                                    {gateway.lastError}
+                                </div>
+                            ) : null}
                         </CardContent>
                     </Card>
 
@@ -207,16 +312,32 @@ export function PaymentGatewayDetailView({ code }: { code: string }) {
                             <CardTitle className="text-sm">{fa ? "امنیت اطلاعات" : "Credential security"}</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3 text-xs leading-5 text-muted-foreground">
-                            <SecurityLine>{fa ? "رمزنگاری ChaCha20-Poly1305 با Purpose اختصاصی هر درگاه" : "ChaCha20-Poly1305 encryption with per-gateway purpose binding"}</SecurityLine>
-                            <SecurityLine>{fa ? "Secretها در پاسخ API، لاگ و UI برگردانده نمی‌شوند" : "Secrets are never returned through API, logs or UI"}</SecurityLine>
-                            <SecurityLine>{fa ? "Callbackها با Idempotency، Amount Guard و Lock سفارش محافظت می‌شوند" : "Callbacks are protected by idempotency, amount guards and order locks"}</SecurityLine>
+                            <SecurityLine>
+                                {fa
+                                    ? "رمزنگاری ChaCha20-Poly1305 با Purpose اختصاصی هر درگاه"
+                                    : "ChaCha20-Poly1305 encryption with per-gateway purpose binding"}
+                            </SecurityLine>
+                            <SecurityLine>
+                                {fa
+                                    ? "Secretها در پاسخ API، لاگ و UI برگردانده نمی‌شوند"
+                                    : "Secrets are never returned through API, logs or UI"}
+                            </SecurityLine>
+                            <SecurityLine>
+                                {fa
+                                    ? "Callbackها با Idempotency، Amount Guard و Lock سفارش محافظت می‌شوند"
+                                    : "Callbacks are protected by idempotency, amount guards and order locks"}
+                            </SecurityLine>
                         </CardContent>
                     </Card>
 
                     <Card>
                         <CardContent className="flex items-start gap-3 p-5 text-xs leading-5 text-muted-foreground">
                             <Settings2 className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-                            <p>{fa ? "بعد از دریافت اطلاعات پذیرنده از بانک/PSP، آن‌ها را فقط در همین صفحه وارد کنید. هیچ Secret واقعی نباید داخل سورس، فایل تنظیمات عمومی یا توضیحات سفارش ثبت شود." : "Enter merchant credentials only on this screen. Never put live secrets in source code, public configuration files, or order notes."}</p>
+                            <p>
+                                {fa
+                                    ? "بعد از دریافت اطلاعات پذیرنده از بانک/PSP، آن‌ها را فقط در همین صفحه وارد کنید. هیچ Secret واقعی نباید داخل سورس، فایل تنظیمات عمومی یا توضیحات سفارش ثبت شود."
+                                    : "Enter merchant credentials only on this screen. Never put live secrets in source code, public configuration files, or order notes."}
+                            </p>
                         </CardContent>
                     </Card>
                 </div>

@@ -17,7 +17,9 @@ export function soapEnvelope(namespace: string, method: string, body: string): s
 /** Extracts a tag ignoring an optional namespace prefix. PSP SOAP responses are small and flat. */
 export function xmlTag(xml: string, name: string): string | null {
     const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const match = xml.match(new RegExp(`<(?:(?:[A-Za-z0-9_-]+):)?${escaped}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/(?:(?:[A-Za-z0-9_-]+):)?${escaped}>`, "i"));
+    const match = xml.match(
+        new RegExp(`<(?:(?:[A-Za-z0-9_-]+):)?${escaped}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/(?:(?:[A-Za-z0-9_-]+):)?${escaped}>`, "i"),
+    );
     if (!match) return null;
     return match[1]
         .replaceAll("&lt;", "<")

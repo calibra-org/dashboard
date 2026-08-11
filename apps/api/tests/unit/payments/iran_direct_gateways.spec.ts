@@ -33,10 +33,7 @@ test.group("Iran direct bank adapters", (group) => {
         });
 
         assert.equal(result.authority, "REFID-123456");
-        assert.equal(
-            result.redirect_url,
-            "https://api.example/api/v1/payment/redirect/mellat?authority=REFID-123456",
-        );
+        assert.equal(result.redirect_url, "https://api.example/api/v1/payment/redirect/mellat?authority=REFID-123456");
         const [call] = fetchCalls();
         assert.equal(call.method, "POST");
         assert.include(String(call.body), "<terminalId>1234567</terminalId>");
@@ -49,11 +46,15 @@ test.group("Iran direct bank adapters", (group) => {
             [MELLAT_SERVICE]: [
                 {
                     headers: { "Content-Type": "text/xml" },
-                    body: xml("<bpVerifyRequestResponse><bpVerifyRequestReturn>0</bpVerifyRequestReturn></bpVerifyRequestResponse>"),
+                    body: xml(
+                        "<bpVerifyRequestResponse><bpVerifyRequestReturn>0</bpVerifyRequestReturn></bpVerifyRequestResponse>",
+                    ),
                 },
                 {
                     headers: { "Content-Type": "text/xml" },
-                    body: xml("<bpSettleRequestResponse><bpSettleRequestReturn>0</bpSettleRequestReturn></bpSettleRequestResponse>"),
+                    body: xml(
+                        "<bpSettleRequestResponse><bpSettleRequestReturn>0</bpSettleRequestReturn></bpSettleRequestResponse>",
+                    ),
                 },
             ],
         });
@@ -79,7 +80,9 @@ test.group("Iran direct bank adapters", (group) => {
         mockFetch({
             [PARSIAN_SALE]: {
                 headers: { "Content-Type": "text/xml" },
-                body: xml("<SalePaymentRequestResponse><SalePaymentRequestResult><Status>0</Status><Token>1234567890</Token></SalePaymentRequestResult></SalePaymentRequestResponse>"),
+                body: xml(
+                    "<SalePaymentRequestResponse><SalePaymentRequestResult><Status>0</Status><Token>1234567890</Token></SalePaymentRequestResult></SalePaymentRequestResponse>",
+                ),
             },
         });
         const attempt = new PaymentAttempt();
@@ -101,7 +104,9 @@ test.group("Iran direct bank adapters", (group) => {
         mockFetch({
             [PARSIAN_CONFIRM]: {
                 headers: { "Content-Type": "text/xml" },
-                body: xml("<ConfirmPaymentResponse><ConfirmPaymentResult><Status>0</Status><RRN>555888</RRN><CardNumberMasked>6037******1234</CardNumberMasked></ConfirmPaymentResult></ConfirmPaymentResponse>"),
+                body: xml(
+                    "<ConfirmPaymentResponse><ConfirmPaymentResult><Status>0</Status><RRN>555888</RRN><CardNumberMasked>6037******1234</CardNumberMasked></ConfirmPaymentResult></ConfirmPaymentResponse>",
+                ),
             },
         });
         const attempt = new PaymentAttempt();

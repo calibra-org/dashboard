@@ -163,7 +163,11 @@ export function gatewayCredentialKeys(code: string): readonly string[] {
 }
 
 export function requiredGatewayCredentialKeys(code: string): readonly string[] {
-    return gatewayDefinition(code)?.credentialFields.filter((field) => field.required).map((field) => field.key) ?? [];
+    return (
+        gatewayDefinition(code)
+            ?.credentialFields.filter((field) => field.required)
+            .map((field) => field.key) ?? []
+    );
 }
 
 export function gatewaySeedRows() {

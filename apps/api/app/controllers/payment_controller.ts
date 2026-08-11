@@ -47,7 +47,9 @@ export default class PaymentController {
         ctx.response.header("X-Frame-Options", "DENY");
         ctx.response.header("Cache-Control", "no-store, max-age=0");
         ctx.response.header("Content-Type", "text/html; charset=utf-8");
-        return ctx.response.send(`<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>انتقال به درگاه بانکی</title><style>body{font-family:system-ui,sans-serif;display:grid;place-items:center;min-height:100vh;margin:0;background:#f6f7fb;color:#15182b}main{max-width:28rem;padding:2rem;text-align:center;background:white;border:1px solid #e5e7eb;border-radius:1rem}button{padding:.8rem 1.2rem;border:0;border-radius:.65rem;background:#24264f;color:white;font:inherit}</style></head><body><main><p>در حال انتقال امن به درگاه به‌پرداخت ملت…</p><form id="mellat" method="post" action="${MELLAT_START_PAY_URL}"><input type="hidden" name="RefId" value="${authority}"><button type="submit">ادامه به درگاه</button></form></main><script>document.getElementById('mellat').submit()</script></body></html>`);
+        return ctx.response.send(
+            `<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>انتقال به درگاه بانکی</title><style>body{font-family:system-ui,sans-serif;display:grid;place-items:center;min-height:100vh;margin:0;background:#f6f7fb;color:#15182b}main{max-width:28rem;padding:2rem;text-align:center;background:white;border:1px solid #e5e7eb;border-radius:1rem}button{padding:.8rem 1.2rem;border:0;border-radius:.65rem;background:#24264f;color:white;font:inherit}</style></head><body><main><p>در حال انتقال امن به درگاه به‌پرداخت ملت…</p><form id="mellat" method="post" action="${MELLAT_START_PAY_URL}"><input type="hidden" name="RefId" value="${authority}"><button type="submit">ادامه به درگاه</button></form></main><script>document.getElementById('mellat').submit()</script></body></html>`,
+        );
     }
 
     async callback(ctx: HttpContext) {

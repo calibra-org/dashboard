@@ -63,7 +63,9 @@ export function PaymentsView() {
         return (data ?? []).filter((gateway) => {
             if (category !== "all" && gateway.category !== category) return false;
             if (!needle) return true;
-            return `${gateway.title[locale]} ${gateway.description[locale]} ${gateway.code}`.toLocaleLowerCase(locale).includes(needle);
+            return `${gateway.title[locale]} ${gateway.description[locale]} ${gateway.code}`
+                .toLocaleLowerCase(locale)
+                .includes(needle);
         });
     }, [category, data, locale, query]);
 
@@ -71,7 +73,9 @@ export function PaymentsView() {
     const bulkEnableBlocked = selectedRows.some((gateway) => !gatewayCanEnable(gateway));
     const activeCount = (data ?? []).filter((gateway) => gateway.enabled).length;
     const healthyCount = (data ?? []).filter((gateway) => gateway.healthStatus === "healthy").length;
-    const configuredCount = (data ?? []).filter((gateway) => gateway.healthStatus === "configured" || gateway.healthStatus === "healthy").length;
+    const configuredCount = (data ?? []).filter(
+        (gateway) => gateway.healthStatus === "configured" || gateway.healthStatus === "healthy",
+    ).length;
 
     function toggleSelected(id: number) {
         setSelected((current) => {
@@ -88,7 +92,12 @@ export function PaymentsView() {
             await update.mutateAsync({ id: gateway.id, enabled });
             setMessage({ tone: "success", text: fa ? "وضعیت درگاه ذخیره شد." : "Gateway status saved." });
         } catch {
-            setMessage({ tone: "error", text: fa ? "تغییر وضعیت درگاه انجام نشد. پیکربندی را بررسی کنید." : "Gateway update failed. Check its configuration." });
+            setMessage({
+                tone: "error",
+                text: fa
+                    ? "تغییر وضعیت درگاه انجام نشد. پیکربندی را بررسی کنید."
+                    : "Gateway update failed. Check its configuration.",
+            });
         }
     }
 
@@ -109,7 +118,12 @@ export function PaymentsView() {
             setSelected(new Set());
             setMessage({ tone: "success", text: fa ? "تغییر گروهی درگاه‌ها ذخیره شد." : "Bulk gateway update saved." });
         } catch {
-            setMessage({ tone: "error", text: fa ? "بخشی از تغییر گروهی انجام نشد؛ وضعیت سرور دوباره بارگذاری شد." : "A bulk update failed; server state was refreshed." });
+            setMessage({
+                tone: "error",
+                text: fa
+                    ? "بخشی از تغییر گروهی انجام نشد؛ وضعیت سرور دوباره بارگذاری شد."
+                    : "A bulk update failed; server state was refreshed.",
+            });
         }
     }
 
@@ -126,7 +140,9 @@ export function PaymentsView() {
     if (isError || data === undefined) {
         return (
             <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed py-14 text-center">
-                <p className="text-muted-foreground text-sm">{fa ? "بارگذاری درگاه‌ها با خطا مواجه شد." : "Failed to load payment gateways."}</p>
+                <p className="text-muted-foreground text-sm">
+                    {fa ? "بارگذاری درگاه‌ها با خطا مواجه شد." : "Failed to load payment gateways."}
+                </p>
                 <Button variant="outline" size="sm" onClick={() => refetch()}>
                     {fa ? "تلاش مجدد" : "Retry"}
                 </Button>
@@ -137,10 +153,26 @@ export function PaymentsView() {
     return (
         <div className="flex flex-col gap-5">
             <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-                <SummaryCard label={fa ? "درگاه‌های قابل مدیریت" : "Managed gateways"} value={String(data.length)} hint={fa ? "کاتالوگ تاییدشده کالیبرا" : "Calibra curated catalog"} />
-                <SummaryCard label={fa ? "فعال در پرداخت" : "Active at checkout"} value={String(activeCount)} hint={fa ? "امکان فعال‌سازی چند مورد" : "Multiple methods supported"} />
-                <SummaryCard label={fa ? "پیکربندی‌شده" : "Configured"} value={String(configuredCount)} hint={`${healthyCount} ${fa ? "اتصال تاییدشده" : "verified"}`} />
-                <SummaryCard label={fa ? "حفاظت اطلاعات پذیرنده" : "Merchant secret protection"} value={fa ? "رمزنگاری" : "Encrypted"} hint={fa ? "ChaCha20-Poly1305 + Mask-on-read" : "ChaCha20-Poly1305 + mask-on-read"} />
+                <SummaryCard
+                    label={fa ? "درگاه‌های قابل مدیریت" : "Managed gateways"}
+                    value={String(data.length)}
+                    hint={fa ? "کاتالوگ تاییدشده کالیبرا" : "Calibra curated catalog"}
+                />
+                <SummaryCard
+                    label={fa ? "فعال در پرداخت" : "Active at checkout"}
+                    value={String(activeCount)}
+                    hint={fa ? "امکان فعال‌سازی چند مورد" : "Multiple methods supported"}
+                />
+                <SummaryCard
+                    label={fa ? "پیکربندی‌شده" : "Configured"}
+                    value={String(configuredCount)}
+                    hint={`${healthyCount} ${fa ? "اتصال تاییدشده" : "verified"}`}
+                />
+                <SummaryCard
+                    label={fa ? "حفاظت اطلاعات پذیرنده" : "Merchant secret protection"}
+                    value={fa ? "رمزنگاری" : "Encrypted"}
+                    hint={fa ? "ChaCha20-Poly1305 + Mask-on-read" : "ChaCha20-Poly1305 + mask-on-read"}
+                />
             </div>
 
             <Card>
@@ -170,9 +202,15 @@ export function PaymentsView() {
             {selectedRows.length > 0 ? (
                 <div className="sticky top-3 z-20 flex flex-col gap-3 rounded-xl border bg-background/95 p-3 shadow-sm backdrop-blur md:flex-row md:items-center md:justify-between">
                     <div>
-                        <p className="text-sm font-medium">{fa ? `${selectedRows.length} درگاه انتخاب شده` : `${selectedRows.length} gateways selected`}</p>
+                        <p className="text-sm font-medium">
+                            {fa ? `${selectedRows.length} درگاه انتخاب شده` : `${selectedRows.length} gateways selected`}
+                        </p>
                         {bulkEnableBlocked ? (
-                            <p className="mt-1 text-xs text-muted-foreground">{fa ? "برای فعال‌سازی گروهی، همه موارد باید Adapter واقعی و پیکربندی کامل داشته باشند." : "Bulk activation requires a real adapter and complete configuration for every selection."}</p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                                {fa
+                                    ? "برای فعال‌سازی گروهی، همه موارد باید Adapter واقعی و پیکربندی کامل داشته باشند."
+                                    : "Bulk activation requires a real adapter and complete configuration for every selection."}
+                            </p>
                         ) : null}
                     </div>
                     <div className="flex gap-2">
@@ -187,7 +225,14 @@ export function PaymentsView() {
             ) : null}
 
             {message ? (
-                <div className={cn("rounded-lg border px-4 py-3 text-sm", message.tone === "error" ? "border-destructive/30 bg-destructive/5 text-destructive" : "border-emerald-500/25 bg-emerald-500/5 text-foreground")}>
+                <div
+                    className={cn(
+                        "rounded-lg border px-4 py-3 text-sm",
+                        message.tone === "error"
+                            ? "border-destructive/30 bg-destructive/5 text-destructive"
+                            : "border-emerald-500/25 bg-emerald-500/5 text-foreground",
+                    )}
+                >
                     {message.text}
                 </div>
             ) : null}
@@ -196,7 +241,13 @@ export function PaymentsView() {
                 {visible.map((gateway) => {
                     const canEnable = gatewayCanEnable(gateway);
                     return (
-                        <Card key={gateway.id} className={cn("overflow-hidden transition-shadow hover:shadow-sm", selected.has(gateway.id) && "ring-1 ring-primary/40")}>
+                        <Card
+                            key={gateway.id}
+                            className={cn(
+                                "overflow-hidden transition-shadow hover:shadow-sm",
+                                selected.has(gateway.id) && "ring-1 ring-primary/40",
+                            )}
+                        >
                             <CardContent className="flex h-full flex-col gap-5 p-5">
                                 <div className="flex items-start gap-4">
                                     <label className="mt-1 inline-flex size-5 shrink-0 items-center justify-center">
@@ -212,9 +263,13 @@ export function PaymentsView() {
                                     <div className="min-w-0 flex-1">
                                         <div className="flex flex-wrap items-center gap-2">
                                             <h3 className="font-semibold">{gateway.title[locale]}</h3>
-                                            <StatusBadge tone={healthTone(gateway)}>{gatewayStatusLabel(gateway, fa)}</StatusBadge>
+                                            <StatusBadge tone={healthTone(gateway)}>
+                                                {gatewayStatusLabel(gateway, fa)}
+                                            </StatusBadge>
                                         </div>
-                                        <p className="mt-1 text-sm leading-6 text-muted-foreground">{gateway.description[locale]}</p>
+                                        <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                                            {gateway.description[locale]}
+                                        </p>
                                     </div>
                                 </div>
 
@@ -222,18 +277,29 @@ export function PaymentsView() {
                                     <Meta label={fa ? "نوع" : "Type"} value={categoryLabel(gateway.category, fa)} />
                                     <Meta label={fa ? "وضعیت فنی" : "Adapter"} value={implementationLabel(gateway, fa)} />
                                     <Meta label={fa ? "اولویت پرداخت" : "Checkout order"} value={String(gateway.ordering)} />
-                                    <Meta label={fa ? "بازگشت وجه" : "Refund"} value={gateway.supportsRefunds ? (fa ? "پشتیبانی" : "Supported") : (fa ? "—" : "—")} />
+                                    <Meta
+                                        label={fa ? "بازگشت وجه" : "Refund"}
+                                        value={gateway.supportsRefunds ? (fa ? "پشتیبانی" : "Supported") : fa ? "—" : "—"}
+                                    />
                                 </div>
 
                                 {gateway.implementationStatus === "stub" ? (
                                     <div className="flex items-start gap-2 rounded-lg border border-amber-500/25 bg-amber-500/5 p-3 text-xs leading-5 text-muted-foreground">
                                         <Info className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-                                        <span>{fa ? "این روش در کاتالوگ نمایش داده می‌شود اما تا دریافت مستندات رسمی پذیرنده و تست Sandbox اجازه فعال‌شدن ندارد؛ هیچ اتصال نمایشی ساخته نشده است." : "Visible in the catalog, but activation stays locked until official merchant documentation and sandbox validation exist. No fake integration is exposed."}</span>
+                                        <span>
+                                            {fa
+                                                ? "این روش در کاتالوگ نمایش داده می‌شود اما تا دریافت مستندات رسمی پذیرنده و تست Sandbox اجازه فعال‌شدن ندارد؛ هیچ اتصال نمایشی ساخته نشده است."
+                                                : "Visible in the catalog, but activation stays locked until official merchant documentation and sandbox validation exist. No fake integration is exposed."}
+                                        </span>
                                     </div>
                                 ) : gateway.healthStatus === "unconfigured" ? (
                                     <div className="flex items-start gap-2 rounded-lg border border-dashed p-3 text-xs leading-5 text-muted-foreground">
                                         <Settings2 className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-                                        <span>{fa ? "برای فعال‌سازی، ابتدا اطلاعات پذیرنده این درگاه را در صفحه پیکربندی ثبت کنید." : "Enter this gateway's merchant credentials before activation."}</span>
+                                        <span>
+                                            {fa
+                                                ? "برای فعال‌سازی، ابتدا اطلاعات پذیرنده این درگاه را در صفحه پیکربندی ثبت کنید."
+                                                : "Enter this gateway's merchant credentials before activation."}
+                                        </span>
                                     </div>
                                 ) : null}
 
@@ -245,7 +311,9 @@ export function PaymentsView() {
                                             onCheckedChange={(checked) => toggleGateway(gateway, checked)}
                                             aria-label={fa ? `فعال‌سازی ${gateway.title.fa}` : `Enable ${gateway.title.en}`}
                                         />
-                                        <span className="text-sm font-medium">{gateway.enabled ? (fa ? "فعال" : "Enabled") : (fa ? "غیرفعال" : "Disabled")}</span>
+                                        <span className="text-sm font-medium">
+                                            {gateway.enabled ? (fa ? "فعال" : "Enabled") : fa ? "غیرفعال" : "Disabled"}
+                                        </span>
                                     </div>
                                     <Button asChild variant="outline" size="sm">
                                         <Link href={`/payments/${gateway.code}` as never}>
@@ -261,7 +329,9 @@ export function PaymentsView() {
             </div>
 
             {visible.length === 0 ? (
-                <div className="rounded-xl border border-dashed py-14 text-center text-sm text-muted-foreground">{fa ? "درگاهی با این فیلتر پیدا نشد." : "No gateways match this filter."}</div>
+                <div className="rounded-xl border border-dashed py-14 text-center text-sm text-muted-foreground">
+                    {fa ? "درگاهی با این فیلتر پیدا نشد." : "No gateways match this filter."}
+                </div>
             ) : null}
         </div>
     );
@@ -289,7 +359,10 @@ function FilterButton({ active, onClick, children }: { active: boolean; onClick:
 
 function BrandMark({ code }: { code: string }) {
     return (
-        <div className="flex size-12 shrink-0 items-center justify-center rounded-xl border bg-background text-xs font-bold tracking-tight shadow-xs" aria-hidden="true">
+        <div
+            className="flex size-12 shrink-0 items-center justify-center rounded-xl border bg-background text-xs font-bold tracking-tight shadow-xs"
+            aria-hidden="true"
+        >
             {BRAND_MARKS[code] ?? code.slice(0, 4).toUpperCase()}
         </div>
     );
@@ -305,8 +378,20 @@ function Meta({ label, value }: { label: string; value: string }) {
 }
 
 function categoryLabel(category: PaymentGatewayCategory, fa: boolean): string {
-    const faLabels: Record<PaymentGatewayCategory, string> = { bank: "بانکی مستقیم", psp: "پرداخت‌یار", bnpl: "اعتباری / BNPL", offline: "آفلاین", legacy: "قدیمی" };
-    const enLabels: Record<PaymentGatewayCategory, string> = { bank: "Direct bank", psp: "PSP", bnpl: "BNPL", offline: "Offline", legacy: "Legacy" };
+    const faLabels: Record<PaymentGatewayCategory, string> = {
+        bank: "بانکی مستقیم",
+        psp: "پرداخت‌یار",
+        bnpl: "اعتباری / BNPL",
+        offline: "آفلاین",
+        legacy: "قدیمی",
+    };
+    const enLabels: Record<PaymentGatewayCategory, string> = {
+        bank: "Direct bank",
+        psp: "PSP",
+        bnpl: "BNPL",
+        offline: "Offline",
+        legacy: "Legacy",
+    };
     return (fa ? faLabels : enLabels)[category];
 }
 

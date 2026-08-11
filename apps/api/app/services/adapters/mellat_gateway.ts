@@ -96,7 +96,12 @@ export class MellatGateway implements PaymentAdapter {
         const saleOrderId = String(payload.sale_order_id ?? orderId).trim();
         const saleReferenceId = String(payload.sale_reference_id ?? args.callback.transaction_id ?? "").trim();
         if (!saleOrderId || !saleReferenceId) {
-            return { ok: false, error_code: "mellat_callback_invalid", error_message: "Mellat callback identifiers are missing", payload };
+            return {
+                ok: false,
+                error_code: "mellat_callback_invalid",
+                error_message: "Mellat callback identifiers are missing",
+                payload,
+            };
         }
         const common = `${credentialXml(c)}<orderId>${xmlEscape(orderId)}</orderId><saleOrderId>${xmlEscape(saleOrderId)}</saleOrderId><saleReferenceId>${xmlEscape(saleReferenceId)}</saleReferenceId>`;
         const verifyCode = await mellatCall("bpVerifyRequest", common);

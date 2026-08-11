@@ -267,6 +267,11 @@ paths:
     /api/v1/payment/init:
         post:
             $ref: "./storefront/paths/payment/init.post.yaml"
+    /api/v1/payment/redirect/mellat:
+        get:
+            $ref: "./storefront/paths/payment/redirect-mellat.get.yaml"
+        head:
+            $ref: "./common/components/operations/HeadCompanion.yaml"
     /api/v1/payment/callback/{gateway_code}:
         get:
             $ref: "./storefront/paths/payment/callback-gateway_code.get.yaml"
