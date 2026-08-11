@@ -3,6 +3,7 @@ import type { HttpContext } from "@adonisjs/core/http";
 
 import { GatewayNotImplementedException } from "#exceptions/payment_exceptions";
 import PaymentGateway from "#models/payment_gateway";
+import { ensurePaymentGatewayCatalog } from "#services/payment_gateway_catalog_service";
 import { paymentGatewayCredentialsService } from "#services/payment_gateway_credentials_service";
 import { withTenantTransaction } from "#services/tenant_context";
 import { adminPaymentGatewaysView } from "#table_views/admin/payment_gateways";
@@ -16,6 +17,7 @@ import {
 /** Admin configuration surface for tenant payment gateways. */
 export default class AdminPaymentGatewaysController {
     async index(ctx: HttpContext) {
+        await ensurePaymentGatewayCatalog();
         const parsed = await ctx.request.validateUsing(adminPaymentGatewayListValidator);
         const { data: rows, meta } = await adminPaymentGatewaysView.run<PaymentGateway>(PaymentGateway.query(), parsed);
         return {
@@ -40,16 +42,11 @@ export default class AdminPaymentGatewaysController {
             gateway.enabled = payload.enabled;
         }
 
-        /** Capability flags come from the registered adapter/catalog, never an operator-supplied PATCH. */
         await gateway.save();
         return { data: new PaymentGatewayTransformer(gateway).forAdmin() };
     }
 
-    /**
-     * Multi-select enable/disable. Validation happens for the full set before any row is saved; the
-     * transaction makes the operation all-or-nothing so one unconfigured PSP cannot leave half the
-     * checkout methods toggled.
-     */
+    /** Multi-select enable/disable; all-or-nothing under row locks. */
     async bulk(ctx: HttpContext) {
         const payload = await ctx.request.validateUsing(adminPaymentGatewayBulkValidator);
         const ids = [...new Set(payload.ids.map(Number))];
