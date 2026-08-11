@@ -1,0 +1,44 @@
+name: Payment gateway visual
+
+on:
+    push:
+        branches:
+            - "phase/08-payment-gateways"
+
+permissions:
+    contents: read
+
+jobs:
+    visual:
+        runs-on: ubuntu-latest
+        services:
+            postgres:
+                image: postgres:17-alpine
+                env:
+                    POSTGRES_USER: postgres
+                    POSTGRES_PASSWORD: postgres
+                    POSTGRES_DB: calibra_visual
+                ports:
+                    - 5432:5432
+                options: >-
+                    --health-cmd "pg_isready -U postgres"
+                    --health-interval 5s
+                    --health-timeout 5s
+                    --health-retries 20
+            redis:
+                image: redis:7-alpine
+                ports:
+                    - 6379:6379
+        steps:
+            - uses: actions/checkout@v4
+            - uses: pnpm/action-setup@v4
+              with:
+                  version: 10.32.1
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 24.14.0
+                  cache: pnpm
+            - run: pnpm install --frozen-lockfile
+            - run: pnpm --filter @calibra/admin exec playwright install chromium --with-deps
+            - name: Prepare application
+              run: pnpm --filter @calibra/api exec node ace --help >/dev/null
