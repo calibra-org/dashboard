@@ -9,12 +9,14 @@ import type {
     VerifyResult,
 } from "#services/adapters/base_redirect_gateway";
 import { timeoutFetch } from "#services/adapters/base_redirect_gateway";
+import { paymentGatewayCredentialsService } from "#services/payment_gateway_credentials_service";
 
 const REQUEST_URL = "https://api.zarinpal.com/pg/v4/payment/request.json";
 const VERIFY_URL = "https://api.zarinpal.com/pg/v4/payment/verify.json";
 const START_PAY_URL = "https://www.zarinpal.com/pg/StartPay/";
 
-function requireMerchantId(settings: Record<string, unknown>): string {
+function requireMerchantId(stored: Record<string, unknown>): string {
+    const settings = paymentGatewayCredentialsService.runtimeSettingsFromStored("zarinpal", stored);
     const merchantId = typeof settings.merchant_id === "string" ? settings.merchant_id.trim() : "";
     if (!merchantId) throw new Error("zarinpal merchant_id is required");
     return merchantId;
@@ -24,27 +26,23 @@ function asRecord(value: unknown): Record<string, unknown> {
     return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
 }
 
-/**
- * ZarinPal v4 redirect adapter. Merchant credentials never enter payload/audit data; only provider
- * response fields are persisted. Amounts are sent in Calibra's canonical Rial minor unit.
- */
+/** ZarinPal v4 redirect adapter. */
 export class ZarinpalGateway implements PaymentAdapter {
     readonly code = "zarinpal";
     readonly capabilities: PaymentAdapterCapabilities = { redirect: true, refunds: false, partial_refunds: false };
 
     async init(args: InitArgs): Promise<InitResult> {
         const merchantId = requireMerchantId(args.settings);
-        const body = {
-            merchant_id: merchantId,
-            amount: Number(args.attempt.amountMinor),
-            callback_url: args.return_url,
-            description: `Calibra order ${String(args.order.orderNumber)}`,
-        };
         const response = await timeoutFetch(REQUEST_URL, {
             method: "POST",
             timeoutMs: 5_000,
             headers: { "content-type": "application/json", accept: "application/json" },
-            body: JSON.stringify(body),
+            body: JSON.stringify({
+                merchant_id: merchantId,
+                amount: Number(args.attempt.amountMinor),
+                callback_url: args.return_url,
+                description: `Calibra order ${String(args.order.orderNumber)}`,
+            }),
         });
         const envelope = asRecord(response.body);
         const data = asRecord(envelope.data);
