@@ -4,11 +4,11 @@ import type PaymentGateway from "#models/payment_gateway";
 import { gatewayCredentialKeys, requiredGatewayCredentialKeys } from "#services/payment_gateway_catalog";
 
 export const PAYMENT_CREDENTIAL_MASK = "***";
+const CIPHERTEXT_KEY = "__credentials_ciphertext";
 
 export type PaymentGatewayHealthStatus = "unconfigured" | "configured" | "healthy" | "error";
 
 interface SecurityAttributes {
-    credentials_ciphertext?: string;
     health_status?: PaymentGatewayHealthStatus;
     last_verified_at?: string | null;
     last_error?: string | null;
@@ -16,28 +16,31 @@ interface SecurityAttributes {
 }
 
 /**
- * Keeps merchant credentials out of the public settings dictionary.
- *
- * Credentials are encrypted as one purpose-bound ChaCha20-Poly1305 payload using Calibra's Adonis
- * encryption manager and stored inside the already tenant-isolated `attributes` JSONB. Purpose
- * binding includes the gateway code, so moving a ciphertext between providers makes decryption
- * fail closed. GET surfaces only mask sentinels; a PATCH containing `***` preserves the existing
- * value, while an empty string explicitly clears it.
+ * Encrypts tenant merchant credentials with Calibra's ChaCha20-Poly1305 encryption manager.
+ * Ciphertext is kept in the existing tenant-isolated settings JSON under a reserved key so the
+ * current PaymentService can pass it to adapters without any plaintext model mutation. Admin GET
+ * strips the ciphertext and exposes only `***`/empty sentinels.
  */
 export class PaymentGatewayCredentialsService {
     runtimeSettings(gateway: PaymentGateway): Record<string, unknown> {
-        const publicSettings = { ...(((gateway.settings as Record<string, unknown> | null) ?? {}) as Record<string, unknown>) };
-        return { ...publicSettings, ...this.readCredentials(gateway) };
+        return this.runtimeSettingsFromStored(gateway.code, (gateway.settings as Record<string, unknown> | null) ?? {});
+    }
+
+    runtimeSettingsFromStored(code: string, stored: Record<string, unknown>): Record<string, unknown> {
+        const publicSettings = { ...stored };
+        delete publicSettings[CIPHERTEXT_KEY];
+        return { ...publicSettings, ...this.readCredentialsFromStored(code, stored) };
     }
 
     maskedSettings(gateway: PaymentGateway): Record<string, unknown> {
-        const publicSettings = { ...(((gateway.settings as Record<string, unknown> | null) ?? {}) as Record<string, unknown>) };
-        const credentials = this.readCredentials(gateway);
+        const stored = { ...(((gateway.settings as Record<string, unknown> | null) ?? {}) as Record<string, unknown>) };
+        const credentials = this.readCredentialsFromStored(gateway.code, stored);
+        delete stored[CIPHERTEXT_KEY];
         for (const key of gatewayCredentialKeys(gateway.code)) {
             const value = credentials[key];
-            publicSettings[key] = typeof value === "string" && value.length > 0 ? PAYMENT_CREDENTIAL_MASK : "";
+            stored[key] = typeof value === "string" && value.length > 0 ? PAYMENT_CREDENTIAL_MASK : "";
         }
-        return publicSettings;
+        return stored;
     }
 
     missingRequired(gateway: PaymentGateway, runtimeOverride?: Record<string, unknown>): string[] {
@@ -82,19 +85,18 @@ export class PaymentGatewayCredentialsService {
     markError(gateway: PaymentGateway, message: string): void {
         const attrs = this.attributes(gateway);
         attrs.health_status = "error";
-        /** Persist a bounded operational message only; provider credentials never reach this string. */
         attrs.last_error = message.slice(0, 500);
         gateway.attributes = attrs;
     }
 
     applySettingsPatch(gateway: PaymentGateway, incoming: Record<string, unknown>): void {
         const credentialKeys = new Set(gatewayCredentialKeys(gateway.code));
-        const publicSettings = { ...(((gateway.settings as Record<string, unknown> | null) ?? {}) as Record<string, unknown>) };
-        const credentials = this.readCredentials(gateway);
+        const stored = { ...(((gateway.settings as Record<string, unknown> | null) ?? {}) as Record<string, unknown>) };
+        const credentials = this.readCredentialsFromStored(gateway.code, stored);
 
         for (const [key, raw] of Object.entries(incoming)) {
             if (!credentialKeys.has(key)) {
-                publicSettings[key] = raw;
+                if (key !== CIPHERTEXT_KEY) stored[key] = raw;
                 continue;
             }
             if (raw === PAYMENT_CREDENTIAL_MASK) continue;
@@ -105,31 +107,27 @@ export class PaymentGatewayCredentialsService {
             }
         }
 
-        for (const key of credentialKeys) delete publicSettings[key];
-        gateway.settings = publicSettings;
-        const attrs = this.attributes(gateway);
+        for (const key of credentialKeys) delete stored[key];
         if (Object.keys(credentials).length === 0) {
-            delete attrs.credentials_ciphertext;
+            delete stored[CIPHERTEXT_KEY];
         } else {
-            attrs.credentials_ciphertext = encryption.encrypt(credentials, { purpose: this.purpose(gateway.code) });
+            stored[CIPHERTEXT_KEY] = encryption.encrypt(credentials, { purpose: this.purpose(gateway.code) });
         }
-        gateway.attributes = attrs;
+        gateway.settings = stored;
         this.markConfigured(gateway);
     }
 
-    private readCredentials(gateway: PaymentGateway): Record<string, string> {
+    private readCredentialsFromStored(code: string, stored: Record<string, unknown>): Record<string, string> {
         const result: Record<string, string> = {};
-        const publicSettings = ((gateway.settings as Record<string, unknown> | null) ?? {}) as Record<string, unknown>;
-
-        /** Legacy compatibility: older deployments stored provider credentials in plaintext JSON. */
-        for (const key of gatewayCredentialKeys(gateway.code)) {
-            const legacy = publicSettings[key];
+        /** Legacy compatibility: plaintext provider fields are migrated on the next PATCH. */
+        for (const key of gatewayCredentialKeys(code)) {
+            const legacy = stored[key];
             if (typeof legacy === "string" && legacy.length > 0 && legacy !== PAYMENT_CREDENTIAL_MASK) result[key] = legacy;
         }
 
-        const ciphertext = this.attributes(gateway).credentials_ciphertext;
+        const ciphertext = stored[CIPHERTEXT_KEY];
         if (typeof ciphertext !== "string" || ciphertext.length === 0) return result;
-        const decrypted = encryption.decrypt(ciphertext, this.purpose(gateway.code));
+        const decrypted = encryption.decrypt(ciphertext, this.purpose(code));
         if (!decrypted || typeof decrypted !== "object" || Array.isArray(decrypted)) return result;
         for (const [key, value] of Object.entries(decrypted as Record<string, unknown>)) {
             if (typeof value === "string") result[key] = value;
