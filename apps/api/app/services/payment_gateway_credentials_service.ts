@@ -45,6 +45,11 @@ export class PaymentGatewayCredentialsService {
         });
     }
 
+    hasCredentialMutation(code: string, incoming: Record<string, unknown>): boolean {
+        const credentialKeys = new Set(gatewayCredentialKeys(code));
+        return Object.entries(incoming).some(([key, raw]) => credentialKeys.has(key) && raw !== PAYMENT_CREDENTIAL_MASK);
+    }
+
     health(gateway: PaymentGateway): {
         status: PaymentGatewayHealthStatus;
         lastVerifiedAt: string | null;
