@@ -28,57 +28,143 @@ test.group("/api/v1/admin/payment-gateways", (group) => {
         response.assertStatus(403);
     });
 
-    test("admin GET lists all gateways and surfaces implementation_status for each", async ({ client, assert }) => {
+    test("admin GET reconciles the approved ten-method catalog without deleting legacy rows", async ({ client, assert }) => {
         const admin = await createAdmin();
         const response = await client.get("/api/v1/admin/payment-gateways").withGuard("api").loginAs(admin);
         response.assertStatus(200);
         response.assertAgainstApiSpec();
-        const list = response.body().data as Array<{ code: string; implementation_status: "stub" | "live" }>;
-        const byCode = new Map(list.map((g) => [g.code, g.implementation_status]));
-        assert.equal(byCode.get("zarinpal"), "stub");
-        assert.equal(byCode.get("idpay"), "stub");
-        assert.equal(byCode.get("cod"), "live");
-        assert.equal(byCode.get("bank_transfer"), "live");
+        const list = response.body().data as Array<{
+            code: string;
+            implementation_status: "stub" | "implemented" | "live";
+            admin_visible: boolean;
+        }>;
+        const byCode = new Map(list.map((gateway) => [gateway.code, gateway]));
+        for (const code of [
+            "mellat",
+            "sadad",
+            "parsian",
+            "zarinpal",
+            "bitpay",
+            "digipay",
+            "snapppay",
+            "azkivam",
+            "card_to_card",
+            "cod",
+        ]) {
+            assert.isTrue(Boolean(byCode.get(code)?.admin_visible), `${code} must be visible in the approved catalog`);
+        }
+        assert.equal(byCode.get("mellat")?.implementation_status, "implemented");
+        assert.equal(byCode.get("parsian")?.implementation_status, "implemented");
+        assert.equal(byCode.get("zarinpal")?.implementation_status, "implemented");
+        assert.equal(byCode.get("sadad")?.implementation_status, "stub");
+        assert.equal(byCode.get("cod")?.implementation_status, "live");
+        assert.isFalse(byCode.get("bank_transfer")?.admin_visible ?? true);
     });
 
-    test("PATCH on a live gateway merges settings; sensitive keys still mask on the response", async ({ client, assert }) => {
+    test("Mellat merchant secrets are encrypted at rest and only masks come back over admin API", async ({ client, assert }) => {
         const admin = await createAdmin();
-        const bank = await PaymentGateway.findByOrFail("code", "bank_transfer");
-
+        const mellat = await PaymentGateway.findByOrFail("code", "mellat");
         const response = await client
-            .patch(`/api/v1/admin/payment-gateways/${Number(bank.id)}`)
+            .patch(`/api/v1/admin/payment-gateways/${Number(mellat.id)}`)
             .withGuard("api")
             .loginAs(admin)
-            .json({ enabled: true, settings: { iban: "IR0123456789012345678901", currency_display: "IRT" } });
+            .json({
+                enabled: true,
+                settings: {
+                    terminal_id: "1234567",
+                    username: "merchant-user",
+                    password: "merchant-password",
+                },
+            });
 
         response.assertStatus(200);
         response.assertAgainstApiSpec();
-        const body = response.body().data as { enabled: boolean; settings: Record<string, string> };
+        const body = response.body().data as {
+            enabled: boolean;
+            settings: Record<string, string>;
+            health_status: string;
+        };
         assert.isTrue(body.enabled);
-        assert.equal(body.settings.iban, "IR0123456789012345678901");
-        assert.equal(body.settings.currency_display, "IRT");
+        assert.equal(body.health_status, "configured");
+        assert.equal(body.settings.terminal_id, "***");
+        assert.equal(body.settings.username, "***");
+        assert.equal(body.settings.password, "***");
 
-        const reloaded = await PaymentGateway.findOrFail(Number(bank.id));
-        const settings = reloaded.settings as Record<string, unknown>;
-        assert.equal(settings.iban, "IR0123456789012345678901");
-        assert.equal(settings.currency_display, "IRT");
+        const reloaded = await PaymentGateway.findOrFail(Number(mellat.id));
+        const stored = reloaded.settings as Record<string, unknown>;
+        assert.notProperty(stored, "terminal_id");
+        assert.notProperty(stored, "username");
+        assert.notProperty(stored, "password");
+        assert.isString(stored.__credentials_ciphertext);
+        assert.notInclude(String(stored.__credentials_ciphertext), "merchant-password");
     });
 
-    test("PATCH that only rotates settings on a live gateway leaves enabled alone", async ({ client, assert }) => {
+    test("mask sentinel preserves an already-configured secret while rotating another field", async ({ client, assert }) => {
+        const admin = await createAdmin();
+        const mellat = await PaymentGateway.findByOrFail("code", "mellat");
+        await client
+            .patch(`/api/v1/admin/payment-gateways/${Number(mellat.id)}`)
+            .withGuard("api")
+            .loginAs(admin)
+            .json({ settings: { terminal_id: "111", username: "old-user", password: "old-pass" } });
+
+        const rotate = await client
+            .patch(`/api/v1/admin/payment-gateways/${Number(mellat.id)}`)
+            .withGuard("api")
+            .loginAs(admin)
+            .json({ settings: { terminal_id: "***", username: "new-user", password: "***" } });
+        rotate.assertStatus(200);
+        const settings = (rotate.body().data as { settings: Record<string, string> }).settings;
+        assert.equal(settings.terminal_id, "***");
+        assert.equal(settings.username, "***");
+        assert.equal(settings.password, "***");
+
+        const enable = await client
+            .patch(`/api/v1/admin/payment-gateways/${Number(mellat.id)}`)
+            .withGuard("api")
+            .loginAs(admin)
+            .json({ enabled: true });
+        enable.assertStatus(200);
+    });
+
+    test("implemented remote gateway cannot be enabled before required merchant credentials exist", async ({ client }) => {
+        const admin = await createAdmin();
+        const zarinpal = await PaymentGateway.findByOrFail("code", "zarinpal");
+        const response = await client
+            .patch(`/api/v1/admin/payment-gateways/${Number(zarinpal.id)}`)
+            .withGuard("api")
+            .loginAs(admin)
+            .json({ enabled: true });
+        response.assertStatus(422);
+    });
+
+    test("stub gateway stays fail-closed even if the operator supplies the expected-looking fields", async ({ client }) => {
+        const admin = await createAdmin();
+        const sadad = await PaymentGateway.findByOrFail("code", "sadad");
+        const response = await client
+            .patch(`/api/v1/admin/payment-gateways/${Number(sadad.id)}`)
+            .withGuard("api")
+            .loginAs(admin)
+            .json({
+                enabled: true,
+                settings: { merchant_id: "m", terminal_id: "t", terminal_key: "k" },
+            });
+        response.assertStatus(422);
+    });
+
+    test("PATCH that only changes non-secret settings leaves an enabled live gateway alone", async ({ client, assert }) => {
         const admin = await createAdmin();
         const cod = await PaymentGateway.findByOrFail("code", "cod");
         assert.isTrue(cod.enabled);
-
         const response = await client
             .patch(`/api/v1/admin/payment-gateways/${Number(cod.id)}`)
             .withGuard("api")
             .loginAs(admin)
-            .json({ settings: { currency_display: "IRR" } });
-
+            .json({ settings: { customer_note: "پرداخت هنگام تحویل" } });
         response.assertStatus(200);
         response.assertAgainstApiSpec();
         const reloaded = await PaymentGateway.findOrFail(Number(cod.id));
         assert.isTrue(reloaded.enabled);
-        assert.equal((reloaded.settings as Record<string, unknown>).currency_display, "IRR");
+        assert.equal((reloaded.settings as Record<string, unknown>).customer_note, "پرداخت هنگام تحویل");
     });
 });
