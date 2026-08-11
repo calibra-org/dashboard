@@ -9,6 +9,7 @@ import type {
     VerifyResult,
 } from "#services/adapters/base_redirect_gateway";
 import { postSoap, xmlEscape, xmlTag } from "#services/adapters/soap_gateway_helpers";
+import { paymentGatewayCredentialsService } from "#services/payment_gateway_credentials_service";
 
 const SALE_URL = "https://pec.shaparak.ir/NewIPGServices/Sale/SaleService.asmx";
 const CONFIRM_URL = "https://pec.shaparak.ir/NewIPGServices/Confirm/ConfirmService.asmx";
@@ -16,7 +17,8 @@ const START_PAY_URL = "https://pec.shaparak.ir/NewIPG/";
 const SALE_NAMESPACE = "https://pec.Shaparak.ir/NewIPGServices/Sale/SaleService";
 const CONFIRM_NAMESPACE = "https://pec.Shaparak.ir/NewIPGServices/Confirm/ConfirmService";
 
-function loginAccount(settings: Record<string, unknown>): string {
+function loginAccount(stored: Record<string, unknown>): string {
+    const settings = paymentGatewayCredentialsService.runtimeSettingsFromStored("parsian", stored);
     const value = String(settings.login_account ?? "").trim();
     if (!value) throw new Error("parsian login_account is required");
     return value;
