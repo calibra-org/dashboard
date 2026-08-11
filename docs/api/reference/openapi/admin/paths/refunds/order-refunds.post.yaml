@@ -3,17 +3,16 @@ summary: Issue a refund against an order
 description: >
     Runs the {@link RefundService} transaction:
     1. `SELECT … FOR UPDATE` on the order so parallel refunds serialize.
-    2. Idempotency-key short-circuit — replays return the original row without duplicating side effects.
+    2. Idempotency-key short-circuit — replays return the original row.
     3. Validate the request: `amount_minor` XOR `line_items[]`, both > 0, both ≤ outstanding.
     4. Allocate `refund_number` from `refund_number_seq`.
     5. Write `order_refunds` + optional `order_refund_line_items`.
-    6. Restock requested lines via {@link InventoryService.increment}; `restock_requested=true`
-       is accepted only for `line_items[]` refunds so inventory quantities are explicit.
+    6. Restock requested lines via {@link InventoryService.increment}.
     7. Dispatch to the gateway adapter's `refund()` — failures are recorded on
        `attributes.gateway_refund` but do not block the booking.
     8. If cumulative refunds ≥ `grand_total`, transition the order to `refunded`.
     9. Append an internal audit note.
-    10. Emit `order:refunded` exactly once for a newly-created refund.
+    10. Emit `order:refunded`.
 
     Pass `Idempotency-Key` to make retries safe; the second call with the same key returns the
     original refund row.
@@ -38,6 +37,7 @@ requestBody:
                       properties:
                           amount_minor: { type: integer, minimum: 1 }
                           reason: { type: [string, "null"], maxLength: 2000 }
+                          restock_requested: { type: boolean, default: false }
                     - title: LineItemRefund
                       type: object
                       required: [line_items]
