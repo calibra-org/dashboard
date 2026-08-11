@@ -1,53 +1,124 @@
 "use client";
 
 import type { AdminSchemas } from "@calibra/sdk";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocale } from "next-intl";
 
-import { apiGet } from "#/lib/queries/api-client";
-import type { AdminPaymentGateway, LocalizedString, PaymentGatewayCode } from "#/lib/types";
+import { apiGet, apiMutate } from "#/lib/queries/api-client";
 
-type SdkAdminPaymentGateway = AdminSchemas["schemas"]["AdminPaymentGateway"];
+export type PaymentGatewayImplementationStatus = "stub" | "implemented" | "live";
+export type PaymentGatewayHealthStatus = "unconfigured" | "configured" | "healthy" | "error";
+export type PaymentGatewayCategory = "bank" | "psp" | "bnpl" | "offline" | "legacy";
 
-/**
- * Display titles for the gateways the platform recognises. The API stores a bare machine `code`
- * (and never a localized title), so the admin UI carries the fa/en label set here. Unknown codes
- * fall back to the raw code in both locales.
- */
-const KNOWN_GATEWAY_TITLES: Record<string, LocalizedString> = {
-    zarinpal: { fa: "زرین‌پال", en: "Zarinpal" },
-    idpay: { fa: "آی‌دی پی", en: "IDPay" },
-    nextpay: { fa: "نکست‌پی", en: "NextPay" },
-    payir: { fa: "پی پینگ", en: "Pay.ir" },
-    zibal: { fa: "زیبال", en: "Zibal" },
-    cod: { fa: "پرداخت در محل", en: "Cash on Delivery" },
-    bank_transfer: { fa: "انتقال بانکی", en: "Bank Transfer" },
-};
-
-/** Fans a single locale-resolved string out to both locale slots so `value[locale]` access works. */
-function dup(value: string | null | undefined): LocalizedString {
-    const safe = typeof value === "string" ? value : "";
-    return { fa: safe, en: safe };
+export interface PaymentGatewayCredentialField {
+    key: string;
+    required: boolean;
 }
 
-/**
- * Adapts the SDK payment-gateway wire shape into the admin view type. Relocated from the deleted
- * `server-repos.ts` so it runs client-side; identical semantics.
- */
-export function toAdminPaymentGateway(g: SdkAdminPaymentGateway): AdminPaymentGateway {
-    const titles = KNOWN_GATEWAY_TITLES[g.code] ?? { fa: g.code, en: g.code };
+export interface LocalizedGatewayCopy {
+    fa: string;
+    en: string;
+}
+
+export interface AdminPaymentGateway {
+    id: number;
+    code: string;
+    title: LocalizedGatewayCopy;
+    description: LocalizedGatewayCopy;
+    enabled: boolean;
+    ordering: number;
+    supportsRefunds: boolean;
+    implementationStatus: PaymentGatewayImplementationStatus;
+    category: PaymentGatewayCategory;
+    adminVisible: boolean;
+    credentialFields: PaymentGatewayCredentialField[];
+    healthStatus: PaymentGatewayHealthStatus;
+    lastVerifiedAt: string | null;
+    lastError: string | null;
+    settings: Record<string, string>;
+}
+
+type SdkAdminPaymentGateway = AdminSchemas["schemas"]["AdminPaymentGateway"];
+type ExtendedWireGateway = SdkAdminPaymentGateway & {
+    category?: PaymentGatewayCategory;
+    admin_visible?: boolean;
+    credential_fields?: PaymentGatewayCredentialField[];
+    health_status?: PaymentGatewayHealthStatus;
+    last_verified_at?: string | null;
+    last_error?: string | null;
+};
+
+const GATEWAY_COPY: Record<string, { title: LocalizedGatewayCopy; description: LocalizedGatewayCopy }> = {
+    mellat: {
+        title: { fa: "به‌پرداخت ملت", en: "Behpardakht Mellat" },
+        description: { fa: "درگاه مستقیم بانک ملت", en: "Direct Mellat Bank internet payment gateway" },
+    },
+    sadad: {
+        title: { fa: "سداد بانک ملی", en: "Sadad – Bank Melli" },
+        description: { fa: "درگاه مستقیم بانک ملی ایران", en: "Direct Bank Melli payment gateway" },
+    },
+    parsian: {
+        title: { fa: "تجارت الکترونیک پارسیان", en: "Parsian E-Commerce" },
+        description: { fa: "درگاه مستقیم بانک پارسیان", en: "Direct Parsian Bank payment gateway" },
+    },
+    zarinpal: {
+        title: { fa: "زرین‌پال", en: "ZarinPal" },
+        description: { fa: "پرداخت اینترنتی از طریق زرین‌پال", en: "Online payments through ZarinPal" },
+    },
+    bitpay: {
+        title: { fa: "بیت‌پی", en: "BitPay Iran" },
+        description: { fa: "پرداخت اینترنتی بیت‌پی", en: "BitPay Iran online payments" },
+    },
+    digipay: {
+        title: { fa: "دیجی‌پی", en: "DigiPay" },
+        description: { fa: "پرداخت و اعتبار دیجی‌پی", en: "DigiPay payment and credit" },
+    },
+    snapppay: {
+        title: { fa: "اسنپ‌پی", en: "SnappPay" },
+        description: { fa: "پرداخت اعتباری اسنپ‌پی", en: "SnappPay credit payment" },
+    },
+    azkivam: {
+        title: { fa: "ازکی‌وام", en: "AzkiVam" },
+        description: { fa: "خرید اعتباری ازکی‌وام", en: "AzkiVam installment payments" },
+    },
+    card_to_card: {
+        title: { fa: "کارت به کارت", en: "Card to Card" },
+        description: { fa: "نمایش اطلاعات کارت برای پرداخت دستی", en: "Manual card-to-card payment instructions" },
+    },
+    cod: {
+        title: { fa: "پرداخت در محل", en: "Cash on Delivery" },
+        description: { fa: "تسویه هنگام تحویل سفارش", en: "Collect payment when the order is delivered" },
+    },
+};
+
+function copyFor(code: string) {
+    return GATEWAY_COPY[code] ?? {
+        title: { fa: code, en: code },
+        description: { fa: "", en: "" },
+    };
+}
+
+export function toAdminPaymentGateway(input: SdkAdminPaymentGateway): AdminPaymentGateway {
+    const g = input as ExtendedWireGateway;
     const settings: Record<string, string> = {};
-    for (const [k, v] of Object.entries(g.settings ?? {})) settings[k] = v === null || v === undefined ? "" : String(v);
+    for (const [key, value] of Object.entries(g.settings ?? {})) settings[key] = value == null ? "" : String(value);
+    const copy = copyFor(g.code);
     return {
         id: g.id,
-        code: g.code as PaymentGatewayCode,
-        title: titles,
-        description: dup(""),
-        customerInstructions: dup(""),
+        code: g.code,
+        title: copy.title,
+        description: copy.description,
         enabled: Boolean(g.enabled),
         ordering: g.ordering ?? 0,
         supportsRefunds: Boolean((g.supports as Record<string, unknown>)?.refunds ?? false),
-        implementationStatus: g.implementation_status === "live" ? "live" : "stub",
+        implementationStatus:
+            g.implementation_status === "live" || g.implementation_status === "implemented" ? g.implementation_status : "stub",
+        category: g.category ?? "legacy",
+        adminVisible: g.admin_visible !== false,
+        credentialFields: Array.isArray(g.credential_fields) ? g.credential_fields : [],
+        healthStatus: g.health_status ?? "unconfigured",
+        lastVerifiedAt: g.last_verified_at ?? null,
+        lastError: g.last_error ?? null,
         settings,
     };
 }
@@ -56,28 +127,63 @@ interface PaymentGatewaysEnvelope {
     data: SdkAdminPaymentGateway[];
 }
 
+interface PaymentGatewayEnvelope {
+    data: SdkAdminPaymentGateway;
+}
+
 const LIST_KEY = (locale: string) => ["admin", "payment-gateways", "list", { locale }] as const;
 
-/**
- * Lists the tenant's payment gateways through the same-origin admin proxy. Shared by the Payments
- * settings screen and the manual-order payment-method picker. Sorted by `ordering` to match the
- * storefront checkout order.
- */
 export function usePaymentGateways() {
     const locale = useLocale();
     return useQuery({
         queryKey: LIST_KEY(locale),
         queryFn: ({ signal }) => apiGet<PaymentGatewaysEnvelope>("payment-gateways", { locale, signal }),
         select: (res): AdminPaymentGateway[] =>
-            (res.data ?? []).map(toAdminPaymentGateway).sort((a, b) => a.ordering - b.ordering),
-        staleTime: 5 * 60 * 1000,
+            (res.data ?? [])
+                .map(toAdminPaymentGateway)
+                .filter((gateway) => gateway.adminVisible)
+                .sort((a, b) => a.ordering - b.ordering),
+        staleTime: 60_000,
+    });
+}
+
+export interface UpdatePaymentGatewayInput {
+    id: number;
+    enabled?: boolean;
+    ordering?: number;
+    settings?: Record<string, unknown>;
+}
+
+export function useUpdatePaymentGateway() {
+    const locale = useLocale();
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, ...body }: UpdatePaymentGatewayInput) =>
+            apiMutate<PaymentGatewayEnvelope>("PATCH", `payment-gateways/${id}`, { locale, body }),
+        onSuccess: () => qc.invalidateQueries({ queryKey: LIST_KEY(locale) }),
     });
 }
 
 /**
- * Resolves a single gateway by `code` from the cached list. Returns `undefined` while loading and
- * `null` when the code is unknown, so the detail screen can render a not-found state.
+ * Multi-select action deliberately reuses the same audited PATCH endpoint for every gateway. The UI
+ * preflights stub/unconfigured rows before entering this mutation; a failure is surfaced and the
+ * list is invalidated so the operator immediately sees the authoritative server state.
  */
+export function useBulkUpdatePaymentGateways() {
+    const locale = useLocale();
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ ids, enabled }: { ids: number[]; enabled: boolean }) => {
+            const results: PaymentGatewayEnvelope[] = [];
+            for (const id of ids) {
+                results.push(await apiMutate<PaymentGatewayEnvelope>("PATCH", `payment-gateways/${id}`, { locale, body: { enabled } }));
+            }
+            return results;
+        },
+        onSettled: () => qc.invalidateQueries({ queryKey: LIST_KEY(locale) }),
+    });
+}
+
 export function usePaymentGateway(code: string) {
     const list = usePaymentGateways();
     const gateway = list.data ? (list.data.find((g) => g.code === code) ?? null) : undefined;
