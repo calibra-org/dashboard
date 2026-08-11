@@ -11,6 +11,7 @@ import type {
     VerifyResult,
 } from "#services/adapters/base_redirect_gateway";
 import { postSoap, xmlEscape, xmlTag } from "#services/adapters/soap_gateway_helpers";
+import { paymentGatewayCredentialsService } from "#services/payment_gateway_credentials_service";
 
 export const MELLAT_START_PAY_URL = "https://bpm.shaparak.ir/pgwchannel/startpay.mellat";
 const SERVICE_URL = "https://bpm.shaparak.ir/pgwchannel/services/pgw";
@@ -22,7 +23,8 @@ interface MellatCredentials {
     password: string;
 }
 
-function credentials(settings: Record<string, unknown>): MellatCredentials {
+function credentials(stored: Record<string, unknown>): MellatCredentials {
+    const settings = paymentGatewayCredentialsService.runtimeSettingsFromStored("mellat", stored);
     const terminalId = String(settings.terminal_id ?? "").trim();
     const username = String(settings.username ?? "").trim();
     const password = String(settings.password ?? "").trim();
@@ -63,7 +65,6 @@ export class MellatGateway implements PaymentAdapter {
         const [resultCode, refId] = result.split(",", 2);
         if (resultCode !== "0" || !refId) throw new Error(`mellat payment request failed (${resultCode || "unknown"})`);
 
-        /** Mellat's StartPay endpoint expects a POST form. Route through our authority-only bridge. */
         const bridge = new URL(args.return_url);
         bridge.pathname = "/api/v1/payment/redirect/mellat";
         bridge.search = "";
