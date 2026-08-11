@@ -5,14 +5,24 @@ import { gatewayCredentialKeys, requiredGatewayCredentialKeys } from "#services/
 
 export const PAYMENT_CREDENTIAL_MASK = "***";
 
+export type PaymentGatewayHealthStatus = "unconfigured" | "configured" | "healthy" | "error";
+
+interface SecurityAttributes {
+    credentials_ciphertext?: string;
+    health_status?: PaymentGatewayHealthStatus;
+    last_verified_at?: string | null;
+    last_error?: string | null;
+    [key: string]: unknown;
+}
+
 /**
- * Keeps merchant credentials out of `payment_gateways.settings`.
+ * Keeps merchant credentials out of the public settings dictionary.
  *
- * Credentials are encrypted as one purpose-bound ChaCha20-Poly1305 payload using Adonis' configured
- * encryption manager. The purpose includes the stable gateway code, preventing ciphertext copied
- * from one provider row from being accepted as another provider's credentials. The service keeps a
- * legacy-read path for credentials that were historically stored in plaintext JSON, but the next
- * settings write migrates them into ciphertext and strips those keys from `settings`.
+ * Credentials are encrypted as one purpose-bound ChaCha20-Poly1305 payload using Calibra's Adonis
+ * encryption manager and stored inside the already tenant-isolated `attributes` JSONB. Purpose
+ * binding includes the gateway code, so moving a ciphertext between providers makes decryption
+ * fail closed. GET surfaces only mask sentinels; a PATCH containing `***` preserves the existing
+ * value, while an empty string explicitly clears it.
  */
 export class PaymentGatewayCredentialsService {
     runtimeSettings(gateway: PaymentGateway): Record<string, unknown> {
@@ -38,11 +48,45 @@ export class PaymentGatewayCredentialsService {
         });
     }
 
-    /**
-     * Applies an admin settings patch. Mask sentinels mean "leave existing secret unchanged";
-     * explicit empty strings clear that credential. Every credential key is removed from public
-     * settings before persistence.
-     */
+    health(gateway: PaymentGateway): {
+        status: PaymentGatewayHealthStatus;
+        lastVerifiedAt: string | null;
+        lastError: string | null;
+    } {
+        const attrs = this.attributes(gateway);
+        const raw = attrs.health_status;
+        const status: PaymentGatewayHealthStatus =
+            raw === "configured" || raw === "healthy" || raw === "error" ? raw : "unconfigured";
+        return {
+            status,
+            lastVerifiedAt: typeof attrs.last_verified_at === "string" ? attrs.last_verified_at : null,
+            lastError: typeof attrs.last_error === "string" ? attrs.last_error : null,
+        };
+    }
+
+    markConfigured(gateway: PaymentGateway): void {
+        const attrs = this.attributes(gateway);
+        attrs.health_status = this.missingRequired(gateway).length === 0 ? "configured" : "unconfigured";
+        attrs.last_error = null;
+        gateway.attributes = attrs;
+    }
+
+    markHealthy(gateway: PaymentGateway, atIso: string): void {
+        const attrs = this.attributes(gateway);
+        attrs.health_status = "healthy";
+        attrs.last_verified_at = atIso;
+        attrs.last_error = null;
+        gateway.attributes = attrs;
+    }
+
+    markError(gateway: PaymentGateway, message: string): void {
+        const attrs = this.attributes(gateway);
+        attrs.health_status = "error";
+        /** Persist a bounded operational message only; provider credentials never reach this string. */
+        attrs.last_error = message.slice(0, 500);
+        gateway.attributes = attrs;
+    }
+
     applySettingsPatch(gateway: PaymentGateway, incoming: Record<string, unknown>): void {
         const credentialKeys = new Set(gatewayCredentialKeys(gateway.code));
         const publicSettings = { ...(((gateway.settings as Record<string, unknown> | null) ?? {}) as Record<string, unknown>) };
@@ -63,29 +107,38 @@ export class PaymentGatewayCredentialsService {
 
         for (const key of credentialKeys) delete publicSettings[key];
         gateway.settings = publicSettings;
-        gateway.credentialsCiphertext =
-            Object.keys(credentials).length === 0
-                ? null
-                : encryption.encrypt(credentials, { purpose: this.purpose(gateway.code) });
+        const attrs = this.attributes(gateway);
+        if (Object.keys(credentials).length === 0) {
+            delete attrs.credentials_ciphertext;
+        } else {
+            attrs.credentials_ciphertext = encryption.encrypt(credentials, { purpose: this.purpose(gateway.code) });
+        }
+        gateway.attributes = attrs;
+        this.markConfigured(gateway);
     }
 
     private readCredentials(gateway: PaymentGateway): Record<string, string> {
         const result: Record<string, string> = {};
         const publicSettings = ((gateway.settings as Record<string, unknown> | null) ?? {}) as Record<string, unknown>;
 
-        /** Legacy compatibility: older deployments stored provider credentials in JSON settings. */
+        /** Legacy compatibility: older deployments stored provider credentials in plaintext JSON. */
         for (const key of gatewayCredentialKeys(gateway.code)) {
             const legacy = publicSettings[key];
             if (typeof legacy === "string" && legacy.length > 0 && legacy !== PAYMENT_CREDENTIAL_MASK) result[key] = legacy;
         }
 
-        if (!gateway.credentialsCiphertext) return result;
-        const decrypted = encryption.decrypt(gateway.credentialsCiphertext, this.purpose(gateway.code));
+        const ciphertext = this.attributes(gateway).credentials_ciphertext;
+        if (typeof ciphertext !== "string" || ciphertext.length === 0) return result;
+        const decrypted = encryption.decrypt(ciphertext, this.purpose(gateway.code));
         if (!decrypted || typeof decrypted !== "object" || Array.isArray(decrypted)) return result;
         for (const [key, value] of Object.entries(decrypted as Record<string, unknown>)) {
             if (typeof value === "string") result[key] = value;
         }
         return result;
+    }
+
+    private attributes(gateway: PaymentGateway): SecurityAttributes {
+        return { ...(((gateway.attributes as SecurityAttributes | null) ?? {}) as SecurityAttributes) };
     }
 
     private purpose(code: string): string {
