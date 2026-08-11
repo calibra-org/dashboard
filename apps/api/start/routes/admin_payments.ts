@@ -9,7 +9,9 @@ router
     .group(() => {
         router.get("/payment-gateways", [AdminPaymentGatewaysController, "index"]).as("admin.payment_gateways.index");
         router.get("/payment-gateways/:id", [AdminPaymentGatewaysController, "show"]).as("admin.payment_gateways.show");
-        router.post("/payment-gateways/:id/verify", [AdminPaymentGatewaysController, "verify"]).as("admin.payment_gateways.verify");
+        router
+            .post("/payment-gateways/:id/verify", [AdminPaymentGatewaysController, "verify"])
+            .as("admin.payment_gateways.verify");
         router.patch("/payment-gateways/:id", [AdminPaymentGatewaysController, "update"]).as("admin.payment_gateways.update");
 
         router.get("/payment-attempts", [AdminPaymentAttemptsController, "index"]).as("admin.payment_attempts.index");
