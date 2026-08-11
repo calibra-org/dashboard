@@ -96,6 +96,21 @@ test.group("POST /api/v1/cart/coupons", (group) => {
         assert.equal(b.body().data.applied_coupons.length, 1);
     });
 
+    test("normal coupon cannot stack after an individual_use coupon", async ({ client, assert }) => {
+        const product = await createTaxableProduct({ regularPrice: 1_000_000 });
+        await CouponFactory.merge({ code: "SOLO", individualUse: true, amountPercent: "20.00" }).create();
+        await CouponFactory.merge({ code: "STACK", amountPercent: "10.00" }).create();
+        const added = await client.post("/api/v1/cart/items").json({ product_id: Number(product.id), quantity: 1 });
+        const token = tokenFromResponse(added);
+
+        const first = await client.post("/api/v1/cart/coupons").cookie("cart_token", token).json({ code: "SOLO" });
+        first.assertStatus(200);
+
+        const second = await client.post("/api/v1/cart/coupons").cookie("cart_token", token).json({ code: "STACK" });
+        second.assertStatus(422);
+        assert.equal(second.body().error, "individual_use_conflict");
+    });
+
     test("case-insensitive lookup resolves welcome10 to WELCOME10", async ({ client, assert }) => {
         const product = await createTaxableProduct({ regularPrice: 1_000_000 });
         await CouponFactory.merge({ code: "WELCOME10", amountPercent: "10.00" }).create();

@@ -6,7 +6,7 @@ import CartItem from "#models/cart_item";
 import type Product from "#models/product";
 import ProductVariation from "#models/product_variation";
 import { buildCartView, resolveCustomerContext } from "#services/cart_view_builder";
-import { checkEligibility, countRedemptions, loadSnapshotByCode } from "#services/discounter_service";
+import { checkEligibility, countRedemptions, loadSnapshotByCode, loadSnapshots } from "#services/discounter_service";
 import { resolvePrice } from "#services/price_resolver";
 import CartTransformer from "#transformers/cart_transformer";
 import { applyCouponValidator } from "#validators/coupons/apply_validator";
@@ -40,6 +40,14 @@ export default class CartCouponsController {
         const items = await loadDiscounterItems(ctx.cart);
         const itemsTotal = items.reduce((sum, item) => sum + item.lineSubtotal, 0);
         const otherIds = ctx.cart.appliedCoupons.map((row) => Number(row.couponId));
+        if (otherIds.length > 0 && !snapshot.individualUse) {
+            const existingSnapshots = await loadSnapshots(
+                ctx.cart.appliedCoupons.map((row) => ({ id: Number(row.couponId), code: row.codeSnapshot })),
+            );
+            if (existingSnapshots.some((existing) => existing.individualUse)) {
+                return this.errorResponse(ctx, 422, "individual_use_conflict", { code: snapshot.code });
+            }
+        }
 
         const globalRedemptions = snapshot.usageLimitGlobal === null ? 0 : await countRedemptions(snapshot.id);
         const perUserRedemptions =

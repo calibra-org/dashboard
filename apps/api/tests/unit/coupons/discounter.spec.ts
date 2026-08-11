@@ -114,6 +114,25 @@ test.group("Discounter — fixed_cart", () => {
         assert.isAtLeast(largest, middle);
     });
 
+    test("exclude_sale_items keeps fixed_cart allocation off sale lines", ({ assert }) => {
+        const items = [
+            item({ lineKey: "sale", quantity: 1, priceSnapshot: 100_000, onSale: true }),
+            item({ lineKey: "regular", quantity: 1, priceSnapshot: 100_000, onSale: false }),
+        ];
+        const { input: i, snapshots } = input(items, [
+            coupon({
+                code: "NOSALE",
+                discountType: "fixed_cart",
+                amountMinor: 50_000,
+                amountPercent: null,
+                excludeSaleItems: true,
+            }),
+        ]);
+        const result = computeDiscounts(i, snapshots);
+        assert.equal(result.perLineDiscounts.get("sale") ?? 0, 0);
+        assert.equal(result.perLineDiscounts.get("regular") ?? 0, 50_000);
+    });
+
     test("coupon worth more than the cart caps at remaining subtotal", ({ assert }) => {
         const items = [item({ lineKey: "1", quantity: 1, priceSnapshot: 10_000 })];
         const { input: i, snapshots } = input(items, [

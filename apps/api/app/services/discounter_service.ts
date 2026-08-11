@@ -375,9 +375,8 @@ function applyCouponToLines(
     remaining: Map<string, number>,
     perLine: Map<string, number>,
 ): void {
-    const eligible = items.filter((item) => isItemEligible(item, coupon));
+    const eligible = items.filter((item) => isItemEligible(item, coupon) && (!coupon.excludeSaleItems || !item.onSale));
     if (eligible.length === 0) return;
-    if (coupon.excludeSaleItems && eligible.every((item) => item.onSale)) return;
 
     switch (coupon.discountType) {
         case "fixed_product":
