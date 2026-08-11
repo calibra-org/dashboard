@@ -44,16 +44,16 @@ export default class AdminPaymentGatewaysController {
         const credentialMutation = payload.settings
             ? paymentGatewayCredentialsService.hasCredentialMutation(gateway.code, payload.settings)
             : false;
+        const settingsChanged = payload.settings
+            ? paymentGatewayCredentialsService.applySettingsPatch(gateway, payload.settings)
+            : false;
 
-        if (payload.settings) {
-            paymentGatewayCredentialsService.applySettingsPatch(gateway, payload.settings);
-            if (credentialMutation) gateway.enabled = false;
-        }
+        if (settingsChanged) gateway.enabled = false;
         if (payload.ordering !== undefined) gateway.ordering = payload.ordering;
 
         if (payload.enabled === true) {
             this.assertImplementedAndConfigured(gateway);
-            if (credentialMutation || paymentGatewayCredentialsService.health(gateway).status !== "healthy") {
+            if (settingsChanged || paymentGatewayCredentialsService.health(gateway).status !== "healthy") {
                 await this.verifyAndPersist(gateway, ctx, false);
             }
             this.assertVerified(gateway);
@@ -72,7 +72,8 @@ export default class AdminPaymentGatewaysController {
                 gateway: gateway.code,
                 enabled: payload.enabled,
                 ordering: payload.ordering,
-                credentials_changed: credentialMutation,
+                settings_changed: settingsChanged,
+                credentials_changed: credentialMutation && settingsChanged,
                 health_status: paymentGatewayCredentialsService.health(gateway).status,
             },
         });
