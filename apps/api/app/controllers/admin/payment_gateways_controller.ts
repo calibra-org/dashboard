@@ -3,7 +3,9 @@ import type { HttpContext } from "@adonisjs/core/http";
 
 import { GatewayNotImplementedException } from "#exceptions/payment_exceptions";
 import PaymentGateway from "#models/payment_gateway";
+import { recordAudit } from "#services/admin_audit_log_service";
 import { ensurePaymentGatewayCatalog } from "#services/payment_gateway_catalog_service";
+import { paymentGatewayConnectionVerifier } from "#services/payment_gateway_connection_verifier";
 import { paymentGatewayCredentialsService } from "#services/payment_gateway_credentials_service";
 import { adminPaymentGatewaysView } from "#table_views/admin/payment_gateways";
 import PaymentGatewayTransformer, { readImplementationStatus } from "#transformers/payment_gateway_transformer";
@@ -32,19 +34,39 @@ export default class AdminPaymentGatewaysController {
     async update(ctx: HttpContext) {
         const gateway = await this.findOrFail(ctx.params.id);
         const payload = await ctx.request.validateUsing(adminPaymentGatewayUpdateValidator);
+        const credentialsChanged = Boolean(payload.settings);
 
         if (payload.settings) paymentGatewayCredentialsService.applySettingsPatch(gateway, payload.settings);
         if (payload.ordering !== undefined) gateway.ordering = payload.ordering;
         if (payload.enabled !== undefined) {
-            if (payload.enabled) this.assertCanEnable(gateway);
+            if (payload.enabled) {
+                this.assertImplementedAndConfigured(gateway);
+                if (credentialsChanged || paymentGatewayCredentialsService.health(gateway).status !== "healthy") {
+                    await paymentGatewayConnectionVerifier.verify(gateway);
+                }
+                this.assertVerified(gateway);
+            }
             gateway.enabled = payload.enabled;
         }
 
         await gateway.save();
+        await recordAudit({
+            ctx,
+            action: payload.enabled === true ? "payment_gateway.verify_and_enable" : "payment_gateway.patch",
+            entityKind: "payment_gateway",
+            entityId: gateway.id,
+            payload: {
+                gateway: gateway.code,
+                enabled: payload.enabled,
+                ordering: payload.ordering,
+                credentials_changed: credentialsChanged,
+                health_status: paymentGatewayCredentialsService.health(gateway).status,
+            },
+        });
         return { data: new PaymentGatewayTransformer(gateway).forAdmin() };
     }
 
-    private assertCanEnable(gateway: PaymentGateway): void {
+    private assertImplementedAndConfigured(gateway: PaymentGateway): void {
         if (readImplementationStatus(gateway) === "stub") {
             throw new GatewayNotImplementedException(gateway.code, "enable");
         }
@@ -54,6 +76,16 @@ export default class AdminPaymentGatewaysController {
                 status: 422,
                 code: "E_PAYMENT_GATEWAY_CREDENTIALS_REQUIRED",
                 cause: { gateway: gateway.code, missing },
+            });
+        }
+    }
+
+    private assertVerified(gateway: PaymentGateway): void {
+        if (paymentGatewayCredentialsService.health(gateway).status !== "healthy") {
+            throw new Exception(`Payment gateway "${gateway.code}" connection is not verified`, {
+                status: 422,
+                code: "E_PAYMENT_GATEWAY_CONNECTION_REQUIRED",
+                cause: { gateway: gateway.code },
             });
         }
     }
