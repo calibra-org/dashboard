@@ -5,14 +5,9 @@ import { GatewayNotImplementedException } from "#exceptions/payment_exceptions";
 import PaymentGateway from "#models/payment_gateway";
 import { ensurePaymentGatewayCatalog } from "#services/payment_gateway_catalog_service";
 import { paymentGatewayCredentialsService } from "#services/payment_gateway_credentials_service";
-import { withTenantTransaction } from "#services/tenant_context";
 import { adminPaymentGatewaysView } from "#table_views/admin/payment_gateways";
 import PaymentGatewayTransformer, { readImplementationStatus } from "#transformers/payment_gateway_transformer";
-import {
-    adminPaymentGatewayBulkValidator,
-    adminPaymentGatewayListValidator,
-    adminPaymentGatewayUpdateValidator,
-} from "#validators/admin/payment_gateway_validator";
+import { adminPaymentGatewayListValidator, adminPaymentGatewayUpdateValidator } from "#validators/admin/payment_gateway_validator";
 
 /** Admin configuration surface for tenant payment gateways. */
 export default class AdminPaymentGatewaysController {
@@ -44,28 +39,6 @@ export default class AdminPaymentGatewaysController {
 
         await gateway.save();
         return { data: new PaymentGatewayTransformer(gateway).forAdmin() };
-    }
-
-    /** Multi-select enable/disable; all-or-nothing under row locks. */
-    async bulk(ctx: HttpContext) {
-        const payload = await ctx.request.validateUsing(adminPaymentGatewayBulkValidator);
-        const ids = [...new Set(payload.ids.map(Number))];
-        const rows = await withTenantTransaction(async (trx) => {
-            const gateways = await PaymentGateway.query({ client: trx }).whereIn("id", ids).forUpdate();
-            if (gateways.length !== ids.length) {
-                throw new Exception("One or more payment gateways were not found", { status: 404, code: "E_NOT_FOUND" });
-            }
-            if (payload.enabled) {
-                for (const gateway of gateways) this.assertCanEnable(gateway);
-            }
-            for (const gateway of gateways) {
-                gateway.useTransaction(trx);
-                gateway.enabled = payload.enabled;
-                await gateway.save();
-            }
-            return gateways;
-        });
-        return { data: rows.map((row) => new PaymentGatewayTransformer(row).forAdmin()) };
     }
 
     private assertCanEnable(gateway: PaymentGateway): void {
