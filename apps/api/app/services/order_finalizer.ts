@@ -21,8 +21,8 @@ import type User from "#models/user";
 import { checkEligibility, countRedemptions, loadSnapshotForUpdate } from "#services/discounter_service";
 import { recordOrderFinalized } from "#services/metrics/domain_metrics";
 import { OrderFactory } from "#services/order_factory";
-import { resolvePrice } from "#services/price_resolver";
 import { orderStateMachine } from "#services/order_state_machine";
+import { resolvePrice } from "#services/price_resolver";
 import { withTenantTransaction } from "#services/tenant_context";
 
 const ORDER_KEY_BYTES = 20;
