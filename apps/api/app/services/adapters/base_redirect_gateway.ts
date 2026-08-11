@@ -25,7 +25,7 @@ export interface PaymentAdapterCapabilities {
 export interface InitArgs {
     order: Order;
     attempt: PaymentAttempt;
-    /** Decrypted gateway settings (merchant_id, api_key, …) sourced from `payment_gateways.settings`. */
+    /** Stored gateway settings. Concrete adapters decrypt protected merchant fields only at the provider boundary. */
     settings: Record<string, unknown>;
     /** Absolute callback URL the PSP should hand control back to after auth. */
     return_url: string;

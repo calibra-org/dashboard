@@ -1,54 +1,66 @@
 # Payment Adapters
 
-This directory holds every PSP (Payment Service Provider) adapter the platform talks to. Each adapter implements the `PaymentAdapter` contract from [`base_redirect_gateway.ts`](./base_redirect_gateway.ts); the registry in [`payment_adapter_registry.ts`](../payment_adapter_registry.ts) resolves an adapter from a gateway code at request time.
+Every remote payment method implements the narrow `PaymentAdapter` contract from
+[`base_redirect_gateway.ts`](./base_redirect_gateway.ts). The registry in
+[`payment_adapter_registry.ts`](../payment_adapter_registry.ts) is the only resolver used by the
+checkout/payment service.
 
-## Posture: we honestly support zero PSPs today
+## Phase 08 posture
 
-Five Iranian PSP gateways (`zarinpal`, `idpay`, `nextpay`, `payir`, `zibal`) are recognised by the platform — their rows are seeded into `payment_gateways`, the admin UI lists them, the registry resolves their codes — but **none of them have been validated against a real PSP sandbox**. To prevent an operator from flipping an unverified integration to `enabled = true` and routing customer funds into nothing, all five share a single class: [`unimplemented_psp_gateway.ts`](./unimplemented_psp_gateway.ts).
+Calibra separates **protocol implementation** from **tenant/provider verification**:
 
-`UnimplementedPspGateway`:
+- `implemented` — concrete request/callback/verify code exists, but a tenant still needs its own
+  merchant credentials and a real provider round-trip before the connection can be called healthy.
+- `live` — an offline method that needs no remote PSP protocol, or a provider integration that has
+  completed the deployment verification gate.
+- `stub` — deliberately non-routable. The admin UI can show the planned method, but both UI and API
+  refuse activation until official merchant documentation and sandbox/merchant validation exist.
 
-- `init`, `verify`, `refund` — throw `GatewayNotImplementedException` (422, `E_GATEWAY_NOT_IMPLEMENTED`).
-- `parseCallback` — does **not** throw; returns a synthetic failed `ParsedCallback` so a stray PSP redirect-hop produces a clean 302 to `/checkout/failed?reason=gateway_not_implemented` instead of a 500.
+Current adapters:
 
-The seed row's `attributes.implementation_status` distinguishes adapters that are stubs from those that are real:
+| code | posture | notes |
+|---|---|---|
+| `mellat` | `implemented` | Behpardakht Mellat SOAP request → callback → verify → settle. Requires terminal id, username, password. |
+| `parsian` | `implemented` | Parsian New IPG Sale/Confirm SOAP flow. Requires LoginAccount. |
+| `zarinpal` | `implemented` | ZarinPal v4 request/verify flow. Requires merchant id. |
+| `card_to_card` | `live` | Offline instructions; PAN is masked in payment-attempt payloads. |
+| `cod` | `live` | Offline cash-on-delivery flow. |
+| `sadad` | `stub` | Credential shape is known to the UI, but no provider protocol is invented without official merchant docs. |
+| `bitpay` | `stub` | Public start-payment material is insufficient for a safe complete verify/callback adapter. |
+| `digipay` | `stub` | Awaiting official merchant API contract/sandbox. |
+| `snapppay` | `stub` | Awaiting official merchant API contract/sandbox. |
+| `azkivam` | `stub` | Awaiting official merchant API contract/sandbox. |
 
-- `"stub"` — every PSP adapter in this repo today (the five above).
-- `"live"` — `cod` and `bank_transfer`. These are offline gateways: they don't talk to any external system, treasury reconciles them by hand, and there is nothing to integrate.
+Legacy `idpay`, `nextpay`, `payir`, `zibal`, and `bank_transfer` rows remain routable or explicitly
+stubbed for backwards compatibility with existing orders, but the new catalog marks them
+`admin_visible=false`.
 
-The admin UI surfaces a "Not implemented" badge on stub rows, disables the enable toggle, and the admin PATCH endpoint refuses `enabled: true` on a stub. The storefront submit flow rejects stub gateways with `E_GATEWAY_NOT_IMPLEMENTED` before ever calling `adapter.init`.
+## Merchant-secret boundary
 
-## How to add a real PSP integration
+Provider credentials never belong in logs, API responses, payment-attempt payloads, or source code.
+`payment_gateway_credentials_service.ts` encrypts credential dictionaries using Adonis' configured
+ChaCha20-Poly1305 manager with a purpose bound to the gateway code. The stored settings JSON contains
+only a reserved ciphertext field; the admin transformer returns `***` masks. Concrete adapters are
+the only layer that decrypts those settings for the outbound provider call.
 
-Five-step recipe when a PSP integration is ready to ship:
+The mask sentinel has write-only semantics:
 
-1. **Write the adapter.** Create `<psp>_gateway.ts` in this directory, implementing the `PaymentAdapter` contract. Money stays in canonical Rial minor units (see [`base_redirect_gateway.ts`](./base_redirect_gateway.ts) for the contract); PSP-specific conversions (e.g. legacy Toman/Rial divisor on older v3 APIs) live **inside** the adapter, never at the call site. Every outbound HTTP call goes through `timeoutFetch` so the `gateway_timeout` / `gateway_unreachable` mapping in `payment_service.init` covers it.
+- missing credential key → preserve existing secret;
+- `***` → preserve existing secret;
+- empty string → clear it;
+- new non-empty value → replace and re-encrypt the credential dictionary.
 
-2. **Register it.** In [`payment_adapter_registry.ts`](../payment_adapter_registry.ts), remove the entry for the PSP code from the `STUB_PSP_CAPABILITIES` array and add a `paymentAdapterRegistry.register(myGateway)` call next to `codGateway` / `bankTransferGateway`. The registered adapter's `capabilities` field is the source of truth for what the admin UI shows and what `payment_service.refund` allows.
+## Adding or promoting a gateway
 
-3. **Update the seeder.** Bump the row in [`database/seed_modules/0001_foundation_seeder.ts`](../../../database/seed_modules/0001_foundation_seeder.ts):
-   - flip `attributes.implementation_status` from `"stub"` to `"live"`, and
-   - update `supports.refunds` to match the new adapter's capabilities.
-   The seed is idempotent; re-running it propagates the flip to existing dev databases.
+1. Obtain the provider's **official merchant documentation** and a merchant/sandbox account.
+2. Implement the provider in a dedicated adapter. Use `timeoutFetch`; keep provider-specific
+   currency/unit conversions inside the adapter.
+3. Add protocol-level unit tests for init, callback parsing, verify, negative codes, timeout and
+   replay-sensitive values. Add a functional checkout callback test through `PaymentService`.
+4. Register the adapter and change its catalog posture from `stub` to `implemented`.
+5. Run a real provider round-trip in the target deployment. Only after that evidence exists should
+   operational health become `healthy`/the provider be described as verified.
 
-4. **Write a functional test.** Drop a Japa spec under [`tests/functional/payments/`](../../../tests/functional/payments/) that exercises the full storefront flow against `mockFetch`-stubbed PSP endpoints: submit → init → callback success, init failure, callback NOK, callback amount mismatch, callback replay, refund success, refund failure. The spec must call `response.assertAgainstApiSpec()` on every 2xx so OpenAPI drift is caught. The existing `cod_gateway.spec.ts` is the simplest reference; the historic `zarinpal_gateway.spec.ts` (visible in git history before this stub-out PR) is the closest reference for a redirect PSP.
-
-5. **Smoke against a real sandbox.** A green CI suite proves the adapter speaks the contract; only a real PSP sandbox round-trip proves it speaks the actual PSP. Document the sandbox credentials handoff (1Password / Vaultwarden / wherever the agency keeps them) in the PR description so the operator can flip `enabled = true` in production with confidence.
-
-## What the contract does and doesn't guarantee
-
-The `PaymentAdapter` interface is intentionally narrow:
-
-- Inputs are pre-loaded models (`Order`, `PaymentAttempt`), the decrypted settings dict, and the return URL.
-- Outputs are typed result envelopes (`InitResult`, `VerifyResult`, `RefundResult`).
-- Side effects (writing `payment_attempts` rows, transitioning the order, idempotency-ledger writes, Sentry breadcrumbs, metrics) all happen in `payment_service.ts` — **never** inside an adapter.
-
-This keeps adapters small enough to fit in your head and replaceable wholesale when a PSP overhauls their API. Don't reach for `db`, `Sentry`, `emitter`, or `cache` from inside an adapter; if you find yourself wanting to, the call belongs in `payment_service.ts` instead.
-
-## Why we ship stubs instead of half-finished integrations
-
-Three reasons:
-
-- **Honesty.** The admin UI shows what the platform actually does today. An operator browsing `/admin/payments` should not see a row that *looks* enabled-able when flipping that toggle would burn customer funds.
-- **Architecture preservation.** The contract, the registry, and the seeded rows are exactly what a future PSP integration plugs into. Deleting them would force the next phase to reinvent the same scaffolding; keeping them lets a new integration ship behind a single PR.
-- **Forensics.** Git history is the archive. `git log --follow apps/api/app/services/adapters/zarinpal_gateway.ts` from any commit on or after this phase shows the speculative integration code that was ripped out, so a future implementer has a starting point instead of a blank file.
+A green mock suite proves Calibra speaks its own adapter contract; it is **not** evidence that a bank
+has accepted the deployment credentials, callback URL, source IP or merchant contract. The product
+must keep that distinction visible.

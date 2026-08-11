@@ -12,6 +12,7 @@ import PaymentAttempt from "#models/payment_attempt";
 import { recordPaymentAttempt, recordPaymentPhase } from "#services/metrics/domain_metrics";
 import { orderStateMachine } from "#services/order_state_machine";
 import { paymentAdapterRegistry } from "#services/payment_adapter_registry";
+import { paymentGatewayCredentialsService } from "#services/payment_gateway_credentials_service";
 import SettingsService from "#services/settings_service";
 import { withTenantTransaction } from "#services/tenant_context";
 import { webhookIdempotencyService } from "#services/webhook_idempotency_service";
@@ -110,12 +111,17 @@ export class PaymentService {
             await this.linkLatest(order, attempt);
             recordPaymentAttempt(gateway.code, PaymentAttemptStatus.Failed);
             recordPaymentPhase(gateway.code, "init", Number(process.hrtime.bigint() - initStartedAt) / 1e9);
+            paymentGatewayCredentialsService.markError(gateway, this.errorCodeFromException(error));
+            await gateway.save();
             throw error;
         }
 
         await withTenantTransaction(async (trx) => {
             attempt.useTransaction(trx);
-            attempt.gatewayPayload = (initResult.payload as Record<string, unknown>) ?? {};
+            attempt.gatewayPayload = {
+                ...(((initResult.payload as Record<string, unknown> | undefined) ?? {}) as Record<string, unknown>),
+                redirect_url: initResult.redirect_url,
+            };
             if (initResult.authority) attempt.gatewayAuthority = initResult.authority;
 
             if (adapter.capabilities.redirect) {
@@ -355,6 +361,8 @@ export class PaymentService {
         }
         recordPaymentPhase(gatewayCode, "callback", Number(process.hrtime.bigint() - callbackStartedAt) / 1e9);
         if (result.attempt?.status === PaymentAttemptStatus.Verified) {
+            paymentGatewayCredentialsService.markHealthy(gateway, DateTime.utc().toISO() ?? new Date().toISOString());
+            await gateway.save();
             await emitter.emit("payment:verified", {
                 orderId: Number(result.order.id),
                 attemptId: Number(result.attempt.id),

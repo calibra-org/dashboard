@@ -1,52 +1,60 @@
 import db from "@adonisjs/lucid/services/db";
 
 import PaymentGateway from "#models/payment_gateway";
+import { ensurePaymentGatewayCatalog } from "#services/payment_gateway_catalog_service";
 import { resetPhase05 } from "#tests/helpers/orders";
 
-/**
- * Canonical post-seed state for the five stub PSP gateways. The foundation seeder ships them
- * `enabled: false` to enforce that stubs cannot be flipped on through the database — only
- * through the admin PATCH flow, which the validator (`E_GATEWAY_NOT_IMPLEMENTED`) refuses.
- * Any spec that bypasses the validator and writes `enabled = true` directly (the unit-level
- * registry tests do exactly that) corrupts this invariant for every subsequent spec that
- * reads it back.
- */
-const STUB_PSP_CODES = ["zarinpal", "idpay", "nextpay", "payir", "zibal"] as const;
+const LEGACY_STUB_CODES = ["idpay", "nextpay", "payir", "zibal"] as const;
+const APPROVED_REMOTE_CODES = ["mellat", "sadad", "parsian", "zarinpal", "bitpay", "digipay", "snapppay", "azkivam"] as const;
 
-/**
- * Drop every phase-08 row on top of the phase-05 reset. Configures `bank_transfer` with the
- * required IBAN + account name so the storefront submit flow can route through the only live
- * redirect-less gateway alongside `cod`. Both live gateways are forced back to `enabled: true`
- * — `resetWithFoundation()` no longer reruns the foundation seeder when the table merely has
- * rows (only when it's been truncated), so per-test mutations to `cod.enabled` would otherwise
- * leak into the next test. The same logic applies to the stub PSPs: tests in the registry
- * suite poke `enabled = true` directly to exercise the disabled-vs-unimplemented branch, so
- * this helper restores `enabled: false` on each of them as the canonical phase-08 invariant.
- *
- * Note: this used to also enable `zarinpal` so callback tests could mock its HTTP endpoints.
- * That coverage was retired when the PSP adapters were stubbed out — every PSP that requires a
- * real HTTP integration (`zarinpal`, `idpay`, `nextpay`, `payir`, `zibal`) now resolves to
- * `UnimplementedPspGateway` and the registry refuses to serve them regardless of `enabled`.
- */
+/** Canonical clean state for payment specs after the Phase 08 gateway-catalog expansion. */
 export async function resetPhase08(): Promise<void> {
     await resetPhase05();
     await db.rawQuery(`TRUNCATE TABLE "payment_links", "payment_attempts" RESTART IDENTITY CASCADE`);
+    await ensurePaymentGatewayCatalog();
+
     const bank = await PaymentGateway.findByOrFail("code", "bank_transfer");
     bank.enabled = true;
     bank.settings = {
-        ...((bank.settings as Record<string, unknown>) ?? {}),
         iban: "IR000000000000000001",
         account_name: "Calibra",
     };
     await bank.save();
+
     const cod = await PaymentGateway.findByOrFail("code", "cod");
     cod.enabled = true;
+    cod.settings = {};
+    cod.attributes = {
+        ...(((cod.attributes as Record<string, unknown> | null) ?? {}) as Record<string, unknown>),
+        health_status: "configured",
+    };
     await cod.save();
-    for (const code of STUB_PSP_CODES) {
-        const stub = await PaymentGateway.findByOrFail("code", code);
-        if (stub.enabled) {
-            stub.enabled = false;
-            await stub.save();
-        }
+
+    const card = await PaymentGateway.findByOrFail("code", "card_to_card");
+    card.enabled = false;
+    card.settings = {};
+    card.attributes = {
+        ...(((card.attributes as Record<string, unknown> | null) ?? {}) as Record<string, unknown>),
+        health_status: "unconfigured",
+    };
+    await card.save();
+
+    for (const code of APPROVED_REMOTE_CODES) {
+        const gateway = await PaymentGateway.findByOrFail("code", code);
+        gateway.enabled = false;
+        gateway.settings = {};
+        gateway.attributes = {
+            ...(((gateway.attributes as Record<string, unknown> | null) ?? {}) as Record<string, unknown>),
+            health_status: "unconfigured",
+            last_verified_at: null,
+            last_error: null,
+        };
+        await gateway.save();
+    }
+
+    for (const code of LEGACY_STUB_CODES) {
+        const gateway = await PaymentGateway.findByOrFail("code", code);
+        gateway.enabled = false;
+        await gateway.save();
     }
 }

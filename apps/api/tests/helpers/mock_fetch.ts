@@ -27,11 +27,7 @@ export interface MockFetchCall {
     headers: Record<string, string>;
 }
 
-/**
- * Install or update the per-URL response map. Calling `mockFetch` again merges new routes into the
- * existing set — useful for tests that want to add a verify-step mock after the init mock has
- * already fired.
- */
+/** Install or update the per-URL response map. */
 export function mockFetch(map: Routes = {}): void {
     if (!active) {
         active = true;
@@ -54,7 +50,6 @@ export function unmockFetch(): void {
     (globalThis as any).fetch = originalFetch;
 }
 
-/** All fetch calls captured since install, in order. */
 export function fetchCalls(): MockFetchCall[] {
     return calls.map((c) => ({
         url: c.url,
@@ -68,12 +63,10 @@ async function mockedFetch(input: string | URL | MaybeRequest, init?: RequestIni
     const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : (input as MaybeRequest).url;
     calls.push({ url, init });
     const route = routes[url];
-    if (!route) {
-        throw new Error(`mockFetch: no route registered for ${url}`);
-    }
+    if (!route) throw new Error(`mockFetch: no route registered for ${url}`);
     const spec = Array.isArray(route) ? route[Math.min(cursors[url] ?? 0, route.length - 1)] : route;
     if (Array.isArray(route)) cursors[url] = (cursors[url] ?? 0) + 1;
-    const body = spec.body === undefined ? "" : JSON.stringify(spec.body);
+    const body = spec.body === undefined ? "" : typeof spec.body === "string" ? spec.body : JSON.stringify(spec.body);
     return new Response(body, {
         status: spec.status ?? 200,
         headers: { "Content-Type": "application/json", ...(spec.headers ?? {}) },

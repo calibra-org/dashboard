@@ -45,7 +45,7 @@ tags:
     - name: Admin / Customers
       description: Customer listing and detail.
     - name: Admin / Payments
-      description: Read-only payment-gateway registry and payment-attempt audit log.
+      description: Secure payment-gateway configuration, provider capability registry, and payment-attempt audit log.
     - name: Admin / Factor
       description: Tenant-scoped invoices, proformas, payment links, collections, and reports.
     - name: Admin / Content

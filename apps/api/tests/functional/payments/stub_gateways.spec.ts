@@ -10,9 +10,9 @@ import { iranRegionId } from "#tests/helpers/orders";
 import { resetPhase08 } from "#tests/helpers/payments";
 
 /**
- * The stub PSP gateways (`zarinpal`, `idpay`, `nextpay`, `payir`, `zibal`) all share one
- * adapter class (`UnimplementedPspGateway`) and must be honestly unreachable through every
- * surface — admin enable PATCH, storefront submit, and stray PSP callback redirect.
+ * Stub PSPs stay visible for operators, but are unreachable through every money-moving surface.
+ * Sadad is the representative approved-catalog stub in this suite; the shared
+ * UnimplementedPspGateway contract covers the remaining locked providers.
  */
 
 async function createAdmin(): Promise<User> {
@@ -37,10 +37,10 @@ test.group("Stub PSP gateways", (group) => {
 
     test("admin PATCH refuses to flip a stub gateway to enabled with E_GATEWAY_NOT_IMPLEMENTED", async ({ client, assert }) => {
         const admin = await createAdmin();
-        const zarinpal = await PaymentGateway.findByOrFail("code", "zarinpal");
+        const sadad = await PaymentGateway.findByOrFail("code", "sadad");
 
         const response = await client
-            .patch(`/api/v1/admin/payment-gateways/${Number(zarinpal.id)}`)
+            .patch(`/api/v1/admin/payment-gateways/${Number(sadad.id)}`)
             .withGuard("api")
             .loginAs(admin)
             .json({ enabled: true });
@@ -48,33 +48,52 @@ test.group("Stub PSP gateways", (group) => {
         response.assertStatus(422);
         const body = response.body() as { errors: Array<{ code: string; gateway: string; phase: string }> };
         assert.equal(body.errors[0]?.code, "E_GATEWAY_NOT_IMPLEMENTED");
-        assert.equal(body.errors[0]?.gateway, "zarinpal");
+        assert.equal(body.errors[0]?.gateway, "sadad");
         assert.equal(body.errors[0]?.phase, "enable");
 
-        const reloaded = await PaymentGateway.findOrFail(Number(zarinpal.id));
+        const reloaded = await PaymentGateway.findOrFail(Number(sadad.id));
         assert.isFalse(reloaded.enabled, "stub gateway should still be disabled after the rejected PATCH");
     });
 
-    test("admin PATCH still applies settings on a stub gateway even when enable is omitted", async ({ client, assert }) => {
+    test("admin PATCH accepts preparatory credentials on a stub but stores them encrypted and masked", async ({
+        client,
+        assert,
+    }) => {
         const admin = await createAdmin();
-        const zarinpal = await PaymentGateway.findByOrFail("code", "zarinpal");
+        const sadad = await PaymentGateway.findByOrFail("code", "sadad");
 
         const response = await client
-            .patch(`/api/v1/admin/payment-gateways/${Number(zarinpal.id)}`)
+            .patch(`/api/v1/admin/payment-gateways/${Number(sadad.id)}`)
             .withGuard("api")
             .loginAs(admin)
-            .json({ settings: { merchant_id: "PREP-FOR-INTEGRATION" } });
+            .json({
+                settings: {
+                    merchant_id: "PREP-MERCHANT",
+                    terminal_id: "PREP-TERMINAL",
+                    terminal_key: "PREP-KEY",
+                },
+            });
 
         response.assertStatus(200);
-        const reloaded = await PaymentGateway.findOrFail(Number(zarinpal.id));
-        assert.isFalse(reloaded.enabled, "stub gateway stays disabled even when settings are rotated in preparation");
-        assert.equal((reloaded.settings as Record<string, unknown>).merchant_id, "PREP-FOR-INTEGRATION");
+        const responseSettings = (response.body().data as { settings: Record<string, unknown> }).settings;
+        assert.equal(responseSettings.merchant_id, "***");
+        assert.equal(responseSettings.terminal_id, "***");
+        assert.equal(responseSettings.terminal_key, "***");
+
+        const reloaded = await PaymentGateway.findOrFail(Number(sadad.id));
+        assert.isFalse(reloaded.enabled, "stub gateway stays disabled even when credentials are prepared");
+        const stored = reloaded.settings as Record<string, unknown>;
+        assert.notProperty(stored, "merchant_id");
+        assert.notProperty(stored, "terminal_id");
+        assert.notProperty(stored, "terminal_key");
+        assert.isString(stored.__credentials_ciphertext);
+        assert.notInclude(String(stored.__credentials_ciphertext), "PREP-KEY");
     });
 
     test("storefront checkout selecting a stub gateway is rejected before reaching the adapter", async ({ client, assert }) => {
         const product = await createTaxableProduct({ regularPrice: 1_000_000 });
         const regionId = await iranRegionId();
-        const zarinpal = await PaymentGateway.findByOrFail("code", "zarinpal");
+        const sadad = await PaymentGateway.findByOrFail("code", "sadad");
 
         const seeded = await client.post("/api/v1/cart/items").json({ product_id: Number(product.id), quantity: 1 });
         const token = tokenFromResponse(seeded);
@@ -98,22 +117,22 @@ test.group("Stub PSP gateways", (group) => {
                     phone: "+989121234567",
                     email: "t@example.test",
                 },
-                payment_gateway_id: Number(zarinpal.id),
+                payment_gateway_id: Number(sadad.id),
             });
 
         setMethod.assertStatus(422);
         const body = setMethod.body() as { errors?: Array<{ code?: string; gateway?: string; phase?: string }> };
         assert.equal(body.errors?.[0]?.code, "E_GATEWAY_NOT_IMPLEMENTED");
-        assert.equal(body.errors?.[0]?.gateway, "zarinpal");
+        assert.equal(body.errors?.[0]?.gateway, "sadad");
 
         const processing = await Order.query().where("status", OrderStatus.Processing);
         assert.lengthOf(processing, 0, "no order should have transitioned to processing");
     });
 
-    test("stray PSP callback redirects to /checkout/failed?reason=gateway_not_implemented", async ({ client, assert }) => {
+    test("stray stub callback redirects to /checkout/failed?reason=gateway_not_implemented", async ({ client, assert }) => {
         const callback = await client
-            .get("/api/v1/payment/callback/zarinpal")
-            .qs({ Authority: "ASTRAY00000000000000000000000001", Status: "OK" })
+            .get("/api/v1/payment/callback/sadad")
+            .qs({ token: "ASTRAY00000000000000000000000001", status: "OK" })
             .redirects(0);
 
         assert.equal(callback.response.status, 302);

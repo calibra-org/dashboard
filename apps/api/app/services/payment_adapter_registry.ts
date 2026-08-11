@@ -2,27 +2,18 @@ import { GatewayNotConfiguredException, GatewayNotImplementedException } from "#
 import PaymentGateway from "#models/payment_gateway";
 import { bankTransferGateway } from "#services/adapters/bank_transfer_gateway";
 import type { PaymentAdapter, PaymentAdapterCapabilities } from "#services/adapters/base_redirect_gateway";
+import { cardToCardGateway } from "#services/adapters/card_to_card_gateway";
 import { codGateway } from "#services/adapters/cod_gateway";
+import { mellatGateway } from "#services/adapters/mellat_gateway";
+import { parsianGateway } from "#services/adapters/parsian_gateway";
 import { UnimplementedPspGateway } from "#services/adapters/unimplemented_psp_gateway";
+import { zarinpalGateway } from "#services/adapters/zarinpal_gateway";
 import { readImplementationStatus } from "#transformers/payment_gateway_transformer";
 
 /**
- * Singleton registry of every PSP adapter. The map is initialized at module load — no DI
- * container plumbing needed because adapters are stateless (settings come from the gateway row at
- * resolve time, not at construction). New PSPs are a one-line `register()` call in the file
- * footer.
- *
- * Resolution throws {@link GatewayNotConfiguredException} when:
- *   1. The `code` is not registered (typo, future PSP, never wired).
- *   2. The matching `payment_gateways` row is missing OR disabled.
- *
- * Callers never branch on adapter class — they branch on `adapter.capabilities` instead.
- *
- * The five Iranian PSPs (`zarinpal`, `idpay`, `nextpay`, `payir`, `zibal`) all resolve to a
- * single {@link UnimplementedPspGateway} instance per code: each one advertises the capability
- * envelope the real PSP supports in principle (so the admin UI shows accurate "refunds" badges)
- * while every lifecycle method throws `E_GATEWAY_NOT_IMPLEMENTED` until a follow-up phase ships
- * a real adapter and flips `implementation_status` on the seed row to `"live"`.
+ * Singleton registry of payment adapters. Concrete adapters are registered only when Calibra has
+ * an actual protocol implementation. A catalog row may still exist as `stub` so operators can see
+ * the planned method without being allowed to route customer money through speculative code.
  */
 export class PaymentAdapterRegistry {
     private readonly adapters = new Map<string, PaymentAdapter>();
@@ -43,21 +34,12 @@ export class PaymentAdapterRegistry {
         return adapter;
     }
 
-    /**
-     * DB-backed resolver. Loads the row, asserts it's enabled, and returns the adapter + the
-     * row's settings/snapshot data. Use this from the storefront / admin code paths; the
-     * registry-only `get()` is for tests + the future payment-link bridge.
-     */
     async resolveForCode(code: string): Promise<{ adapter: PaymentAdapter; gateway: PaymentGateway }> {
         const adapter = this.get(code);
         const gateway = await PaymentGateway.query().where("code", code).first();
         if (!gateway) {
             throw new GatewayNotConfiguredException(code, `Payment gateway row for code "${code}" not found`);
         }
-        /**
-         * Stub gateways short-circuit before the enabled-check so every surface gets a uniform
-         * `E_GATEWAY_NOT_IMPLEMENTED` instead of the misleading "is disabled" message.
-         */
         if (readImplementationStatus(gateway) === "stub") {
             throw new GatewayNotImplementedException(code, "verify");
         }
@@ -84,13 +66,27 @@ export class PaymentAdapterRegistry {
 
 export const paymentAdapterRegistry = new PaymentAdapterRegistry();
 
+/** Concrete, provider-speaking adapters. */
+paymentAdapterRegistry.register(mellatGateway);
+paymentAdapterRegistry.register(parsianGateway);
+paymentAdapterRegistry.register(zarinpalGateway);
+paymentAdapterRegistry.register(cardToCardGateway);
+paymentAdapterRegistry.register(codGateway);
+
+/** Legacy offline adapter remains routable for existing tenants but is hidden from the new catalog UI. */
+paymentAdapterRegistry.register(bankTransferGateway);
+
 /**
- * Per-PSP capability envelopes — kept in sync with each provider's public API surface so the
- * admin UI renders accurate badges even while every adapter is a stub. When a real integration
- * lands, drop the entry here and `register()` the concrete adapter instead.
+ * Visible methods that lack sufficient official merchant documentation/sandbox validation stay
+ * fail-closed. Legacy PSP codes remain registered as stubs so historical rows fail with the same
+ * explicit E_GATEWAY_NOT_IMPLEMENTED error instead of an ambiguous missing-adapter error.
  */
 const STUB_PSP_CAPABILITIES: ReadonlyArray<{ code: string; capabilities: PaymentAdapterCapabilities }> = [
-    { code: "zarinpal", capabilities: { redirect: true, refunds: false, partial_refunds: false } },
+    { code: "sadad", capabilities: { redirect: true, refunds: false, partial_refunds: false } },
+    { code: "bitpay", capabilities: { redirect: true, refunds: false, partial_refunds: false } },
+    { code: "digipay", capabilities: { redirect: true, refunds: false, partial_refunds: false } },
+    { code: "snapppay", capabilities: { redirect: true, refunds: false, partial_refunds: false } },
+    { code: "azkivam", capabilities: { redirect: true, refunds: false, partial_refunds: false } },
     { code: "idpay", capabilities: { redirect: true, refunds: true, partial_refunds: false } },
     { code: "nextpay", capabilities: { redirect: true, refunds: false, partial_refunds: false } },
     { code: "payir", capabilities: { redirect: true, refunds: true, partial_refunds: false } },
@@ -100,6 +96,3 @@ const STUB_PSP_CAPABILITIES: ReadonlyArray<{ code: string; capabilities: Payment
 for (const { code, capabilities } of STUB_PSP_CAPABILITIES) {
     paymentAdapterRegistry.register(new UnimplementedPspGateway(code, capabilities));
 }
-
-paymentAdapterRegistry.register(codGateway);
-paymentAdapterRegistry.register(bankTransferGateway);
