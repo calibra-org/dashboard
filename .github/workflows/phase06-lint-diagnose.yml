@@ -1,12 +1,15 @@
-name: Phase 06 Lint Diagnose
+name: Phase 06 Lint Fix
 
 on:
   push:
     branches:
       - phase/06-coupons
 
+permissions:
+  contents: write
+
 jobs:
-  diagnose:
+  fix:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -21,7 +24,9 @@ jobs:
           node-version: 24.14.0
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Biome check Phase 06 files
+      - name: Apply safe Biome fix
+        run: pnpm exec biome check apps/api/app/services/order_finalizer.ts --write
+      - name: Recheck Phase 06 files
         run: >-
           pnpm exec biome check --max-diagnostics=200
           apps/api/app/contracts/discounter.ts
@@ -47,3 +52,13 @@ jobs:
           apps/api/tests/unit/cart/cart_totals.spec.ts
           apps/api/tests/unit/coupons/coupon_eligibility.spec.ts
           apps/api/tests/unit/coupons/discounter.spec.ts
+      - name: Commit safe fix
+        run: |
+          if git diff --quiet; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/api/app/services/order_finalizer.ts
+          git commit -m "style(coupons): organize finalizer imports"
+          git push origin HEAD:phase/06-coupons
