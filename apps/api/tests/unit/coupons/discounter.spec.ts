@@ -36,6 +36,7 @@ function coupon(overrides: Partial<CouponSnapshot>): CouponSnapshot {
         freeShipping: false,
         productConstraints: [],
         categoryConstraints: [],
+        brandConstraints: [],
         emailRestrictions: [],
         ...overrides,
     };

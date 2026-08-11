@@ -126,7 +126,7 @@ async function loadDiscounterItems(cart: { id: bigint | number }) {
     const lines = await CartItem.query()
         .where("cart_id", Number(cart.id))
         .preload("product", (q) => {
-            q.preload("categories").preload("tags");
+            q.preload("categories").preload("tags").preload("brands");
         });
 
     const variationIds = lines.filter((line) => line.variationId !== null).map((line) => Number(line.variationId));
@@ -147,6 +147,7 @@ async function loadDiscounterItems(cart: { id: bigint | number }) {
             lineSubtotal: Number(line.priceSnapshot) * line.quantity,
             categoryIds: ((product?.categories ?? []) as Array<{ id: bigint | number }>).map((c) => Number(c.id)),
             tagIds: ((product?.tags ?? []) as Array<{ id: bigint | number }>).map((t) => Number(t.id)),
+            brandIds: ((product?.brands ?? []) as Array<{ id: bigint | number }>).map((b) => Number(b.id)),
             onSale,
         };
     });

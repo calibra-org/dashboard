@@ -11,6 +11,7 @@ import type {
     DiscounterResult,
 } from "#contracts/discounter";
 import Coupon, { type CouponDiscountType } from "#models/coupon";
+import CouponBrandConstraint from "#models/coupon_brand_constraint";
 import CouponCategoryConstraint from "#models/coupon_category_constraint";
 import CouponEmailRestriction from "#models/coupon_email_restriction";
 import CouponProductConstraint from "#models/coupon_product_constraint";
@@ -70,6 +71,7 @@ export interface CouponSnapshot {
     freeShipping: boolean;
     productConstraints: ReadonlyArray<{ productId: number; mode: "include" | "exclude" }>;
     categoryConstraints: ReadonlyArray<{ categoryId: number; mode: "include" | "exclude" }>;
+    brandConstraints: ReadonlyArray<{ brandId: number; mode: "include" | "exclude" }>;
     emailRestrictions: ReadonlyArray<string>;
 }
 
@@ -250,9 +252,12 @@ export async function loadSnapshots(
 
     const productConstraints = await CouponProductConstraint.query({ client }).whereIn("coupon_id", ids);
     const categoryConstraints = await CouponCategoryConstraint.query({ client }).whereIn("coupon_id", ids);
+    const brandConstraints = await CouponBrandConstraint.query({ client }).whereIn("coupon_id", ids);
     const emailRestrictions = await CouponEmailRestriction.query({ client }).whereIn("coupon_id", ids);
 
-    return coupons.map((coupon) => toSnapshot(coupon, productConstraints, categoryConstraints, emailRestrictions));
+    return coupons.map((coupon) =>
+        toSnapshot(coupon, productConstraints, categoryConstraints, brandConstraints, emailRestrictions),
+    );
 }
 
 /**
@@ -269,9 +274,10 @@ export async function loadSnapshotByCode(code: string, client?: TransactionClien
     const couponId = Number(coupon.id);
     const productConstraints = await CouponProductConstraint.query({ client }).where("coupon_id", couponId);
     const categoryConstraints = await CouponCategoryConstraint.query({ client }).where("coupon_id", couponId);
+    const brandConstraints = await CouponBrandConstraint.query({ client }).where("coupon_id", couponId);
     const emailRestrictions = await CouponEmailRestriction.query({ client }).where("coupon_id", couponId);
 
-    return toSnapshot(coupon, productConstraints, categoryConstraints, emailRestrictions);
+    return toSnapshot(coupon, productConstraints, categoryConstraints, brandConstraints, emailRestrictions);
 }
 
 /**
@@ -285,9 +291,10 @@ export async function loadSnapshotForUpdate(couponId: number, trx: TransactionCl
 
     const productConstraints = await CouponProductConstraint.query({ client: trx }).where("coupon_id", couponId);
     const categoryConstraints = await CouponCategoryConstraint.query({ client: trx }).where("coupon_id", couponId);
+    const brandConstraints = await CouponBrandConstraint.query({ client: trx }).where("coupon_id", couponId);
     const emailRestrictions = await CouponEmailRestriction.query({ client: trx }).where("coupon_id", couponId);
 
-    return toSnapshot(coupon, productConstraints, categoryConstraints, emailRestrictions);
+    return toSnapshot(coupon, productConstraints, categoryConstraints, brandConstraints, emailRestrictions);
 }
 
 /**
@@ -325,6 +332,7 @@ function toSnapshot(
     coupon: Coupon,
     productConstraints: ReadonlyArray<CouponProductConstraint>,
     categoryConstraints: ReadonlyArray<CouponCategoryConstraint>,
+    brandConstraints: ReadonlyArray<CouponBrandConstraint>,
     emailRestrictions: ReadonlyArray<CouponEmailRestriction>,
 ): CouponSnapshot {
     return {
@@ -350,6 +358,9 @@ function toSnapshot(
         categoryConstraints: categoryConstraints
             .filter((c) => Number(c.couponId) === Number(coupon.id))
             .map((c) => ({ categoryId: Number(c.categoryId), mode: c.mode as "include" | "exclude" })),
+        brandConstraints: brandConstraints
+            .filter((c) => Number(c.couponId) === Number(coupon.id))
+            .map((c) => ({ brandId: Number(c.brandId), mode: c.mode as "include" | "exclude" })),
         emailRestrictions: emailRestrictions.filter((c) => Number(c.couponId) === Number(coupon.id)).map((c) => c.emailPattern),
     };
 }
@@ -498,21 +509,26 @@ function isItemEligible(item: DiscounterItem, coupon: CouponSnapshot): boolean {
     const productExcludes = coupon.productConstraints.filter((c) => c.mode === "exclude");
     const categoryIncludes = coupon.categoryConstraints.filter((c) => c.mode === "include");
     const categoryExcludes = coupon.categoryConstraints.filter((c) => c.mode === "exclude");
+    const brandIncludes = coupon.brandConstraints.filter((c) => c.mode === "include");
+    const brandExcludes = coupon.brandConstraints.filter((c) => c.mode === "exclude");
+    const itemBrandIds = item.brandIds ?? [];
 
     if (productExcludes.some((c) => c.productId === item.productId)) return false;
     if (categoryExcludes.some((c) => item.categoryIds.includes(c.categoryId))) return false;
+    if (brandExcludes.some((c) => itemBrandIds.includes(c.brandId))) return false;
 
     const hasProductInclude = productIncludes.length > 0;
     const hasCategoryInclude = categoryIncludes.length > 0;
-    if (!hasProductInclude && !hasCategoryInclude) return true;
+    const hasBrandInclude = brandIncludes.length > 0;
+    if (!hasProductInclude && !hasCategoryInclude && !hasBrandInclude) return true;
 
     const productMatch = hasProductInclude && productIncludes.some((c) => c.productId === item.productId);
     const categoryMatch = hasCategoryInclude && categoryIncludes.some((c) => item.categoryIds.includes(c.categoryId));
+    const brandMatch = hasBrandInclude && brandIncludes.some((c) => itemBrandIds.includes(c.brandId));
     /**
-     * Match either set when present — the WC convention is that include lists are unioned, not
-     * intersected, so a coupon "for product A OR category B" works as customers expect.
+     * Include dimensions are unioned: product A OR category B OR brand C. Excludes always win.
      */
-    return productMatch || categoryMatch;
+    return productMatch || categoryMatch || brandMatch;
 }
 
 function matchEmailPattern(pattern: string, email: string): boolean {

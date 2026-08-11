@@ -226,7 +226,11 @@ export class OrderFactory {
         const products =
             productIds.length === 0
                 ? ([] as Product[])
-                : await Product.query({ client: trx }).whereIn("id", productIds).preload("categories").preload("tags");
+                : await Product.query({ client: trx })
+                      .whereIn("id", productIds)
+                      .preload("categories")
+                      .preload("tags")
+                      .preload("brands");
         const productMap = new Map(products.map((p) => [Number(p.id), p]));
         const variationIds = snapshots.map((s) => s.variationId).filter((v): v is number => v !== null);
         const variations =
@@ -251,6 +255,7 @@ export class OrderFactory {
                 requiresShipping: true,
                 categoryIds: ((product?.categories ?? []) as Array<{ id: bigint | number }>).map((c) => Number(c.id)),
                 tagIds: ((product?.tags ?? []) as Array<{ id: bigint | number }>).map((t) => Number(t.id)),
+                brandIds: ((product?.brands ?? []) as Array<{ id: bigint | number }>).map((b) => Number(b.id)),
                 onSale,
             };
         });

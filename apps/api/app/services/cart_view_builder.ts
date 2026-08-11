@@ -33,6 +33,7 @@ export async function buildCartView(
                     .preload("translations")
                     .preload("categories")
                     .preload("tags")
+                    .preload("brands")
                     .preload("images", (img) => {
                         img.orderBy("position", "asc").preload("media");
                     });
@@ -57,6 +58,7 @@ export async function buildCartView(
         const onSale = product ? resolvePrice(product, variation).onSale : false;
         const categoryIds = (product?.categories ?? []).map((c) => Number(c.id));
         const tagIds = (product?.tags ?? []).map((t) => Number(t.id));
+        const brandIds = (product?.brands ?? []).map((b) => Number(b.id));
         return {
             lineKey: String(line.id),
             id: Number(line.id),
@@ -69,6 +71,7 @@ export async function buildCartView(
             requiresShipping,
             categoryIds,
             tagIds,
+            brandIds,
             onSale,
         };
     });
