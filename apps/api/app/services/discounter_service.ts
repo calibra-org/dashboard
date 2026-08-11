@@ -247,7 +247,7 @@ export async function loadSnapshots(
     if (contexts.length === 0) return [];
 
     const ids = contexts.map((c) => c.id);
-    const couponsQuery = Coupon.query({ client }).whereIn("id", ids);
+    const couponsQuery = Coupon.query({ client }).whereIn("id", ids).whereNull("deleted_at");
     const coupons = await couponsQuery;
 
     const productConstraints = await CouponProductConstraint.query({ client }).whereIn("coupon_id", ids);

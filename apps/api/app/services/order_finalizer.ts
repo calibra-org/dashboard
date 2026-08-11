@@ -247,7 +247,11 @@ export class OrderFinalizer {
      * UNIQUE `(coupon_id, order_id)` keeps idempotency replays from double-counting.
      */
     private async writeRedemptionLedger(order: Order, trx: TransactionClientContract): Promise<void> {
-        const lines = await OrderCouponLine.query({ client: trx }).where("order_id", Number(order.id));
+        /** Deterministic coupon lock order avoids A→B / B→A deadlocks across concurrent orders. */
+        const lines = await OrderCouponLine.query({ client: trx })
+            .where("order_id", Number(order.id))
+            .orderBy("coupon_id", "asc")
+            .orderBy("id", "asc");
         if (lines.length === 0) return;
 
         const customerId = order.customerId === null || order.customerId === undefined ? null : Number(order.customerId);

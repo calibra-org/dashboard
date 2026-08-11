@@ -96,6 +96,24 @@ test.group("POST /api/v1/cart/coupons", (group) => {
         assert.equal(b.body().data.applied_coupons.length, 1);
     });
 
+    test("soft-deleted applied coupon stops discounting on the next cart recompute", async ({ client, assert }) => {
+        const product = await createTaxableProduct({ regularPrice: 1_000_000 });
+        const coupon = await CouponFactory.merge({ code: "GONE10", amountPercent: "10.00" }).create();
+        const added = await client.post("/api/v1/cart/items").json({ product_id: Number(product.id), quantity: 1 });
+        const token = tokenFromResponse(added);
+
+        const applied = await client.post("/api/v1/cart/coupons").cookie("cart_token", token).json({ code: "GONE10" });
+        applied.assertStatus(200);
+        assert.equal(applied.body().data.totals.discount_total, 100_000);
+
+        coupon.deletedAt = DateTime.utc();
+        await coupon.save();
+
+        const refreshed = await client.get("/api/v1/cart").cookie("cart_token", token);
+        refreshed.assertStatus(200);
+        assert.equal(refreshed.body().data.totals.discount_total, 0);
+    });
+
     test("normal coupon cannot stack after an individual_use coupon", async ({ client, assert }) => {
         const product = await createTaxableProduct({ regularPrice: 1_000_000 });
         await CouponFactory.merge({ code: "SOLO", individualUse: true, amountPercent: "20.00" }).create();
