@@ -29,6 +29,11 @@ jobs:
                 image: redis:7-alpine
                 ports:
                     - 6379:6379
+                options: >-
+                    --health-cmd "redis-cli ping"
+                    --health-interval 5s
+                    --health-timeout 5s
+                    --health-retries 20
         steps:
             - uses: actions/checkout@v4
             - uses: pnpm/action-setup@v4
@@ -40,5 +45,61 @@ jobs:
                   cache: pnpm
             - run: pnpm install --frozen-lockfile
             - run: pnpm --filter @calibra/admin exec playwright install chromium --with-deps
-            - name: Prepare application
-              run: pnpm --filter @calibra/api exec node ace --help >/dev/null
+            - name: Configure development runtime
+              shell: bash
+              run: |
+                  APP_KEY=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
+                  cat > apps/api/.env <<ENV
+                  TZ=UTC
+                  PORT=3333
+                  HOST=0.0.0.0
+                  LOG_LEVEL=info
+                  APP_KEY=$APP_KEY
+                  NODE_ENV=development
+                  DB_HOST=127.0.0.1
+                  DB_PORT=5432
+                  DB_USER=postgres
+                  DB_PASSWORD=postgres
+                  DB_DATABASE=calibra_visual
+                  REDIS_HOST=127.0.0.1
+                  REDIS_PORT=6379
+                  REDIS_PASSWORD=
+                  REDIS_DB=0
+                  ENV
+                  cat > apps/admin/.env.local <<'ENV'
+                  CALIBRA_API_URL=http://127.0.0.1:3333
+                  NEXT_PUBLIC_CALIBRA_API_URL=http://127.0.0.1:3333
+                  ENV
+            - name: Migrate and seed
+              shell: bash
+              run: |
+                  pnpm --filter @calibra/api exec node ace migration:run --force
+                  pnpm --filter @calibra/api exec node ace db:seed || true
+            - name: Start API
+              shell: bash
+              run: |
+                  (cd apps/api && node ace serve --watch > /tmp/calibra-api.log 2>&1) &
+                  for i in $(seq 1 90); do
+                      if curl --fail --silent http://127.0.0.1:3333/health/live >/dev/null; then
+                          exit 0
+                      fi
+                      sleep 2
+                  done
+                  tail -n 160 /tmp/calibra-api.log || true
+                  exit 1
+            - name: Capture real admin UI
+              working-directory: apps/admin
+              env:
+                  ADMIN_LOGIN_EMAIL: admin@aurora.test
+                  ADMIN_LOGIN_PASSWORD: admin
+                  ADMIN_PORT: "3001"
+                  BASE_URL: http://aurora.admin.localhost:3001
+              run: pnpm exec playwright test tests/e2e/payment-gateway-visual.spec.ts --workers=1
+            - name: Upload browser screenshots
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: payment-gateway-settings-screenshots
+                  path: apps/admin/test-results/*.png
+                  if-no-files-found: error
+                  retention-days: 30
