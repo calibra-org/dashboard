@@ -1,11 +1,13 @@
 import { Exception } from "@adonisjs/core/exceptions";
 import type { HttpContext } from "@adonisjs/core/http";
 import emitter from "@adonisjs/core/services/emitter";
+import lock from "@adonisjs/lock/services/main";
 import * as Sentry from "@sentry/node";
 import { DateTime } from "luxon";
 
 import { OrderStatus } from "#enums/order_status";
 import { PaymentAttemptStatus } from "#enums/payment_attempt_status";
+import { ResourceConflictException } from "#exceptions/domain_exceptions";
 import { GatewayNotConfiguredException } from "#exceptions/payment_exceptions";
 import Order from "#models/order";
 import PaymentAttempt from "#models/payment_attempt";
@@ -42,11 +44,10 @@ export interface PaymentRefundResult {
 }
 
 /**
- * Orchestrates the three payment lifecycle moves: `init`, `verifyCallback`, `refund`. Wraps every
- * write in a transaction so a mid-flow failure leaves no half-applied state — and uses
- * `FOR UPDATE` on the attempt row inside `verifyCallback` so concurrent PSP retries serialize at
- * the database, not in app code. Controllers never call adapter methods directly; they go through
- * here.
+ * Orchestrates the three payment lifecycle moves: `init`, `verifyCallback`, `refund`. Critical
+ * order mutations are serialized at two layers: the distributed `order:<id>` mutex coordinates
+ * PSP callback verification with admin refunds, while `FOR UPDATE` protects the authoritative
+ * payment-attempt/order rows inside PostgreSQL.
  */
 export class PaymentService {
     constructor(private readonly settings = new SettingsService()) {}
@@ -106,6 +107,29 @@ export class PaymentService {
                     .where("idempotency_key", normalizedIdempotencyKey)
                     .first();
                 if (existing) return { order: lockedOrder, attempt: existing, created: false as const };
+            }
+
+            /**
+             * Never mint a second live PSP session for the same order. A browser retry that arrives
+             * with a different idempotency key while an earlier request is still waiting at the PSP
+             * receives that existing redirect instead. Failed/cancelled attempts remain retryable.
+             */
+            const active = await PaymentAttempt.query({ client: trx })
+                .where("order_id", Number(lockedOrder.id))
+                .where("gateway_id", Number(gateway.id))
+                .whereIn("status", [PaymentAttemptStatus.Initiated, PaymentAttemptStatus.AwaitingCallback])
+                .orderBy("initiated_at", "desc")
+                .first();
+            if (active) return { order: lockedOrder, attempt: active, created: false as const };
+
+            /**
+             * Failed pay-link retries are transitioned back to pending by PayLinkController before
+             * reaching this service; on_hold is intentionally payable because async/offline orders
+             * may be converted to an online gateway. Processing/completed/refunded orders must never
+             * receive another PSP charge.
+             */
+            if (lockedOrder.status !== OrderStatus.Pending && lockedOrder.status !== OrderStatus.OnHold) {
+                throw new Exception("Order is no longer payable", { status: 409, code: "E_ORDER_NOT_PAYABLE" });
             }
 
             const row = new PaymentAttempt();
@@ -219,135 +243,165 @@ export class PaymentService {
         const rawBody = request.raw() ?? JSON.stringify(request.all() ?? {});
         const eventId = String(parsed.authority);
 
-        const result = await withTenantTransaction(async (trx) => {
-            const attempt = await PaymentAttempt.query({ client: trx })
-                .where("gateway_id", Number(gateway.id))
-                .where("gateway_authority", String(parsed.authority))
-                .forUpdate()
-                .first();
-            if (!attempt) {
-                throw new Exception("No matching payment attempt found for callback", {
-                    status: 404,
-                    code: "E_PAYMENT_ATTEMPT_NOT_FOUND",
-                });
-            }
-            const order = await Order.query({ client: trx }).where("id", Number(attempt.orderId)).forUpdate().firstOrFail();
-            const ledger = await webhookIdempotencyService.record(
-                {
-                    provider: gatewayCode,
-                    eventId,
-                    eventKind: `payment.callback.${parsed.status}`,
-                    paymentAttemptId: attempt.id,
-                    orderId: order.id,
-                    rawBody,
-                },
-                trx,
-            );
-            if (ledger.replayed) {
-                const replayedRedirect =
-                    ledger.existing.outcome === "verified"
-                        ? this.attachOrderKey(successUrl, order)
-                        : this.attachReason(failedUrl, `replayed_${ledger.existing.outcome}`);
-                return { order, attempt, redirect: replayedRedirect };
-            }
-            const ledgerRow = ledger.inserted;
-
-            if (parsed.status === "cancelled" || parsed.status === "failed") {
-                if (attempt.status !== PaymentAttemptStatus.Verified) {
-                    attempt.status = parsed.status === "cancelled" ? PaymentAttemptStatus.Cancelled : PaymentAttemptStatus.Failed;
-                    attempt.gatewayPayload = (parsed.payload as Record<string, unknown>) ?? {};
-                    attempt.errorCode = parsed.status === "cancelled" ? "psp_cancelled" : "psp_failed";
-                    await attempt.save();
-                }
-                if (order.status === OrderStatus.Pending) {
-                    await orderStateMachine.transition(order, OrderStatus.Failed, {
-                        reason: `payment.${gatewayCode}.${parsed.status}`,
-                        trx,
-                    });
-                }
-                await webhookIdempotencyService.finalize(ledgerRow, parsed.status, { trx });
-                return { order, attempt, redirect: this.attachReason(failedUrl, `psp_${parsed.status}`) };
-            }
-
-            if (attempt.status === PaymentAttemptStatus.Verified) {
-                Sentry.captureMessage("webhook_out_of_order", {
-                    level: "warning",
-                    tags: {
-                        gateway: gatewayCode,
-                        order_id: String(order.id),
-                        attempt_id: String(attempt.id),
-                        prior_status: attempt.status,
-                    },
-                });
-                await webhookIdempotencyService.finalize(ledgerRow, "verified_out_of_order", { trx });
-                return { order, attempt, redirect: this.attachOrderKey(successUrl, order) };
-            }
-
-            const verifyResult = await adapter.verify({
-                attempt,
-                callback: parsed,
-                settings: runtimeSettings,
+        /**
+         * Resolve the order id before taking the distributed mutex. This read is non-mutating and
+         * intentionally unlocked; the authoritative attempt is fetched again with FOR UPDATE once
+         * the mutex is held. RefundService uses the same `order:<id>` key, so a refund and a PSP
+         * verification can no longer race each other across processes.
+         */
+        const candidate = await PaymentAttempt.query()
+            .where("gateway_id", Number(gateway.id))
+            .where("gateway_authority", eventId)
+            .first();
+        if (!candidate) {
+            throw new Exception("No matching payment attempt found for callback", {
+                status: 404,
+                code: "E_PAYMENT_ATTEMPT_NOT_FOUND",
             });
-            const amountMismatch =
-                verifyResult.ok &&
-                verifyResult.amount_minor !== undefined &&
-                verifyResult.amount_minor !== Number(attempt.amountMinor);
+        }
 
-            if (!verifyResult.ok || amountMismatch) {
-                if (amountMismatch) {
-                    Sentry.captureMessage("payment_amount_mismatch", {
-                        level: "error",
-                        tags: {
-                            gateway: gatewayCode,
-                            order_id: String(order.id),
-                            attempt_id: String(attempt.id),
+        const [acquired, lockedResult] = await lock
+            .createLock(`order:${Number(candidate.orderId)}`, "30s")
+            .runImmediately(async () =>
+                withTenantTransaction(async (trx) => {
+                    const attempt = await PaymentAttempt.query({ client: trx })
+                        .where("gateway_id", Number(gateway.id))
+                        .where("gateway_authority", eventId)
+                        .forUpdate()
+                        .first();
+                    if (!attempt) {
+                        throw new Exception("No matching payment attempt found for callback", {
+                            status: 404,
+                            code: "E_PAYMENT_ATTEMPT_NOT_FOUND",
+                        });
+                    }
+                    const order = await Order.query({ client: trx }).where("id", Number(attempt.orderId)).forUpdate().firstOrFail();
+                    const ledger = await webhookIdempotencyService.record(
+                        {
+                            provider: gatewayCode,
+                            eventId,
+                            eventKind: `payment.callback.${parsed.status}`,
+                            paymentAttemptId: attempt.id,
+                            orderId: order.id,
+                            rawBody,
                         },
-                        extra: {
-                            expected_minor: Number(attempt.amountMinor),
-                            received_minor: (verifyResult as { amount_minor: number }).amount_minor,
-                        },
-                    });
-                }
-                attempt.status = PaymentAttemptStatus.Failed;
-                attempt.errorCode = amountMismatch ? "amount_mismatch" : (verifyResult as { error_code: string }).error_code;
-                attempt.errorMessage = amountMismatch
-                    ? `expected ${attempt.amountMinor}, got ${(verifyResult as { amount_minor: number }).amount_minor}`
-                    : (verifyResult as { error_message: string }).error_message;
-                attempt.gatewayPayload = (verifyResult.payload as Record<string, unknown>) ?? {};
-                await attempt.save();
-                if (order.status === OrderStatus.Pending) {
-                    await orderStateMachine.transition(order, OrderStatus.Failed, {
-                        reason: amountMismatch
-                            ? `payment.${gatewayCode}.amount_mismatch`
-                            : `payment.${gatewayCode}.verify_failed`,
                         trx,
+                    );
+                    if (ledger.replayed) {
+                        const replayedRedirect =
+                            ledger.existing.outcome === "verified"
+                                ? this.attachOrderKey(successUrl, order)
+                                : this.attachReason(failedUrl, `replayed_${ledger.existing.outcome}`);
+                        return { order, attempt, redirect: replayedRedirect };
+                    }
+                    const ledgerRow = ledger.inserted;
+
+                    if (parsed.status === "cancelled" || parsed.status === "failed") {
+                        if (attempt.status !== PaymentAttemptStatus.Verified) {
+                            attempt.status = parsed.status === "cancelled" ? PaymentAttemptStatus.Cancelled : PaymentAttemptStatus.Failed;
+                            attempt.gatewayPayload = (parsed.payload as Record<string, unknown>) ?? {};
+                            attempt.errorCode = parsed.status === "cancelled" ? "psp_cancelled" : "psp_failed";
+                            await attempt.save();
+                        }
+                        if (order.status === OrderStatus.Pending) {
+                            await orderStateMachine.transition(order, OrderStatus.Failed, {
+                                reason: `payment.${gatewayCode}.${parsed.status}`,
+                                trx,
+                            });
+                        }
+                        await webhookIdempotencyService.finalize(ledgerRow, parsed.status, { trx });
+                        return { order, attempt, redirect: this.attachReason(failedUrl, `psp_${parsed.status}`) };
+                    }
+
+                    if (attempt.status === PaymentAttemptStatus.Verified) {
+                        Sentry.captureMessage("webhook_out_of_order", {
+                            level: "warning",
+                            tags: {
+                                gateway: gatewayCode,
+                                order_id: String(order.id),
+                                attempt_id: String(attempt.id),
+                                prior_status: attempt.status,
+                            },
+                        });
+                        await webhookIdempotencyService.finalize(ledgerRow, "verified_out_of_order", { trx });
+                        return { order, attempt, redirect: this.attachOrderKey(successUrl, order) };
+                    }
+
+                    const verifyResult = await adapter.verify({
+                        attempt,
+                        callback: parsed,
+                        settings: runtimeSettings,
                     });
-                }
-                await webhookIdempotencyService.finalize(ledgerRow, amountMismatch ? "amount_mismatch" : "verify_failed", {
-                    trx,
-                });
-                return {
-                    order,
-                    attempt,
-                    redirect: this.attachReason(failedUrl, amountMismatch ? "amount_mismatch" : "verify_failed"),
-                };
-            }
+                    const amountMismatch =
+                        verifyResult.ok &&
+                        verifyResult.amount_minor !== undefined &&
+                        verifyResult.amount_minor !== Number(attempt.amountMinor);
 
-            attempt.status = PaymentAttemptStatus.Verified;
-            attempt.gatewayTransactionId = verifyResult.transaction_id;
-            attempt.verifiedAt = DateTime.utc();
-            attempt.gatewayPayload = (verifyResult.payload as Record<string, unknown>) ?? {};
-            await attempt.save();
+                    if (!verifyResult.ok || amountMismatch) {
+                        if (amountMismatch) {
+                            Sentry.captureMessage("payment_amount_mismatch", {
+                                level: "error",
+                                tags: {
+                                    gateway: gatewayCode,
+                                    order_id: String(order.id),
+                                    attempt_id: String(attempt.id),
+                                },
+                                extra: {
+                                    expected_minor: Number(attempt.amountMinor),
+                                    received_minor: (verifyResult as { amount_minor: number }).amount_minor,
+                                },
+                            });
+                        }
+                        attempt.status = PaymentAttemptStatus.Failed;
+                        attempt.errorCode = amountMismatch ? "amount_mismatch" : (verifyResult as { error_code: string }).error_code;
+                        attempt.errorMessage = amountMismatch
+                            ? `expected ${attempt.amountMinor}, got ${(verifyResult as { amount_minor: number }).amount_minor}`
+                            : (verifyResult as { error_message: string }).error_message;
+                        attempt.gatewayPayload = (verifyResult.payload as Record<string, unknown>) ?? {};
+                        await attempt.save();
+                        if (order.status === OrderStatus.Pending) {
+                            await orderStateMachine.transition(order, OrderStatus.Failed, {
+                                reason: amountMismatch
+                                    ? `payment.${gatewayCode}.amount_mismatch`
+                                    : `payment.${gatewayCode}.verify_failed`,
+                                trx,
+                            });
+                        }
+                        await webhookIdempotencyService.finalize(ledgerRow, amountMismatch ? "amount_mismatch" : "verify_failed", {
+                            trx,
+                        });
+                        return {
+                            order,
+                            attempt,
+                            redirect: this.attachReason(failedUrl, amountMismatch ? "amount_mismatch" : "verify_failed"),
+                        };
+                    }
 
-            order.useTransaction(trx);
-            order.transactionId = verifyResult.transaction_id;
-            await order.save();
-            if (order.status === OrderStatus.Pending) {
-                await orderStateMachine.transition(order, OrderStatus.Processing, { reason: "payment_verified", trx });
-            }
-            await webhookIdempotencyService.finalize(ledgerRow, "verified", { trx });
-            return { order, attempt, redirect: this.attachOrderKey(successUrl, order) };
-        });
+                    attempt.status = PaymentAttemptStatus.Verified;
+                    attempt.gatewayTransactionId = verifyResult.transaction_id;
+                    attempt.verifiedAt = DateTime.utc();
+                    attempt.gatewayPayload = (verifyResult.payload as Record<string, unknown>) ?? {};
+                    await attempt.save();
+
+                    order.useTransaction(trx);
+                    order.transactionId = verifyResult.transaction_id;
+                    await order.save();
+                    if (order.status === OrderStatus.Pending) {
+                        await orderStateMachine.transition(order, OrderStatus.Processing, { reason: "payment_verified", trx });
+                    }
+                    await webhookIdempotencyService.finalize(ledgerRow, "verified", { trx });
+                    return { order, attempt, redirect: this.attachOrderKey(successUrl, order) };
+                }),
+            );
+
+        if (!acquired) {
+            throw new ResourceConflictException("order is being processed concurrently", {
+                resource: "orders",
+                id: Number(candidate.orderId),
+                code: "E_CONCURRENT_PROCESSING",
+            });
+        }
+        const result = lockedResult;
 
         if (result.attempt) {
             await this.linkLatest(result.order, result.attempt);
