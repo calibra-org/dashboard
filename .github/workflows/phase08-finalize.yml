@@ -1,44 +1,44 @@
 name: Phase 08 finalize
 
 on:
-  push:
-    branches:
-      - phase/08-payment-gateways
+    push:
+        branches:
+            - "phase/08-payment-gateways"
 
 permissions:
-  contents: write
+    contents: write
 
 jobs:
-  finalize:
-    if: ${{ !contains(github.event.head_commit.message, 'chore: finalize phase 08 generated files') }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10.32.1
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - name: Patch OpenAPI roots
-        run: node scripts/phase08_finalize.mjs
-      - name: Regenerate SDK contracts
-        run: pnpm --filter @calibra/sdk run codegen
-      - name: Format changed source
-        run: pnpm run format:fix
-      - name: Commit generated and formatted files
-        shell: bash
-        run: |
-          if git diff --quiet; then
-            echo "No generated changes"
-            exit 0
-          fi
-          git config user.name "calibra-dev"
-          git config user.email "keshavarz20.com@gmail.com"
-          git add -A
-          git commit -m "chore: finalize phase 08 generated files"
-          git push
+    finalize:
+        if: github.event.head_commit.message != 'chore: finalize phase 08 generated files'
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+            - uses: pnpm/action-setup@v4
+              with:
+                  version: 10.32.1
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: pnpm
+            - run: pnpm install --frozen-lockfile
+            - name: Patch OpenAPI roots
+              run: node scripts/phase08_finalize.mjs
+            - name: Regenerate SDK contracts
+              run: pnpm --filter @calibra/sdk run codegen
+            - name: Format changed source
+              run: pnpm run format:fix
+            - name: Commit generated and formatted files
+              shell: bash
+              run: |
+                  if git diff --quiet; then
+                      echo "No generated changes"
+                      exit 0
+                  fi
+                  git config user.name "calibra-dev"
+                  git config user.email "keshavarz20.com@gmail.com"
+                  git add -A
+                  git commit -m "chore: finalize phase 08 generated files"
+                  git push
