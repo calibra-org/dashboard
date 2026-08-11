@@ -10,14 +10,14 @@ import { adminRefundsView } from "#table_views/admin/refunds";
  */
 export const adminRefundCreateValidator = vine.compile(
     vine.object({
-        amount_minor: vine.number().positive().optional(),
+        amount_minor: vine.number().withoutDecimals().positive().max(Number.MAX_SAFE_INTEGER).optional(),
         line_items: vine
             .array(
                 vine.object({
-                    order_line_item_id: vine.number().positive(),
-                    quantity: vine.number().positive().max(100_000),
-                    refund_amount_minor: vine.number().min(0).optional(),
-                    refund_tax_minor: vine.number().min(0).optional(),
+                    order_line_item_id: vine.number().withoutDecimals().positive(),
+                    quantity: vine.number().withoutDecimals().positive().max(100_000),
+                    refund_amount_minor: vine.number().withoutDecimals().min(0).max(Number.MAX_SAFE_INTEGER).optional(),
+                    refund_tax_minor: vine.number().withoutDecimals().min(0).max(Number.MAX_SAFE_INTEGER).optional(),
                 }),
             )
             .minLength(1)
