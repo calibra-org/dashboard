@@ -31,6 +31,13 @@ export default class AdminPaymentGatewaysController {
         return { data: new PaymentGatewayTransformer(gateway).forAdmin() };
     }
 
+    async verify(ctx: HttpContext) {
+        const gateway = await this.findOrFail(ctx.params.id);
+        this.assertImplementedAndConfigured(gateway);
+        await this.verifyAndPersist(gateway, ctx);
+        return { data: new PaymentGatewayTransformer(gateway).forAdmin() };
+    }
+
     async update(ctx: HttpContext) {
         const gateway = await this.findOrFail(ctx.params.id);
         const payload = await ctx.request.validateUsing(adminPaymentGatewayUpdateValidator);
@@ -42,7 +49,7 @@ export default class AdminPaymentGatewaysController {
             if (payload.enabled) {
                 this.assertImplementedAndConfigured(gateway);
                 if (credentialsChanged || paymentGatewayCredentialsService.health(gateway).status !== "healthy") {
-                    await paymentGatewayConnectionVerifier.verify(gateway);
+                    await this.verifyAndPersist(gateway, ctx, false);
                 }
                 this.assertVerified(gateway);
             }
@@ -64,6 +71,41 @@ export default class AdminPaymentGatewaysController {
             },
         });
         return { data: new PaymentGatewayTransformer(gateway).forAdmin() };
+    }
+
+    private async verifyAndPersist(gateway: PaymentGateway, ctx: HttpContext, audit = true): Promise<void> {
+        try {
+            await paymentGatewayConnectionVerifier.verify(gateway);
+            await gateway.save();
+            if (audit) {
+                await recordAudit({
+                    ctx,
+                    action: "payment_gateway.verify_connection",
+                    entityKind: "payment_gateway",
+                    entityId: gateway.id,
+                    payload: {
+                        gateway: gateway.code,
+                        health_status: paymentGatewayCredentialsService.health(gateway).status,
+                    },
+                });
+            }
+        } catch (error) {
+            await gateway.save();
+            if (audit) {
+                await recordAudit({
+                    ctx,
+                    action: "payment_gateway.verify_connection_failed",
+                    entityKind: "payment_gateway",
+                    entityId: gateway.id,
+                    payload: {
+                        gateway: gateway.code,
+                        health_status: paymentGatewayCredentialsService.health(gateway).status,
+                        last_error: paymentGatewayCredentialsService.health(gateway).lastError,
+                    },
+                });
+            }
+            throw error;
+        }
     }
 
     private assertImplementedAndConfigured(gateway: PaymentGateway): void {
