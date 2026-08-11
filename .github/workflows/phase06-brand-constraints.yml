@@ -1,4 +1,4 @@
-name: Phase 06 Brand Constraints
+name: Phase 06 Coupon Runtime Hardening
 
 on:
   push:
@@ -47,7 +47,10 @@ jobs:
           node-version: 24.14.0
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: python3 .github/scripts/phase06-brand-constraints.py
+      - name: Apply runtime hardening
+        run: |
+          python3 .github/scripts/phase06-brand-constraints.py
+          python3 .github/scripts/phase06-runtime-hardening.py
       - name: Format changed coupon runtime files
         run: >-
           pnpm exec biome format --write
@@ -58,6 +61,7 @@ jobs:
           apps/api/app/services/coupon_test_runner.ts
           apps/api/app/services/discounter_service.ts
           apps/api/app/services/order_factory.ts
+          apps/api/tests/functional/coupons/cart_apply.spec.ts
           apps/api/tests/unit/coupons/coupon_eligibility.spec.ts
           apps/api/tests/unit/coupons/discounter.spec.ts
       - run: pnpm --filter @calibra/api run typecheck
@@ -70,7 +74,7 @@ jobs:
         run: |
           files=$(find tests/unit/coupons tests/functional/coupons -type f -name '*.spec.ts' -printf '%p\n' | sort | sed 's/^/--files=/' | xargs)
           pnpm test $files --files=tests/unit/cart/cart_totals.spec.ts
-      - name: Commit verified brand enforcement
+      - name: Commit verified coupon runtime hardening
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -82,10 +86,11 @@ jobs:
             apps/api/app/services/coupon_test_runner.ts \
             apps/api/app/services/discounter_service.ts \
             apps/api/app/services/order_factory.ts \
+            apps/api/tests/functional/coupons/cart_apply.spec.ts \
             apps/api/tests/unit/coupons/coupon_eligibility.spec.ts \
             apps/api/tests/unit/coupons/discounter.spec.ts
           if git diff --cached --quiet; then
             exit 0
           fi
-          git commit -m "fix(coupons): enforce admin brand constraints in discount runtime"
+          git commit -m "fix(coupons): enforce brand, stacking, and sale-item rules"
           git push origin HEAD:phase/06-coupons
