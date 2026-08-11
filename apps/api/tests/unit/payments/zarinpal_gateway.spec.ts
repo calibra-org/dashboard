@@ -4,8 +4,8 @@ import PaymentAttempt from "#models/payment_attempt";
 import { zarinpalGateway } from "#services/adapters/zarinpal_gateway";
 import { fetchCalls, mockFetch, unmockFetch } from "#tests/helpers/mock_fetch";
 
-const REQUEST_URL = "https://api.zarinpal.com/pg/v4/payment/request.json";
-const VERIFY_URL = "https://api.zarinpal.com/pg/v4/payment/verify.json";
+const REQUEST_URL = "https://payment.zarinpal.com/pg/v4/payment/request.json";
+const VERIFY_URL = "https://payment.zarinpal.com/pg/v4/payment/verify.json";
 
 test.group("ZarinpalGateway", (group) => {
     group.each.teardown(() => unmockFetch());
@@ -26,7 +26,7 @@ test.group("ZarinpalGateway", (group) => {
         });
 
         assert.equal(result.authority, "A000000000000000000000000000001");
-        assert.equal(result.redirect_url, "https://www.zarinpal.com/pg/StartPay/A000000000000000000000000000001");
+        assert.equal(result.redirect_url, "https://payment.zarinpal.com/pg/StartPay/A000000000000000000000000000001");
         const [call] = fetchCalls();
         assert.equal(call.url, REQUEST_URL);
         assert.equal(call.method, "POST");
