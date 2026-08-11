@@ -58,14 +58,16 @@ export default class PaymentController {
             const result = await paymentService.verifyCallback(String(code), ctx.request);
             return ctx.response.redirect(result.redirect);
         } catch (error) {
+            /**
+             * Callback failures must use the same operator-configured storefront destination as
+             * normal verify failures. Keeping a localhost literal here made production exception
+             * paths escape the configured checkout UX even though the service honored the setting.
+             */
             const reason =
                 error instanceof GatewayNotImplementedException
                     ? "gateway_not_implemented"
                     : ((error as Error)?.message ?? "callback_failed").slice(0, 200);
-            const fallback = "http://localhost:3000/checkout/failed";
-            const u = new URL(fallback);
-            u.searchParams.set("reason", reason);
-            return ctx.response.redirect(u.toString());
+            return ctx.response.redirect(await paymentService.failureRedirect(reason));
         }
     }
 }
