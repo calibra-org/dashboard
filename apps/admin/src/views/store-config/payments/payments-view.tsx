@@ -202,11 +202,11 @@ export function PaymentsView() {
             {selectedRows.length > 0 ? (
                 <div className="sticky top-3 z-20 flex flex-col gap-3 rounded-xl border bg-background/95 p-3 shadow-sm backdrop-blur md:flex-row md:items-center md:justify-between">
                     <div>
-                        <p className="text-sm font-medium">
+                        <p className="font-medium text-sm">
                             {fa ? `${selectedRows.length} درگاه انتخاب شده` : `${selectedRows.length} gateways selected`}
                         </p>
                         {bulkEnableBlocked ? (
-                            <p className="mt-1 text-xs text-muted-foreground">
+                            <p className="mt-1 text-muted-foreground text-xs">
                                 {fa
                                     ? "برای فعال‌سازی گروهی، همه موارد باید Adapter واقعی و پیکربندی کامل داشته باشند."
                                     : "Bulk activation requires a real adapter and complete configuration for every selection."}
@@ -267,7 +267,7 @@ export function PaymentsView() {
                                                 {gatewayStatusLabel(gateway, fa)}
                                             </StatusBadge>
                                         </div>
-                                        <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                                        <p className="mt-1 text-muted-foreground text-sm leading-6">
                                             {gateway.description[locale]}
                                         </p>
                                     </div>
@@ -284,7 +284,7 @@ export function PaymentsView() {
                                 </div>
 
                                 {gateway.implementationStatus === "stub" ? (
-                                    <div className="flex items-start gap-2 rounded-lg border border-amber-500/25 bg-amber-500/5 p-3 text-xs leading-5 text-muted-foreground">
+                                    <div className="flex items-start gap-2 rounded-lg border border-amber-500/25 bg-amber-500/5 p-3 text-muted-foreground text-xs leading-5">
                                         <Info className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
                                         <span>
                                             {fa
@@ -293,7 +293,7 @@ export function PaymentsView() {
                                         </span>
                                     </div>
                                 ) : gateway.healthStatus === "unconfigured" ? (
-                                    <div className="flex items-start gap-2 rounded-lg border border-dashed p-3 text-xs leading-5 text-muted-foreground">
+                                    <div className="flex items-start gap-2 rounded-lg border border-dashed p-3 text-muted-foreground text-xs leading-5">
                                         <Settings2 className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
                                         <span>
                                             {fa
@@ -311,7 +311,7 @@ export function PaymentsView() {
                                             onCheckedChange={(checked) => toggleGateway(gateway, checked)}
                                             aria-label={fa ? `فعال‌سازی ${gateway.title.fa}` : `Enable ${gateway.title.en}`}
                                         />
-                                        <span className="text-sm font-medium">
+                                        <span className="font-medium text-sm">
                                             {gateway.enabled ? (fa ? "فعال" : "Enabled") : fa ? "غیرفعال" : "Disabled"}
                                         </span>
                                     </div>
@@ -329,7 +329,7 @@ export function PaymentsView() {
             </div>
 
             {visible.length === 0 ? (
-                <div className="rounded-xl border border-dashed py-14 text-center text-sm text-muted-foreground">
+                <div className="rounded-xl border border-dashed py-14 text-center text-muted-foreground text-sm">
                     {fa ? "درگاهی با این فیلتر پیدا نشد." : "No gateways match this filter."}
                 </div>
             ) : null}
@@ -341,8 +341,8 @@ function SummaryCard({ label, value, hint }: { label: string; value: string; hin
     return (
         <Card>
             <CardContent className="p-4">
-                <p className="text-xs text-muted-foreground">{label}</p>
-                <p className="mt-2 text-xl font-semibold tracking-tight">{value}</p>
+                <p className="text-muted-foreground text-xs">{label}</p>
+                <p className="mt-2 font-semibold text-xl tracking-tight">{value}</p>
                 <p className="mt-1 text-[11px] text-muted-foreground">{hint}</p>
             </CardContent>
         </Card>
@@ -360,7 +360,7 @@ function FilterButton({ active, onClick, children }: { active: boolean; onClick:
 function BrandMark({ code }: { code: string }) {
     return (
         <div
-            className="flex size-12 shrink-0 items-center justify-center rounded-xl border bg-background text-xs font-bold tracking-tight shadow-xs"
+            className="flex size-12 shrink-0 items-center justify-center rounded-xl border bg-background font-bold text-xs tracking-tight shadow-xs"
             aria-hidden="true"
         >
             {BRAND_MARKS[code] ?? code.slice(0, 4).toUpperCase()}

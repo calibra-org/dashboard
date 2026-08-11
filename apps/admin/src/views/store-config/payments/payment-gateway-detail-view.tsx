@@ -73,7 +73,7 @@ export function PaymentGatewayDetailView({ code }: { code: string }) {
 
     if (gateway === null) {
         return (
-            <div className="rounded-xl border border-dashed py-16 text-center text-sm text-muted-foreground">
+            <div className="rounded-xl border border-dashed py-16 text-center text-muted-foreground text-sm">
                 {fa ? "درگاه پیدا نشد." : "Gateway not found."}
             </div>
         );
@@ -142,10 +142,10 @@ export function PaymentGatewayDetailView({ code }: { code: string }) {
                         <CardContent className="grid gap-5 md:grid-cols-2">
                             <div className="flex items-center justify-between rounded-lg border p-4 md:col-span-2">
                                 <div>
-                                    <Label htmlFor={`enabled-${gateway.code}`} className="text-sm font-medium">
+                                    <Label htmlFor={`enabled-${gateway.code}`} className="font-medium text-sm">
                                         {fa ? "فعال در پرداخت" : "Enabled at checkout"}
                                     </Label>
-                                    <p className="mt-1 text-xs text-muted-foreground">
+                                    <p className="mt-1 text-muted-foreground text-xs">
                                         {enableBlocked
                                             ? fa
                                                 ? "ابتدا الزامات پیکربندی را تکمیل کنید."
@@ -189,7 +189,7 @@ export function PaymentGatewayDetailView({ code }: { code: string }) {
                         </CardHeader>
                         <CardContent className="grid grid-cols-1 gap-5 md:grid-cols-2">
                             {gateway.credentialFields.length === 0 ? (
-                                <div className="rounded-lg border border-dashed p-5 text-sm text-muted-foreground md:col-span-2">
+                                <div className="rounded-lg border border-dashed p-5 text-muted-foreground text-sm md:col-span-2">
                                     {stub
                                         ? fa
                                             ? "فیلدهای پذیرنده تا دریافت مستندات رسمی این سرویس تعریف نمی‌شوند."
@@ -300,7 +300,7 @@ export function PaymentGatewayDetailView({ code }: { code: string }) {
                                 tone={gateway.enabled ? "success" : "neutral"}
                             />
                             {gateway.lastError ? (
-                                <div className="rounded-md bg-destructive/5 p-3 text-xs text-destructive">
+                                <div className="rounded-md bg-destructive/5 p-3 text-destructive text-xs">
                                     {gateway.lastError}
                                 </div>
                             ) : null}
@@ -311,7 +311,7 @@ export function PaymentGatewayDetailView({ code }: { code: string }) {
                         <CardHeader>
                             <CardTitle className="text-sm">{fa ? "امنیت اطلاعات" : "Credential security"}</CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-3 text-xs leading-5 text-muted-foreground">
+                        <CardContent className="space-y-3 text-muted-foreground text-xs leading-5">
                             <SecurityLine>
                                 {fa
                                     ? "رمزنگاری ChaCha20-Poly1305 با Purpose اختصاصی هر درگاه"
@@ -331,7 +331,7 @@ export function PaymentGatewayDetailView({ code }: { code: string }) {
                     </Card>
 
                     <Card>
-                        <CardContent className="flex items-start gap-3 p-5 text-xs leading-5 text-muted-foreground">
+                        <CardContent className="flex items-start gap-3 p-5 text-muted-foreground text-xs leading-5">
                             <Settings2 className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
                             <p>
                                 {fa

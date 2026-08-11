@@ -1,7 +1,7 @@
 import { BaseTransformer } from "@adonisjs/core/transformers";
 
 import type PaymentGateway from "#models/payment_gateway";
-import { gatewayCredentialKeys, gatewayDefinition, type GatewayImplementationStatus } from "#services/payment_gateway_catalog";
+import { type GatewayImplementationStatus, gatewayCredentialKeys, gatewayDefinition } from "#services/payment_gateway_catalog";
 import { paymentGatewayCredentialsService } from "#services/payment_gateway_credentials_service";
 
 /** Backwards-compatible export used by tests/other modules; catalog-specific keys are added dynamically. */
