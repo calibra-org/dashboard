@@ -63,7 +63,7 @@ export class PaymentGatewayConnectionVerifier {
             const result = await adapter.init({
                 order: { id: probeId, orderNumber: `gateway-check-${probeId}` } as never,
                 attempt,
-                settings: (gateway.settings as Record<string, unknown>) ?? {},
+                settings: paymentGatewayCredentialsService.runtimeSettings(gateway),
                 return_url: `${callbackBase.replace(/\/+$/, "")}/api/v1/payment/callback/${gateway.code}`,
             });
 
