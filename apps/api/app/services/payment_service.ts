@@ -57,15 +57,26 @@ export class PaymentService {
      * gateways (cod, bank_transfer) the order is transitioned to `on_hold` and the attempt is
      * marked `verified` (no PSP callback ever arrives).
      *
-     * Idempotent on `(order_id, idempotency_key)`: a replayed init with the same key returns the
-     * existing attempt instead of creating a duplicate.
+     * Idempotent on `(tenant_id, order_id, idempotency_key)`. The order row is locked before the
+     * second replay check and insert, closing the classic check-then-insert race: two simultaneous
+     * requests for the same order/key serialize, and the loser returns the winner's attempt instead
+     * of calling the PSP twice.
      */
     async init(order: Order, gatewayId: number | bigint, idempotencyKey: string | null): Promise<PaymentInitResult> {
         const initStartedAt = process.hrtime.bigint();
-        if (idempotencyKey) {
+        const normalizedIdempotencyKey = idempotencyKey?.trim() || null;
+        if (normalizedIdempotencyKey && normalizedIdempotencyKey.length > 64) {
+            throw new Exception("Idempotency-Key must be at most 64 characters", {
+                status: 422,
+                code: "E_PAYMENT_IDEMPOTENCY_KEY_INVALID",
+            });
+        }
+
+        /** Fast replay path. Correctness does not depend on it; the locked check below is authoritative. */
+        if (normalizedIdempotencyKey) {
             const existing = await PaymentAttempt.query()
                 .where("order_id", Number(order.id))
-                .where("idempotency_key", idempotencyKey)
+                .where("idempotency_key", normalizedIdempotencyKey)
                 .first();
             if (existing) {
                 return {
@@ -77,28 +88,57 @@ export class PaymentService {
 
         const { adapter, gateway } = await paymentAdapterRegistry.resolveForGatewayId(gatewayId);
         const runtimeSettings = paymentGatewayCredentialsService.runtimeSettings(gateway);
-        const returnUrl = await this.buildCallbackUrl(gateway.code, order);
-        const attempt = await withTenantTransaction(async (trx) => {
+
+        const claim = await withTenantTransaction(async (trx) => {
+            /**
+             * Serialize all init claims for one order. This also refreshes mutable order state from
+             * the database, avoiding a transition based on the stale model instance passed by a
+             * caller that may have waited behind another request.
+             */
+            const lockedOrder = await Order.query({ client: trx })
+                .where("id", Number(order.id))
+                .forUpdate()
+                .firstOrFail();
+
+            if (normalizedIdempotencyKey) {
+                const existing = await PaymentAttempt.query({ client: trx })
+                    .where("order_id", Number(lockedOrder.id))
+                    .where("idempotency_key", normalizedIdempotencyKey)
+                    .first();
+                if (existing) return { order: lockedOrder, attempt: existing, created: false as const };
+            }
+
             const row = new PaymentAttempt();
             row.useTransaction(trx);
-            row.orderId = order.id;
+            row.orderId = lockedOrder.id;
             row.gatewayId = gateway.id;
             row.gatewayCodeSnapshot = gateway.code;
             row.status = PaymentAttemptStatus.Initiated;
-            row.amountMinor = Number(order.grandTotal);
-            row.currency = order.currency;
-            row.idempotencyKey = idempotencyKey;
+            row.amountMinor = Number(lockedOrder.grandTotal);
+            row.currency = lockedOrder.currency;
+            row.idempotencyKey = normalizedIdempotencyKey;
             row.gatewayPayload = {};
             row.initiatedAt = DateTime.utc();
             await row.save();
-            return row;
+            return { order: lockedOrder, attempt: row, created: true as const };
         });
+
+        if (!claim.created) {
+            return {
+                attempt: claim.attempt,
+                redirect_url: this.redirectUrlFromAttemptPayload(claim.attempt),
+            };
+        }
+
+        const lockedOrder = claim.order;
+        const attempt = claim.attempt;
+        const returnUrl = await this.buildCallbackUrl(gateway.code, lockedOrder);
         recordPaymentAttempt(gateway.code, PaymentAttemptStatus.Initiated);
 
         let initResult: Awaited<ReturnType<typeof adapter.init>>;
         try {
             initResult = await adapter.init({
-                order,
+                order: lockedOrder,
                 attempt,
                 settings: runtimeSettings,
                 return_url: returnUrl,
@@ -109,7 +149,7 @@ export class PaymentService {
             attempt.errorMessage = (error as Error).message ?? "init threw";
             attempt.gatewayPayload = { error: String((error as Error).message ?? error) };
             await attempt.save();
-            await this.linkLatest(order, attempt);
+            await this.linkLatest(lockedOrder, attempt);
             recordPaymentAttempt(gateway.code, PaymentAttemptStatus.Failed);
             recordPaymentPhase(gateway.code, "init", Number(process.hrtime.bigint() - initStartedAt) / 1e9);
             paymentGatewayCredentialsService.markError(gateway, this.errorCodeFromException(error));
@@ -138,8 +178,8 @@ export class PaymentService {
                 attempt.status = PaymentAttemptStatus.Verified;
                 attempt.verifiedAt = DateTime.utc();
                 await attempt.save();
-                if (order.status === OrderStatus.Pending) {
-                    await orderStateMachine.transition(order, OrderStatus.OnHold, {
+                if (lockedOrder.status === OrderStatus.Pending) {
+                    await orderStateMachine.transition(lockedOrder, OrderStatus.OnHold, {
                         reason: `payment.${gateway.code}.no_redirect`,
                         trx,
                     });
@@ -147,7 +187,7 @@ export class PaymentService {
             }
         });
 
-        await this.linkLatest(order, attempt);
+        await this.linkLatest(lockedOrder, attempt);
         recordPaymentAttempt(gateway.code, attempt.status);
         recordPaymentPhase(gateway.code, "init", Number(process.hrtime.bigint() - initStartedAt) / 1e9);
         return { attempt, redirect_url: initResult.redirect_url };
@@ -353,6 +393,12 @@ export class PaymentService {
         if (result.ok) recordPaymentAttempt(gateway.code, PaymentAttemptStatus.Refunded);
         recordPaymentPhase(gateway.code, "refund", Number(process.hrtime.bigint() - refundStartedAt) / 1e9);
         return result;
+    }
+
+    /** Build the configured storefront failure redirect for controller-level exceptions. */
+    async failureRedirect(reason: string): Promise<string> {
+        const failedUrl = await this.settings.get<string>("general", "checkout_return_url_failed", DEFAULT_RETURN_FAILED);
+        return this.attachReason(failedUrl, reason);
     }
 
     private redirectUrlFromAttemptPayload(attempt: PaymentAttempt): string | null {
