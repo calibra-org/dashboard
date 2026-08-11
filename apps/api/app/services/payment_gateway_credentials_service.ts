@@ -15,6 +15,11 @@ interface SecurityAttributes {
     [key: string]: unknown;
 }
 
+export interface PaymentGatewaySettingsPatchResult {
+    changed: boolean;
+    credentialsChanged: boolean;
+}
+
 export class PaymentGatewayCredentialsService {
     runtimeSettings(gateway: PaymentGateway): Record<string, unknown> {
         return this.runtimeSettingsFromStored(gateway.code, (gateway.settings as Record<string, unknown> | null) ?? {});
@@ -43,11 +48,6 @@ export class PaymentGatewayCredentialsService {
             const value = settings[key];
             return typeof value !== "string" || value.trim().length === 0;
         });
-    }
-
-    hasCredentialMutation(code: string, incoming: Record<string, unknown>): boolean {
-        const credentialKeys = new Set(gatewayCredentialKeys(code));
-        return Object.entries(incoming).some(([key, raw]) => credentialKeys.has(key) && raw !== PAYMENT_CREDENTIAL_MASK);
     }
 
     health(gateway: PaymentGateway): {
@@ -90,12 +90,16 @@ export class PaymentGatewayCredentialsService {
         gateway.attributes = attrs;
     }
 
-    /** Apply a settings patch and return whether the effective provider configuration changed. */
-    applySettingsPatch(gateway: PaymentGateway, incoming: Record<string, unknown>): boolean {
+    /** Apply a settings patch and report whether effective settings / credentials actually changed. */
+    applySettingsPatch(gateway: PaymentGateway, incoming: Record<string, unknown>): PaymentGatewaySettingsPatchResult {
         const credentialKeys = new Set(gatewayCredentialKeys(gateway.code));
         const originalRuntime = this.runtimeSettings(gateway);
+        const originalCredentials = this.readCredentialsFromStored(
+            gateway.code,
+            (gateway.settings as Record<string, unknown> | null) ?? {},
+        );
         const stored = { ...(((gateway.settings as Record<string, unknown> | null) ?? {}) as Record<string, unknown>) };
-        const credentials = this.readCredentialsFromStored(gateway.code, stored);
+        const credentials = { ...originalCredentials };
 
         for (const [key, raw] of Object.entries(incoming)) {
             if (!credentialKeys.has(key)) {
@@ -113,17 +117,18 @@ export class PaymentGatewayCredentialsService {
         const nextRuntime: Record<string, unknown> = { ...stored, ...credentials };
         delete nextRuntime[CIPHERTEXT_KEY];
         const changed = !this.sameSettings(originalRuntime, nextRuntime);
-        if (!changed) return false;
+        const credentialsChanged = !this.sameSettings(originalCredentials, credentials);
+        if (!changed) return { changed: false, credentialsChanged: false };
 
         for (const key of credentialKeys) delete stored[key];
         if (Object.keys(credentials).length === 0) {
             delete stored[CIPHERTEXT_KEY];
-        } else {
+        } else if (credentialsChanged || typeof stored[CIPHERTEXT_KEY] !== "string") {
             stored[CIPHERTEXT_KEY] = encryption.encrypt(credentials, { purpose: this.purpose(gateway.code) });
         }
         gateway.settings = stored;
-        this.markConfigured(gateway);
-        return true;
+        if (credentialsChanged) this.markConfigured(gateway);
+        return { changed: true, credentialsChanged };
     }
 
     private sameSettings(left: Record<string, unknown>, right: Record<string, unknown>): boolean {
