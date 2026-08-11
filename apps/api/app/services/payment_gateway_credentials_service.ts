@@ -90,8 +90,10 @@ export class PaymentGatewayCredentialsService {
         gateway.attributes = attrs;
     }
 
-    applySettingsPatch(gateway: PaymentGateway, incoming: Record<string, unknown>): void {
+    /** Apply a settings patch and return whether the effective provider configuration changed. */
+    applySettingsPatch(gateway: PaymentGateway, incoming: Record<string, unknown>): boolean {
         const credentialKeys = new Set(gatewayCredentialKeys(gateway.code));
+        const originalRuntime = this.runtimeSettings(gateway);
         const stored = { ...(((gateway.settings as Record<string, unknown> | null) ?? {}) as Record<string, unknown>) };
         const credentials = this.readCredentialsFromStored(gateway.code, stored);
 
@@ -108,6 +110,11 @@ export class PaymentGatewayCredentialsService {
             }
         }
 
+        const nextRuntime: Record<string, unknown> = { ...stored, ...credentials };
+        delete nextRuntime[CIPHERTEXT_KEY];
+        const changed = !this.sameSettings(originalRuntime, nextRuntime);
+        if (!changed) return false;
+
         for (const key of credentialKeys) delete stored[key];
         if (Object.keys(credentials).length === 0) {
             delete stored[CIPHERTEXT_KEY];
@@ -116,6 +123,25 @@ export class PaymentGatewayCredentialsService {
         }
         gateway.settings = stored;
         this.markConfigured(gateway);
+        return true;
+    }
+
+    private sameSettings(left: Record<string, unknown>, right: Record<string, unknown>): boolean {
+        const leftKeys = Object.keys(left).sort();
+        const rightKeys = Object.keys(right).sort();
+        if (leftKeys.length !== rightKeys.length) return false;
+        return leftKeys.every((key, index) => key === rightKeys[index] && this.sameValue(left[key], right[key]));
+    }
+
+    private sameValue(left: unknown, right: unknown): boolean {
+        if (left === right) return true;
+        if (left === null || right === null || left === undefined || right === undefined) return false;
+        if (typeof left !== "object" || typeof right !== "object") return false;
+        try {
+            return JSON.stringify(left) === JSON.stringify(right);
+        } catch {
+            return false;
+        }
     }
 
     private readCredentialsFromStored(code: string, stored: Record<string, unknown>): Record<string, string> {
