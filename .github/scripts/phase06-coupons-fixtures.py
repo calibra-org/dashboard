@@ -72,3 +72,23 @@ new = '''        if (code.length < 4 || code.length > 64) {
 if old not in text:
     raise SystemExit("admin coupon code-check length guard not found")
 controller.write_text(text.replace(old, new, 1))
+
+# A cart row can outlive coupon eligibility. The draft must snapshot only coupons that actually
+# participated in the verified calculation. A free-shipping coupon still participates with a zero
+# monetary allocation, so presence in perCouponDiscounts is the correct predicate.
+factory = Path("apps/api/app/services/order_factory.ts")
+text = factory.read_text()
+old = '''        const codes = cart.appliedCoupons.map((row) => ({
+            couponId: Number(row.couponId),
+            code: row.codeSnapshot,
+        }));'''
+new = '''        const codes = cart.appliedCoupons
+            .map((row) => ({
+                couponId: Number(row.couponId),
+                code: row.codeSnapshot,
+            }))
+            .filter((entry) => totals.perCouponDiscounts.has(entry.code));
+        if (codes.length === 0) return;'''
+if old not in text:
+    raise SystemExit("order coupon snapshot list not found")
+factory.write_text(text.replace(old, new, 1))
