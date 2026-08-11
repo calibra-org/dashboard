@@ -81,6 +81,7 @@ export default class PaymentController {
         if (code === "E_PAYMENT_ATTEMPT_NOT_FOUND") return "payment_attempt_not_found";
         if (code === "E_GATEWAY_NOT_CONFIGURED") return "gateway_not_configured";
         if (code === "E_GATEWAY_NOT_IMPLEMENTED") return "gateway_not_implemented";
+        if (code === "E_CONCURRENT_PROCESSING") return "concurrent_processing";
         return "callback_failed";
     }
 }
