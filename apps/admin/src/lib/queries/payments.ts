@@ -170,7 +170,8 @@ export function useVerifyPaymentGateway() {
     const locale = useLocale();
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: (id: number) => apiMutate<PaymentGatewayEnvelope>("POST", `payment-gateways/${id}/verify`, { locale, body: {} }),
+        mutationFn: (id: number) =>
+            apiMutate<PaymentGatewayEnvelope>("POST", `payment-gateways/${id}/verify`, { locale, body: {} }),
         onSettled: () => qc.invalidateQueries({ queryKey: LIST_KEY(locale) }),
     });
 }
