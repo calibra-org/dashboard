@@ -11,9 +11,9 @@ import type {
 import { timeoutFetch } from "#services/adapters/base_redirect_gateway";
 import { paymentGatewayCredentialsService } from "#services/payment_gateway_credentials_service";
 
-const REQUEST_URL = "https://api.zarinpal.com/pg/v4/payment/request.json";
-const VERIFY_URL = "https://api.zarinpal.com/pg/v4/payment/verify.json";
-const START_PAY_URL = "https://www.zarinpal.com/pg/StartPay/";
+const REQUEST_URL = "https://payment.zarinpal.com/pg/v4/payment/request.json";
+const VERIFY_URL = "https://payment.zarinpal.com/pg/v4/payment/verify.json";
+const START_PAY_URL = "https://payment.zarinpal.com/pg/StartPay/";
 
 function requireMerchantId(stored: Record<string, unknown>): string {
     const settings = paymentGatewayCredentialsService.runtimeSettingsFromStored("zarinpal", stored);
