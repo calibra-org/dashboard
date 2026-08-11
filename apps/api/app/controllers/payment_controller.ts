@@ -59,15 +59,28 @@ export default class PaymentController {
             return ctx.response.redirect(result.redirect);
         } catch (error) {
             /**
-             * Callback failures must use the same operator-configured storefront destination as
-             * normal verify failures. Keeping a localhost literal here made production exception
-             * paths escape the configured checkout UX even though the service honored the setting.
+             * Never reflect raw PSP/database exception text into a browser-visible query string.
+             * Besides exposing internals, several upstream messages may contain provider payload
+             * fragments. Keep the public failure vocabulary deliberately small and log the actual
+             * exception server-side with the request id for diagnostics.
              */
-            const reason =
-                error instanceof GatewayNotImplementedException
-                    ? "gateway_not_implemented"
-                    : ((error as Error)?.message ?? "callback_failed").slice(0, 200);
-            return ctx.response.redirect(await paymentService.failureRedirect(reason));
+            ctx.logger.error(
+                {
+                    err: error,
+                    gateway: String(code ?? "unknown"),
+                },
+                "payment_callback_failed",
+            );
+            return ctx.response.redirect(await paymentService.failureRedirect(this.publicCallbackFailureReason(error)));
         }
+    }
+
+    private publicCallbackFailureReason(error: unknown): string {
+        if (error instanceof GatewayNotImplementedException) return "gateway_not_implemented";
+        const code = String((error as { code?: unknown })?.code ?? "");
+        if (code === "E_PAYMENT_ATTEMPT_NOT_FOUND") return "payment_attempt_not_found";
+        if (code === "E_GATEWAY_NOT_CONFIGURED") return "gateway_not_configured";
+        if (code === "E_GATEWAY_NOT_IMPLEMENTED") return "gateway_not_implemented";
+        return "callback_failed";
     }
 }
