@@ -166,6 +166,16 @@ export function useUpdatePaymentGateway() {
     });
 }
 
+export function useVerifyPaymentGateway() {
+    const locale = useLocale();
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (id: number) =>
+            apiMutate<PaymentGatewayEnvelope>("POST", `payment-gateways/${id}/verify`, { locale, body: {} }),
+        onSettled: () => qc.invalidateQueries({ queryKey: LIST_KEY(locale) }),
+    });
+}
+
 /**
  * Multi-select action deliberately reuses the same audited PATCH endpoint for every gateway. The UI
  * preflights stub/unconfigured rows before entering this mutation; a failure is surfaced and the

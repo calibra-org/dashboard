@@ -1,10 +1,15 @@
 import { Exception } from "@adonisjs/core/exceptions";
 import type { HttpContext } from "@adonisjs/core/http";
+import db from "@adonisjs/lucid/services/db";
+import { DateTime } from "luxon";
 
 import { GatewayNotImplementedException } from "#exceptions/payment_exceptions";
 import PaymentGateway from "#models/payment_gateway";
+import { recordAudit } from "#services/admin_audit_log_service";
 import { ensurePaymentGatewayCatalog } from "#services/payment_gateway_catalog_service";
+import { paymentGatewayConnectionVerifier } from "#services/payment_gateway_connection_verifier";
 import { paymentGatewayCredentialsService } from "#services/payment_gateway_credentials_service";
+import { currentTenantId } from "#services/tenant_context";
 import { adminPaymentGatewaysView } from "#table_views/admin/payment_gateways";
 import PaymentGatewayTransformer, { readImplementationStatus } from "#transformers/payment_gateway_transformer";
 import {
@@ -18,10 +23,7 @@ export default class AdminPaymentGatewaysController {
         await ensurePaymentGatewayCatalog();
         const parsed = await ctx.request.validateUsing(adminPaymentGatewayListValidator);
         const { data: rows, meta } = await adminPaymentGatewaysView.run<PaymentGateway>(PaymentGateway.query(), parsed);
-        return {
-            data: rows.map((row) => new PaymentGatewayTransformer(row).forAdmin()),
-            meta,
-        };
+        return { data: rows.map((row) => new PaymentGatewayTransformer(row).forAdmin()), meta };
     }
 
     async show(ctx: HttpContext) {
@@ -29,22 +31,117 @@ export default class AdminPaymentGatewaysController {
         return { data: new PaymentGatewayTransformer(gateway).forAdmin() };
     }
 
-    async update(ctx: HttpContext) {
+    async verify(ctx: HttpContext) {
         const gateway = await this.findOrFail(ctx.params.id);
-        const payload = await ctx.request.validateUsing(adminPaymentGatewayUpdateValidator);
-
-        if (payload.settings) paymentGatewayCredentialsService.applySettingsPatch(gateway, payload.settings);
-        if (payload.ordering !== undefined) gateway.ordering = payload.ordering;
-        if (payload.enabled !== undefined) {
-            if (payload.enabled) this.assertCanEnable(gateway);
-            gateway.enabled = payload.enabled;
-        }
-
-        await gateway.save();
+        this.assertImplementedAndConfigured(gateway);
+        await this.verifyAndPersist(gateway, ctx);
         return { data: new PaymentGatewayTransformer(gateway).forAdmin() };
     }
 
-    private assertCanEnable(gateway: PaymentGateway): void {
+    async update(ctx: HttpContext) {
+        const gateway = await this.findOrFail(ctx.params.id);
+        const payload = await ctx.request.validateUsing(adminPaymentGatewayUpdateValidator);
+        const settingsPatch = payload.settings
+            ? paymentGatewayCredentialsService.applySettingsPatch(gateway, payload.settings)
+            : { changed: false, credentialsChanged: false };
+
+        if (settingsPatch.credentialsChanged) gateway.enabled = false;
+        if (payload.ordering !== undefined) gateway.ordering = payload.ordering;
+
+        if (payload.enabled === true) {
+            this.assertImplementedAndConfigured(gateway);
+            if (settingsPatch.credentialsChanged || paymentGatewayCredentialsService.health(gateway).status !== "healthy") {
+                await this.verifyAndPersist(gateway, ctx, false);
+            }
+            this.assertVerified(gateway);
+            gateway.enabled = true;
+        } else if (payload.enabled === false) {
+            gateway.enabled = false;
+        }
+
+        await gateway.save();
+        await recordAudit({
+            ctx,
+            action: payload.enabled === true ? "payment_gateway.verify_and_enable" : "payment_gateway.patch",
+            entityKind: "payment_gateway",
+            entityId: gateway.id,
+            payload: {
+                gateway: gateway.code,
+                enabled: payload.enabled,
+                ordering: payload.ordering,
+                settings_changed: settingsPatch.changed,
+                credentials_changed: settingsPatch.credentialsChanged,
+                health_status: paymentGatewayCredentialsService.health(gateway).status,
+            },
+        });
+        return { data: new PaymentGatewayTransformer(gateway).forAdmin() };
+    }
+
+    private async verifyAndPersist(gateway: PaymentGateway, ctx: HttpContext, audit = true): Promise<void> {
+        try {
+            await paymentGatewayConnectionVerifier.verify(gateway);
+            await gateway.save();
+            if (audit) {
+                await recordAudit({
+                    ctx,
+                    action: "payment_gateway.verify_connection",
+                    entityKind: "payment_gateway",
+                    entityId: gateway.id,
+                    payload: {
+                        gateway: gateway.code,
+                        health_status: paymentGatewayCredentialsService.health(gateway).status,
+                    },
+                });
+            }
+        } catch (error) {
+            gateway.enabled = false;
+            await this.persistFailedVerification(gateway);
+            if (audit) {
+                await recordAudit({
+                    ctx,
+                    action: "payment_gateway.verify_connection_failed",
+                    entityKind: "payment_gateway",
+                    entityId: gateway.id,
+                    payload: {
+                        gateway: gateway.code,
+                        health_status: paymentGatewayCredentialsService.health(gateway).status,
+                        last_error: paymentGatewayCredentialsService.health(gateway).lastError,
+                    },
+                });
+            }
+            throw error;
+        }
+    }
+
+    /**
+     * A failed controller response is rolled back by tenant_context_middleware. Verification
+     * diagnostics are different: operators must see the failed probe and a previously-enabled
+     * gateway must stay disabled. Persist that fail-closed state on the privileged connection with
+     * an explicit tenant predicate, so no RLS bypass can cross tenant boundaries.
+     */
+    private async persistFailedVerification(gateway: PaymentGateway): Promise<void> {
+        const tenantId = Number(currentTenantId());
+        const updated = await db
+            .connection("postgres_admin")
+            .from("payment_gateways")
+            .where("id", Number(gateway.id))
+            .where("tenant_id", tenantId)
+            .update({
+                enabled: false,
+                settings: gateway.settings,
+                attributes: gateway.attributes,
+                updated_at: DateTime.utc().toSQL(),
+            });
+        if (Number(updated) !== 1) {
+            throw new Exception("Payment gateway verification state could not be persisted", {
+                status: 500,
+                code: "E_PAYMENT_GATEWAY_STATE_PERSIST_FAILED",
+                cause: { gateway: gateway.code },
+            });
+        }
+    }
+
+    private assertImplementedAndConfigured(gateway: PaymentGateway): void {
         if (readImplementationStatus(gateway) === "stub") {
             throw new GatewayNotImplementedException(gateway.code, "enable");
         }
@@ -58,15 +155,23 @@ export default class AdminPaymentGatewaysController {
         }
     }
 
+    private assertVerified(gateway: PaymentGateway): void {
+        if (paymentGatewayCredentialsService.health(gateway).status !== "healthy") {
+            throw new Exception(`Payment gateway "${gateway.code}" connection is not verified`, {
+                status: 422,
+                code: "E_PAYMENT_GATEWAY_CONNECTION_REQUIRED",
+                cause: { gateway: gateway.code },
+            });
+        }
+    }
+
     private async findOrFail(id: unknown): Promise<PaymentGateway> {
         const numericId = Number(id);
         if (!Number.isFinite(numericId)) {
             throw new Exception("Payment gateway not found", { status: 404, code: "E_NOT_FOUND" });
         }
         const row = await PaymentGateway.find(numericId);
-        if (!row) {
-            throw new Exception("Payment gateway not found", { status: 404, code: "E_NOT_FOUND" });
-        }
+        if (!row) throw new Exception("Payment gateway not found", { status: 404, code: "E_NOT_FOUND" });
         return row;
     }
 }

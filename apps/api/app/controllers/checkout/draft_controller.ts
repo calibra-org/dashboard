@@ -9,6 +9,8 @@ import OrderAddress from "#models/order_address";
 import OrderAddressIranExtension from "#models/order_address_iran_extension";
 import PaymentGateway from "#models/payment_gateway";
 import { throwIfErrors, validateAddressForCountry } from "#services/address_country_validator";
+import { gatewayDefinition } from "#services/payment_gateway_catalog";
+import { paymentGatewayCredentialsService } from "#services/payment_gateway_credentials_service";
 import { orderFactory } from "#services/order_factory";
 import { withTenantTransaction } from "#services/tenant_context";
 import OrderTransformer from "#transformers/order_transformer";
@@ -16,10 +18,8 @@ import { readImplementationStatus } from "#transformers/payment_gateway_transfor
 import { checkoutDraftValidator } from "#validators/checkout/draft_validator";
 
 /**
- * Storefront checkout controller for `GET /api/v1/checkout` and `PUT /api/v1/checkout`. The
- * `cart_middleware` already resolves `ctx.cart`. The draft order is materialized lazily — first
- * GET creates one, second GET returns the same row, PUT patches addresses + payment + note onto
- * it.
+ * Storefront checkout controller for `GET /api/v1/checkout` and `PUT /api/v1/checkout`.
+ * Online gateways are accepted only after the admin-side provider connection verification succeeds.
  */
 export default class CheckoutDraftController {
     async show(ctx: HttpContext) {
@@ -45,20 +45,24 @@ export default class CheckoutDraftController {
             if (payload.payment_gateway_id !== undefined) {
                 const gateway = await PaymentGateway.find(payload.payment_gateway_id, { client: trx });
                 if (!gateway) {
-                    throw new Exception("Payment method is unavailable", {
-                        status: 422,
-                        code: "E_PAYMENT_GATEWAY_INVALID",
-                    });
+                    throw new Exception("Payment method is unavailable", { status: 422, code: "E_PAYMENT_GATEWAY_INVALID" });
                 }
                 if (readImplementationStatus(gateway) === "stub") {
                     throw new GatewayNotImplementedException(gateway.code, "init");
                 }
                 if (!gateway.enabled) {
-                    throw new Exception("Payment method is unavailable", {
+                    throw new Exception("Payment method is unavailable", { status: 422, code: "E_PAYMENT_GATEWAY_INVALID" });
+                }
+
+                const definition = gatewayDefinition(gateway.code);
+                if (definition?.category !== "offline" && paymentGatewayCredentialsService.health(gateway).status !== "healthy") {
+                    throw new Exception("Payment method connection is not verified", {
                         status: 422,
-                        code: "E_PAYMENT_GATEWAY_INVALID",
+                        code: "E_PAYMENT_GATEWAY_CONNECTION_REQUIRED",
+                        cause: { gateway: gateway.code },
                     });
                 }
+
                 order.paymentGatewayIdSnapshot = gateway.id;
                 order.paymentMethodCodeSnapshot = gateway.code;
                 order.paymentMethodTitleSnapshot = gateway.code;
@@ -73,11 +77,6 @@ export default class CheckoutDraftController {
         return { data: new OrderTransformer(order).forDetail() };
     }
 
-    /**
-     * Either return an existing draft attached to this customer (or cart), or build one from the
-     * current cart via {@link OrderFactory}. The draft is keyed on the cart's `customer_id` when
-     * the user is authenticated; otherwise on `cart_hash = cart.id`.
-     */
     private async materializeDraft(cart: Cart, locale: string): Promise<Order> {
         const existing = await this.findExistingDraft(cart);
         if (existing) return existing;
@@ -154,7 +153,7 @@ export default class CheckoutDraftController {
         row.attributes = row.attributes ?? {};
         await row.save();
 
-        if (country === "IR" && iranExt && Object.values(iranExt).some((v) => v)) {
+        if (country === "IR" && iranExt && Object.values(iranExt).some((value) => value)) {
             await OrderAddressIranExtension.updateOrCreate(
                 { orderAddressId: row.id },
                 {

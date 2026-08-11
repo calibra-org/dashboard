@@ -15,12 +15,11 @@ interface SecurityAttributes {
     [key: string]: unknown;
 }
 
-/**
- * Encrypts tenant merchant credentials with Calibra's ChaCha20-Poly1305 encryption manager.
- * Ciphertext is kept in the existing tenant-isolated settings JSON under a reserved key so the
- * current PaymentService can pass it to adapters without any plaintext model mutation. Admin GET
- * strips the ciphertext and exposes only `***`/empty sentinels.
- */
+export interface PaymentGatewaySettingsPatchResult {
+    changed: boolean;
+    credentialsChanged: boolean;
+}
+
 export class PaymentGatewayCredentialsService {
     runtimeSettings(gateway: PaymentGateway): Record<string, unknown> {
         return this.runtimeSettingsFromStored(gateway.code, (gateway.settings as Record<string, unknown> | null) ?? {});
@@ -70,6 +69,7 @@ export class PaymentGatewayCredentialsService {
     markConfigured(gateway: PaymentGateway): void {
         const attrs = this.attributes(gateway);
         attrs.health_status = this.missingRequired(gateway).length === 0 ? "configured" : "unconfigured";
+        attrs.last_verified_at = null;
         attrs.last_error = null;
         gateway.attributes = attrs;
     }
@@ -85,14 +85,21 @@ export class PaymentGatewayCredentialsService {
     markError(gateway: PaymentGateway, message: string): void {
         const attrs = this.attributes(gateway);
         attrs.health_status = "error";
+        attrs.last_verified_at = null;
         attrs.last_error = message.slice(0, 500);
         gateway.attributes = attrs;
     }
 
-    applySettingsPatch(gateway: PaymentGateway, incoming: Record<string, unknown>): void {
+    /** Apply a settings patch and report whether effective settings / credentials actually changed. */
+    applySettingsPatch(gateway: PaymentGateway, incoming: Record<string, unknown>): PaymentGatewaySettingsPatchResult {
         const credentialKeys = new Set(gatewayCredentialKeys(gateway.code));
+        const originalRuntime = this.runtimeSettings(gateway);
+        const originalCredentials = this.readCredentialsFromStored(
+            gateway.code,
+            (gateway.settings as Record<string, unknown> | null) ?? {},
+        );
         const stored = { ...(((gateway.settings as Record<string, unknown> | null) ?? {}) as Record<string, unknown>) };
-        const credentials = this.readCredentialsFromStored(gateway.code, stored);
+        const credentials = { ...originalCredentials };
 
         for (const [key, raw] of Object.entries(incoming)) {
             if (!credentialKeys.has(key)) {
@@ -107,19 +114,43 @@ export class PaymentGatewayCredentialsService {
             }
         }
 
+        const nextRuntime: Record<string, unknown> = { ...stored, ...credentials };
+        delete nextRuntime[CIPHERTEXT_KEY];
+        const changed = !this.sameSettings(originalRuntime, nextRuntime);
+        const credentialsChanged = !this.sameSettings(originalCredentials, credentials);
+        if (!changed) return { changed: false, credentialsChanged: false };
+
         for (const key of credentialKeys) delete stored[key];
         if (Object.keys(credentials).length === 0) {
             delete stored[CIPHERTEXT_KEY];
-        } else {
+        } else if (credentialsChanged || typeof stored[CIPHERTEXT_KEY] !== "string") {
             stored[CIPHERTEXT_KEY] = encryption.encrypt(credentials, { purpose: this.purpose(gateway.code) });
         }
         gateway.settings = stored;
-        this.markConfigured(gateway);
+        if (credentialsChanged) this.markConfigured(gateway);
+        return { changed: true, credentialsChanged };
+    }
+
+    private sameSettings(left: Record<string, unknown>, right: Record<string, unknown>): boolean {
+        const leftKeys = Object.keys(left).sort();
+        const rightKeys = Object.keys(right).sort();
+        if (leftKeys.length !== rightKeys.length) return false;
+        return leftKeys.every((key, index) => key === rightKeys[index] && this.sameValue(left[key], right[key]));
+    }
+
+    private sameValue(left: unknown, right: unknown): boolean {
+        if (left === right) return true;
+        if (left === null || right === null || left === undefined || right === undefined) return false;
+        if (typeof left !== "object" || typeof right !== "object") return false;
+        try {
+            return JSON.stringify(left) === JSON.stringify(right);
+        } catch {
+            return false;
+        }
     }
 
     private readCredentialsFromStored(code: string, stored: Record<string, unknown>): Record<string, string> {
         const result: Record<string, string> = {};
-        /** Legacy compatibility: plaintext provider fields are migrated on the next PATCH. */
         for (const key of gatewayCredentialKeys(code)) {
             const legacy = stored[key];
             if (typeof legacy === "string" && legacy.length > 0 && legacy !== PAYMENT_CREDENTIAL_MASK) result[key] = legacy;

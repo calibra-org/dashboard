@@ -426,6 +426,9 @@ paths:
             $ref: "./common/components/operations/HeadCompanion.yaml"
         patch:
             $ref: "./admin/paths/payments/payment-gateways-id.patch.yaml"
+    /api/v1/admin/payment-gateways/{id}/verify:
+        post:
+            $ref: "./admin/paths/payments/payment-gateways-id-verify.post.yaml"
     /api/v1/admin/payment-attempts:
         get:
             $ref: "./admin/paths/payments/payment-attempts.get.yaml"

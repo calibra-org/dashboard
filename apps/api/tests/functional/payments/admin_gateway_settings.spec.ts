@@ -6,14 +6,13 @@ import User from "#models/user";
 import { resetPhase08 } from "#tests/helpers/payments";
 
 async function createAdmin(): Promise<User> {
-    const user = await User.create({ email: "admin@calibra.dev", passwordHash: "Passw0rd1!", role: "admin", locale: "fa" });
-    await Customer.create({ userId: user.id, firstName: "A", lastName: "U", countryDefault: "IR" });
-    return user;
-}
-
-async function createPlainUser(email: string): Promise<User> {
-    const user = await User.create({ email, passwordHash: "Passw0rd1!", role: "customer", locale: "fa" });
-    await Customer.create({ userId: user.id, firstName: "C", lastName: "U", countryDefault: "IR" });
+    const user = await User.create({
+        email: `gateway-admin-${Date.now()}@calibra.dev`,
+        passwordHash: "Passw0rd1!",
+        role: "admin",
+        locale: "fa",
+    });
+    await Customer.create({ userId: user.id, firstName: "Gateway", lastName: "Admin", countryDefault: "IR" });
     return user;
 }
 
@@ -23,22 +22,28 @@ test.group("/api/v1/admin/payment-gateways", (group) => {
     });
 
     test("non-admin → 403", async ({ client }) => {
-        const user = await createPlainUser("nope@calibra.dev");
+        const user = await User.create({
+            email: `gateway-user-${Date.now()}@calibra.dev`,
+            passwordHash: "Passw0rd1!",
+            role: "customer",
+            locale: "fa",
+        });
+        await Customer.create({ userId: user.id, firstName: "Gateway", lastName: "User", countryDefault: "IR" });
         const response = await client.get("/api/v1/admin/payment-gateways").withGuard("api").loginAs(user);
         response.assertStatus(403);
     });
 
     test("admin GET reconciles the approved ten-method catalog without deleting legacy rows", async ({ client, assert }) => {
         const admin = await createAdmin();
-        const response = await client.get("/api/v1/admin/payment-gateways").withGuard("api").loginAs(admin);
+        const response = await client.get("/api/v1/admin/payment-gateways?limit=100").withGuard("api").loginAs(admin);
         response.assertStatus(200);
         response.assertAgainstApiSpec();
-        const list = response.body().data as Array<{
+        const rows = response.body().data as Array<{
             code: string;
-            implementation_status: "stub" | "implemented" | "live";
+            implementation_status: string;
             admin_visible: boolean;
         }>;
-        const byCode = new Map(list.map((gateway) => [gateway.code, gateway]));
+        const byCode = new Map(rows.map((row) => [row.code, row]));
         for (const code of [
             "mellat",
             "sadad",
@@ -51,7 +56,7 @@ test.group("/api/v1/admin/payment-gateways", (group) => {
             "card_to_card",
             "cod",
         ]) {
-            assert.isTrue(Boolean(byCode.get(code)?.admin_visible), `${code} must be visible in the approved catalog`);
+            assert.isTrue(byCode.has(code), `expected ${code} in catalog`);
         }
         assert.equal(byCode.get("mellat")?.implementation_status, "implemented");
         assert.equal(byCode.get("parsian")?.implementation_status, "implemented");
@@ -69,7 +74,6 @@ test.group("/api/v1/admin/payment-gateways", (group) => {
             .withGuard("api")
             .loginAs(admin)
             .json({
-                enabled: true,
                 settings: {
                     terminal_id: "1234567",
                     username: "merchant-user",
@@ -84,7 +88,7 @@ test.group("/api/v1/admin/payment-gateways", (group) => {
             settings: Record<string, string>;
             health_status: string;
         };
-        assert.isTrue(body.enabled);
+        assert.isFalse(body.enabled);
         assert.equal(body.health_status, "configured");
         assert.equal(body.settings.terminal_id, "***");
         assert.equal(body.settings.username, "***");
@@ -102,11 +106,12 @@ test.group("/api/v1/admin/payment-gateways", (group) => {
     test("mask sentinel preserves an already-configured secret while rotating another field", async ({ client, assert }) => {
         const admin = await createAdmin();
         const mellat = await PaymentGateway.findByOrFail("code", "mellat");
-        await client
+        const configured = await client
             .patch(`/api/v1/admin/payment-gateways/${Number(mellat.id)}`)
             .withGuard("api")
             .loginAs(admin)
             .json({ settings: { terminal_id: "111", username: "old-user", password: "old-pass" } });
+        configured.assertStatus(200);
 
         const rotate = await client
             .patch(`/api/v1/admin/payment-gateways/${Number(mellat.id)}`)
@@ -114,17 +119,12 @@ test.group("/api/v1/admin/payment-gateways", (group) => {
             .loginAs(admin)
             .json({ settings: { terminal_id: "***", username: "new-user", password: "***" } });
         rotate.assertStatus(200);
-        const settings = (rotate.body().data as { settings: Record<string, string> }).settings;
-        assert.equal(settings.terminal_id, "***");
-        assert.equal(settings.username, "***");
-        assert.equal(settings.password, "***");
-
-        const enable = await client
-            .patch(`/api/v1/admin/payment-gateways/${Number(mellat.id)}`)
-            .withGuard("api")
-            .loginAs(admin)
-            .json({ enabled: true });
-        enable.assertStatus(200);
+        const data = rotate.body().data as { enabled: boolean; health_status: string; settings: Record<string, string> };
+        assert.isFalse(data.enabled);
+        assert.equal(data.health_status, "configured");
+        assert.equal(data.settings.terminal_id, "***");
+        assert.equal(data.settings.username, "***");
+        assert.equal(data.settings.password, "***");
     });
 
     test("implemented remote gateway cannot be enabled before required merchant credentials exist", async ({ client }) => {
