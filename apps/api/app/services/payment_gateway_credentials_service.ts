@@ -15,12 +15,6 @@ interface SecurityAttributes {
     [key: string]: unknown;
 }
 
-/**
- * Encrypts tenant merchant credentials with Calibra's ChaCha20-Poly1305 encryption manager.
- * Ciphertext is kept in the existing tenant-isolated settings JSON under a reserved key so the
- * current PaymentService can pass it to adapters without any plaintext model mutation. Admin GET
- * strips the ciphertext and exposes only `***`/empty sentinels.
- */
 export class PaymentGatewayCredentialsService {
     runtimeSettings(gateway: PaymentGateway): Record<string, unknown> {
         return this.runtimeSettingsFromStored(gateway.code, (gateway.settings as Record<string, unknown> | null) ?? {});
@@ -70,6 +64,7 @@ export class PaymentGatewayCredentialsService {
     markConfigured(gateway: PaymentGateway): void {
         const attrs = this.attributes(gateway);
         attrs.health_status = this.missingRequired(gateway).length === 0 ? "configured" : "unconfigured";
+        attrs.last_verified_at = null;
         attrs.last_error = null;
         gateway.attributes = attrs;
     }
@@ -119,7 +114,6 @@ export class PaymentGatewayCredentialsService {
 
     private readCredentialsFromStored(code: string, stored: Record<string, unknown>): Record<string, string> {
         const result: Record<string, string> = {};
-        /** Legacy compatibility: plaintext provider fields are migrated on the next PATCH. */
         for (const key of gatewayCredentialKeys(code)) {
             const legacy = stored[key];
             if (typeof legacy === "string" && legacy.length > 0 && legacy !== PAYMENT_CREDENTIAL_MASK) result[key] = legacy;
