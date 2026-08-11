@@ -1,4 +1,4 @@
-name: Phase 06 Coupon Runtime Hardening
+name: Phase 06 Checkout Revalidation
 
 on:
   push:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  enforce:
+  verify:
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     services:
@@ -47,36 +47,25 @@ jobs:
           node-version: 24.14.0
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Apply remaining runtime hardening
-        run: python3 .github/scripts/phase06-runtime-hardening.py
-      - name: Format changed coupon runtime files
-        run: >-
-          pnpm exec biome format --write
-          apps/api/app/controllers/cart/coupons_controller.ts
-          apps/api/app/services/discounter_service.ts
-          apps/api/tests/functional/coupons/cart_apply.spec.ts
-          apps/api/tests/unit/coupons/discounter.spec.ts
+      - run: python3 .github/scripts/phase06-finalizer-revalidation.py
+      - run: pnpm exec biome format --write apps/api/app/services/order_finalizer.ts apps/api/tests/functional/coupons/checkout_redemption.spec.ts
       - run: pnpm --filter @calibra/api run typecheck
       - name: Create test database
         env:
           PGPASSWORD: calibra
         run: psql -h localhost -U calibra -d calibra -c "CREATE DATABASE calibra_test OWNER calibra;"
-      - name: Run coupon regressions
+      - name: Run all coupon regressions
         working-directory: apps/api
         run: |
           files=$(find tests/unit/coupons tests/functional/coupons -type f -name '*.spec.ts' -printf '%p\n' | sort | sed 's/^/--files=/' | xargs)
           pnpm test $files --files=tests/unit/cart/cart_totals.spec.ts
-      - name: Commit verified runtime hardening
+      - name: Commit verified checkout revalidation
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add \
-            apps/api/app/controllers/cart/coupons_controller.ts \
-            apps/api/app/services/discounter_service.ts \
-            apps/api/tests/functional/coupons/cart_apply.spec.ts \
-            apps/api/tests/unit/coupons/discounter.spec.ts
+          git add apps/api/app/services/order_finalizer.ts apps/api/tests/functional/coupons/checkout_redemption.spec.ts
           if git diff --cached --quiet; then
             exit 0
           fi
-          git commit -m "fix(coupons): enforce stacking and sale-item rules"
+          git commit -m "fix(coupons): revalidate live eligibility at checkout submit"
           git push origin HEAD:phase/06-coupons
