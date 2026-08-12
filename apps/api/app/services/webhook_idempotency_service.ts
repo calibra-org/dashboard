@@ -17,6 +17,7 @@ export interface WebhookEventInput {
 export interface WebhookEventReplay {
     replayed: true;
     existing: ProcessedWebhookEvent;
+    payloadChanged: boolean;
 }
 
 export interface WebhookEventInserted {
@@ -27,29 +28,14 @@ export interface WebhookEventInserted {
 export type RecordOutcome = WebhookEventInserted | WebhookEventReplay;
 
 /**
- * Idempotency ledger for inbound PSP callbacks. The webhook handler calls `record()` inside
- * the same transaction as the work it's about to do — a duplicate `(provider, event_id)`
- * raises a unique-violation in Postgres, which we translate into `{ replayed: true }` so the
- * caller can short-circuit and serve the prior outcome.
- *
- * The payload hash gives audit a way to spot tampering across replays (same id, different
- * body → the second arrival was forged or the PSP changed its serialisation mid-flight).
- *
- * `outcome` is updated by the caller after the side effects complete so the ledger reflects
- * what actually happened to each event (success / failed / cancelled / mismatch / refunded).
+ * Idempotency ledger for inbound PSP callbacks. Identity is
+ * `(tenant_id, provider, event_id, event_kind)`: the PSP authority identifies the payment while
+ * event_kind identifies the delivered state. Therefore an identical success retry replays, but a
+ * legitimate failed -> success evolution for the same authority is processed as a new event.
  */
 export class WebhookIdempotencyService {
     async record(input: WebhookEventInput, trx?: TransactionClientContract): Promise<RecordOutcome> {
         const payloadHash = createHash("sha256").update(input.rawBody).digest("hex");
-
-        /**
-         * `INSERT ... ON CONFLICT DO NOTHING RETURNING id`. When a row with the same
-         * (provider, event_id) already exists, Postgres skips the insert and returns zero
-         * rows — which is the signal that this is a replay. We can't use a try/catch on the
-         * model's save() inside a transaction because a unique-constraint violation aborts
-         * the entire transaction (subsequent queries fail with "current transaction is
-         * aborted"). ON CONFLICT DO NOTHING returns cleanly without poisoning the txn.
-         */
         const client = trx ?? db.connection();
         const paymentAttemptId =
             input.paymentAttemptId !== undefined && input.paymentAttemptId !== null ? Number(input.paymentAttemptId) : null;
@@ -59,7 +45,7 @@ export class WebhookIdempotencyService {
             INSERT INTO processed_webhook_events
                 (provider, event_id, event_kind, payment_attempt_id, order_id, payload_hash, outcome, received_at, created_at, updated_at)
             VALUES (:provider, :event_id, :event_kind, :payment_attempt_id, :order_id, :payload_hash, 'pending', now(), now(), now())
-            ON CONFLICT (provider, event_id) DO NOTHING
+            ON CONFLICT DO NOTHING
             RETURNING id
             `,
             {
@@ -81,15 +67,11 @@ export class WebhookIdempotencyService {
         const existing = await ProcessedWebhookEvent.query({ client: trx })
             .where("provider", input.provider)
             .where("event_id", input.eventId)
+            .where("event_kind", input.eventKind)
             .firstOrFail();
-        return { replayed: true, existing };
+        return { replayed: true, existing, payloadChanged: existing.payloadHash !== payloadHash };
     }
 
-    /**
-     * Mark an inserted event row as processed with a terminal outcome. The caller passes
-     * whichever transaction it owns; the ledger update happens inside it so a transactional
-     * rollback also rolls back this status flip.
-     */
     async finalize(
         row: ProcessedWebhookEvent,
         outcome: string,
@@ -102,12 +84,8 @@ export class WebhookIdempotencyService {
         if (opts.trx) row.useTransaction(opts.trx);
         row.outcome = outcome;
         row.processedAt = DateTime.utc();
-        if (opts.paymentAttemptId !== undefined && opts.paymentAttemptId !== null) {
-            row.paymentAttemptId = Number(opts.paymentAttemptId);
-        }
-        if (opts.orderId !== undefined && opts.orderId !== null) {
-            row.orderId = Number(opts.orderId);
-        }
+        if (opts.paymentAttemptId !== undefined && opts.paymentAttemptId !== null) row.paymentAttemptId = Number(opts.paymentAttemptId);
+        if (opts.orderId !== undefined && opts.orderId !== null) row.orderId = Number(opts.orderId);
         await row.save();
     }
 }

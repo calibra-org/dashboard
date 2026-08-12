@@ -58,14 +58,30 @@ export default class PaymentController {
             const result = await paymentService.verifyCallback(String(code), ctx.request);
             return ctx.response.redirect(result.redirect);
         } catch (error) {
-            const reason =
-                error instanceof GatewayNotImplementedException
-                    ? "gateway_not_implemented"
-                    : ((error as Error)?.message ?? "callback_failed").slice(0, 200);
-            const fallback = "http://localhost:3000/checkout/failed";
-            const u = new URL(fallback);
-            u.searchParams.set("reason", reason);
-            return ctx.response.redirect(u.toString());
+            /**
+             * Never reflect raw PSP/database exception text into a browser-visible query string.
+             * Besides exposing internals, several upstream messages may contain provider payload
+             * fragments. Keep the public failure vocabulary deliberately small and log the actual
+             * exception server-side with the request id for diagnostics.
+             */
+            ctx.logger.error(
+                {
+                    err: error,
+                    gateway: String(code ?? "unknown"),
+                },
+                "payment_callback_failed",
+            );
+            return ctx.response.redirect(await paymentService.failureRedirect(this.publicCallbackFailureReason(error)));
         }
+    }
+
+    private publicCallbackFailureReason(error: unknown): string {
+        if (error instanceof GatewayNotImplementedException) return "gateway_not_implemented";
+        const code = String((error as { code?: unknown })?.code ?? "");
+        if (code === "E_PAYMENT_ATTEMPT_NOT_FOUND") return "payment_attempt_not_found";
+        if (code === "E_GATEWAY_NOT_CONFIGURED") return "gateway_not_configured";
+        if (code === "E_GATEWAY_NOT_IMPLEMENTED") return "gateway_not_implemented";
+        if (code === "E_CONCURRENT_PROCESSING") return "concurrent_processing";
+        return "callback_failed";
     }
 }
