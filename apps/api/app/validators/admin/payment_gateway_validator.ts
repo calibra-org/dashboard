@@ -18,5 +18,13 @@ export const adminPaymentGatewayUpdateValidator = vine.compile(
     }),
 );
 
-/** All filters move to the TableView `filter[]` grammar. */
-export const adminPaymentAttemptListValidator = adminPaymentAttemptsView.compileStrict();
+/**
+ * Transaction-center list query. All structured dimensions stay in TableView's filter/sort
+ * grammar. `q` is the one endpoint extra because operators need a single search box that can
+ * match an attempt id, order id, PSP authority, PSP transaction id, or gateway snapshot.
+ */
+export const adminPaymentAttemptListValidator = adminPaymentAttemptsView.compileStrict({
+    extras: {
+        q: vine.string().trim().minLength(1).maxLength(120).optional(),
+    },
+});
