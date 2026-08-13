@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocale } from "next-intl";
 
 import { apiGet } from "#/lib/queries/api-client";
-import type { MoneyMinor, SalesReport } from "#/lib/types";
+import type { MoneyMinor, SalesReport, TopSellersReport } from "#/lib/types";
 
 interface SalesStatsTotals {
     gross_sales: number;
@@ -28,6 +28,21 @@ interface SalesStatsResponse {
     intervals: SalesStatsInterval[];
     comparison: unknown | null;
     generated_at: string;
+}
+
+interface TopProductsResponse {
+    data: Array<{
+        product_id: number;
+        name: string;
+        sku: string | null;
+        units: number;
+        revenue: number;
+    }>;
+    range: {
+        start_date: string;
+        end_date: string;
+        days: number;
+    };
 }
 
 function trailingThirtyDayRange(): { date_from: string; date_to: string } {
@@ -67,6 +82,34 @@ export function useSalesReport() {
                 revenue: Number(point.gross_sales) as MoneyMinor,
                 orders: Number(point.orders),
                 refunded: Number(point.returns) as MoneyMinor,
+            })),
+        }),
+        staleTime: 5 * 60 * 1000,
+    });
+}
+
+/** Top products by actual fulfilled/fulfilling order revenue for the trailing 30-day window. */
+export function useTopSellersReport() {
+    const locale = useLocale() as Locale;
+    return useQuery<TopProductsResponse, Error, TopSellersReport>({
+        queryKey: ["admin", "reports", "top-sellers", { locale, days: 30, limit: 10 }],
+        queryFn: ({ signal }) =>
+            apiGet<TopProductsResponse>("reports/top-products", {
+                locale,
+                query: { days: 30, limit: 10 },
+                signal,
+            }),
+        select: (payload): TopSellersReport => ({
+            range: {
+                startDate: payload.range.start_date,
+                endDate: payload.range.end_date,
+            },
+            rows: payload.data.map((row) => ({
+                productId: Number(row.product_id),
+                name: { fa: row.name, en: row.name },
+                sku: row.sku ?? "",
+                units: Number(row.units),
+                revenue: Number(row.revenue) as MoneyMinor,
             })),
         }),
         staleTime: 5 * 60 * 1000,
