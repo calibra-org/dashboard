@@ -5,6 +5,8 @@ import type {
     ParsedCallback,
     PaymentAdapter,
     PaymentAdapterCapabilities,
+    ReconcileArgs,
+    ReconcileResult,
     VerifyArgs,
     VerifyResult,
 } from "#services/adapters/base_redirect_gateway";
@@ -98,6 +100,45 @@ export class ZarinpalGateway implements PaymentAdapter {
             error_code: `zarinpal_${Number.isFinite(code) ? code : response.status}`,
             error_message: typeof errors.message === "string" ? errors.message : "ZarinPal verification failed",
             payload: { provider_code: Number.isFinite(code) ? code : null },
+        };
+    }
+
+    /**
+     * ZarinPal's verification call is idempotent for an already-verified authority (`101`) in the
+     * adapter's existing contract, so it is safe to reuse as a reconciliation probe. Negative or
+     * transport outcomes remain `unknown`; they are not promoted to provider failure without
+     * authoritative evidence.
+     */
+    async reconcile(args: ReconcileArgs): Promise<ReconcileResult> {
+        const authority = String(args.attempt.gatewayAuthority ?? "").trim();
+        if (!authority) {
+            return {
+                ok: false,
+                provider_status: "unknown",
+                error_code: "missing_authority",
+                error_message: "ZarinPal authority is missing",
+                payload: {},
+            };
+        }
+        const result = await this.verify({
+            attempt: args.attempt,
+            settings: args.settings,
+            callback: { authority, status: "success", payload: { source: "reconciliation" } },
+        });
+        if (!result.ok) {
+            return {
+                ok: false,
+                provider_status: "unknown",
+                error_code: result.error_code,
+                error_message: result.error_message,
+                payload: result.payload,
+            };
+        }
+        return {
+            ok: true,
+            provider_status: "verified",
+            transaction_id: result.transaction_id,
+            payload: result.payload,
         };
     }
 }

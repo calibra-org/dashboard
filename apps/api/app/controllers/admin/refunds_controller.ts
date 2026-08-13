@@ -3,29 +3,23 @@ import type { HttpContext } from "@adonisjs/core/http";
 
 import Order from "#models/order";
 import OrderRefund from "#models/order_refund";
+import { recordAudit } from "#services/admin_audit_log_service";
 import { refundService } from "#services/refund_service";
 import { adminRefundsView } from "#table_views/admin/refunds";
 import OrderRefundTransformer from "#transformers/order_refund_transformer";
 import { adminRefundCreateValidator, adminRefundListValidator } from "#validators/admin/refund_validator";
 
 /**
- * Admin refund surface. `POST` runs the full {@link refundService} transaction (FOR UPDATE lock →
- * validate → allocate → restock → audit note → optional state transition). `DELETE` returns 405
- * unconditionally — refunds are immutable audit records; voiding is a future `credit_note`
- * document.
+ * Admin refund surface. `POST` runs the full RefundService transaction and then appends an operator
+ * audit event. Refund records remain immutable; deletion returns 405.
  */
 export default class AdminRefundsController {
     async index(ctx: HttpContext) {
         const order = await this.findOrderOrFail(ctx.params.order_id);
         const parsed = await ctx.request.validateUsing(adminRefundListValidator);
-
         const builder = OrderRefund.query().where("order_id", Number(order.id)).preload("lineItems");
         const { data, meta } = await adminRefundsView.run<OrderRefund>(builder, parsed);
-
-        return {
-            data: data.map((refund) => new OrderRefundTransformer(refund).toObject()),
-            meta,
-        };
+        return { data: data.map((refund) => new OrderRefundTransformer(refund).toObject()), meta };
     }
 
     async show(ctx: HttpContext) {
@@ -35,9 +29,7 @@ export default class AdminRefundsController {
             .where("order_id", Number(order.id))
             .preload("lineItems")
             .first();
-        if (!refund) {
-            throw new Exception("Refund not found", { status: 404, code: "E_NOT_FOUND" });
-        }
+        if (!refund) throw new Exception("Refund not found", { status: 404, code: "E_NOT_FOUND" });
         return { data: new OrderRefundTransformer(refund).toObject() };
     }
 
@@ -46,16 +38,15 @@ export default class AdminRefundsController {
         const payload = await ctx.request.validateUsing(adminRefundCreateValidator);
         const idempotencyKey =
             ctx.idempotencyKey ?? ctx.request.header("idempotency-key") ?? ctx.request.header("Idempotency-Key") ?? null;
-
         const refund = await refundService.create(
             order.id,
             {
                 amountMinor: payload.amount_minor ?? null,
-                lineItems: payload.line_items?.map((l) => ({
-                    orderLineItemId: l.order_line_item_id,
-                    quantity: l.quantity,
-                    refundAmountMinor: l.refund_amount_minor ?? null,
-                    refundTaxMinor: l.refund_tax_minor ?? null,
+                lineItems: payload.line_items?.map((line) => ({
+                    orderLineItemId: line.order_line_item_id,
+                    quantity: line.quantity,
+                    refundAmountMinor: line.refund_amount_minor ?? null,
+                    refundTaxMinor: line.refund_tax_minor ?? null,
                 })),
                 reason: payload.reason ?? null,
                 restockRequested: payload.restock_requested ?? false,
@@ -65,8 +56,22 @@ export default class AdminRefundsController {
                 idempotencyKey: typeof idempotencyKey === "string" ? idempotencyKey.trim() || null : null,
             },
         );
-
         await refund.load("lineItems");
+        await recordAudit({
+            ctx,
+            actorUserId: ctx.auth.user ? Number(ctx.auth.user.id) : null,
+            action: "order.refund.created",
+            entityKind: "order_refund",
+            entityId: refund.id,
+            payload: {
+                order_id: Number(order.id),
+                refund_number: Number(refund.refundNumber),
+                amount_minor: Number(refund.amountMinor),
+                reason: refund.reason,
+                restock_requested: refund.restockRequested,
+                refunded_by_user_id: refund.refundedByUserId === null ? null : Number(refund.refundedByUserId),
+            },
+        });
         ctx.response.status(201);
         return { data: new OrderRefundTransformer(refund).toObject() };
     }
@@ -85,13 +90,11 @@ export default class AdminRefundsController {
 
     private async findOrderOrFail(rawId: unknown): Promise<Order> {
         const numericId = Number(rawId);
-        if (!Number.isFinite(numericId)) {
+        if (!Number.isSafeInteger(numericId) || numericId <= 0) {
             throw new Exception("Order not found", { status: 404, code: "E_NOT_FOUND" });
         }
         const order = await Order.query().where("id", numericId).whereNull("deleted_at").first();
-        if (!order) {
-            throw new Exception("Order not found", { status: 404, code: "E_NOT_FOUND" });
-        }
+        if (!order) throw new Exception("Order not found", { status: 404, code: "E_NOT_FOUND" });
         return order;
     }
 }
