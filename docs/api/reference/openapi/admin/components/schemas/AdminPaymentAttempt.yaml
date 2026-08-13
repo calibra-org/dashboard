@@ -1,8 +1,8 @@
 title: AdminPaymentAttempt
 description: >
-    `payment_attempts` row — matches `PaymentAttemptTransformer.forList()` for list endpoints
-    and `forDetail()` (adds `gateway_payload`) for detail. `idempotency_key` is never picked
-    by the transformer, so it cannot leak. Read-only on the admin surface.
+    Operational `payment_attempts` projection. List responses omit large provider payloads; detail
+    responses additionally include `gateway_payload` and `reconciliation_evidence`. The transformer
+    never exposes idempotency or credential material.
 type: object
 properties:
     id: { type: integer }
@@ -18,12 +18,23 @@ properties:
     gateway_transaction_id: { type: [string, "null"] }
     error_code: { type: [string, "null"] }
     error_message: { type: [string, "null"] }
+    reconciliation_status:
+        type: string
+        enum: [unchecked, matched, mismatch, unsupported, error]
+    reconciliation_provider_status: { type: [string, "null"] }
+    reconciliation_checked_at: { type: [string, "null"], format: date-time }
+    reconciliation_checked_by_user_id: { type: [integer, "null"] }
+    reconciliation_error_code: { type: [string, "null"] }
     initiated_at: { type: [string, "null"], format: date-time }
     verified_at: { type: [string, "null"], format: date-time }
     created_at: { type: [string, "null"], format: date-time }
     gateway_payload:
         type: object
-        description: PSP response payload. Present on `forDetail()` only.
+        description: PSP request/response evidence. Present on detail responses only.
+        additionalProperties: true
+    reconciliation_evidence:
+        type: object
+        description: Latest provider reconciliation evidence. Present on detail responses only.
         additionalProperties: true
 required:
     - id
@@ -32,3 +43,4 @@ required:
     - status
     - amount_minor
     - currency
+    - reconciliation_status
