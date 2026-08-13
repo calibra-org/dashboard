@@ -1,0 +1,27 @@
+operationId: adminPaymentAttemptReconcile
+summary: Reconcile a payment attempt with its provider
+description: >
+    Performs a provider-safe reconciliation check. Only adapters with an explicit idempotent or
+    read-like reconciliation capability are polled; unsupported providers record `unsupported`
+    rather than replaying capture/settlement. Every check appends an admin audit event.
+tags: [Admin / Payments]
+parameters:
+    - name: id
+      in: path
+      required: true
+      schema: { type: integer }
+responses:
+    "200":
+        description: Updated payment-attempt detail including latest reconciliation evidence.
+        content:
+            application/json:
+                schema:
+                    type: object
+                    required: [data]
+                    properties:
+                        data: { $ref: "../../components/schemas/AdminPaymentAttempt.yaml" }
+    "401": { $ref: "../../../common/components/responses/Unauthorized.yaml" }
+    "403": { $ref: "../../../common/components/responses/Forbidden.yaml" }
+    "404": { $ref: "../../../common/components/responses/NotFound.yaml" }
+    "409":
+        description: The order/payment is being processed concurrently.
