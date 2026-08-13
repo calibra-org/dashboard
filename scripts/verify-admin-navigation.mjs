@@ -40,25 +40,30 @@ check(Boolean(importMatch), "Sidebar must import icons through #/icons");
 const importedIcons = importMatch
     ? importMatch[1]
           .split(",")
-          .map((name) => name.trim())
+          .map((entry) => entry.trim())
           .filter(Boolean)
+          .map((entry) => {
+              const alias = entry.match(/^([A-Za-z0-9_]+)\s+as\s+([A-Za-z0-9_]+)$/);
+              return alias ? { exported: alias[1], local: alias[2] } : { exported: entry, local: entry };
+          })
     : [];
 const generatedIcons = read("packages/panel-kit/src/icons/icons.generated.ts");
 const directionalIcons = read("packages/panel-kit/src/icons/directional.ts");
 for (const icon of importedIcons) {
     check(
-        generatedIcons.includes(icon) || directionalIcons.includes(icon),
-        `Sidebar icon ${icon} is not exported by @calibra/panel-kit/icons`,
+        generatedIcons.includes(icon.exported) || directionalIcons.includes(icon.exported),
+        `Sidebar icon ${icon.exported} is not exported by @calibra/panel-kit/icons`,
     );
 }
 
+const localIconNames = new Set(importedIcons.map((icon) => icon.local));
 const itemIconNames = [...sidebar.matchAll(/icon:\s*([A-Za-z0-9_]+)/g)].map((match) => match[1]);
 for (const icon of itemIconNames) {
-    check(importedIcons.includes(icon), `Sidebar uses icon ${icon} without importing it from #/icons`);
+    check(localIconNames.has(icon), `Sidebar uses icon ${icon} without importing it from #/icons`);
 }
 
 for (const control of ["ChevronDown", "Box"]) {
-    if (sidebar.includes(`<${control}`)) check(importedIcons.includes(control), `Sidebar JSX uses ${control} without importing it`);
+    if (sidebar.includes(`<${control}`)) check(localIconNames.has(control), `Sidebar JSX uses ${control} without importing it`);
 }
 
 check(!sidebar.includes('label: { fa:'), "Sidebar must not carry local bilingual navigation copy; use Nav translation keys");
