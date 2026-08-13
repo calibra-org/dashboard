@@ -61,9 +61,15 @@ export interface ReconciliationAuditEntry {
     occurred_at: string | null;
 }
 
-interface SummaryEnvelope { data: TransactionSummary }
-interface DetailEnvelope { data: AdminTransactionDetail }
-interface HistoryEnvelope { data: ReconciliationAuditEntry[] }
+interface SummaryEnvelope {
+    data: TransactionSummary;
+}
+interface DetailEnvelope {
+    data: AdminTransactionDetail;
+}
+interface HistoryEnvelope {
+    data: ReconciliationAuditEntry[];
+}
 
 export function useTransactions(query: TableViewQuery, q?: string) {
     const locale = useLocale() as Locale;
@@ -85,7 +91,7 @@ export function useTransactionSummary() {
         queryKey: ["admin", "transactions", "summary", { locale }],
         queryFn: ({ signal }) => apiGet<SummaryEnvelope>("payment-attempts/summary", { locale, signal }),
         select: (payload) => payload.data,
-        staleTime: 15_000,
+        staleTime: 0,
         refetchInterval: 30_000,
     });
 }
