@@ -49,6 +49,22 @@ jobs:
             - run: pnpm install --frozen-lockfile
             - run: pnpm run typecheck
 
+    phase1-4-integration:
+        runs-on: ubuntu-latest
+        timeout-minutes: 6
+        steps:
+            - uses: actions/checkout@v4
+            - uses: pnpm/action-setup@v4
+              with:
+                  version: ${{ env.PNPM_VERSION }}
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: "pnpm"
+            - run: pnpm install --frozen-lockfile
+            - name: Verify Phase 1-4 wiring and release invariants
+              run: pnpm run verify:phase1-4
+
     test-frontend:
         runs-on: ubuntu-latest
         timeout-minutes: 4
