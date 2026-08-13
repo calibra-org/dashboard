@@ -1,18 +1,18 @@
 operationId: adminPaymentAttemptsIndex
 summary: List payment attempts
 description: >
-    Paginated audit log of every `payment_attempts` row — every init + callback writes here.
-    Filter, sort, and paginate via the unified TableView wire grammar (`filter[]=field:op:value`,
-    `sort[]=field:dir`, `page`, `limit`). Read-only on the admin surface; the payment service is
-    the sole writer.
+    Paginated operational ledger of payment attempts. Search with `q` across attempt/order ids,
+    gateway code, PSP authority and PSP transaction/reference id. Structured filters, sorting and
+    pagination use the unified TableView wire grammar.
 
 
     **TableView filterable fields**: `id`, `order_id`, `gateway_id`, `gateway_code_snapshot`,
-    `status`, `amount_minor`, `created_at`, `initiated_at`, `verified_at`.
+    `status`, `amount_minor`, `reconciliation_status`, `reconciliation_provider_status`,
+    `created_at`, `initiated_at`, `verified_at`, `reconciliation_checked_at`.
 
 
-    **TableView orderable fields**: `id`, `status`, `amount_minor`, `created_at`, `initiated_at`,
-    `verified_at`.
+    **TableView orderable fields**: `id`, `status`, `amount_minor`, `reconciliation_status`,
+    `created_at`, `initiated_at`, `verified_at`, `reconciliation_checked_at`.
 tags: [Admin / Payments]
 
 parameters:
@@ -21,6 +21,11 @@ parameters:
     - $ref: "../../../common/components/parameters/table-view/Filter.yaml"
     - $ref: "../../../common/components/parameters/table-view/FilterOr.yaml"
     - $ref: "../../../common/components/parameters/table-view/Sort.yaml"
+    - name: q
+      in: query
+      required: false
+      description: Search attempt/order ids, gateway code, authority or PSP transaction/reference id.
+      schema: { type: string, minLength: 1, maxLength: 120 }
 
 responses:
     "200":
@@ -37,3 +42,4 @@ responses:
                         meta: { $ref: "../../../common/components/schemas/PaginationMeta.yaml" }
     "401": { $ref: "../../../common/components/responses/Unauthorized.yaml" }
     "403": { $ref: "../../../common/components/responses/Forbidden.yaml" }
+    "422": { $ref: "../../../common/components/responses/ValidationError.yaml" }
