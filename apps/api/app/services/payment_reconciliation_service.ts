@@ -173,6 +173,7 @@ export class PaymentReconciliationService {
                 entityKind: "payment_attempt",
                 entityId: attempt.id,
                 trx,
+                strict: true,
                 payload: {
                     previous,
                     current: {
