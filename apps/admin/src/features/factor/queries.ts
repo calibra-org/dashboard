@@ -258,6 +258,6 @@ export function useFactorPaymentAttempts(params: { page?: number; limit?: number
                 query,
             }),
         placeholderData: (previous) => previous,
-        staleTime: 15_000,
+        staleTime: 0,
     });
 }
