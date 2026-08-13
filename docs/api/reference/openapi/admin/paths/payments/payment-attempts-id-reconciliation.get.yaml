@@ -1,0 +1,43 @@
+operationId: adminPaymentAttemptReconciliationHistory
+summary: List reconciliation audit events for a payment attempt
+description: Returns immutable admin audit events produced by provider reconciliation checks, newest first.
+tags: [Admin / Payments]
+parameters:
+    - name: id
+      in: path
+      required: true
+      schema: { type: integer }
+responses:
+    "200":
+        description: Reconciliation history.
+        content:
+            application/json:
+                schema:
+                    type: object
+                    required: [data]
+                    properties:
+                        data:
+                            type: array
+                            maxItems: 50
+                            items:
+                                type: object
+                                required: [id, action, entity_kind, payload]
+                                properties:
+                                    id: { type: string }
+                                    actor:
+                                        anyOf:
+                                            - type: object
+                                              required: [id, email]
+                                              properties:
+                                                  id: { type: string }
+                                                  email: { type: string, format: email }
+                                            - type: "null"
+                                    action: { type: string, const: payment.reconciliation.checked }
+                                    entity_kind: { type: string, const: payment_attempt }
+                                    entity_id: { type: [string, "null"] }
+                                    payload: { type: object, additionalProperties: true }
+                                    ip_address: { type: [string, "null"] }
+                                    occurred_at: { type: [string, "null"], format: date-time }
+    "401": { $ref: "../../../common/components/responses/Unauthorized.yaml" }
+    "403": { $ref: "../../../common/components/responses/Forbidden.yaml" }
+    "404": { $ref: "../../../common/components/responses/NotFound.yaml" }
