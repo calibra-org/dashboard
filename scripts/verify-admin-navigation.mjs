@@ -21,6 +21,20 @@ function check(condition, message) {
     if (!condition) failures.push(message);
 }
 
+function messages(locale) {
+    const base = JSON.parse(read(`apps/admin/messages/${locale}.json`));
+    const transactionsPath = `apps/admin/messages/transactions/${locale}.json`;
+    const transactions = exists(transactionsPath) ? JSON.parse(read(transactionsPath)) : {};
+    return {
+        ...base,
+        ...transactions,
+        Nav: {
+            ...base.Nav,
+            ...(transactions.Nav ?? {}),
+        },
+    };
+}
+
 const sidebarPath = "apps/admin/src/components/Sidebar.tsx";
 const sidebar = read(sidebarPath);
 const authenticatedRoot = "apps/admin/src/app/[locale]/(authenticated)";
@@ -68,8 +82,8 @@ for (const control of ["ChevronDown", "Box"]) {
 
 check(!sidebar.includes('label: { fa:'), "Sidebar must not carry local bilingual navigation copy; use Nav translation keys");
 
-const fa = JSON.parse(read("apps/admin/messages/fa.json"));
-const en = JSON.parse(read("apps/admin/messages/en.json"));
+const fa = messages("fa");
+const en = messages("en");
 const labelKeys = [...sidebar.matchAll(/labelKey:\s*"([^"]+)"/g)].map((match) => match[1]);
 for (const key of new Set(labelKeys)) {
     check(typeof fa.Nav?.[key] === "string" && fa.Nav[key].length > 0, `Persian Nav.${key} is missing`);
