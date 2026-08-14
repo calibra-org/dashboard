@@ -10,7 +10,7 @@ export type {
     components as AdminSchemas,
     operations as AdminOperations,
     paths as AdminPaths,
-} from "./generated/admin";
+} from "./generated/admin.composed";
 export type {
     components as PlatformSchemas,
     operations as PlatformOperations,
