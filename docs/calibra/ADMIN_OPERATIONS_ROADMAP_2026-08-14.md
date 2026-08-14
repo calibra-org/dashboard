@@ -144,3 +144,33 @@ Phase 5 is not Closed until all of the following are true in a runnable environm
 ## Current first action
 
 Audit the current Admin/API/DB/OpenAPI/SDK surfaces for Orders, Inventory, Shipping, Tax, Analytics/Revenue, Refunds and notifications. For each Phase 5 workstream classify every requirement as `already complete`, `exists but incomplete`, or `missing`; then research primary-source patterns from leading commerce/fulfillment systems before writing the Phase 5 master implementation prompt and code.
+
+---
+
+## Phase 5 implementation checkpoint — appended 2026-08-14
+
+The first-action audit above has now been performed against the current Phase 5 branch. This section is intentionally appended; no historical roadmap text above is rewritten.
+
+### Audit result
+
+- **Orders:** existing order CRUD/state machine/history were reused. Phase 5 adds line-aware full/partial fulfillment, shipment lifecycle, tracking evidence, operational summary and RMA inside the existing Orders experience.
+- **Inventory:** existing `InventoryService`, inventory items and immutable movement ledger were reused. Phase 5 adds Admin movement visibility and reasoned manual adjustment without creating a second stock engine. Fulfillment does not decrement stock a second time because checkout reservation already owns that mutation.
+- **Shipping:** existing zones, methods and checkout rate matcher were present. The previously incomplete Admin settings surface is now backed by persisted zone/location/method CRUD in Settings → Shipping; configuration writes invalidate the tenant shipping-rate cache.
+- **Tax:** existing classes, rates and calculator were present. The Admin settings gap is filled with persisted class/rate management in Settings → Tax; no parallel tax engine was created.
+- **Revenue / reports:** existing revenue and reports remain authoritative. Phase 5 does not create a new revenue subsystem.
+- **Refunds:** canonical `RefundService` remains the only financial refund engine. RMA receipt/restock is separated from financial refund and the RMA refund handoff derives money from immutable order-line snapshots when the operator has not supplied a lower explicit amount.
+- **Tickets:** the existing Ticket Operations Center remains the escalation/support system; Phase 5 does not add a support menu.
+- **Navigation:** no new top-level menu was introduced. New controls stay under Orders, Analytics → Stock, Settings → Shipping and Settings → Tax.
+
+### Integrity hardening completed during implementation audit
+
+- Phase 5 Admin mutation endpoints now use the existing `adminWriteLimiter` rather than introducing an unbounded write surface.
+- Processing-order cancellation is blocked while non-cancelled fulfillment activity exists, preventing blanket stock restoration after fulfillment has begun.
+- Return creation is bounded by delivered quantity. Historical completed/refunded orders with no fulfillment ledger retain a compatibility path so pre-Phase-5 deliveries can still be returned.
+- RMA refund defaults are server-derived from persisted order-line totals/tax; client UI is not treated as a source of money truth.
+- Shipping configuration mutations invalidate the existing tenant shipping-rate cache.
+- Existing Shipping zone-method assignments can now be removed from the existing Settings → Shipping editor, closing the CRUD gap without adding a new page group.
+
+### Remaining release work
+
+Phase 5 remains **IN PROGRESS** until executable evidence exists for the release gate above. The GitHub-hosted workflow attempts observed for this branch have failed before runner steps execute under the repository/org runner allocation/billing condition; that infrastructure state is neither a code-test failure nor green evidence. The branch must remain unmerged until format/lint/typecheck/build, focused API/Admin tests, migration/codegen drift checks, runtime smoke, RTL/LTR visual QA and the final evidence-based 99/100 audit have actually executed.
