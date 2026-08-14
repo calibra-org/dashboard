@@ -37,18 +37,25 @@ export interface RefundCreateOptions {
     idempotencyKey?: string | null;
 }
 
+interface ComparableRefundLine {
+    orderLineItemId: number;
+    quantity: number;
+    refundAmountMinor: number;
+    refundTaxMinor: number;
+}
+
 /**
  * Issues refunds against an existing order. Every mutation runs inside a single transaction:
  *
  *  1. `SELECT … FOR UPDATE` on the order (so two parallel refund requests serialize).
  *  2. Idempotency-Key short-circuit — if a refund row with `(order_id, idempotency_key)` already
- *     exists, return it without re-issuing or re-emitting domain side effects.
+ *     exists, return it only when the replay payload is semantically identical; otherwise fail 409.
  *  3. Validate the request body: `amount_minor` XOR `line_items[]`, both > 0, both ≤ outstanding.
  *  4. Allocate the refund_number from `refund_number_seq`.
  *  5. Insert `order_refunds` + (optionally) `order_refund_line_items` rows.
  *  6. If `restock_requested` → call {@link InventoryService.increment} per explicitly refunded line.
  *  7. PSP refund hook — `paymentService.refund()` dispatches to the gateway adapter; failures are
- *     recorded on `attributes.gateway_refund` but do not block the booking.
+ *     recorded as bounded status codes on `attributes.gateway_refund` but do not block booking.
  *  8. If `sum(refunds.amount_minor) >= order.grand_total` → transition the order to `refunded`.
  *  9. Append an internal audit note (`"Refund #{number} for {amount} {currency}. Reason: {reason}"`).
  * 10. Commit, then emit `order:refunded` exactly once for a newly-created refund.
@@ -128,9 +135,11 @@ export class RefundService {
                     .first();
                 if (existing) {
                     await existing.load("lineItems");
+                    this.assertIdempotentReplayMatches(existing, payload);
                     return {
                         refund: existing,
-                        customerId: order.customerId === null || order.customerId === undefined ? null : Number(order.customerId),
+                        customerId:
+                            order.customerId === null || order.customerId === undefined ? null : Number(order.customerId),
                         created: false,
                     };
                 }
@@ -239,6 +248,76 @@ export class RefundService {
                 customerId: order.customerId === null || order.customerId === undefined ? null : Number(order.customerId),
                 created: true,
             };
+        });
+    }
+
+    /**
+     * An idempotency key names one logical request, not merely one refund row. Reusing the same
+     * key with a different amount, reason, restock flag, or line allocation must fail closed;
+     * otherwise a caller can receive a 201 response for a refund different from the payload it
+     * just sent. Existing rows are compared directly so this also protects refunds created before
+     * this invariant was introduced, without a schema migration or stored request fingerprint.
+     */
+    private assertIdempotentReplayMatches(existing: OrderRefund, payload: RefundInput): void {
+        const requestedLines = this.comparableRequestedLines(payload.lineItems ?? []);
+        const existingLines = this.comparableExistingLines(existing.lineItems ?? []);
+        const requestedHasAmount = payload.amountMinor !== undefined && payload.amountMinor !== null;
+        const existingIsAmountOnly = existingLines.length === 0;
+        const sameReason = (existing.reason ?? null) === (payload.reason ?? null);
+        const sameRestock = Boolean(existing.restockRequested) === Boolean(payload.restockRequested ?? false);
+
+        let matches = sameReason && sameRestock;
+        if (requestedHasAmount) {
+            matches =
+                matches &&
+                existingIsAmountOnly &&
+                requestedLines.length === 0 &&
+                Number(existing.amountMinor) === Number(payload.amountMinor);
+        } else {
+            matches = matches && !existingIsAmountOnly && this.sameComparableLines(existingLines, requestedLines);
+        }
+
+        if (!matches) {
+            throw new Exception("Idempotency-Key was already used with a different refund payload", {
+                status: 409,
+                code: "E_REFUND_IDEMPOTENCY_MISMATCH",
+            });
+        }
+    }
+
+    private comparableRequestedLines(lines: RefundLineItemInput[]): ComparableRefundLine[] {
+        return lines
+            .map((line) => ({
+                orderLineItemId: Number(line.orderLineItemId),
+                quantity: Number(line.quantity),
+                refundAmountMinor: Number(line.refundAmountMinor ?? 0),
+                refundTaxMinor: Number(line.refundTaxMinor ?? 0),
+            }))
+            .sort((a, b) => a.orderLineItemId - b.orderLineItemId);
+    }
+
+    private comparableExistingLines(lines: OrderRefundLineItem[]): ComparableRefundLine[] {
+        return lines
+            .map((line) => ({
+                orderLineItemId: Number(line.orderLineItemId),
+                quantity: Number(line.quantity),
+                refundAmountMinor: Number(line.refundAmountMinor),
+                refundTaxMinor: Number(line.refundTaxMinor),
+            }))
+            .sort((a, b) => a.orderLineItemId - b.orderLineItemId);
+    }
+
+    private sameComparableLines(left: ComparableRefundLine[], right: ComparableRefundLine[]): boolean {
+        if (left.length !== right.length || left.length === 0) return false;
+        return left.every((line, index) => {
+            const other = right[index];
+            return (
+                other !== undefined &&
+                line.orderLineItemId === other.orderLineItemId &&
+                line.quantity === other.quantity &&
+                line.refundAmountMinor === other.refundAmountMinor &&
+                line.refundTaxMinor === other.refundTaxMinor
+            );
         });
     }
 
@@ -394,14 +473,14 @@ export class RefundService {
     /**
      * PSP refund hook. Looks up the order's verified `payment_attempts` row and calls the
      * adapter's `refund()`. On success, persists the PSP-side identifier in
-     * `refund.gateway_refund_id`. The whole chain is best-effort: adapter outage, "refunds
-     * unsupported", or "no verified attempt" never blocks Calibra-side bookkeeping — the refund
-     * row is the source of truth, and the failure detail rides on `attributes.gateway_refund` for
-     * forensic replay later.
+     * `refund.gateway_refund_id`. Provider failures are represented by bounded codes only; raw
+     * diagnostics go to Sentry and never enter the refund row where they could later leak through
+     * an unrelated administrative/debug surface.
      *
-     * Failures (return ok=false) are intentionally NOT re-thrown — for cod / bank_transfer
-     * orders there's no PSP to refund against, and for redirect gateways an offline reconcile
-     * is expected when the PSP is unreachable. Callers see the booking either way.
+     * Failures are intentionally NOT re-thrown — for cod / bank_transfer orders there's no PSP to
+     * refund against, and for redirect gateways an offline reconcile is expected when the PSP is
+     * unreachable. Callers see the ledger booking either way and the Admin transformer projects a
+     * `manual_action_required` settlement state.
      */
     private async callGatewayRefund(order: Order, refund: OrderRefund, trx: TransactionClientContract): Promise<void> {
         try {
@@ -416,13 +495,8 @@ export class RefundService {
             } else {
                 refund.attributes = {
                     ...((refund.attributes as Record<string, unknown>) ?? {}),
-                    gateway_refund: { ok: false, error_code: result.error_code, error_message: result.error_message },
+                    gateway_refund: { ok: false, error_code: result.error_code ?? "unknown" },
                 };
-                /**
-                 * PSP refund didn't throw but came back !ok. Booking still proceeds (manual
-                 * reconciliation later) so we surface the failure to error tracking — silent
-                 * `ok: false` rows pile up unnoticed otherwise.
-                 */
                 Sentry.captureMessage("refund_psp_returned_failure", {
                     level: "warning",
                     tags: {
@@ -438,14 +512,9 @@ export class RefundService {
             refund.useTransaction(trx);
             refund.attributes = {
                 ...((refund.attributes as Record<string, unknown>) ?? {}),
-                gateway_refund: { ok: false, error_code: "exception", error_message: (error as Error).message ?? "unknown" },
+                gateway_refund: { ok: false, error_code: "exception" },
             };
             await refund.save();
-            /**
-             * Caught here so the booking proceeds (and the refund row records the failure),
-             * which means the global exception handler never sees it. Explicit capture so the
-             * silent-failure path stays visible.
-             */
             Sentry.captureException(error, {
                 tags: { order_id: String(order.id), refund_id: String(refund.id), phase: "gateway_refund" },
             });
