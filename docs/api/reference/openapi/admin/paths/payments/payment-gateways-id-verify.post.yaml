@@ -27,8 +27,4 @@ responses:
     "404":
         $ref: "../../../common/components/responses/NotFound.yaml"
     "422":
-        description: Gateway is a stub, required merchant credentials are missing, or the provider rejected/timed out during the connection probe. Failed probes persist bounded non-secret health diagnostics.
-        content:
-            application/json:
-                schema:
-                    $ref: "../../../common/components/schemas/ErrorResponse.yaml"
+        $ref: "../../../common/components/responses/ValidationError.yaml"
