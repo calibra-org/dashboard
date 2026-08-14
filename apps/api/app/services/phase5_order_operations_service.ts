@@ -311,15 +311,13 @@ export class Phase5OrderOperationsService {
                     created_by_user_id: actor.id,
                 })
                 .returning("*");
-            await trx
-                .table("order_fulfillment_items")
-                .insert(
-                    items.map((item) => ({
-                        fulfillment_id: created.id,
-                        order_line_item_id: item.order_line_item_id,
-                        quantity: item.quantity,
-                    })),
-                );
+            await trx.table("order_fulfillment_items").insert(
+                items.map((item) => ({
+                    fulfillment_id: created.id,
+                    order_line_item_id: item.order_line_item_id,
+                    quantity: item.quantity,
+                })),
+            );
             return this.fulfillment(Number(created.id));
         });
         if (!acquired)
@@ -398,14 +396,12 @@ export class Phase5OrderOperationsService {
                 tracking_url: input.tracking_url ?? null,
             })
             .returning("*");
-        await trx
-            .table("order_shipment_events")
-            .insert({
-                shipment_id: shipment.id,
-                status: "label_created",
-                evidence: JSON.stringify({ source: "admin" }),
-                created_by_user_id: actor.id,
-            });
+        await trx.table("order_shipment_events").insert({
+            shipment_id: shipment.id,
+            status: "label_created",
+            evidence: JSON.stringify({ source: "admin" }),
+            created_by_user_id: actor.id,
+        });
         return { data: shipmentRow(shipment) };
     }
 
@@ -560,17 +556,15 @@ export class Phase5OrderOperationsService {
                     created_by_user_id: actor.id,
                 })
                 .returning("*");
-            await trx
-                .table("order_return_items")
-                .insert(
-                    items.map((item) => ({
-                        return_id: created.id,
-                        order_line_item_id: item.order_line_item_id,
-                        requested_quantity: item.quantity,
-                        reason: item.reason ?? null,
-                        refund_amount_minor: item.refund_amount_minor ?? null,
-                    })),
-                );
+            await trx.table("order_return_items").insert(
+                items.map((item) => ({
+                    return_id: created.id,
+                    order_line_item_id: item.order_line_item_id,
+                    requested_quantity: item.quantity,
+                    reason: item.reason ?? null,
+                    refund_amount_minor: item.refund_amount_minor ?? null,
+                })),
+            );
             return this.returnDetail(Number(created.id));
         });
         if (!acquired)
@@ -682,15 +676,12 @@ export class Phase5OrderOperationsService {
                     trx,
                 );
             }
-            await trx
-                .from("order_return_items")
-                .where("id", item.id)
-                .update({
-                    received_quantity: patch.received_quantity,
-                    damaged_quantity: patch.damaged_quantity,
-                    restock_quantity: patch.restock_quantity,
-                    updated_at: new Date(),
-                });
+            await trx.from("order_return_items").where("id", item.id).update({
+                received_quantity: patch.received_quantity,
+                damaged_quantity: patch.damaged_quantity,
+                restock_quantity: patch.restock_quantity,
+                updated_at: new Date(),
+            });
         }
         const refreshed = await trx.from("order_return_items").where("return_id", id);
         const approved = refreshed.filter((item) => Number(item.approved_quantity) > 0);

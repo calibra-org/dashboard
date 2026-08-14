@@ -198,15 +198,13 @@ export class StoreOperationsConfigService {
             .insert({ name: input.name, is_fallback: input.is_fallback ?? false })
             .returning("*");
         if (input.locations?.length) {
-            await trx
-                .table("shipping_zone_locations")
-                .insert(
-                    input.locations.map((location) => ({
-                        zone_id: row.id,
-                        type: location.type,
-                        code: location.code.toUpperCase(),
-                    })),
-                );
+            await trx.table("shipping_zone_locations").insert(
+                input.locations.map((location) => ({
+                    zone_id: row.id,
+                    type: location.type,
+                    code: location.code.toUpperCase(),
+                })),
+            );
         }
         return this.shippingZone(Number(row.id));
     }
