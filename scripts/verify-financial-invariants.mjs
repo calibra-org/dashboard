@@ -33,7 +33,7 @@ check(audit.includes("if (strict) throw error"), "Strict audit mode must fail cl
 
 const reconciliation = read("apps/api/app/services/payment_reconciliation_service.ts");
 for (const invariant of [
-    'createLock(`order:${Number(candidate.orderId)}`',
+    'createLock(`order:${Number(attempt.orderId)}`',
     "withTenantTransaction",
     ".forUpdate()",
     "strict: true",
@@ -41,6 +41,10 @@ for (const invariant of [
 ]) {
     check(reconciliation.includes(invariant), `Reconciliation financial invariant missing: ${invariant}`);
 }
+check(
+    !reconciliation.includes("error_message: (error as Error).message"),
+    "Reconciliation financial evidence must not persist raw provider exceptions",
+);
 
 const refund = read("apps/api/app/services/refund_service.ts");
 for (const invariant of [
@@ -59,6 +63,13 @@ const refundController = read("apps/api/app/controllers/admin/refunds_controller
 check(refundController.includes("refundService.create"), "Admin refund endpoint must delegate to RefundService");
 check(refundController.includes("idempotencyKey"), "Admin refund endpoint must forward the idempotency key");
 check(refundController.includes('action: "order.refund.created"'), "Admin refund endpoint must append operator audit evidence");
+
+const refundTransformer = read("apps/api/app/transformers/order_refund_transformer.ts");
+check(
+    refundTransformer.includes('status: "manual_action_required"'),
+    "Refund responses must distinguish ledger booking from failed automatic PSP settlement",
+);
+check(!refundTransformer.includes("error_message"), "Refund responses must not expose raw PSP error messages");
 
 if (failures.length > 0) {
     console.error(`Financial invariants verifier failed: ${failures.length}/${checks} checks`);
