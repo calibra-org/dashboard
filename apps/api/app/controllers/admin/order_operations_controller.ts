@@ -129,13 +129,9 @@ export default class OrderOperationsController {
     async createReturn(ctx: HttpContext) {
         const orderId = id(ctx.params.orderId, "E_ORDER_ID");
         const payload = await ctx.request.validateUsing(createReturnValidator);
-        const prepared = await phase5ReturnPolicyService.prepareCreate(orderId, payload);
-        const result = await phase5OrderOperationsService.createReturn(
-            orderId,
-            prepared,
-            await actor(ctx),
-            ctx.request.header("idempotency-key"),
-        );
+        const idempotencyKey = ctx.request.header("idempotency-key");
+        const prepared = await phase5ReturnPolicyService.prepareCreate(orderId, payload, idempotencyKey);
+        const result = await phase5OrderOperationsService.createReturn(orderId, prepared, await actor(ctx), idempotencyKey);
         ctx.response.status(201);
         await recordAudit({
             ctx,
