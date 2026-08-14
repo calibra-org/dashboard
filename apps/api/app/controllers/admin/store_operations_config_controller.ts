@@ -2,7 +2,9 @@ import { Exception } from "@adonisjs/core/exceptions";
 import type { HttpContext } from "@adonisjs/core/http";
 
 import { recordAudit } from "#services/admin_audit_log_service";
+import { CacheInvalidation } from "#services/cache_invalidation";
 import { storeOperationsConfigService } from "#services/store_operations_config_service";
+import { currentTenantId } from "#services/tenant_context";
 import {
     shippingZoneCreateValidator,
     shippingZoneLocationsValidator,
@@ -19,6 +21,10 @@ function positiveId(value: unknown, code: string): number {
     return id;
 }
 
+async function invalidateShippingRates(): Promise<void> {
+    await CacheInvalidation.shippingZonesChanged(currentTenantId());
+}
+
 export default class StoreOperationsConfigController {
     async shippingZones() {
         return storeOperationsConfigService.shippingZones();
@@ -31,6 +37,7 @@ export default class StoreOperationsConfigController {
     async createShippingZone(ctx: HttpContext) {
         const payload = await ctx.request.validateUsing(shippingZoneCreateValidator);
         const result = await storeOperationsConfigService.createShippingZone(payload);
+        await invalidateShippingRates();
         ctx.response.status(201);
         await recordAudit({
             ctx,
@@ -46,6 +53,7 @@ export default class StoreOperationsConfigController {
         const id = positiveId(ctx.params.id, "E_SHIPPING_ZONE_ID");
         const payload = await ctx.request.validateUsing(shippingZoneUpdateValidator);
         const result = await storeOperationsConfigService.updateShippingZone(id, payload);
+        await invalidateShippingRates();
         await recordAudit({ ctx, action: "shipping.zone.update", entityKind: "shipping_zone", entityId: id, payload });
         return result;
     }
@@ -54,6 +62,7 @@ export default class StoreOperationsConfigController {
         const id = positiveId(ctx.params.id, "E_SHIPPING_ZONE_ID");
         const payload = await ctx.request.validateUsing(shippingZoneLocationsValidator);
         const result = await storeOperationsConfigService.replaceShippingZoneLocations(id, payload.locations);
+        await invalidateShippingRates();
         await recordAudit({
             ctx,
             action: "shipping.zone.locations.replace",
@@ -67,6 +76,7 @@ export default class StoreOperationsConfigController {
     async deleteShippingZone(ctx: HttpContext) {
         const id = positiveId(ctx.params.id, "E_SHIPPING_ZONE_ID");
         await storeOperationsConfigService.deleteShippingZone(id);
+        await invalidateShippingRates();
         await recordAudit({ ctx, action: "shipping.zone.delete", entityKind: "shipping_zone", entityId: id, payload: {} });
         return ctx.response.status(204);
     }
@@ -79,6 +89,7 @@ export default class StoreOperationsConfigController {
         const zoneId = positiveId(ctx.params.zoneId, "E_SHIPPING_ZONE_ID");
         const payload = await ctx.request.validateUsing(shippingZoneMethodCreateValidator);
         const result = await storeOperationsConfigService.addShippingZoneMethod(zoneId, payload);
+        await invalidateShippingRates();
         ctx.response.status(201);
         await recordAudit({
             ctx,
@@ -95,6 +106,7 @@ export default class StoreOperationsConfigController {
         const id = positiveId(ctx.params.id, "E_SHIPPING_ZONE_METHOD_ID");
         const payload = await ctx.request.validateUsing(shippingZoneMethodUpdateValidator);
         const result = await storeOperationsConfigService.updateShippingZoneMethod(zoneId, id, payload);
+        await invalidateShippingRates();
         await recordAudit({
             ctx,
             action: "shipping.zone_method.update",
@@ -109,6 +121,7 @@ export default class StoreOperationsConfigController {
         const zoneId = positiveId(ctx.params.zoneId, "E_SHIPPING_ZONE_ID");
         const id = positiveId(ctx.params.id, "E_SHIPPING_ZONE_METHOD_ID");
         await storeOperationsConfigService.deleteShippingZoneMethod(zoneId, id);
+        await invalidateShippingRates();
         await recordAudit({
             ctx,
             action: "shipping.zone_method.delete",
