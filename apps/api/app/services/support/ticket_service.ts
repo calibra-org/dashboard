@@ -9,6 +9,23 @@ type TicketStatus = (typeof TICKET_STATUSES)[number];
 type TicketPriority = (typeof TICKET_PRIORITIES)[number];
 type TicketChannel = (typeof TICKET_CHANNELS)[number];
 type DbRow = Record<string, unknown>;
+type TicketRecord = DbRow & {
+    id: number;
+    ticket_number: number;
+    reference: string;
+    subject: string;
+    status: TicketStatus;
+    priority: TicketPriority;
+    channel: TicketChannel;
+    category: string | null;
+    tags: string[];
+    assigned_user_id: number | null;
+    version: number;
+    resolved_at: unknown;
+    closed_at: unknown;
+    first_response_at: unknown;
+};
+type TicketDetail = TicketRecord & { messages: DbRow[]; events: DbRow[] };
 
 export interface TicketListInput {
     page?: number;
@@ -72,16 +89,25 @@ function numberValue(value: unknown): number {
     return numberOrNull(value) ?? 0;
 }
 
-function ticketRow(row: DbRow): DbRow {
+function ticketRow(row: DbRow): TicketRecord {
     return {
         ...row,
         id: numberValue(row.id),
         ticket_number: numberValue(row.ticket_number),
+        reference: String(row.reference ?? ""),
+        subject: String(row.subject ?? ""),
+        status: String(row.status ?? "open") as TicketStatus,
+        priority: String(row.priority ?? "normal") as TicketPriority,
+        channel: String(row.channel ?? "admin") as TicketChannel,
+        category: row.category === null || row.category === undefined ? null : String(row.category),
         customer_id: numberOrNull(row.customer_id),
         assigned_user_id: numberOrNull(row.assigned_user_id),
         created_by_user_id: numberOrNull(row.created_by_user_id),
         version: numberValue(row.version),
-        tags: Array.isArray(row.tags) ? row.tags : [],
+        tags: Array.isArray(row.tags) ? row.tags.map(String) : [],
+        resolved_at: row.resolved_at ?? null,
+        closed_at: row.closed_at ?? null,
+        first_response_at: row.first_response_at ?? null,
     };
 }
 
@@ -142,7 +168,7 @@ async function ensureCustomer(customerId: number | null | undefined): Promise<vo
 export class SupportTicketService {
     async settings() {
         const trx = currentTrx();
-        const tenantId = currentTenantId();
+        const tenantId = Number(currentTenantId());
         await trx.table("support_ticket_settings").insert({ tenant_id: tenantId }).onConflict("tenant_id").ignore();
         const row = await trx.from("support_ticket_settings").where("tenant_id", tenantId).first();
         return {
@@ -167,7 +193,7 @@ export class SupportTicketService {
         for (const [key, value] of entries) patch[key] = value;
         const [row] = await currentTrx()
             .from("support_ticket_settings")
-            .where("tenant_id", currentTenantId())
+            .where("tenant_id", Number(currentTenantId()))
             .update(patch)
             .returning("*");
         return { data: { ...row, tenant_id: numberValue(row.tenant_id), default_assignee_user_id: numberOrNull(row.default_assignee_user_id) }, changed: true };
@@ -229,7 +255,7 @@ export class SupportTicketService {
         };
     }
 
-    async find(ticketId: number) {
+    async find(ticketId: number): Promise<{ data: TicketDetail }> {
         const trx = currentTrx();
         const row = await trx
             .from("support_tickets as t")
@@ -267,7 +293,10 @@ export class SupportTicketService {
         await ensureCustomer(input.customer_id);
         await ensureAssignee(input.assigned_user_id);
         const settings = (await this.settings()).data;
-        const ticketNumber = await nextNumber("ticket");
+        const ticketNumber = Number(await nextNumber("ticket"));
+        if (!Number.isSafeInteger(ticketNumber) || ticketNumber < 1) {
+            throw new Exception("Ticket number is outside the supported numeric range", { status: 500, code: "E_TICKET_NUMBER_RANGE" });
+        }
         const prefix = String(settings.reference_prefix ?? "TKT").toUpperCase();
         const priority = input.priority ?? (settings.default_priority as TicketPriority) ?? "normal";
         const assignedUserId = input.assigned_user_id === undefined ? numberOrNull(settings.default_assignee_user_id) : input.assigned_user_id;
