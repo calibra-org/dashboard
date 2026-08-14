@@ -34,6 +34,7 @@ const requiredFiles = [
     "apps/api/app/controllers/admin/reports_controller.ts",
     "apps/api/app/services/reports/analytics_service.ts",
     "apps/api/app/validators/admin/report_validator.ts",
+    "apps/api/tests/unit/validators/report_validator.spec.ts",
     "apps/admin/src/lib/queries/reports.ts",
     "apps/admin/src/views/reports/sales-report-view.tsx",
     "apps/admin/src/views/reports/top-sellers-view.tsx",
@@ -90,6 +91,19 @@ for (const invariant of [
     check(controller.includes(invariant), `Reports controller invariant missing: ${invariant}`);
 }
 
+const validator = read("apps/api/app/validators/admin/report_validator.ts");
+for (const invariant of [
+    'reportDate("start")',
+    'reportDate("end")',
+    "T00:00:00.000Z",
+    "T23:59:59.999Z",
+]) {
+    check(validator.includes(invariant), `Report date-boundary invariant missing: ${invariant}`);
+}
+const dateTests = read("apps/api/tests/unit/validators/report_validator.spec.ts");
+check(dateTests.includes("full inclusive UTC day"), "Report validator tests must cover the inclusive end-date regression");
+check(dateTests.includes("preserves explicit timestamp"), "Report validator tests must preserve sub-day API ranges");
+
 const analytics = read("apps/api/app/services/reports/analytics_service.ts");
 for (const invariant of [
     "REPORT_COUNTED_STATUSES",
@@ -106,12 +120,19 @@ for (const invariant of [
     check(analytics.includes(invariant), `Analytics service invariant missing: ${invariant}`);
 }
 
-const queries = read("apps/admin/src/lib/queries/reports.ts");
 contains("apps/admin/src/lib/queries/reports.ts", 'apiGet<SalesStatsResponse>("reports/sales-stats"');
 contains("apps/admin/src/lib/queries/reports.ts", 'apiGet<TopProductsResponse>("reports/top-products"');
-notContains("apps/admin/src/lib/queries/reports.ts", 'apiGet<OrderListEnvelope>("orders"', "Sales report must not aggregate an arbitrary order-list page in the browser");
+notContains(
+    "apps/admin/src/lib/queries/reports.ts",
+    'apiGet<OrderListEnvelope>("orders"',
+    "Sales report must not aggregate an arbitrary order-list page in the browser",
+);
 notContains("apps/admin/src/lib/queries/reports.ts", "limit: 100", "Sales report must not be capped to 100 orders");
-notContains("apps/admin/src/lib/queries/reports.ts", "refundedAmount: 0", "Refund total must come from the backend analytics source");
+notContains(
+    "apps/admin/src/lib/queries/reports.ts",
+    "refundedAmount: 0",
+    "Refund total must come from the backend analytics source",
+);
 
 const topSellers = read("apps/admin/src/views/reports/top-sellers-view.tsx");
 check(topSellers.includes("useTopSellersReport"), "Top sellers view must consume the real reports query");
@@ -147,6 +168,7 @@ for (const file of [
     "apps/admin/src/views/reports/top-sellers-view.tsx",
     "apps/api/app/controllers/admin/reports_controller.ts",
     "apps/api/app/services/reports/analytics_service.ts",
+    "apps/api/app/validators/admin/report_validator.ts",
 ]) {
     const source = read(file);
     check(!/\b(?:TODO|FIXME|HACK)\b/.test(source), `unfinished marker found in reports release surface: ${file}`);
