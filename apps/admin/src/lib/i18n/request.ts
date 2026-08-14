@@ -17,15 +17,18 @@ export default getRequestConfig(async ({ requestLocale }) => {
     const locale: Locale = hasLocale(routing.locales, requested) ? requested : routing.defaultLocale;
     const base = (await import(`../../../messages/${locale}.json`)).default;
     const transactions = (await import(`../../../messages/transactions/${locale}.json`)).default;
+    const tickets = (await import(`../../../messages/tickets/${locale}.json`)).default;
 
     return {
         locale,
         messages: {
             ...base,
             ...transactions,
+            ...tickets,
             Nav: {
                 ...base.Nav,
                 ...transactions.Nav,
+                ...tickets.Nav,
             },
         },
     };

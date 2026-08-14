@@ -1,9 +1,8 @@
 /**
  * Composed Admin SDK surface.
  *
- * `admin.d.ts` is the historical OpenAPI-generated contract. Feature overlays are generated from
- * their independently reviewed OpenAPI slices and intersected here so new operations are typed
- * without forcing unrelated generated declarations to churn.
+ * Core declarations are generated from the historical Admin contract, while feature overlays are
+ * generated from independently reviewed OpenAPI slices and intersected here.
  */
 import type {
     components as CoreComponents,
@@ -15,7 +14,12 @@ import type {
     operations as Phase4Operations,
     paths as Phase4Paths,
 } from "./admin.phase4";
+import type {
+    components as TicketComponents,
+    operations as TicketOperations,
+    paths as TicketPaths,
+} from "./admin.tickets";
 
-export type paths = CorePaths & Phase4Paths;
-export type components = CoreComponents & Phase4Components;
-export type operations = CoreOperations & Phase4Operations;
+export type paths = CorePaths & Phase4Paths & TicketPaths;
+export type components = CoreComponents & Phase4Components & TicketComponents;
+export type operations = CoreOperations & Phase4Operations & TicketOperations;

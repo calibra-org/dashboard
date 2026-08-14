@@ -29,7 +29,7 @@ export interface SettleMutationReturn<TValue> {
     isSaving: boolean;
     /** Optimistically update the value and restart the settle timer. */
     setPending: (next: TValue) => void;
-    /** Force the settle now — e.g. on blur, on unmount, or when an explicit "Save" lands. */
+    /** Force the settle now — e.g. on blur or when an explicit save lands. */
     flush: () => Promise<void>;
 }
 
@@ -41,8 +41,8 @@ export interface SettleMutationReturn<TValue> {
  *
  *   1. Renders the operator's input immediately (`pending`) so the UI feels instant.
  *   2. Defers the network call until they've been idle for `delayMs` (default 1200ms).
- *   3. Compares the final value against `committedValue` and short-circuits when they match — so
- *      toggling on→off→on within the window writes zero history rows, not three.
+ *   3. Compares the final value against `committedValue` and short-circuits when they match.
+ *   4. Rolls the optimistic value back to the latest committed value when persistence fails.
  *
  * Pair it with a backend that no-ops when the new value equals the current value (no history /
  * audit write on same-value PATCHes). The frontend collapses noise across the window; the backend
@@ -81,7 +81,7 @@ export function useSettleMutation<TValue, TResult>({
     /**
      * Whenever the upstream `committedValue` changes (server refetch landed, peer edit synced),
      * advance our committed snapshot. Only mirror it into `pending` when the operator is idle —
-     * otherwise we'd stomp their in-flight typing.
+     * otherwise we'd stomp their in-flight input.
      */
     useEffect(() => {
         committedRef.current = committedValue;
@@ -105,6 +105,11 @@ export function useSettleMutation<TValue, TResult>({
         try {
             await mutateRef.current(target);
             committedRef.current = target;
+        } catch (error) {
+            const rollback = committedRef.current;
+            pendingRef.current = rollback;
+            setPendingState(rollback);
+            throw error;
         } finally {
             setSaving(false);
         }
@@ -118,7 +123,9 @@ export function useSettleMutation<TValue, TResult>({
             if (timerRef.current !== null) window.clearTimeout(timerRef.current);
             timerRef.current = window.setTimeout(() => {
                 timerRef.current = null;
-                flush();
+                void flush().catch(() => {
+                    /** The mutation owns user-visible error state; the timer must not leak an unhandled rejection. */
+                });
             }, delayMs);
         },
         [delayMs, flush],
@@ -131,8 +138,7 @@ export function useSettleMutation<TValue, TResult>({
                 /**
                  * Don't auto-flush on unmount — the parent decides whether an in-flight edit
                  * should be persisted or discarded (a dialog close, route change, etc.). Callers
-                 * that DO want a save-on-unmount can call `flush()` explicitly from their own
-                 * cleanup effect.
+                 * that do want save-on-unmount semantics can call `flush()` from their own cleanup.
                  */
             }
         },

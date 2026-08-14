@@ -24,6 +24,7 @@ import {
     Library,
     Link2,
     ListTree,
+    MessageSquare,
     Newspaper,
     Package,
     PenLine,
@@ -146,6 +147,11 @@ const seoItems: NavItem[] = [
     { href: "/seo/settings", labelKey: "seoSettings", icon: Settings2 },
 ];
 
+const ticketItems: NavItem[] = [
+    { href: "/tickets", labelKey: "ticketQueue", icon: MessageSquare },
+    { href: "/tickets/settings", labelKey: "ticketSettings", icon: SlidersHorizontal },
+];
+
 function isActive(pathname: string, href: string): boolean {
     if (href === "/products") {
         if (pathname === "/products" || pathname === "/products/new") return true;
@@ -153,6 +159,7 @@ function isActive(pathname: string, href: string): boolean {
     }
     if (href === "/settings/general") return pathname === "/settings" || pathname.startsWith("/settings/");
     if (href === "/analytics") return pathname === "/analytics";
+    if (href === "/tickets") return pathname === href || /^\/tickets\/\d+(?:\/|$)/.test(pathname);
     return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -163,9 +170,11 @@ export function Sidebar() {
     const factorActive = pathname === "/factor" || pathname.startsWith("/factor/");
     const contentActive = pathname === "/content" || pathname.startsWith("/content/");
     const seoActive = pathname === "/seo" || pathname.startsWith("/seo/");
+    const ticketActive = pathname === "/tickets" || pathname.startsWith("/tickets/");
     const [factorOpen, setFactorOpen] = useState(factorActive);
     const [contentOpen, setContentOpen] = useState(contentActive);
     const [seoOpen, setSeoOpen] = useState(seoActive);
+    const [ticketOpen, setTicketOpen] = useState(ticketActive);
 
     useEffect(() => {
         if (factorActive) setFactorOpen(true);
@@ -178,6 +187,10 @@ export function Sidebar() {
     useEffect(() => {
         if (seoActive) setSeoOpen(true);
     }, [seoActive]);
+
+    useEffect(() => {
+        if (ticketActive) setTicketOpen(true);
+    }, [ticketActive]);
 
     const itemLink = (item: NavItem, compact = false) => {
         const Icon = item.icon;
@@ -297,6 +310,15 @@ export function Sidebar() {
                                         10: navT("seoSectionMonitoring"),
                                         14: navT("seoSectionSystem"),
                                     },
+                                )}
+                                {collapsible(
+                                    "ticket-sidebar-items",
+                                    ticketActive,
+                                    ticketOpen,
+                                    setTicketOpen,
+                                    MessageSquare,
+                                    navT("tickets"),
+                                    ticketItems,
                                 )}
                             </div>
                         ) : null}

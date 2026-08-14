@@ -64,6 +64,7 @@ await import("./routes/admin_payments.js");
 await import("./routes/admin_factor.js");
 await import("./routes/admin_content.js");
 await import("./routes/admin_seo.js");
+await import("./routes/admin_tickets.js");
 await import("./routes/admin_reports.js");
 await import("./routes/admin_insights.js");
 await import("./routes/admin_settings.js");
