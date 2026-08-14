@@ -67,15 +67,33 @@ test.group("admin transaction center", (group) => {
     test("searches by PSP authority and numeric order id", async ({ client, assert }) => {
         const user = await admin();
         const product = await createTaxableProduct({ regularPrice: 1_000_000 });
-        const wanted = await attempt({ productId: Number(product.id), status: PaymentAttemptStatus.Verified, authority: "A-UNIQUE-7788", amountMinor: 1_000_000 });
-        await attempt({ productId: Number(product.id), status: PaymentAttemptStatus.Failed, authority: "A-OTHER", amountMinor: 2_000_000 });
+        const wanted = await attempt({
+            productId: Number(product.id),
+            status: PaymentAttemptStatus.Verified,
+            authority: "A-UNIQUE-7788",
+            amountMinor: 1_000_000,
+        });
+        await attempt({
+            productId: Number(product.id),
+            status: PaymentAttemptStatus.Failed,
+            authority: "A-OTHER",
+            amountMinor: 2_000_000,
+        });
 
-        const authority = await client.get("/api/v1/admin/payment-attempts").qs({ q: "UNIQUE-7788" }).withGuard("api").loginAs(user);
+        const authority = await client
+            .get("/api/v1/admin/payment-attempts")
+            .qs({ q: "UNIQUE-7788" })
+            .withGuard("api")
+            .loginAs(user);
         authority.assertStatus(200);
         assert.equal(authority.body().meta.total, 1);
         assert.equal(authority.body().data[0].id, Number(wanted.id));
 
-        const byOrder = await client.get("/api/v1/admin/payment-attempts").qs({ q: String(wanted.orderId) }).withGuard("api").loginAs(user);
+        const byOrder = await client
+            .get("/api/v1/admin/payment-attempts")
+            .qs({ q: String(wanted.orderId) })
+            .withGuard("api")
+            .loginAs(user);
         byOrder.assertStatus(200);
         assert.equal(byOrder.body().meta.total, 1);
         assert.equal(byOrder.body().data[0].order_id, Number(wanted.orderId));
@@ -84,9 +102,24 @@ test.group("admin transaction center", (group) => {
     test("filters and sorts by canonical minor-unit amount through TableView", async ({ client, assert }) => {
         const user = await admin();
         const product = await createTaxableProduct({ regularPrice: 1_000_000 });
-        await attempt({ productId: Number(product.id), status: PaymentAttemptStatus.Verified, authority: "A-1", amountMinor: 1_000_000 });
-        await attempt({ productId: Number(product.id), status: PaymentAttemptStatus.Verified, authority: "A-2", amountMinor: 2_000_000 });
-        await attempt({ productId: Number(product.id), status: PaymentAttemptStatus.Verified, authority: "A-3", amountMinor: 3_000_000 });
+        await attempt({
+            productId: Number(product.id),
+            status: PaymentAttemptStatus.Verified,
+            authority: "A-1",
+            amountMinor: 1_000_000,
+        });
+        await attempt({
+            productId: Number(product.id),
+            status: PaymentAttemptStatus.Verified,
+            authority: "A-2",
+            amountMinor: 2_000_000,
+        });
+        await attempt({
+            productId: Number(product.id),
+            status: PaymentAttemptStatus.Verified,
+            authority: "A-3",
+            amountMinor: 3_000_000,
+        });
 
         const response = await client
             .get("/api/v1/admin/payment-attempts")
@@ -95,17 +128,35 @@ test.group("admin transaction center", (group) => {
             .loginAs(user);
         response.assertStatus(200);
         assert.equal(response.body().meta.total, 2);
-        assert.deepEqual((response.body().data as Array<{ amount_minor: number }>).map((row) => row.amount_minor), [3_000_000, 2_000_000]);
+        assert.deepEqual(
+            (response.body().data as Array<{ amount_minor: number }>).map((row) => row.amount_minor),
+            [3_000_000, 2_000_000],
+        );
     });
 
     test("returns status, reconciliation and attention aggregates", async ({ client, assert }) => {
         const user = await admin();
         const product = await createTaxableProduct({ regularPrice: 1_000_000 });
-        await attempt({ productId: Number(product.id), status: PaymentAttemptStatus.Verified, authority: "A-1", amountMinor: 1_000_000 });
-        const mismatch = await attempt({ productId: Number(product.id), status: PaymentAttemptStatus.Verified, authority: "A-2", amountMinor: 2_000_000 });
+        await attempt({
+            productId: Number(product.id),
+            status: PaymentAttemptStatus.Verified,
+            authority: "A-1",
+            amountMinor: 1_000_000,
+        });
+        const mismatch = await attempt({
+            productId: Number(product.id),
+            status: PaymentAttemptStatus.Verified,
+            authority: "A-2",
+            amountMinor: 2_000_000,
+        });
         mismatch.reconciliationStatus = "mismatch";
         await mismatch.save();
-        await attempt({ productId: Number(product.id), status: PaymentAttemptStatus.Failed, authority: "A-3", amountMinor: 500_000 });
+        await attempt({
+            productId: Number(product.id),
+            status: PaymentAttemptStatus.Failed,
+            authority: "A-3",
+            amountMinor: 500_000,
+        });
 
         const response = await client.get("/api/v1/admin/payment-attempts/summary").withGuard("api").loginAs(user);
         response.assertStatus(200);
@@ -131,16 +182,24 @@ test.group("admin transaction center", (group) => {
             transactionId: "445566",
         });
         mockFetch({
-            [ZARINPAL_VERIFY_URL]: { body: { data: { code: 101, ref_id: 445566, card_pan: "6037******0000" }, errors: [] } },
+            [ZARINPAL_VERIFY_URL]: {
+                body: { data: { code: 101, ref_id: 445566, card_pan: "6037******0000" }, errors: [] },
+            },
         });
 
-        const response = await client.post(`/api/v1/admin/payment-attempts/${Number(row.id)}/reconcile`).withGuard("api").loginAs(user);
+        const response = await client
+            .post(`/api/v1/admin/payment-attempts/${Number(row.id)}/reconcile`)
+            .withGuard("api")
+            .loginAs(user);
         response.assertStatus(200);
         assert.equal(response.body().data.reconciliation_status, "matched");
         assert.equal(response.body().data.reconciliation_provider_status, "verified");
         assert.equal(response.body().data.reconciliation_checked_by_user_id, Number(user.id));
 
-        const history = await client.get(`/api/v1/admin/payment-attempts/${Number(row.id)}/reconciliation`).withGuard("api").loginAs(user);
+        const history = await client
+            .get(`/api/v1/admin/payment-attempts/${Number(row.id)}/reconciliation`)
+            .withGuard("api")
+            .loginAs(user);
         history.assertStatus(200);
         assert.equal(history.body().data.length, 1);
         assert.equal(history.body().data[0].action, "payment.reconciliation.checked");
@@ -153,19 +212,63 @@ test.group("admin transaction center", (group) => {
         const gateway = await PaymentGateway.findByOrFail("code", "zarinpal");
         gateway.settings = { merchant_id: "merchant" };
         await gateway.save();
-        const row = await attempt({ productId: Number(product.id), status: PaymentAttemptStatus.Verified, authority: "AUTH-MISMATCH", amountMinor: 2_500_000, transactionId: "internal-1" });
+        const row = await attempt({
+            productId: Number(product.id),
+            status: PaymentAttemptStatus.Verified,
+            authority: "AUTH-MISMATCH",
+            amountMinor: 2_500_000,
+            transactionId: "internal-1",
+        });
         mockFetch({ [ZARINPAL_VERIFY_URL]: { body: { data: { code: 101, ref_id: "provider-2" }, errors: [] } } });
 
-        const response = await client.post(`/api/v1/admin/payment-attempts/${Number(row.id)}/reconcile`).withGuard("api").loginAs(user);
+        const response = await client
+            .post(`/api/v1/admin/payment-attempts/${Number(row.id)}/reconcile`)
+            .withGuard("api")
+            .loginAs(user);
         response.assertStatus(200);
         assert.equal(response.body().data.reconciliation_status, "mismatch");
+    });
+
+    test("sanitizes provider reconciliation exceptions before persistence or response", async ({ client, assert }) => {
+        const user = await admin();
+        const product = await createTaxableProduct({ regularPrice: 2_500_000 });
+        const gateway = await PaymentGateway.findByOrFail("code", "zarinpal");
+        gateway.settings = { merchant_id: "merchant" };
+        await gateway.save();
+        const row = await attempt({
+            productId: Number(product.id),
+            status: PaymentAttemptStatus.Verified,
+            authority: "AUTH-NETWORK-FAILURE",
+            amountMinor: 2_500_000,
+            transactionId: "445566",
+        });
+        mockFetch();
+
+        const response = await client
+            .post(`/api/v1/admin/payment-attempts/${Number(row.id)}/reconcile`)
+            .withGuard("api")
+            .loginAs(user);
+        response.assertStatus(200);
+        assert.equal(response.body().data.reconciliation_status, "error");
+        assert.equal(response.body().data.reconciliation_error_code, "provider_probe_exception");
+        assert.equal(response.body().data.reconciliation_evidence.reason, "provider_probe_exception");
+        assert.notInclude(JSON.stringify(response.body()), "mockFetch: no route registered");
     });
 
     test("records unsupported reconciliation without inventing provider state", async ({ client, assert }) => {
         const user = await admin();
         const product = await createTaxableProduct({ regularPrice: 1_000_000 });
-        const row = await attempt({ productId: Number(product.id), status: PaymentAttemptStatus.Verified, authority: "COD-1", amountMinor: 1_000_000, gatewayCode: "cod" });
-        const response = await client.post(`/api/v1/admin/payment-attempts/${Number(row.id)}/reconcile`).withGuard("api").loginAs(user);
+        const row = await attempt({
+            productId: Number(product.id),
+            status: PaymentAttemptStatus.Verified,
+            authority: "COD-1",
+            amountMinor: 1_000_000,
+            gatewayCode: "cod",
+        });
+        const response = await client
+            .post(`/api/v1/admin/payment-attempts/${Number(row.id)}/reconcile`)
+            .withGuard("api")
+            .loginAs(user);
         response.assertStatus(200);
         assert.equal(response.body().data.reconciliation_status, "unsupported");
         assert.equal(response.body().data.reconciliation_provider_status, "unsupported");
@@ -174,7 +277,12 @@ test.group("admin transaction center", (group) => {
     test("list, summary, reconcile and history remain admin-only", async ({ client }) => {
         const user = await customer();
         const product = await createTaxableProduct({ regularPrice: 1_000_000 });
-        const row = await attempt({ productId: Number(product.id), status: PaymentAttemptStatus.Verified, authority: "A-CUSTOMER", amountMinor: 1_000_000 });
+        const row = await attempt({
+            productId: Number(product.id),
+            status: PaymentAttemptStatus.Verified,
+            authority: "A-CUSTOMER",
+            amountMinor: 1_000_000,
+        });
         const requests = [
             client.get("/api/v1/admin/payment-attempts"),
             client.get("/api/v1/admin/payment-attempts/summary"),
