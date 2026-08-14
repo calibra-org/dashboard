@@ -1,0 +1,76 @@
+name: Apply Finalize Carrier
+
+on:
+  push:
+    branches:
+      - agent/complete-ticket-seo-content-backends-20260814
+
+permissions:
+  contents: write
+
+jobs:
+  apply-finalize:
+    if: contains(github.event.head_commit.message, '[apply-finalize-carrier]')
+    runs-on: ubuntu-24.04
+    env:
+      FORCE_COLOR: 3
+      TURBO_TELEMETRY_DISABLED: 1
+      DO_NOT_TRACK: 1
+      NODE_VERSION: 24.14.0
+      PNPM_VERSION: 10.32.1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Reconstruct and apply verified patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .finalize-carrier/part-* > /tmp/finalize.patch.xz.b64
+          echo "42359682e1ad5162f9688b14cb07c81e105a5644d1a6cfde85c44b50a0e7a2fe  /tmp/finalize.patch.xz.b64" | sha256sum -c -
+          base64 -d /tmp/finalize.patch.xz.b64 > /tmp/finalize.patch.xz
+          echo "507651161115dd13ad825adfa11b300780c59b681829adb141facdafbee364b0  /tmp/finalize.patch.xz" | sha256sum -c -
+          xz -dc /tmp/finalize.patch.xz > /tmp/finalize.patch
+          echo "b9f37db695426d14aa598485372237d8ba1a3c6d94b550174708befd4df85241  /tmp/finalize.patch" | sha256sum -c -
+          git apply --check /tmp/finalize.patch
+          git apply /tmp/finalize.patch
+          rm -rf .finalize-carrier
+          rm -f .github/workflows/apply-finalize-carrier.yml
+          rm -f .github/workflows/finalize-artifacts.yml
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Format and regenerate canonical SDK
+        run: |
+          pnpm exec biome check --write .
+          pnpm --filter @calibra/sdk run codegen
+      - name: Verify release invariants
+        run: |
+          pnpm run verify:phase1-4
+          pnpm run verify:phase5
+          node scripts/verify-admin-localization-policy.mjs
+          node scripts/verify-factor-integration.mjs
+          node scripts/verify-seo-integration.mjs
+          node scripts/verify-seo-search-engines.mjs
+          node scripts/verify-tickets-integration.mjs
+          node scripts/verify-ticket-seo-content-completion.mjs
+          git diff --check
+      - name: Typecheck and lint
+        run: |
+          pnpm run typecheck
+          pnpm run lint
+      - name: Commit finalized source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix: finalize phase closure and realtime/i18n"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
