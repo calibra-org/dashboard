@@ -21,6 +21,16 @@ interface ReturnCreateInput {
     tracking_number?: string | null;
 }
 
+interface ReturnReceiveInput {
+    expected_version: number;
+    items: Array<{
+        order_line_item_id: number;
+        received_quantity: number;
+        damaged_quantity: number;
+        restock_quantity: number;
+    }>;
+}
+
 interface ReturnRefundInput {
     expected_version: number;
     reason?: string | null;
@@ -133,6 +143,30 @@ export class Phase5ReturnPolicyService {
         return { ...input, items: enriched };
     }
 
+    /**
+     * Receiving is the final physical inspection in the v1 RMA state machine. Because there is no
+     * partially-received state, every positively-approved line must be present in the receipt
+     * payload before the return may advance to `received`; otherwise an omitted package could be
+     * stranded forever with approved quantity but no remaining transition that can receive it.
+     */
+    async assertFinalReceiptCoverage(id: number, input: ReturnReceiveInput): Promise<void> {
+        const trx = currentTrx();
+        const row = await trx.from("order_returns").where("id", id).first();
+        if (!row) throw new Exception("Return not found", { status: 404, code: "E_RETURN_NOT_FOUND" });
+        const items = await trx.from("order_return_items").where("return_id", id);
+        const approvedLineIds = items
+            .filter((item) => numberValue(item.approved_quantity) > 0)
+            .map((item) => Number(item.order_line_item_id));
+        const submittedLineIds = new Set(input.items.map((item) => Number(item.order_line_item_id)));
+        const missing = approvedLineIds.some((lineId) => !submittedLineIds.has(lineId));
+        if (missing) {
+            throw new Exception("Receipt must account for every approved return line", {
+                status: 422,
+                code: "E_RETURN_RECEIPT_INCOMPLETE",
+            });
+        }
+    }
+
     async refundReceivedReturn(id: number, input: ReturnRefundInput, actor: User): Promise<void> {
         const trx = currentTrx();
         const row = await trx.from("order_returns").where("id", id).forUpdate().first();
@@ -163,12 +197,11 @@ export class Phase5ReturnPolicyService {
                 const received = numberValue(item.received_quantity);
                 const requested = Math.max(1, numberValue(item.requested_quantity));
                 const soldQuantity = Math.max(1, numberValue(source.quantity));
-                const storedGross = numberValue(item.refund_amount_minor);
-                const gross =
-                    storedGross > 0
-                        ? prorate(storedGross, received, requested)
-                        : prorate(numberValue(source.total) + numberValue(source.total_tax), received, soldQuantity);
-                const tax = prorate(numberValue(source.total_tax), received, soldQuantity);
+                const storedRefund = item.refund_amount_minor === null ? null : numberValue(item.refund_amount_minor);
+                const defaultGross = prorate(numberValue(source.total) + numberValue(source.total_tax), received, soldQuantity);
+                const gross = storedRefund === null ? defaultGross : prorate(storedRefund, received, requested);
+                const defaultTax = prorate(numberValue(source.total_tax), received, soldQuantity);
+                const tax = defaultGross > 0 ? Math.floor((defaultTax * gross) / defaultGross) : 0;
                 if (gross <= 0) {
                     throw new Exception("Return refund amount is not positive", {
                         status: 422,
