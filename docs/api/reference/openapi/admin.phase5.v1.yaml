@@ -1,0 +1,421 @@
+openapi: 3.1.0
+info:
+  title: Calibra Admin Phase 5 Operations Overlay
+  version: 1.0.0
+  description: Fulfillment, shipment, returns, inventory operations, shipping configuration and tax-rate administration.
+paths:
+  /api/v1/admin/orders/operations/summary:
+    get:
+      operationId: adminPhase5OrderOperationsSummary
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Order operations exception summary
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrderOperationsSummaryEnvelope' }
+  /api/v1/admin/orders/{orderId}/operations:
+    get:
+      operationId: adminPhase5OrderOperationsShow
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/OrderId' }]
+      responses:
+        '200':
+          description: Order fulfillment and return aggregate
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrderOperationsEnvelope' }
+  /api/v1/admin/orders/{orderId}/fulfillments:
+    post:
+      operationId: adminPhase5FulfillmentCreate
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/OrderId' }
+        - in: header
+          name: Idempotency-Key
+          required: false
+          schema: { type: string, maxLength: 64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateFulfillmentInput' }
+      responses:
+        '201':
+          description: Fulfillment created
+          content: { application/json: { schema: { $ref: '#/components/schemas/FulfillmentEnvelope' } } }
+        '409': { description: Idempotency, concurrency or over-fulfillment conflict }
+  /api/v1/admin/fulfillments/{id}/transition:
+    post:
+      operationId: adminPhase5FulfillmentTransition
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/ResourceId' }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/FulfillmentTransitionInput' } } }
+      responses:
+        '200': { description: Fulfillment transitioned, content: { application/json: { schema: { $ref: '#/components/schemas/FulfillmentEnvelope' } } } }
+        '409': { description: Optimistic version conflict }
+  /api/v1/admin/fulfillments/{fulfillmentId}/shipments:
+    post:
+      operationId: adminPhase5ShipmentCreate
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: fulfillmentId
+          required: true
+          schema: { type: integer, format: int64, minimum: 1 }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CreateShipmentInput' } } }
+      responses:
+        '201': { description: Shipment created, content: { application/json: { schema: { $ref: '#/components/schemas/ShipmentEnvelope' } } } }
+  /api/v1/admin/shipments/{shipmentId}/events:
+    post:
+      operationId: adminPhase5ShipmentEventCreate
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: shipmentId
+          required: true
+          schema: { type: integer, format: int64, minimum: 1 }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/ShipmentEventInput' } } }
+      responses:
+        '201': { description: Immutable shipment event appended, content: { application/json: { schema: { $ref: '#/components/schemas/ShipmentEventEnvelope' } } } }
+        '409': { description: Optimistic version or terminal-state conflict }
+  /api/v1/admin/orders/{orderId}/returns:
+    post:
+      operationId: adminPhase5ReturnCreate
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/OrderId' }
+        - in: header
+          name: Idempotency-Key
+          required: false
+          schema: { type: string, maxLength: 64 }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CreateReturnInput' } } }
+      responses:
+        '201': { description: Return request created, content: { application/json: { schema: { $ref: '#/components/schemas/ReturnEnvelope' } } } }
+        '409': { description: Idempotency, concurrency or over-return conflict }
+  /api/v1/admin/returns/{id}/approve:
+    post:
+      operationId: adminPhase5ReturnApprove
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/ResourceId' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ApproveReturnInput' } } } }
+      responses:
+        '200': { description: Return approved, content: { application/json: { schema: { $ref: '#/components/schemas/ReturnEnvelope' } } } }
+  /api/v1/admin/returns/{id}/receive:
+    post:
+      operationId: adminPhase5ReturnReceive
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/ResourceId' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ReceiveReturnInput' } } } }
+      responses:
+        '200': { description: Return received and sellable quantity restocked exactly once, content: { application/json: { schema: { $ref: '#/components/schemas/ReturnEnvelope' } } } }
+  /api/v1/admin/returns/{id}/transition:
+    post:
+      operationId: adminPhase5ReturnTransition
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/ResourceId' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ReturnTransitionInput' } } } }
+      responses:
+        '200': { description: Return transitioned, content: { application/json: { schema: { $ref: '#/components/schemas/ReturnEnvelope' } } } }
+  /api/v1/admin/returns/{id}/refund:
+    post:
+      operationId: adminPhase5ReturnRefund
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/ResourceId' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ReturnRefundInput' } } } }
+      responses:
+        '200': { description: Canonical RefundService result linked to return, content: { application/json: { schema: { $ref: '#/components/schemas/ReturnEnvelope' } } } }
+  /api/v1/admin/inventory/movements:
+    get:
+      operationId: adminPhase5InventoryMovements
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: inventory_item_id
+          required: true
+          schema: { type: integer, format: int64, minimum: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 200, default: 100 }
+      responses:
+        '200': { description: Inventory item plus immutable movement ledger, content: { application/json: { schema: { $ref: '#/components/schemas/InventoryOperationsEnvelope' } } } }
+  /api/v1/admin/inventory/adjustments:
+    post:
+      operationId: adminPhase5InventoryAdjustment
+      security: [{ bearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/InventoryAdjustmentInput' } } } }
+      responses:
+        '200': { description: Inventory adjusted through central InventoryService, content: { application/json: { schema: { $ref: '#/components/schemas/InventoryOperationsEnvelope' } } } }
+  /api/v1/admin/shipping/zones:
+    get:
+      operationId: adminPhase5ShippingZonesList
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Shipping zones, content: { application/json: { schema: { $ref: '#/components/schemas/ShippingZonesEnvelope' } } } } }
+    post:
+      operationId: adminPhase5ShippingZoneCreate
+      security: [{ bearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ShippingZoneWrite' } } } }
+      responses: { '201': { description: Shipping zone created } }
+  /api/v1/admin/shipping/zones/{id}:
+    patch:
+      operationId: adminPhase5ShippingZoneUpdate
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/ResourceId' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ShippingZoneWrite' } } } }
+      responses: { '200': { description: Shipping zone updated } }
+    delete:
+      operationId: adminPhase5ShippingZoneDelete
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/ResourceId' }]
+      responses: { '204': { description: Shipping zone deleted } }
+  /api/v1/admin/shipping/zones/{id}/locations:
+    put:
+      operationId: adminPhase5ShippingZoneLocationsReplace
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/ResourceId' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ShippingLocationsWrite' } } } }
+      responses: { '200': { description: Shipping zone locations replaced } }
+  /api/v1/admin/shipping/methods:
+    get:
+      operationId: adminPhase5ShippingMethodsList
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Server-owned shipping method definitions, content: { application/json: { schema: { $ref: '#/components/schemas/ShippingMethodsEnvelope' } } } } }
+  /api/v1/admin/shipping/zones/{zoneId}/methods:
+    post:
+      operationId: adminPhase5ShippingZoneMethodCreate
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: zoneId
+          required: true
+          schema: { type: integer, format: int64, minimum: 1 }
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ShippingZoneMethodWrite' } } } }
+      responses: { '201': { description: Shipping method assigned } }
+  /api/v1/admin/shipping/zones/{zoneId}/methods/{id}:
+    patch:
+      operationId: adminPhase5ShippingZoneMethodUpdate
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: zoneId
+          required: true
+          schema: { type: integer, format: int64, minimum: 1 }
+        - { $ref: '#/components/parameters/ResourceId' }
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ShippingZoneMethodWrite' } } } }
+      responses: { '200': { description: Shipping method assignment updated } }
+    delete:
+      operationId: adminPhase5ShippingZoneMethodDelete
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: zoneId
+          required: true
+          schema: { type: integer, format: int64, minimum: 1 }
+        - { $ref: '#/components/parameters/ResourceId' }
+      responses: { '204': { description: Shipping method assignment deleted } }
+  /api/v1/admin/tax/rates:
+    get:
+      operationId: adminPhase5TaxRatesList
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Tax rates, content: { application/json: { schema: { $ref: '#/components/schemas/TaxRatesEnvelope' } } } } }
+    post:
+      operationId: adminPhase5TaxRateCreate
+      security: [{ bearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/TaxRateWrite' } } } }
+      responses: { '201': { description: Tax rate created } }
+  /api/v1/admin/tax/rates/{id}:
+    patch:
+      operationId: adminPhase5TaxRateUpdate
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/ResourceId' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/TaxRateWrite' } } } }
+      responses: { '200': { description: Tax rate updated } }
+    delete:
+      operationId: adminPhase5TaxRateDelete
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/ResourceId' }]
+      responses: { '204': { description: Tax rate deleted } }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer }
+  parameters:
+    OrderId:
+      in: path
+      name: orderId
+      required: true
+      schema: { type: integer, format: int64, minimum: 1 }
+    ResourceId:
+      in: path
+      name: id
+      required: true
+      schema: { type: integer, format: int64, minimum: 1 }
+  schemas:
+    FulfillmentStatus: { type: string, enum: [pending, packed, shipped, delivered, cancelled] }
+    ShipmentStatus: { type: string, enum: [label_created, in_transit, out_for_delivery, delivered, exception, returned] }
+    ReturnStatus: { type: string, enum: [requested, approved, in_transit, received, completed, cancelled] }
+    OrderOperationsSummary:
+      type: object
+      required: [paid_unfulfilled_over_24h, shipment_exceptions, returns_awaiting_approval, returns_awaiting_refund]
+      properties:
+        paid_unfulfilled_over_24h: { type: integer }
+        shipment_exceptions: { type: integer }
+        returns_awaiting_approval: { type: integer }
+        returns_awaiting_refund: { type: integer }
+    OrderOperationsSummaryEnvelope: { type: object, required: [data], properties: { data: { $ref: '#/components/schemas/OrderOperationsSummary' } } }
+    FulfillmentItemInput:
+      type: object
+      required: [order_line_item_id, quantity]
+      properties:
+        order_line_item_id: { type: integer, format: int64, minimum: 1 }
+        quantity: { type: integer, minimum: 1 }
+    CreateFulfillmentInput:
+      type: object
+      required: [items]
+      properties:
+        items: { type: array, minItems: 1, items: { $ref: '#/components/schemas/FulfillmentItemInput' } }
+        note: { type: [string, 'null'], maxLength: 2000 }
+    FulfillmentTransitionInput:
+      type: object
+      required: [status, expected_version]
+      properties:
+        status: { $ref: '#/components/schemas/FulfillmentStatus' }
+        expected_version: { type: integer, minimum: 1 }
+    CreateShipmentInput:
+      type: object
+      properties:
+        carrier: { type: [string, 'null'] }
+        service: { type: [string, 'null'] }
+        tracking_number: { type: [string, 'null'] }
+        tracking_url: { type: [string, 'null'], format: uri }
+    ShipmentEventInput:
+      type: object
+      required: [status, expected_version]
+      properties:
+        status: { $ref: '#/components/schemas/ShipmentStatus' }
+        expected_version: { type: integer, minimum: 1 }
+        occurred_at: { type: string, format: date-time }
+        location: { type: [string, 'null'] }
+        message: { type: [string, 'null'] }
+        evidence: { type: object, additionalProperties: true }
+    ReturnItemInput:
+      type: object
+      required: [order_line_item_id, quantity]
+      properties:
+        order_line_item_id: { type: integer, format: int64, minimum: 1 }
+        quantity: { type: integer, minimum: 1 }
+        reason: { type: [string, 'null'] }
+        refund_amount_minor: { type: [integer, 'null'], format: int64, minimum: 0 }
+    CreateReturnInput:
+      type: object
+      required: [items]
+      properties:
+        items: { type: array, minItems: 1, items: { $ref: '#/components/schemas/ReturnItemInput' } }
+        reason: { type: [string, 'null'] }
+        customer_note: { type: [string, 'null'] }
+        internal_note: { type: [string, 'null'] }
+        carrier: { type: [string, 'null'] }
+        tracking_number: { type: [string, 'null'] }
+    ApproveReturnInput:
+      type: object
+      required: [expected_version, items]
+      properties:
+        expected_version: { type: integer, minimum: 1 }
+        items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [order_line_item_id, approved_quantity]
+            properties:
+              order_line_item_id: { type: integer, format: int64, minimum: 1 }
+              approved_quantity: { type: integer, minimum: 0 }
+    ReceiveReturnInput:
+      type: object
+      required: [expected_version, items]
+      properties:
+        expected_version: { type: integer, minimum: 1 }
+        items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [order_line_item_id, received_quantity, damaged_quantity, restock_quantity]
+            properties:
+              order_line_item_id: { type: integer, format: int64, minimum: 1 }
+              received_quantity: { type: integer, minimum: 0 }
+              damaged_quantity: { type: integer, minimum: 0 }
+              restock_quantity: { type: integer, minimum: 0 }
+    ReturnTransitionInput:
+      type: object
+      required: [status, expected_version]
+      properties:
+        status: { $ref: '#/components/schemas/ReturnStatus' }
+        expected_version: { type: integer, minimum: 1 }
+    ReturnRefundInput:
+      type: object
+      required: [expected_version]
+      properties:
+        expected_version: { type: integer, minimum: 1 }
+        reason: { type: [string, 'null'] }
+    InventoryAdjustmentInput:
+      type: object
+      required: [inventory_item_id, quantity_delta, reason]
+      properties:
+        inventory_item_id: { type: integer, format: int64, minimum: 1 }
+        quantity_delta: { type: integer, not: { const: 0 } }
+        reason: { type: string, minLength: 3, maxLength: 500 }
+    ShippingZoneWrite:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        is_fallback: { type: boolean }
+        locations: { type: array, items: { $ref: '#/components/schemas/ShippingLocationWrite' } }
+    ShippingLocationWrite:
+      type: object
+      required: [type, code]
+      properties:
+        type: { type: string, enum: [continent, country, state, postcode] }
+        code: { type: string, minLength: 1 }
+    ShippingLocationsWrite:
+      type: object
+      required: [locations]
+      properties: { locations: { type: array, items: { $ref: '#/components/schemas/ShippingLocationWrite' } } }
+    ShippingZoneMethodWrite:
+      type: object
+      properties:
+        method_id: { type: integer, format: int64, minimum: 1 }
+        title_override: { type: [string, 'null'] }
+        enabled: { type: boolean }
+        ordering: { type: integer }
+        settings: { type: object, additionalProperties: true }
+    TaxRateWrite:
+      type: object
+      properties:
+        tax_class_id: { type: integer, format: int64, minimum: 1 }
+        country: { type: [string, 'null'], minLength: 2, maxLength: 2 }
+        region_id: { type: [integer, 'null'], format: int64 }
+        postcodes: { type: array, items: { type: string } }
+        cities: { type: array, items: { type: string } }
+        rate: { type: number, minimum: 0 }
+        label: { type: string }
+        priority: { type: integer }
+        compound: { type: boolean }
+        applies_to_shipping: { type: boolean }
+        ordering: { type: integer }
+    OrderOperationsEnvelope: { type: object, required: [data], properties: { data: { type: object, additionalProperties: true } } }
+    FulfillmentEnvelope: { type: object, required: [data], properties: { data: { type: object, additionalProperties: true } } }
+    ShipmentEnvelope: { type: object, required: [data], properties: { data: { type: object, additionalProperties: true } } }
+    ShipmentEventEnvelope: { type: object, required: [data], properties: { data: { type: object, additionalProperties: true } } }
+    ReturnEnvelope: { type: object, required: [data], properties: { data: { type: object, additionalProperties: true } } }
+    InventoryOperationsEnvelope: { type: object, required: [data], properties: { data: { type: object, additionalProperties: true } } }
+    ShippingZonesEnvelope: { type: object, required: [data], properties: { data: { type: array, items: { type: object, additionalProperties: true } } } }
+    ShippingMethodsEnvelope: { type: object, required: [data], properties: { data: { type: array, items: { type: object, additionalProperties: true } } } }
+    TaxRatesEnvelope: { type: object, required: [data], properties: { data: { type: array, items: { type: object, additionalProperties: true } } } }
