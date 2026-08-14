@@ -1,0 +1,60 @@
+name: PR17 Diagnostics
+
+on:
+  push:
+    branches:
+      - agent/complete-ticket-seo-content-backends-20260814
+
+permissions:
+  contents: read
+
+jobs:
+  diagnostics:
+    runs-on: ubuntu-24.04
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+    env:
+      NODE_ENV: test
+      PORT: 3334
+      HOST: 0.0.0.0
+      APP_NAME: calibra-api
+      APP_KEY: ci-only-key-not-used-for-real-secrets
+      LOG_LEVEL: warn
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_USER: calibra
+      DB_PASSWORD: calibra
+      DB_DATABASE: calibra
+      MAIL_FROM_ADDRESS: ops@calibra.local
+      MAIL_FROM_NAME: Calibra
+      MAIL_NOTIFICATIONS_ENABLED: false
+      SMTP_HOST: localhost
+      SMTP_PORT: 11025
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+      TRANSMIT_TRANSPORT: none
+      QUEUE_DRIVER: sync
+      LIMITER_STORE: memory
+      CACHE_DRIVER: memory
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/complete-ticket-seo-content-backends-20260814
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Full Biome error diagnostics
+        shell: bash
+        run: pnpm exec biome lint . --diagnostic-level=error --max-diagnostics=500 || true
+      - name: Route registry diagnostics
+        working-directory: apps/api
+        shell: bash
+        run: node ace routes --json || true
