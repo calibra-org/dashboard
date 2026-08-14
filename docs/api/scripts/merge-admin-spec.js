@@ -7,10 +7,21 @@ const base = JSON.parse(readFileSync(resolve(root, "dist/admin.base.v1.json"), "
 const tickets = JSON.parse(readFileSync(resolve(root, "dist/admin.tickets.v1.json"), "utf8"));
 const completion = JSON.parse(readFileSync(resolve(root, "dist/admin.completion.v1.json"), "utf8"));
 
-function mergeRecord(baseRecord = {}, overlayRecord = {}, label) {
-    const collisions = Object.keys(overlayRecord).filter((key) => Object.hasOwn(baseRecord, key));
-    if (collisions.length > 0) throw new Error(`Admin OpenAPI overlay collides with ${label}: ${collisions.join(", ")}`);
-    return { ...baseRecord, ...overlayRecord };
+function sameJson(left, right) {
+    return JSON.stringify(left) === JSON.stringify(right);
+}
+
+function mergeRecord(baseRecord = {}, overlayRecord = {}, label, allowIdentical = false) {
+    const merged = { ...baseRecord };
+    for (const [key, value] of Object.entries(overlayRecord)) {
+        if (!Object.hasOwn(merged, key)) {
+            merged[key] = value;
+            continue;
+        }
+        if (allowIdentical && sameJson(merged[key], value)) continue;
+        throw new Error(`Admin OpenAPI overlay collides with ${label}: ${key}`);
+    }
+    return merged;
 }
 
 for (const overlay of [tickets, completion]) {
@@ -25,6 +36,7 @@ for (const overlay of [tickets, completion]) {
             base.components?.[section],
             overlay.components?.[section],
             `components.${section}`,
+            true,
         );
     }
     base.components = merged;
