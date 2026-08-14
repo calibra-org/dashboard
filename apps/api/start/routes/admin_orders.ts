@@ -1,9 +1,11 @@
 import router from "@adonisjs/core/services/router";
 
 import { middleware } from "#start/kernel";
+import { adminWriteLimiter } from "#start/limiter";
 
 const AdminOrdersController = () => import("#controllers/admin/orders_controller");
 const AdminOrderEditController = () => import("#controllers/admin/order_edit_controller");
+const OrderOperationsController = () => import("#controllers/admin/order_operations_controller");
 
 router
     .group(() => {
@@ -16,7 +18,10 @@ router
         router.put("/:id", [AdminOrdersController, "update"]).as("admin.orders.put");
         router.delete("/:id", [AdminOrdersController, "destroy"]).as("admin.orders.destroy");
         router.post("/:id/status", [AdminOrdersController, "transitionStatus"]).as("admin.orders.status");
-        router.post("/:id/mark-shipped", [AdminOrdersController, "markShipped"]).as("admin.orders.markShipped");
+        router
+            .post("/:id/mark-shipped", [OrderOperationsController, "legacyMarkShipped"])
+            .as("admin.orders.markShipped")
+            .use(adminWriteLimiter);
         router
             .post("/:id/resend-confirmation", [AdminOrdersController, "resendConfirmation"])
             .as("admin.orders.resendConfirmation");
