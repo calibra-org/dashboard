@@ -52,7 +52,13 @@ export const adminOrderListValidator = adminOrdersView.compileStrict({
 export const adminOrderMarkShippedValidator = vine.compile(
     vine.object({
         tracking_number: vine.string().trim().maxLength(120).optional().nullable(),
-        tracking_url: vine.string().trim().url().maxLength(500).optional().nullable(),
+        tracking_url: vine
+            .string()
+            .trim()
+            .url({ require_protocol: true, protocols: ["http", "https"] })
+            .maxLength(500)
+            .optional()
+            .nullable(),
         carrier: vine.string().trim().maxLength(80).optional().nullable(),
         notify_customer: vine.boolean().optional(),
     }),
