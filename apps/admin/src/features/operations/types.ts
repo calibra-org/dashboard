@@ -11,6 +11,9 @@ export interface OrderOperationsLine {
     quantity: number;
     fulfilled_quantity: number;
     remaining_quantity: number;
+    delivered_quantity: number;
+    returned_quantity: number;
+    returnable_quantity: number;
 }
 
 export interface ShipmentEvent {
