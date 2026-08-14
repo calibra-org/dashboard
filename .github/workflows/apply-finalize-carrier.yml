@@ -53,13 +53,24 @@ jobs:
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Format and regenerate canonical SDK
+      - name: Apply canonical formatting
+        shell: bash
+        run: pnpm exec biome check --write --max-diagnostics=500 . || true
+      - name: Capture Biome diagnostics
         shell: bash
         run: |
           set -o pipefail
-          pnpm exec biome check --write --max-diagnostics=500 . || true
-          pnpm exec biome check --max-diagnostics=500 .
-          pnpm --filter @calibra/sdk run codegen
+          pnpm exec biome check --max-diagnostics=500 . 2>&1 | tee /tmp/biome.log
+      - name: Upload Biome diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: biome-diagnostics-${{ github.sha }}
+          path: /tmp/biome.log
+          if-no-files-found: error
+          retention-days: 1
+      - name: Regenerate canonical SDK
+        run: pnpm --filter @calibra/sdk run codegen
       - name: Verify release invariants
         run: |
           pnpm run verify:phase1-4
