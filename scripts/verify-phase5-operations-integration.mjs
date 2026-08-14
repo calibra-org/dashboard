@@ -7,6 +7,7 @@ const mustExist = [
     "apps/api/database/migrations/1762000000000_create_phase5_order_operations.ts",
     "apps/api/database/phase5_schema.generated.ts",
     "apps/api/app/services/phase5_order_operations_service.ts",
+    "apps/api/app/services/phase5_return_policy_service.ts",
     "apps/api/app/services/legacy_mark_shipped_service.ts",
     "apps/api/app/services/inventory_operations_service.ts",
     "apps/api/app/services/store_operations_config_service.ts",
@@ -45,17 +46,23 @@ assertContains("docs/calibra/ADMIN_OPERATIONS_ROADMAP_2026-08-14.md", [
     "Ticket Operations Center — CLOSED",
     "Phase 5 — Fulfillment & Order Operations — IN PROGRESS",
     "No new top-level Sidebar group or menu is allowed",
+    "Phase 5 implementation checkpoint — appended 2026-08-14",
 ]);
 
 assertContains("apps/api/start/routes/admin_phase5_operations.ts", [
     'prefix("/api/v1/admin")',
     'middleware.auth({ guards: ["api"] })',
     "middleware.admin()",
+    "adminWriteLimiter",
     '"/orders/:orderId/fulfillments"',
     '"/orders/:orderId/returns"',
     '"/inventory/adjustments"',
     '"/shipping/zones"',
     '"/tax/rates"',
+]);
+assertContains("apps/api/start/routes/admin_orders.ts", [
+    'OrderOperationsController, "legacyMarkShipped"',
+    "adminWriteLimiter",
 ]);
 
 assertContains("apps/api/database/migrations/1762000000000_create_phase5_order_operations.ts", [
@@ -81,6 +88,19 @@ assertNotContains("apps/api/app/services/phase5_order_operations_service.ts", [
     "stock_quantity -",
 ]);
 
+assertContains("apps/api/app/services/phase5_return_policy_service.ts", [
+    "E_RETURN_EXCEEDS_DELIVERED",
+    "E_RETURN_REFUND_AMOUNT_EXCEEDS_LINE",
+    "order_line_items",
+    "order_fulfillments",
+    "RefundService",
+    "rma:${id}:refund",
+]);
+assertContains("apps/api/app/services/order_state_machine.ts", [
+    "assertFulfillmentSafeTransition",
+    "E_ORDER_HAS_ACTIVE_FULFILLMENT",
+]);
+
 assertContains("apps/api/app/services/inventory_operations_service.ts", ["InventoryService", "adjust"]);
 assertContains("apps/api/app/services/store_operations_config_service.ts", [
     "shipping_zones",
@@ -88,6 +108,10 @@ assertContains("apps/api/app/services/store_operations_config_service.ts", [
     "settings_schema",
     "tax_rates",
     "E_SHIPPING_FALLBACK_EXISTS",
+]);
+assertContains("apps/api/app/controllers/admin/store_operations_config_controller.ts", [
+    "CacheInvalidation.shippingZonesChanged",
+    "currentTenantId",
 ]);
 
 for (const view of [
@@ -98,6 +122,10 @@ for (const view of [
 ]) {
     assertNotContains(view, ["#/lib/fixtures/", "SHIPPING_ZONES", "SHIPPING_METHODS", "TAX_CLASSES", "TAX_RATES"]);
 }
+assertContains("apps/admin/src/views/store-config/shipping/shipping-zones-view.tsx", [
+    "useDeleteShippingZoneMethod",
+    "remove.mutate(method.id)",
+]);
 
 assertContains("apps/admin/src/views/orders/detail/shipping-card.tsx", ["FulfillmentOperationsCard", "orderId={order.id}"]);
 assertContains("apps/admin/src/views/orders/list/status-tabs.tsx", ["useOrderOperationsSummary", "shipmentExceptions", "returnsApproval"]);
@@ -124,6 +152,10 @@ assertContains("apps/api/tests/functional/admin/phase5_operations.spec.ts", [
     "Idempotency-Key",
     "records shipment events",
     "requires authentication and admin role",
+    "blocks returns before delivery",
+    "hands the financial refund to RefundService",
+    "blocks order cancellation",
+    "persists inventory adjustments and shipping/tax configuration",
 ]);
 
 console.log("Phase 5 operations integration verifier passed.");
