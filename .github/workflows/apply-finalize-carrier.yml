@@ -36,10 +36,89 @@ jobs:
           git apply /tmp/finalize.patch
           python3 - <<'PY'
           from pathlib import Path
-          path = Path("apps/admin/src/components/Sidebar.tsx")
-          source = path.read_text()
-          source = source.replace('aria-label={ticketsT("unread", { count: badge })}', 'title={ticketsT("unread", { count: badge })}')
-          path.write_text(source)
+
+          def replace(path_str: str, old: str, new: str) -> None:
+              path = Path(path_str)
+              source = path.read_text()
+              if old not in source:
+                  raise SystemExit(f"expected source fragment missing in {path_str}: {old[:80]!r}")
+              path.write_text(source.replace(old, new, 1))
+
+          # Sidebar unread badge: spans cannot carry aria-label as the accessible name here.
+          replace(
+              "apps/admin/src/components/Sidebar.tsx",
+              'aria-label={ticketsT("unread", { count: badge })}',
+              'title={ticketsT("unread", { count: badge })}',
+          )
+
+          # Content settings effect uses the translator to derive the list separator.
+          replace(
+              "apps/admin/src/features/content/settings-page.tsx",
+              "    }, [settings.data]);",
+              "    }, [settings.data, copyT]);",
+          )
+
+          # Shipping locations already have persistent ids. Preserve them locally and allocate
+          # negative ids for unsaved rows so React keys remain stable while the user edits values.
+          shipping = Path("apps/admin/src/views/store-config/shipping/shipping-zones-view.tsx")
+          source = shipping.read_text()
+          source = source.replace(
+              'const LOCATION_TYPES = ["country", "state", "postcode", "continent"] as const;\n',
+              'const LOCATION_TYPES = ["country", "state", "postcode", "continent"] as const;\nlet nextTemporaryLocationId = -1;\n',
+              1,
+          )
+          source = source.replace(
+              'const [locations, setLocations] = useState(zone.locations.map((item) => ({ type: item.type, code: item.code })));',
+              'const [locations, setLocations] = useState(zone.locations.map((item) => ({ id: item.id, type: item.type, code: item.code })));',
+              1,
+          )
+          source = source.replace(
+              'onClick={() => setLocations((current) => [...current, { type: "country", code: "" }])}',
+              'onClick={() => setLocations((current) => [...current, { id: nextTemporaryLocationId--, type: "country", code: "" }])}',
+              1,
+          )
+          source = source.replace(
+              '<div key={`${location.type}-${index}`} className="grid gap-2 sm:grid-cols-[150px_minmax(0,1fr)_auto]">',
+              '<div key={location.id} className="grid gap-2 sm:grid-cols-[150px_minmax(0,1fr)_auto]">',
+              1,
+          )
+          source = source.replace(
+              'onClick={() => replaceLocations.mutate(locations.map((item) => ({ ...item, code: item.code.trim() })))}',
+              'onClick={() => replaceLocations.mutate(locations.map((item) => ({ type: item.type, code: item.code.trim() })))}',
+              1,
+          )
+          shipping.write_text(source)
+
+          # Static skeleton rows have stable semantic keys rather than array indexes.
+          transactions = Path("apps/admin/src/views/transactions/transactions-center.tsx")
+          source = transactions.read_text()
+          source = source.replace(
+              'const RECONCILIATION: PaymentReconciliationStatus[] = ["unchecked", "matched", "mismatch", "unsupported", "error"];\n',
+              'const RECONCILIATION: PaymentReconciliationStatus[] = ["unchecked", "matched", "mismatch", "unsupported", "error"];\nconst TRANSACTION_SKELETON_KEYS = ["transaction-1", "transaction-2", "transaction-3", "transaction-4", "transaction-5", "transaction-6", "transaction-7", "transaction-8"] as const;\n',
+              1,
+          )
+          source = source.replace(
+              '{Array.from({ length: 8 }).map((_, index) => (\n                            <Skeleton key={index} className="h-12 w-full" />\n                        ))}',
+              '{TRANSACTION_SKELETON_KEYS.map((key) => (\n                            <Skeleton key={key} className="h-12 w-full" />\n                        ))}',
+              1,
+          )
+          source = source.replace(
+              '            role="button"\n            aria-label={`${detailsLabel} #${row.id}`}',
+              '            // biome-ignore lint/a11y/useSemanticElements: A button cannot replace a table row without invalid table markup; keyboard activation is implemented below.\n            role="button"\n            aria-label={`${detailsLabel} #${row.id}`}',
+              1,
+          )
+          transactions.write_text(source)
+
+          # Give the reconciliation adapter its concrete registry type.
+          reconciliation = Path("apps/api/app/services/payment_reconciliation_service.ts")
+          source = reconciliation.read_text()
+          source = source.replace(
+              'import type { ProviderPaymentStatus, ReconcileResult } from "#services/adapters/base_redirect_gateway";',
+              'import type { PaymentAdapter, ProviderPaymentStatus, ReconcileResult } from "#services/adapters/base_redirect_gateway";',
+              1,
+          )
+          source = source.replace('            let adapter;\n', '            let adapter: PaymentAdapter;\n', 1)
+          reconciliation.write_text(source)
           PY
           rm -rf .finalize-carrier
           rm -f .github/workflows/apply-finalize-carrier.yml
