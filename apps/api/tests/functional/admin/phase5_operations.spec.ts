@@ -18,13 +18,17 @@ async function processingOrder(quantity = 2) {
     return { product, order };
 }
 
-async function moveToProcessing(client: Parameters<Parameters<typeof test>[1]>[0]["client"], admin: Awaited<ReturnType<typeof adminUser>>, orderId: number) {
+async function moveToProcessing(
+    client: import("@japa/api-client").ApiClient,
+    admin: Awaited<ReturnType<typeof adminUser>>,
+    orderId: number,
+) {
     await client.post(`/api/v1/admin/orders/${orderId}/status`).loginAs(admin).json({ to_status: "pending" });
     await client.post(`/api/v1/admin/orders/${orderId}/status`).loginAs(admin).json({ to_status: "processing" });
 }
 
 async function deliverSingleLine(
-    client: Parameters<Parameters<typeof test>[1]>[0]["client"],
+    client: import("@japa/api-client").ApiClient,
     admin: Awaited<ReturnType<typeof adminUser>>,
     orderId: number,
     lineId: number,
