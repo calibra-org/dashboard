@@ -161,6 +161,7 @@ export default class OrderOperationsController {
     async receiveReturn(ctx: HttpContext) {
         const returnId = id(ctx.params.id, "E_RETURN_ID");
         const payload = await ctx.request.validateUsing(receiveReturnValidator);
+        await phase5ReturnPolicyService.assertFinalReceiptCoverage(returnId, payload);
         const result = await phase5OrderOperationsService.receiveReturn(returnId, payload);
         await recordAudit({
             ctx,
