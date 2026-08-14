@@ -9,6 +9,10 @@ import AdminAuditLogTransformer from "#transformers/admin_audit_log_transformer"
 import PaymentAttemptTransformer from "#transformers/payment_attempt_transformer";
 import { adminPaymentAttemptListValidator } from "#validators/admin/payment_gateway_validator";
 
+function ilikeLiteral(value: string): string {
+    return `%${value.replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_")}%`;
+}
+
 /** Admin operations surface for payment attempts. */
 export default class AdminPaymentAttemptsController {
     async index(ctx: HttpContext) {
@@ -16,11 +20,12 @@ export default class AdminPaymentAttemptsController {
         const query = PaymentAttempt.query();
         const q = parsed.q?.trim();
         if (q) {
+            const needle = ilikeLiteral(q);
             query.where((builder) => {
                 builder
-                    .whereILike("gateway_code_snapshot", `%${q}%`)
-                    .orWhereILike("gateway_authority", `%${q}%`)
-                    .orWhereILike("gateway_transaction_id", `%${q}%`);
+                    .whereILike("gateway_code_snapshot", needle)
+                    .orWhereILike("gateway_authority", needle)
+                    .orWhereILike("gateway_transaction_id", needle);
                 if (/^\d+$/.test(q)) {
                     const numeric = Number(q);
                     if (Number.isSafeInteger(numeric)) builder.orWhere("id", numeric).orWhere("order_id", numeric);
@@ -43,7 +48,9 @@ export default class AdminPaymentAttemptsController {
             .count("id as count")
             .groupBy("reconciliation_status");
         const attentionRow = await PaymentAttempt.query()
-            .where((builder) => builder.whereIn("status", ["failed", "cancelled"]).orWhere("reconciliation_status", "mismatch"))
+            .where((builder) =>
+                builder.whereIn("status", ["failed", "cancelled"]).orWhere("reconciliation_status", "mismatch"),
+            )
             .count("id as count")
             .first();
 
