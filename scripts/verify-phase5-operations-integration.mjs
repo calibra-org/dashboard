@@ -8,6 +8,7 @@ const mustExist = [
     "apps/api/database/phase5_schema.generated.ts",
     "apps/api/app/services/phase5_order_operations_service.ts",
     "apps/api/app/services/phase5_order_operations_query_service.ts",
+    "apps/api/app/services/phase5_operations_summary_service.ts",
     "apps/api/app/services/phase5_return_policy_service.ts",
     "apps/api/app/services/legacy_mark_shipped_service.ts",
     "apps/api/app/services/inventory_operations_service.ts",
@@ -22,6 +23,7 @@ const mustExist = [
     "packages/sdk/src/generated/admin.phase5.d.ts",
     "apps/api/tests/functional/admin/phase5_operations.spec.ts",
     "apps/api/tests/functional/admin/phase5_operations_hardening.spec.ts",
+    "apps/api/tests/functional/admin/phase5_operations_summary.spec.ts",
 ];
 
 for (const file of mustExist) {
@@ -50,6 +52,7 @@ assertContains("docs/calibra/ADMIN_OPERATIONS_ROADMAP_2026-08-14.md", [
     "Phase 5 — Fulfillment & Order Operations — IN PROGRESS",
     "No new top-level Sidebar group or menu is allowed",
     "Phase 5 implementation checkpoint — appended 2026-08-14",
+    "Phase 5 hardening checkpoint — appended 2026-08-14",
 ]);
 
 assertContains("apps/api/start/routes/admin_phase5_operations.ts", [
@@ -100,7 +103,15 @@ assertContains("apps/api/app/services/phase5_order_operations_query_service.ts",
     "returned_quantity",
     "returnable_quantity",
 ]);
+assertContains("apps/api/app/services/phase5_operations_summary_service.ts", [
+    "date_paid_at",
+    "interval '24 hours'",
+    'whereIn("status", ["exception", "returned"])',
+    "paid_unfulfilled_over_24h",
+]);
 assertContains("apps/api/app/controllers/admin/order_operations_controller.ts", [
+    "phase5OperationsSummaryService",
+    "phase5OperationsSummaryService.summary",
     "phase5OrderOperationsQueryService",
     "phase5OrderOperationsQueryService.orderOperations",
     "phase5ReturnPolicyService",
@@ -212,6 +223,13 @@ assertContains("apps/api/tests/functional/admin/phase5_operations_hardening.spec
     "explicit zero RMA refund",
     "ftp://carrier.example",
     "refunds.body().data.length, 0",
+]);
+assertContains("apps/api/tests/functional/admin/phase5_operations_summary.spec.ts", [
+    "stale in-progress fulfillment",
+    "date_paid_at",
+    "returned to sender",
+    "paid_unfulfilled_over_24h",
+    "shipment_exceptions",
 ]);
 
 console.log("Phase 5 operations integration verifier passed.");
