@@ -1,6 +1,7 @@
 import { Exception } from "@adonisjs/core/exceptions";
 import type { HttpContext } from "@adonisjs/core/http";
 import lock from "@adonisjs/lock/services/main";
+import * as Sentry from "@sentry/node";
 import { DateTime } from "luxon";
 
 import { PaymentAttemptStatus } from "#enums/payment_attempt_status";
@@ -77,10 +78,17 @@ export class PaymentReconciliationService {
                     settings: paymentGatewayCredentialsService.runtimeSettings(gateway),
                 });
             } catch (error) {
+                Sentry.captureException(error, {
+                    tags: {
+                        payment_attempt_id: String(attempt.id),
+                        gateway: gateway.code,
+                        phase: "payment_reconciliation",
+                    },
+                });
                 return this.persist(attempt.id, actorUserId, ctx, {
                     status: "error",
                     providerStatus: "unknown",
-                    evidence: { gateway: gateway.code, exception: (error as Error).message || "unknown" },
+                    evidence: { gateway: gateway.code, reason: "provider_probe_exception" },
                     errorCode: "provider_probe_exception",
                 });
             }
