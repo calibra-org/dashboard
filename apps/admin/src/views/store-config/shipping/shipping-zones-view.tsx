@@ -11,6 +11,7 @@ import {
     useAddShippingZoneMethod,
     useCreateShippingZone,
     useDeleteShippingZone,
+    useDeleteShippingZoneMethod,
     useReplaceShippingZoneLocations,
     useShippingMethodDefinitions,
     useShippingZones,
@@ -151,6 +152,7 @@ function ZoneMethodEditor({ zoneId, method }: { zoneId: number; method: Shipping
     const t = useTranslations("StoreOperations");
     const shipping = useTranslations("StoreOperations.shipping");
     const update = useUpdateShippingZoneMethod(zoneId, method.id);
+    const remove = useDeleteShippingZoneMethod(zoneId);
     const [title, setTitle] = useState(method.title_override ?? "");
     const [ordering, setOrdering] = useState(String(method.ordering));
     const numericSettingKeys = Object.entries(method.settings_schema ?? {}).filter(([, rule]) => rule.type === "number").map(([key]) => key);
@@ -172,8 +174,11 @@ function ZoneMethodEditor({ zoneId, method }: { zoneId: number; method: Shipping
             {numericSettingKeys.map((key) => (
                 <label key={key} className="grid gap-1 text-xs"><span>{key === "cost" ? shipping("cost") : key === "min_amount" ? shipping("minAmount") : key}</span><Input value={settings[key] ?? ""} onChange={(event) => setSettings((current) => ({ ...current, [key]: event.target.value }))} inputMode="numeric" /></label>
             ))}
-            <div className="flex justify-end md:col-span-3"><Button type="button" size="sm" disabled={update.isPending} onClick={save}>{update.isPending ? t("saving") : t("save")}</Button></div>
-            <MutationMessage failed={update.isError} />
+            <div className="flex justify-end gap-2 md:col-span-3">
+                <Button type="button" size="sm" variant="destructive" disabled={remove.isPending} onClick={() => remove.mutate(method.id)}>{t("delete")}</Button>
+                <Button type="button" size="sm" disabled={update.isPending} onClick={save}>{update.isPending ? t("saving") : t("save")}</Button>
+            </div>
+            <MutationMessage failed={update.isError || remove.isError} />
         </div>
     );
 }
