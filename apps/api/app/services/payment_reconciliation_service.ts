@@ -34,17 +34,17 @@ export class PaymentReconciliationService {
         if (!Number.isSafeInteger(id) || id <= 0) {
             throw new Exception("Payment attempt not found", { status: 404, code: "E_NOT_FOUND" });
         }
-        const candidate = await PaymentAttempt.find(id);
-        if (!candidate) throw new Exception("Payment attempt not found", { status: 404, code: "E_NOT_FOUND" });
+        const attempt = await PaymentAttempt.find(id);
+        if (!attempt) throw new Exception("Payment attempt not found", { status: 404, code: "E_NOT_FOUND" });
 
-        const [acquired, result] = await lock.createLock(`order:${Number(candidate.orderId)}`, "30s").runImmediately(async () => {
-            const attempt = await PaymentAttempt.findOrFail(id);
-            const gateway = await PaymentGateway.find(Number(attempt.gatewayId));
+        const [acquired, result] = await lock.createLock(`order:${Number(attempt.orderId)}`, "30s").runImmediately(async () => {
+            const lockedAttempt = await PaymentAttempt.findOrFail(id);
+            const gateway = await PaymentGateway.find(Number(lockedAttempt.gatewayId));
             if (!gateway) {
-                return this.persist(attempt.id, Number(ctx.auth.user!.id), ctx, {
+                return this.persist(lockedAttempt.id, Number(ctx.auth.user!.id), ctx, {
                     status: "error",
                     providerStatus: "unknown",
-                    evidence: { gateway_id: Number(attempt.gatewayId), reason: "gateway_row_missing" },
+                    evidence: { gateway_id: Number(lockedAttempt.gatewayId), reason: "gateway_row_missing" },
                     errorCode: "gateway_row_missing",
                 });
             }
@@ -53,7 +53,7 @@ export class PaymentReconciliationService {
             try {
                 adapter = paymentAdapterRegistry.get(gateway.code);
             } catch {
-                return this.persist(attempt.id, Number(ctx.auth.user!.id), ctx, {
+                return this.persist(lockedAttempt.id, Number(ctx.auth.user!.id), ctx, {
                     status: "unsupported",
                     providerStatus: "unsupported",
                     evidence: { gateway: gateway.code, reason: "adapter_reconciliation_unsupported" },
@@ -63,7 +63,7 @@ export class PaymentReconciliationService {
 
             const actorUserId = Number(ctx.auth.user!.id);
             if (!adapter.reconcile) {
-                return this.persist(attempt.id, actorUserId, ctx, {
+                return this.persist(lockedAttempt.id, actorUserId, ctx, {
                     status: "unsupported",
                     providerStatus: "unsupported",
                     evidence: { gateway: gateway.code, reason: "adapter_reconciliation_unsupported" },
@@ -74,18 +74,18 @@ export class PaymentReconciliationService {
             let providerResult: ReconcileResult;
             try {
                 providerResult = await adapter.reconcile({
-                    attempt,
+                    attempt: lockedAttempt,
                     settings: paymentGatewayCredentialsService.runtimeSettings(gateway),
                 });
             } catch (error) {
                 Sentry.captureException(error, {
                     tags: {
-                        payment_attempt_id: String(attempt.id),
+                        payment_attempt_id: String(lockedAttempt.id),
                         gateway: gateway.code,
                         phase: "payment_reconciliation",
                     },
                 });
-                return this.persist(attempt.id, actorUserId, ctx, {
+                return this.persist(lockedAttempt.id, actorUserId, ctx, {
                     status: "error",
                     providerStatus: "unknown",
                     evidence: { gateway: gateway.code, reason: "provider_probe_exception" },
@@ -94,7 +94,7 @@ export class PaymentReconciliationService {
             }
 
             if (!providerResult.ok) {
-                return this.persist(attempt.id, actorUserId, ctx, {
+                return this.persist(lockedAttempt.id, actorUserId, ctx, {
                     status: "error",
                     providerStatus: "unknown",
                     evidence: this.asRecord(providerResult.payload),
@@ -102,8 +102,8 @@ export class PaymentReconciliationService {
                 });
             }
 
-            return this.persist(attempt.id, actorUserId, ctx, {
-                status: this.classify(attempt, providerResult),
+            return this.persist(lockedAttempt.id, actorUserId, ctx, {
+                status: this.classify(lockedAttempt, providerResult),
                 providerStatus: providerResult.provider_status,
                 evidence: this.asRecord(providerResult.payload),
                 errorCode: null,
