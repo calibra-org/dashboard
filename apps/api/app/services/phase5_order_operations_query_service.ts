@@ -1,5 +1,6 @@
 import { Exception } from "@adonisjs/core/exceptions";
 
+import { OrderStatus } from "#enums/order_status";
 import { currentTrx } from "#services/tenant_context";
 
 type DbRow = Record<string, unknown>;
@@ -118,27 +119,53 @@ export class Phase5OrderOperationsQueryService {
             : [];
 
         const allocated = new Map<number, number>();
+        const delivered = new Map<number, number>();
         for (const item of fulfillmentItems) {
             const fulfillment = fulfillments.find((candidate) => Number(candidate.id) === Number(item.fulfillment_id));
             if (!fulfillment || fulfillment.status === "cancelled") continue;
             const lineId = Number(item.order_line_item_id);
             allocated.set(lineId, (allocated.get(lineId) ?? 0) + Number(item.quantity));
+            if (fulfillment.status === "delivered") {
+                delivered.set(lineId, (delivered.get(lineId) ?? 0) + Number(item.quantity));
+            }
         }
+
+        const returned = new Map<number, number>();
+        for (const item of returnItems) {
+            const returnRecord = returns.find((candidate) => Number(candidate.id) === Number(item.return_id));
+            if (!returnRecord || returnRecord.status === "cancelled") continue;
+            const lineId = Number(item.order_line_item_id);
+            returned.set(lineId, (returned.get(lineId) ?? 0) + Number(item.requested_quantity));
+        }
+
+        const legacyDelivered =
+            fulfillments.length === 0 &&
+            (order.status === OrderStatus.Completed || order.status === OrderStatus.Refunded);
 
         return {
             data: {
                 order_id: orderId,
                 order_status: String(order.status),
-                lines: lines.map((line) => ({
-                    id: numberValue(line.id),
-                    product_id: numberOrNull(line.product_id),
-                    variation_id: numberOrNull(line.variation_id),
-                    name: String(line.name),
-                    sku: line.sku === null ? null : String(line.sku),
-                    quantity: numberValue(line.quantity),
-                    fulfilled_quantity: allocated.get(Number(line.id)) ?? 0,
-                    remaining_quantity: Math.max(0, numberValue(line.quantity) - (allocated.get(Number(line.id)) ?? 0)),
-                })),
+                lines: lines.map((line) => {
+                    const lineId = Number(line.id);
+                    const orderedQuantity = numberValue(line.quantity);
+                    const fulfilledQuantity = allocated.get(lineId) ?? 0;
+                    const deliveredQuantity = legacyDelivered ? orderedQuantity : delivered.get(lineId) ?? 0;
+                    const returnedQuantity = returned.get(lineId) ?? 0;
+                    return {
+                        id: numberValue(line.id),
+                        product_id: numberOrNull(line.product_id),
+                        variation_id: numberOrNull(line.variation_id),
+                        name: String(line.name),
+                        sku: line.sku === null ? null : String(line.sku),
+                        quantity: orderedQuantity,
+                        fulfilled_quantity: fulfilledQuantity,
+                        remaining_quantity: Math.max(0, orderedQuantity - fulfilledQuantity),
+                        delivered_quantity: deliveredQuantity,
+                        returned_quantity: returnedQuantity,
+                        returnable_quantity: Math.max(0, deliveredQuantity - returnedQuantity),
+                    };
+                }),
                 fulfillments: fulfillments.map((row) => ({
                     ...fulfillmentRow(row),
                     items: fulfillmentItems
