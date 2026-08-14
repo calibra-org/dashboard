@@ -94,6 +94,9 @@ assertContains("apps/api/app/services/phase5_order_operations_query_service.ts",
     "order_fulfillments",
     "order_shipment_events",
     "order_returns",
+    "delivered_quantity",
+    "returned_quantity",
+    "returnable_quantity",
 ]);
 assertContains("apps/api/app/controllers/admin/order_operations_controller.ts", [
     "phase5OrderOperationsQueryService",
@@ -143,6 +146,12 @@ assertContains("apps/admin/src/views/store-config/shipping/shipping-zones-view.t
     "useDeleteShippingZoneMethod",
     "remove.mutate(method.id)",
 ]);
+assertContains("apps/admin/src/features/operations/fulfillment-operations-card.tsx", [
+    "SHIPMENT_NEXT",
+    "line.returnable_quantity",
+    't("noReturnable")',
+    "delivered_quantity",
+]);
 
 assertContains("apps/admin/src/views/orders/detail/shipping-card.tsx", ["FulfillmentOperationsCard", "orderId={order.id}"]);
 assertContains("apps/admin/src/views/orders/list/status-tabs.tsx", ["useOrderOperationsSummary", "shipmentExceptions", "returnsApproval"]);
@@ -169,7 +178,8 @@ assertContains("apps/api/tests/functional/admin/phase5_operations.spec.ts", [
     "Idempotency-Key",
     "records shipment events",
     "requires authentication and admin role",
-    "blocks returns before delivery",
+    "routes legacy mark-shipped through fulfillment",
+    "refund_amount_minor: 1_000_001",
     "hands the financial refund to RefundService",
     "blocks order cancellation",
     "persists inventory adjustments and shipping/tax configuration",
