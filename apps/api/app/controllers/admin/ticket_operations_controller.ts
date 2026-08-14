@@ -24,7 +24,12 @@ import {
 
 function paramId(ctx: HttpContext, name = "id"): number {
     const value = Number(ctx.params[name]);
-    if (!Number.isSafeInteger(value) || value < 1) throw new Exception("Invalid support operation identifier", { status: 422, code: "E_SUPPORT_INVALID_ID" });
+    if (!Number.isSafeInteger(value) || value < 1) {
+        throw new Exception("Invalid support operation identifier", {
+            status: 422,
+            code: "E_SUPPORT_INVALID_ID",
+        });
+    }
     return value;
 }
 
@@ -33,7 +38,13 @@ async function actor(ctx: HttpContext): Promise<number> {
     return Number(user.id);
 }
 
-async function audit(ctx: HttpContext, action: string, entityKind: string, entityId: number | null, payload: Record<string, unknown> = {}) {
+async function audit(
+    ctx: HttpContext,
+    action: string,
+    entityKind: string,
+    entityId: number | null,
+    payload: Record<string, unknown> = {},
+) {
     await recordAudit({ ctx, action, entityKind, entityId, payload });
 }
 
@@ -46,7 +57,9 @@ export default class TicketOperationsController {
         const payload = await ctx.request.validateUsing(ticketWorkflowStatusValidator);
         const result = await ticketOperationsService.createWorkflowStatus(payload);
         ctx.response.status(201);
-        await audit(ctx, "support.workflow_status.create", "support_ticket_workflow_status", Number(result.data.id), { code: payload.code });
+        await audit(ctx, "support.workflow_status.create", "support_ticket_workflow_status", Number(result.data.id), {
+            code: payload.code,
+        });
         return result;
     }
 
@@ -63,23 +76,29 @@ export default class TicketOperationsController {
     }
 
     async savedViewUpdate(ctx: HttpContext) {
+        const viewId = paramId(ctx);
         const payload = await ctx.request.validateUsing(ticketSavedViewUpdateValidator);
-        const result = await ticketOperationsService.updateSavedView(paramId(ctx), await actor(ctx), payload);
-        await audit(ctx, "support.saved_view.update", "support_ticket_saved_view", paramId(ctx));
+        const result = await ticketOperationsService.updateSavedView(viewId, await actor(ctx), payload);
+        await audit(ctx, "support.saved_view.update", "support_ticket_saved_view", viewId);
         return result;
     }
 
     async savedViewDestroy(ctx: HttpContext) {
-        const id = paramId(ctx);
-        await ticketOperationsService.deleteSavedView(id, await actor(ctx));
-        await audit(ctx, "support.saved_view.delete", "support_ticket_saved_view", id);
+        const viewId = paramId(ctx);
+        await ticketOperationsService.deleteSavedView(viewId, await actor(ctx));
+        await audit(ctx, "support.saved_view.delete", "support_ticket_saved_view", viewId);
         return ctx.response.status(204);
     }
 
     async bulk(ctx: HttpContext) {
         const payload = await ctx.request.validateUsing(ticketBulkOperationValidator);
         const result = await ticketOperationsService.bulk(payload, await actor(ctx));
-        await audit(ctx, "support.ticket.bulk", "support_ticket", null, { operation: payload.operation, requested: payload.tickets.length, succeeded: result.meta.succeeded, failed: result.meta.failed });
+        await audit(ctx, "support.ticket.bulk", "support_ticket", null, {
+            operation: payload.operation,
+            requested: payload.tickets.length,
+            succeeded: result.meta.succeeded,
+            failed: result.meta.failed,
+        });
         return result;
     }
 
@@ -92,7 +111,10 @@ export default class TicketOperationsController {
         const payload = await ctx.request.validateUsing(ticketAttachmentValidator);
         const result = await ticketOperationsService.addAttachment(ticketId, payload, await actor(ctx));
         ctx.response.status(201);
-        await audit(ctx, "support.ticket.attachment.create", "support_ticket_attachment", Number(result.data.id), { ticket_id: ticketId, media_id: payload.media_id });
+        await audit(ctx, "support.ticket.attachment.create", "support_ticket_attachment", Number(result.data.id), {
+            ticket_id: ticketId,
+            media_id: payload.media_id,
+        });
         return result;
     }
 
@@ -100,7 +122,9 @@ export default class TicketOperationsController {
         const attachmentId = paramId(ctx, "attachmentId");
         const payload = await ctx.request.validateUsing(ticketAttachmentScanValidator);
         const result = await ticketOperationsService.updateAttachmentScan(attachmentId, payload, await actor(ctx));
-        await audit(ctx, "support.ticket.attachment.scan", "support_ticket_attachment", attachmentId, { status: payload.status });
+        await audit(ctx, "support.ticket.attachment.scan", "support_ticket_attachment", attachmentId, {
+            status: payload.status,
+        });
         return result;
     }
 
@@ -108,7 +132,10 @@ export default class TicketOperationsController {
         const sourceId = paramId(ctx, "ticketId");
         const payload = await ctx.request.validateUsing(ticketMergeValidator);
         const result = await ticketOperationsService.merge(sourceId, payload, await actor(ctx));
-        await audit(ctx, "support.ticket.merge", "support_ticket", sourceId, { target_ticket_id: payload.target_ticket_id, merge_id: result.data.id });
+        await audit(ctx, "support.ticket.merge", "support_ticket", sourceId, {
+            target_ticket_id: payload.target_ticket_id,
+            merge_id: result.data.id,
+        });
         return result;
     }
 
@@ -128,7 +155,11 @@ export default class TicketOperationsController {
     async channelUpdate(ctx: HttpContext) {
         const payload = await ctx.request.validateUsing(ticketChannelUpdateValidator);
         const result = await ticketOperationsService.configureChannel(payload);
-        await audit(ctx, "support.channel.configure", "support_channel_integration", Number(result.data.id), { channel: payload.channel, enabled: payload.enabled, credential_env_ref: payload.credential_env_ref ?? null });
+        await audit(ctx, "support.channel.configure", "support_channel_integration", null, {
+            channel: payload.channel,
+            enabled: payload.enabled,
+            credential_env_ref: payload.credential_env_ref ?? null,
+        });
         return result;
     }
 
@@ -145,10 +176,12 @@ export default class TicketOperationsController {
     }
 
     async routingRuleUpdate(ctx: HttpContext) {
-        const id = paramId(ctx);
+        const ruleId = paramId(ctx);
         const payload = await ctx.request.validateUsing(ticketRuleUpdateValidator);
-        const result = await ticketOperationsService.updateRoutingRule(id, payload);
-        await audit(ctx, "support.routing_rule.update", "support_routing_rule", id, { expected_version: payload.expected_version });
+        const result = await ticketOperationsService.updateRoutingRule(ruleId, payload);
+        await audit(ctx, "support.routing_rule.update", "support_routing_rule", ruleId, {
+            expected_version: payload.expected_version,
+        });
         return result;
     }
 
@@ -165,10 +198,12 @@ export default class TicketOperationsController {
     }
 
     async automationRuleUpdate(ctx: HttpContext) {
-        const id = paramId(ctx);
+        const ruleId = paramId(ctx);
         const payload = await ctx.request.validateUsing(ticketAutomationUpdateValidator);
-        const result = await ticketOperationsService.updateAutomationRule(id, payload);
-        await audit(ctx, "support.automation_rule.update", "support_automation_rule", id, { expected_version: payload.expected_version });
+        const result = await ticketOperationsService.updateAutomationRule(ruleId, payload);
+        await audit(ctx, "support.automation_rule.update", "support_automation_rule", ruleId, {
+            expected_version: payload.expected_version,
+        });
         return result;
     }
 
@@ -180,23 +215,39 @@ export default class TicketOperationsController {
         const payload = await ctx.request.validateUsing(ticketCampaignCreateValidator);
         const result = await ticketOperationsService.createCampaign(payload);
         ctx.response.status(201);
-        await audit(ctx, "support.campaign.create", "support_campaign", Number(result.data.id), { channel: payload.channel });
+        await audit(ctx, "support.campaign.create", "support_campaign", Number(result.data.id), {
+            channel: payload.channel,
+        });
         return result;
     }
 
     async campaignRecipients(ctx: HttpContext) {
-        const id = paramId(ctx);
+        const campaignId = paramId(ctx);
         const payload = await ctx.request.validateUsing(ticketCampaignRecipientsValidator);
-        const result = await ticketOperationsService.addCampaignRecipients(id, payload.expected_version, payload.recipients);
-        await audit(ctx, "support.campaign.recipients", "support_campaign", id, { count: payload.recipients.length, expected_version: payload.expected_version });
+        const result = await ticketOperationsService.addCampaignRecipients(
+            campaignId,
+            payload.expected_version,
+            payload.recipients,
+        );
+        await audit(ctx, "support.campaign.recipients", "support_campaign", campaignId, {
+            count: payload.recipients.length,
+            expected_version: payload.expected_version,
+        });
         return result;
     }
 
     async campaignTransition(ctx: HttpContext) {
-        const id = paramId(ctx);
+        const campaignId = paramId(ctx);
         const payload = await ctx.request.validateUsing(ticketCampaignTransitionValidator);
-        const result = await ticketOperationsService.transitionCampaign(id, payload.expected_version, payload.status);
-        await audit(ctx, "support.campaign.transition", "support_campaign", id, { status: payload.status, expected_version: payload.expected_version });
+        const result = await ticketOperationsService.transitionCampaign(
+            campaignId,
+            payload.expected_version,
+            payload.status,
+        );
+        await audit(ctx, "support.campaign.transition", "support_campaign", campaignId, {
+            status: payload.status,
+            expected_version: payload.expected_version,
+        });
         return result;
     }
 
