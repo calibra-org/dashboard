@@ -65,6 +65,11 @@ export interface ApiMutationOptions extends ApiFetchOptions {
     body?: unknown;
     /** Optional `If-Match` header value — forwarded to the api for optimistic concurrency checks. */
     ifMatch?: string;
+    /**
+     * Stable idempotency token for retry-safe financial/create operations. Callers must keep this
+     * value stable while retrying the same logical request and rotate it when the payload changes.
+     */
+    idempotencyKey?: string;
 }
 
 export type MutationMethod = "POST" | "PUT" | "PATCH" | "DELETE";
@@ -85,6 +90,9 @@ export async function apiMutate<T>(method: MutationMethod, path: string, options
     };
     if (typeof options.ifMatch === "string" && options.ifMatch.length > 0) {
         headers["if-match"] = options.ifMatch;
+    }
+    if (typeof options.idempotencyKey === "string" && options.idempotencyKey.length > 0) {
+        headers["idempotency-key"] = options.idempotencyKey;
     }
     let body: BodyInit | undefined;
     if (options.body !== undefined && options.body !== null) {
