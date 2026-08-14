@@ -27,11 +27,11 @@ jobs:
         run: |
           set -euo pipefail
           cat .finalize-carrier/part-* > /tmp/finalize.patch.xz.b64
-          echo "42359682e1ad5162f9688b14cb07c81e105a5644d1a6cfde85c44b50a0e7a2fe  /tmp/finalize.patch.xz.b64" | sha256sum -c -
+          echo "68cd07c81b64c502718cfdd3ceba5dc823f4adb2b92afeb1eb5fa44efa8a1a90  /tmp/finalize.patch.xz.b64" | sha256sum -c -
           base64 -d /tmp/finalize.patch.xz.b64 > /tmp/finalize.patch.xz
-          echo "507651161115dd13ad825adfa11b300780c59b681829adb141facdafbee364b0  /tmp/finalize.patch.xz" | sha256sum -c -
+          echo "ad04041bc41d0aac5a45b81c9efecf95a9d53325ba05c7f442b98649585eff13  /tmp/finalize.patch.xz" | sha256sum -c -
           xz -dc /tmp/finalize.patch.xz > /tmp/finalize.patch
-          echo "b9f37db695426d14aa598485372237d8ba1a3c6d94b550174708befd4df85241  /tmp/finalize.patch" | sha256sum -c -
+          echo "4cf49e8c566cb7ff7121badd8ff3f5ba18adf6e3fce3c9b85cb2c9c60c70fc56  /tmp/finalize.patch" | sha256sum -c -
           git apply --check /tmp/finalize.patch
           git apply /tmp/finalize.patch
           rm -rf .finalize-carrier
