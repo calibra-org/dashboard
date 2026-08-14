@@ -69,6 +69,7 @@ await import("./routes/admin_seo.js");
 await import("./routes/admin_seo_operations.js");
 await import("./routes/admin_tickets.js");
 await import("./routes/admin_ticket_operations.js");
+await import("./routes/admin_ticket_campaign_review.js");
 await import("./routes/admin_reports.js");
 await import("./routes/admin_insights.js");
 await import("./routes/admin_settings.js");
