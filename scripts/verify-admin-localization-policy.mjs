@@ -21,6 +21,19 @@ function check(condition, message) {
     if (!condition) failures.push(message);
 }
 
+function messages(locale) {
+    const base = JSON.parse(read(`apps/admin/messages/${locale}.json`));
+    const transactions = JSON.parse(read(`apps/admin/messages/transactions/${locale}.json`));
+    return {
+        ...base,
+        ...transactions,
+        Nav: {
+            ...base.Nav,
+            ...transactions.Nav,
+        },
+    };
+}
+
 const localizedSurfaces = [
     "apps/admin/src/views/transactions/transactions-center.tsx",
     "apps/admin/src/features/factor/documents-list.tsx",
@@ -56,8 +69,8 @@ for (const file of factorFiles) {
     check(!/type=["']date["']/.test(source), `${file} must use the Admin date-picker primitive instead of native input[type=date]`);
 }
 
-const fa = JSON.parse(read("apps/admin/messages/fa.json"));
-const en = JSON.parse(read("apps/admin/messages/en.json"));
+const fa = messages("fa");
+const en = messages("en");
 for (const namespace of ["Transactions", "Factor", "Content", "Seo"]) {
     check(fa[namespace] && typeof fa[namespace] === "object", `Persian messages missing ${namespace} namespace`);
     check(en[namespace] && typeof en[namespace] === "object", `English messages missing ${namespace} namespace`);
