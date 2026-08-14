@@ -2,7 +2,7 @@ import { beforeSave, belongsTo, column } from "@adonisjs/lucid/orm";
 import type { BelongsTo } from "@adonisjs/lucid/types/relations";
 import type { DateTime } from "luxon";
 
-import { PaymentAttemptSchema } from "#database/schema";
+import { PaymentAttemptSchema } from "#database/payment_attempt_schema.generated";
 import type { PaymentAttemptStatus } from "#enums/payment_attempt_status";
 import Order from "#models/order";
 import PaymentGateway from "#models/payment_gateway";
