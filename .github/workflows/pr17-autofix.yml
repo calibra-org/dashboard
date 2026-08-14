@@ -28,6 +28,32 @@ jobs:
           node-version: 24.14.0
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Apply deterministic source cleanups
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from "node:fs";
+
+          function replaceExact(file, from, to) {
+            const source = fs.readFileSync(file, "utf8");
+            if (!source.includes(from)) return;
+            fs.writeFileSync(file, source.replace(from, to));
+          }
+
+          replaceExact(
+            "apps/api/app/services/seo/operations_service.ts",
+            "before = contentPayload(detail.data);",
+            "before = { ...contentPayload(detail.data) };",
+          );
+
+          const ticketOps = "apps/api/app/services/support/ticket_operations_service.ts";
+          let source = fs.readFileSync(ticketOps, "utf8");
+          source = source.replace(
+            /async function ensureTicketVersion[\s\S]*?\n}\n\n(?=async function event)/,
+            "",
+          );
+          fs.writeFileSync(ticketOps, source);
+          NODE
       - name: Apply repository formatter
         run: pnpm exec biome format --write .
       - name: Regenerate SDK from canonical OpenAPI
