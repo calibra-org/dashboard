@@ -99,7 +99,7 @@ for (const icon of importedIcons) {
 }
 
 const localIconNames = new Set(importedIcons.map((icon) => icon.local));
-const itemIconNames = [...sidebar.matchAll(/icon:\s*([A-Za-z0-9_]+)/g)].map((match) => match[1]);
+const itemIconNames = [...sidebar.matchAll(/icon:\s*([A-Za-z0-9_]+)\s*,/g)].map((match) => match[1]);
 for (const icon of itemIconNames) {
     check(localIconNames.has(icon), `Sidebar uses icon ${icon} without importing it from #/icons`);
 }
