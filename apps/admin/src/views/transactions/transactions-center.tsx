@@ -106,6 +106,9 @@ interface CopyShape {
     refundRemaining: string;
     refundRouting: string;
     refundSuccess: string;
+    refundGatewayCompleted: string;
+    refundGatewayManual: string;
+    refundGatewayUnknown: string;
     refundInvalid: string;
     refundUnavailable: string;
     previousRefunds: string;
@@ -905,14 +908,27 @@ function RefundPanel({ transaction, locale, t }: { transaction: AdminTransaction
             return;
         }
         try {
-            await createRefund.mutateAsync({
+            const created = await createRefund.mutateAsync({
                 order_id: transaction.order_id,
                 amount_minor: amountMinor,
                 reason: reason.trim() || null,
             });
             setAmount("");
             setReason("");
-            toast.add({ description: t.refundSuccess, data: { tone: "success" } });
+            const gatewayStatus = (
+                created.data as typeof created.data & {
+                    gateway_refund_status?: "completed" | "manual_action_required" | "unknown";
+                }
+            ).gateway_refund_status;
+            if (gatewayStatus === "completed") {
+                toast.add({ description: t.refundGatewayCompleted, data: { tone: "success" } });
+            } else if (gatewayStatus === "manual_action_required") {
+                toast.add({ description: t.refundGatewayManual, data: { tone: "warning" } });
+            } else if (gatewayStatus === "unknown") {
+                toast.add({ description: t.refundGatewayUnknown, data: { tone: "warning" } });
+            } else {
+                toast.add({ description: t.refundSuccess, data: { tone: "success" } });
+            }
         } catch (error) {
             toast.add({ description: (error as Error).message, data: { tone: "error" } });
         }
