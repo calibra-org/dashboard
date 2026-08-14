@@ -44,22 +44,18 @@ jobs:
                   raise SystemExit(f"expected source fragment missing in {path_str}: {old[:80]!r}")
               path.write_text(source.replace(old, new, 1))
 
-          # Sidebar unread badge: spans cannot carry aria-label as the accessible name here.
           replace(
               "apps/admin/src/components/Sidebar.tsx",
               'aria-label={ticketsT("unread", { count: badge })}',
               'title={ticketsT("unread", { count: badge })}',
           )
 
-          # Content settings effect uses the translator to derive the list separator.
           replace(
               "apps/admin/src/features/content/settings-page.tsx",
               "    }, [settings.data]);",
               "    }, [settings.data, copyT]);",
           )
 
-          # Shipping locations already have persistent ids. Preserve them locally and allocate
-          # negative ids for unsaved rows so React keys remain stable while the user edits values.
           shipping = Path("apps/admin/src/views/store-config/shipping/shipping-zones-view.tsx")
           source = shipping.read_text()
           source = source.replace(
@@ -89,7 +85,6 @@ jobs:
           )
           shipping.write_text(source)
 
-          # Static skeleton rows have stable semantic keys rather than array indexes.
           transactions = Path("apps/admin/src/views/transactions/transactions-center.tsx")
           source = transactions.read_text()
           source = source.replace(
@@ -103,13 +98,12 @@ jobs:
               1,
           )
           source = source.replace(
-              '            role="button"\n            aria-label={`${detailsLabel} #${row.id}`}',
-              '            // biome-ignore lint/a11y/useSemanticElements: A button cannot replace a table row without invalid table markup; keyboard activation is implemented below.\n            role="button"\n            aria-label={`${detailsLabel} #${row.id}`}',
+              '    return (\n        <tr\n            tabIndex={0}\n            role="button"',
+              '    return (\n        // biome-ignore lint/a11y/useSemanticElements: A button cannot replace a table row without invalid table markup; keyboard activation is implemented below.\n        <tr\n            tabIndex={0}\n            role="button"',
               1,
           )
           transactions.write_text(source)
 
-          # Give the reconciliation adapter its concrete registry type.
           reconciliation = Path("apps/api/app/services/payment_reconciliation_service.ts")
           source = reconciliation.read_text()
           source = source.replace(
