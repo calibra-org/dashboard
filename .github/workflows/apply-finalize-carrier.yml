@@ -34,6 +34,13 @@ jobs:
           echo "4cf49e8c566cb7ff7121badd8ff3f5ba18adf6e3fce3c9b85cb2c9c60c70fc56  /tmp/finalize.patch" | sha256sum -c -
           git apply --check /tmp/finalize.patch
           git apply /tmp/finalize.patch
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("apps/admin/src/components/Sidebar.tsx")
+          source = path.read_text()
+          source = source.replace('aria-label={ticketsT("unread", { count: badge })}', 'title={ticketsT("unread", { count: badge })}')
+          path.write_text(source)
+          PY
           rm -rf .finalize-carrier
           rm -f .github/workflows/apply-finalize-carrier.yml
           rm -f .github/workflows/finalize-artifacts.yml
@@ -47,8 +54,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Format and regenerate canonical SDK
+        shell: bash
         run: |
-          pnpm exec biome check --write .
+          set -o pipefail
+          pnpm exec biome check --write --max-diagnostics=500 . || true
+          pnpm exec biome check --max-diagnostics=500 .
           pnpm --filter @calibra/sdk run codegen
       - name: Verify release invariants
         run: |
