@@ -13,6 +13,7 @@ const mustExist = [
     "apps/api/app/services/inventory_operations_service.ts",
     "apps/api/app/services/store_operations_config_service.ts",
     "apps/api/start/routes/admin_phase5_operations.ts",
+    "apps/admin/src/app/api/admin/[...path]/route.ts",
     "apps/admin/src/features/operations/fulfillment-operations-card.tsx",
     "apps/admin/src/features/operations/inventory-operations-panel.tsx",
     "apps/admin/messages/operations/fa.json",
@@ -20,6 +21,7 @@ const mustExist = [
     "docs/api/reference/openapi/admin.phase5.v1.yaml",
     "packages/sdk/src/generated/admin.phase5.d.ts",
     "apps/api/tests/functional/admin/phase5_operations.spec.ts",
+    "apps/api/tests/functional/admin/phase5_operations_hardening.spec.ts",
 ];
 
 for (const file of mustExist) {
@@ -102,6 +104,7 @@ assertContains("apps/api/app/controllers/admin/order_operations_controller.ts", 
     "phase5OrderOperationsQueryService",
     "phase5OrderOperationsQueryService.orderOperations",
     "phase5ReturnPolicyService",
+    "assertFinalReceiptCoverage",
 ]);
 assertContains("apps/api/app/services/legacy_mark_shipped_service.ts", [
     "phase5OrderOperationsQueryService",
@@ -111,6 +114,9 @@ assertContains("apps/api/app/services/legacy_mark_shipped_service.ts", [
 assertContains("apps/api/app/services/phase5_return_policy_service.ts", [
     "E_RETURN_EXCEEDS_DELIVERED",
     "E_RETURN_REFUND_AMOUNT_EXCEEDS_LINE",
+    "E_RETURN_RECEIPT_INCOMPLETE",
+    "storedRefund === null",
+    "defaultTax * gross",
     "order_line_items",
     "order_fulfillments",
     "RefundService",
@@ -119,6 +125,21 @@ assertContains("apps/api/app/services/phase5_return_policy_service.ts", [
 assertContains("apps/api/app/services/order_state_machine.ts", [
     "assertFulfillmentSafeTransition",
     "E_ORDER_HAS_ACTIVE_FULFILLMENT",
+]);
+
+assertContains("apps/api/app/validators/admin/phase5_operations_validator.ts", [
+    'protocols: ["http", "https"]',
+    "require_protocol: true",
+    "withoutDecimals()",
+]);
+assertContains("apps/api/app/validators/admin/order_validator.ts", [
+    'protocols: ["http", "https"]',
+    "require_protocol: true",
+]);
+
+assertContains("apps/admin/src/app/api/admin/[...path]/route.ts", [
+    'request.headers.get("idempotency-key")',
+    'headers["idempotency-key"] = idempotencyKey',
 ]);
 
 assertContains("apps/api/app/services/inventory_operations_service.ts", ["InventoryService", "adjust"]);
@@ -183,6 +204,14 @@ assertContains("apps/api/tests/functional/admin/phase5_operations.spec.ts", [
     "hands the financial refund to RefundService",
     "blocks order cancellation",
     "persists inventory adjustments and shipping/tax configuration",
+]);
+assertContains("apps/api/tests/functional/admin/phase5_operations_hardening.spec.ts", [
+    "rejects fractional fulfillment quantities",
+    "rejects non-web tracking URLs",
+    "every approved unit",
+    "explicit zero RMA refund",
+    "ftp://carrier.example",
+    "refunds.body().data.length, 0",
 ]);
 
 console.log("Phase 5 operations integration verifier passed.");
