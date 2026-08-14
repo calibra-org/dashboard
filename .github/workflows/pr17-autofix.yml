@@ -1,0 +1,47 @@
+name: PR17 Reproducible Autofix
+
+on:
+  push:
+    branches:
+      - agent/complete-ticket-seo-content-backends-20260814
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pr17-reproducible-autofix
+  cancel-in-progress: true
+
+jobs:
+  format-and-codegen:
+    if: github.actor != 'github-actions[bot]' || !contains(github.event.head_commit.message, 'chore(ci): apply reproducible formatter and SDK codegen')
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/complete-ticket-seo-content-backends-20260814
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Apply repository formatter
+        run: pnpm exec biome format --write .
+      - name: Regenerate SDK from canonical OpenAPI
+        run: pnpm --filter @calibra/sdk run codegen
+      - name: Commit reproducible outputs
+        shell: bash
+        run: |
+          if git diff --quiet -- .; then
+            echo "No reproducible changes required."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore(ci): apply reproducible formatter and SDK codegen"
+          git push origin HEAD:agent/complete-ticket-seo-content-backends-20260814
