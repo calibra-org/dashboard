@@ -62,7 +62,7 @@ const importedIcons = importMatch
           })
     : [];
 const generatedIcons = read("packages/panel-kit/src/icons/icons.generated.ts");
-const directionalIcons = read("packages/panel-kit/src/icons/directional.ts");
+const directionalIcons = read("packages/panel-kit/src/icons/directional.tsx");
 for (const icon of importedIcons) {
     check(
         generatedIcons.includes(icon.exported) || directionalIcons.includes(icon.exported),
