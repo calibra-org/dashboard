@@ -21,16 +21,28 @@ function check(condition, message) {
     if (!condition) failures.push(message);
 }
 
-function contains(relative, needle, message = `${relative} must contain ${needle}`) {
-    check(read(relative).includes(needle), message);
-}
-
 function notContains(relative, needle, message = `${relative} must not contain ${needle}`) {
     check(!read(relative).includes(needle), message);
 }
 
+function messages(locale) {
+    const base = JSON.parse(read(`apps/admin/messages/${locale}.json`));
+    const transactions = JSON.parse(read(`apps/admin/messages/transactions/${locale}.json`));
+    return {
+        ...base,
+        ...transactions,
+        Nav: {
+            ...base.Nav,
+            ...transactions.Nav,
+        },
+    };
+}
+
 const requiredFiles = [
+    "apps/admin/messages/transactions/fa.json",
+    "apps/admin/messages/transactions/en.json",
     "apps/admin/src/app/[locale]/(authenticated)/transactions/page.tsx",
+    "apps/admin/src/lib/i18n/request.ts",
     "apps/admin/src/lib/queries/transactions.ts",
     "apps/admin/src/views/transactions/transactions-center.tsx",
     "apps/api/app/controllers/admin/payment_attempts_controller.ts",
@@ -72,10 +84,11 @@ check(routes.includes("middleware.admin()"), "Admin payment routes must require 
 
 const transactionUi = read("apps/admin/src/views/transactions/transactions-center.tsx");
 for (const invariant of [
+    "useTranslations(\"Transactions\")",
     "useTransactions",
     "useTransactionSummary",
     "useReconcileTransaction",
-    "useReconciliationHistory",
+    "useTransactionReconciliationHistory",
     "usePaymentGateways",
     "useCreateRefund",
     "useOrderRefunds",
@@ -86,18 +99,38 @@ for (const invariant of [
 ]) {
     check(transactionUi.includes(invariant), `Transaction Center missing wiring: ${invariant}`);
 }
-notContains("apps/admin/src/views/transactions/transactions-center.tsx", "getTopSellersFixture", "Transaction Center must not use fixtures");
-notContains("apps/admin/src/views/transactions/transactions-center.tsx", "toast.success", "Transaction Center must use the repository toast manager API");
+notContains(
+    "apps/admin/src/views/transactions/transactions-center.tsx",
+    "getTopSellersFixture",
+    "Transaction Center must not use fixtures",
+);
+notContains(
+    "apps/admin/src/views/transactions/transactions-center.tsx",
+    "toast.success",
+    "Transaction Center must use the repository toast manager API",
+);
+notContains(
+    "apps/admin/src/views/transactions/transactions-center.tsx",
+    "const COPY =",
+    "Transaction Center visible copy must come from next-intl",
+);
+check(
+    transactionUi.includes("const financialsReady = order.isSuccess && refunds.isSuccess"),
+    "Refund UI must wait for authoritative order/refund data instead of falling back to a historical attempt amount",
+);
 
 const sidebar = read("apps/admin/src/components/Sidebar.tsx");
 check(sidebar.includes('/transactions'), "Sidebar must link to /transactions");
 check(sidebar.includes('labelKey: "transactions"'), "Transaction navigation must use the Nav translation catalog");
-check(!sidebar.includes('label: { fa: "تراکنش‌ها", en: "Transactions" }'), "Sidebar must not hard-code bilingual transaction copy");
+check(
+    !sidebar.includes('label: { fa: "تراکنش‌ها", en: "Transactions" }'),
+    "Sidebar must not hard-code bilingual transaction copy",
+);
 
-for (const messagesFile of ["apps/admin/messages/fa.json", "apps/admin/messages/en.json"]) {
-    const messages = JSON.parse(read(messagesFile));
-    check(typeof messages?.Nav?.transactions === "string" && messages.Nav.transactions.length > 0, `${messagesFile} missing Nav.transactions`);
-    check(messages?.Transactions && typeof messages.Transactions === "object", `${messagesFile} missing Transactions namespace`);
+for (const locale of ["fa", "en"]) {
+    const catalog = messages(locale);
+    check(typeof catalog.Nav?.transactions === "string", `${locale} Nav.transactions is missing`);
+    check(catalog.Transactions && typeof catalog.Transactions === "object", `${locale} Transactions namespace is missing`);
 }
 
 const controller = read("apps/api/app/controllers/admin/payment_attempts_controller.ts");
@@ -116,21 +149,42 @@ for (const invariant of [
     'createLock(`order:${Number(attempt.orderId)}`',
     ".forUpdate()",
     "adapter.reconcile",
-    'reconciliationStatus = "unsupported"',
-    'reconciliationStatus = "error"',
+    'status: "unsupported"',
+    'status: "error"',
     'action: "payment.reconciliation.checked"',
     "paymentGatewayCredentialsService.runtimeSettings",
+    "Sentry.captureException",
+    'reason: "provider_probe_exception"',
 ]) {
     check(reconciliation.includes(invariant), `Reconciliation safety invariant missing: ${invariant}`);
 }
-notContains("apps/api/app/services/payment_reconciliation_service.ts", ".settle(", "Reconciliation must not replay provider settlement as a status check");
-notContains("apps/api/app/services/payment_reconciliation_service.ts", ".capture(", "Reconciliation must not replay provider capture as a status check");
+notContains(
+    "apps/api/app/services/payment_reconciliation_service.ts",
+    ".settle(",
+    "Reconciliation must not replay provider settlement as a status check",
+);
+notContains(
+    "apps/api/app/services/payment_reconciliation_service.ts",
+    ".capture(",
+    "Reconciliation must not replay provider capture as a status check",
+);
+notContains(
+    "apps/api/app/services/payment_reconciliation_service.ts",
+    "error_message: (error as Error).message",
+    "Reconciliation evidence must not persist raw provider exceptions",
+);
 
 const adapterContract = read("apps/api/app/services/adapters/base_redirect_gateway.ts");
-check(adapterContract.includes("reconcile?(args: ReconcileArgs)"), "Payment adapter contract must make reconciliation capability explicit and optional");
+check(
+    adapterContract.includes("reconcile?(args: ReconcileArgs)"),
+    "Payment adapter contract must make reconciliation capability explicit and optional",
+);
 const zarinpal = read("apps/api/app/services/adapters/zarinpal_gateway.ts");
 check(zarinpal.includes("async reconcile"), "ZarinPal adapter must expose the verified safe reconciliation probe");
-check(zarinpal.includes("code === 100 || code === 101"), "ZarinPal reconciliation relies on documented existing idempotent verify semantics in Calibra");
+check(
+    zarinpal.includes("code === 100 || code === 101"),
+    "ZarinPal reconciliation relies on documented existing idempotent verify semantics in Calibra",
+);
 
 const model = read("apps/api/app/models/payment_attempt.ts");
 for (const field of [
@@ -156,7 +210,10 @@ for (const column of [
 ]) {
     check(migration.includes(column), `Reconciliation migration missing column: ${column}`);
 }
-check(migration.includes("payment_attempts_reconciliation_status_idx"), "Reconciliation migration must index status for operations filtering");
+check(
+    migration.includes("payment_attempts_reconciliation_status_idx"),
+    "Reconciliation migration must index status for operations filtering",
+);
 
 const generatedSchema = read("apps/api/database/schema.ts");
 for (const column of [
@@ -167,7 +224,10 @@ for (const column of [
     "reconciliationErrorCode",
     "reconciliationEvidence",
 ]) {
-    check(generatedSchema.includes(column), `Generated DB schema drift: missing PaymentAttempt.${column}; run the official migration/schema generation flow`);
+    check(
+        generatedSchema.includes(column),
+        `Generated DB schema drift: missing PaymentAttempt.${column}; run the official migration/schema generation flow`,
+    );
 }
 
 const transformer = read("apps/api/app/transformers/payment_attempt_transformer.ts");
@@ -181,7 +241,11 @@ for (const field of [
 ]) {
     check(transformer.includes(field), `PaymentAttempt transformer missing field: ${field}`);
 }
-notContains("apps/api/app/transformers/payment_attempt_transformer.ts", "idempotency_key", "PaymentAttempt transformer must never expose idempotency keys");
+notContains(
+    "apps/api/app/transformers/payment_attempt_transformer.ts",
+    "idempotency_key",
+    "PaymentAttempt transformer must never expose idempotency keys",
+);
 
 const refundController = read("apps/api/app/controllers/admin/refunds_controller.ts");
 check(refundController.includes("refundService.create"), "Admin refunds must reuse RefundService");
