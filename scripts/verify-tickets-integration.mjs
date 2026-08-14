@@ -47,7 +47,8 @@ const requiredFiles = [
     "apps/api/tests/functional/admin/tickets_table_view.spec.ts",
     "apps/api/tests/functional/admin/tickets_workflow.spec.ts",
     "docs/api/reference/openapi/admin.tickets.v1.yaml",
-    "packages/sdk/src/generated/admin.d.ts",
+    "packages/sdk/src/generated/admin.tickets.d.ts",
+    "packages/sdk/src/generated/admin.composed.d.ts",
 ];
 for (const file of requiredFiles) check(exists(file), `missing ticket integration file: ${file}`);
 
@@ -207,7 +208,7 @@ for (const endpoint of [
     check(openapi.includes(endpoint), `Ticket OpenAPI overlay missing path: ${endpoint}`);
 }
 
-const sdk = read("packages/sdk/src/generated/admin.d.ts");
+const sdk = `${read("packages/sdk/src/generated/admin.tickets.d.ts")}\n${read("packages/sdk/src/generated/admin.composed.d.ts")}`;
 for (const endpoint of [
     '"/api/v1/admin/tickets"',
     '"/api/v1/admin/tickets/summary"',
@@ -215,8 +216,9 @@ for (const endpoint of [
     '"/api/v1/admin/tickets/{id}/transition"',
     '"/api/v1/admin/tickets/{id}/messages"',
 ]) {
-    check(sdk.includes(endpoint), `Generated Admin SDK drift: missing ${endpoint}; run official codegen`);
+    check(sdk.includes(endpoint), `Generated Admin SDK drift: missing ${endpoint}`);
 }
+check(sdk.includes("TicketPaths"), "Composed Admin SDK must include the generated Tickets overlay");
 
 if (failures.length > 0) {
     console.error(`Tickets integration verifier failed: ${failures.length}/${checks} checks`);
