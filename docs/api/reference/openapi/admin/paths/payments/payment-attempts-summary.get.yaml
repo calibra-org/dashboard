@@ -1,0 +1,33 @@
+operationId: adminPaymentAttemptsSummary
+summary: Summarize transaction operations
+description: Returns live counts and canonical minor-unit totals for the Transaction Center KPI strip.
+tags: [Admin / Payments]
+responses:
+    "200":
+        description: Transaction summary.
+        content:
+            application/json:
+                schema:
+                    type: object
+                    required: [data]
+                    properties:
+                        data:
+                            type: object
+                            required: [total_count, total_amount_minor, by_status, by_reconciliation, needs_attention_count]
+                            properties:
+                                total_count: { type: integer }
+                                total_amount_minor: { type: integer }
+                                needs_attention_count: { type: integer }
+                                by_status:
+                                    type: object
+                                    additionalProperties:
+                                        type: object
+                                        required: [count, amount_minor]
+                                        properties:
+                                            count: { type: integer }
+                                            amount_minor: { type: integer }
+                                by_reconciliation:
+                                    type: object
+                                    additionalProperties: { type: integer }
+    "401": { $ref: "../../../common/components/responses/Unauthorized.yaml" }
+    "403": { $ref: "../../../common/components/responses/Forbidden.yaml" }

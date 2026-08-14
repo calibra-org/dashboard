@@ -4,63 +4,114 @@ import type { Locale } from "@calibra/shared/i18n";
 import { useQuery } from "@tanstack/react-query";
 import { useLocale } from "next-intl";
 
-import { type SdkAdminOrderListRow, toAdminOrderListRow } from "#/lib/adapters/orders";
 import { apiGet } from "#/lib/queries/api-client";
-import type { AdminOrder, MoneyMinor, SalesReport } from "#/lib/types";
+import type { MoneyMinor, SalesReport, TopSellersReport } from "#/lib/types";
 
-interface OrderListEnvelope {
-    data: SdkAdminOrderListRow[];
+interface SalesStatsTotals {
+    gross_sales: number;
+    net_sales: number;
+    total_sales: number;
+    returns: number;
+    orders: number;
+    avg_order_value: number;
 }
 
-/**
- * Builds the 14-day revenue/orders series from the order list. Relocated verbatim from the deleted
- * `server-repos.ts` `buildSalesSeries` so it runs client-side inside the React Query `select`; pure
- * function, no server imports.
- */
-function buildSalesSeries(orders: AdminOrder[]): { date: string; revenue: MoneyMinor; orders: number }[] {
-    const buckets = new Map<string, { revenue: number; orders: number }>();
+interface SalesStatsInterval {
+    date: string;
+    orders: number;
+    gross_sales: number;
+    returns: number;
+}
+
+interface SalesStatsResponse {
+    totals: SalesStatsTotals;
+    intervals: SalesStatsInterval[];
+    comparison: unknown | null;
+    generated_at: string;
+}
+
+interface TopProductsResponse {
+    data: Array<{
+        product_id: number;
+        name: string;
+        sku: string | null;
+        units: number;
+        revenue: number;
+    }>;
+    range: {
+        start_date: string;
+        end_date: string;
+        days: number;
+    };
+}
+
+function trailingThirtyDayRange(): { date_from: string; date_to: string } {
     const today = new Date();
-    for (let i = 13; i >= 0; i -= 1) {
-        const d = new Date(today);
-        d.setDate(today.getDate() - i);
-        const key = d.toISOString().slice(0, 10);
-        buckets.set(key, { revenue: 0, orders: 0 });
-    }
-    for (const o of orders) {
-        const key = new Date(o.createdAt).toISOString().slice(0, 10);
-        const bucket = buckets.get(key);
-        if (bucket === undefined) continue;
-        bucket.revenue += Number(o.grandTotal);
-        bucket.orders += 1;
-    }
-    return [...buckets.entries()].map(([date, v]) => ({ date, revenue: v.revenue as MoneyMinor, orders: v.orders }));
+    const from = new Date(today);
+    from.setUTCDate(today.getUTCDate() - 29);
+    return {
+        date_from: from.toISOString().slice(0, 10),
+        date_to: today.toISOString().slice(0, 10),
+    };
 }
 
 /**
- * Aggregates the sales report client-side from `GET /admin/orders?limit=100`. There is no first-party
- * reports endpoint yet, so the report is composed from the order list exactly as the deleted
- * `server-repos.getSalesReport` did — the math is copied verbatim, only the fetch moved to the
- * same-origin proxy. When a real report operation lands, swap the `queryFn` for that single call.
+ * Canonical 30-day sales report. The API's analytics service is the single source of truth for
+ * counted order statuses, refunds, gross/net sales and interval bucketing; the browser only adapts
+ * that response into the legacy `SalesReport` view shape.
  */
 export function useSalesReport() {
     const locale = useLocale() as Locale;
-    return useQuery<OrderListEnvelope, Error, SalesReport>({
-        queryKey: ["admin", "reports", "sales", { locale }],
-        queryFn: ({ signal }) => apiGet<OrderListEnvelope>("orders", { locale, query: { limit: 100 }, signal }),
-        select: (payload): SalesReport => {
-            const orders = (payload.data ?? []).map(toAdminOrderListRow);
-            const totalRevenue = orders.reduce((s, o) => s + Number(o.grandTotal), 0) as MoneyMinor;
-            const orderCount = orders.length;
-            const avg = orderCount === 0 ? 0 : Math.floor(totalRevenue / orderCount);
-            return {
-                totalRevenue,
-                netRevenue: totalRevenue,
-                refundedAmount: 0 as MoneyMinor,
-                averageOrderValue: avg as MoneyMinor,
-                orderCount,
-                series: buildSalesSeries(orders).map((p) => ({ ...p, refunded: 0 as MoneyMinor })),
-            };
-        },
+    const range = trailingThirtyDayRange();
+    return useQuery<SalesStatsResponse, Error, SalesReport>({
+        queryKey: ["admin", "reports", "sales", { locale, ...range }],
+        queryFn: ({ signal }) =>
+            apiGet<SalesStatsResponse>("reports/sales-stats", {
+                locale,
+                query: { ...range, interval: "day" },
+                signal,
+            }),
+        select: (payload): SalesReport => ({
+            totalRevenue: Number(payload.totals.gross_sales) as MoneyMinor,
+            netRevenue: Number(payload.totals.net_sales) as MoneyMinor,
+            refundedAmount: Number(payload.totals.returns) as MoneyMinor,
+            averageOrderValue: Number(payload.totals.avg_order_value) as MoneyMinor,
+            orderCount: Number(payload.totals.orders),
+            series: payload.intervals.map((point) => ({
+                date: point.date,
+                revenue: Number(point.gross_sales) as MoneyMinor,
+                orders: Number(point.orders),
+                refunded: Number(point.returns) as MoneyMinor,
+            })),
+        }),
+        staleTime: 5 * 60 * 1000,
+    });
+}
+
+/** Top products by actual fulfilled/fulfilling order revenue for the trailing 30-day window. */
+export function useTopSellersReport() {
+    const locale = useLocale() as Locale;
+    return useQuery<TopProductsResponse, Error, TopSellersReport>({
+        queryKey: ["admin", "reports", "top-sellers", { locale, days: 30, limit: 10 }],
+        queryFn: ({ signal }) =>
+            apiGet<TopProductsResponse>("reports/top-products", {
+                locale,
+                query: { days: 30, limit: 10 },
+                signal,
+            }),
+        select: (payload): TopSellersReport => ({
+            range: {
+                startDate: payload.range.start_date,
+                endDate: payload.range.end_date,
+            },
+            rows: payload.data.map((row) => ({
+                productId: Number(row.product_id),
+                name: { fa: row.name, en: row.name },
+                sku: row.sku ?? "",
+                units: Number(row.units),
+                revenue: Number(row.revenue) as MoneyMinor,
+            })),
+        }),
         staleTime: 5 * 60 * 1000,
     });
 }

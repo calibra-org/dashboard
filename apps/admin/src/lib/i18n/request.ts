@@ -7,13 +7,26 @@ import { routing } from "./routing";
 /**
  * Per-request locale + message-catalog loader. Wired into Next.js via the `createNextIntlPlugin`
  * call in `next.config.ts`.
+ *
+ * Feature catalogs may live in their own files so large operational surfaces can be maintained
+ * independently without duplicating the base catalog. Their namespaces are merged here before
+ * next-intl receives the request messages.
  */
 export default getRequestConfig(async ({ requestLocale }) => {
     const requested = await requestLocale;
     const locale: Locale = hasLocale(routing.locales, requested) ? requested : routing.defaultLocale;
+    const base = (await import(`../../../messages/${locale}.json`)).default;
+    const transactions = (await import(`../../../messages/transactions/${locale}.json`)).default;
 
     return {
         locale,
-        messages: (await import(`../../../messages/${locale}.json`)).default,
+        messages: {
+            ...base,
+            ...transactions,
+            Nav: {
+                ...base.Nav,
+                ...transactions.Nav,
+            },
+        },
     };
 });

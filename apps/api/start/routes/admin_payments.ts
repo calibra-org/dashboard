@@ -15,6 +15,13 @@ router
         router.patch("/payment-gateways/:id", [AdminPaymentGatewaysController, "update"]).as("admin.payment_gateways.update");
 
         router.get("/payment-attempts", [AdminPaymentAttemptsController, "index"]).as("admin.payment_attempts.index");
+        router.get("/payment-attempts/summary", [AdminPaymentAttemptsController, "summary"]).as("admin.payment_attempts.summary");
+        router
+            .get("/payment-attempts/:id/reconciliation", [AdminPaymentAttemptsController, "reconciliationHistory"])
+            .as("admin.payment_attempts.reconciliation_history");
+        router
+            .post("/payment-attempts/:id/reconcile", [AdminPaymentAttemptsController, "reconcile"])
+            .as("admin.payment_attempts.reconcile");
         router.get("/payment-attempts/:id", [AdminPaymentAttemptsController, "show"]).as("admin.payment_attempts.show");
     })
     .prefix("/api/v1/admin")

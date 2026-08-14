@@ -1,5 +1,5 @@
 title: AdminRefund
-description: One `order_refunds` row plus its line-item breakdown.
+description: One `order_refunds` row plus its line-item breakdown and bounded gateway-settlement projection.
 type: object
 properties:
     id: { type: integer }
@@ -14,7 +14,17 @@ properties:
     restock_requested: { type: boolean }
     gateway_refund_id:
         type: [string, "null"]
-        description: Null for bank-transfer / non-PSP refunds, and for PSP calls that failed.
+        description: PSP-side refund identifier when automatic gateway settlement completed.
+    gateway_refund_status:
+        type: string
+        enum: [completed, manual_action_required, unknown]
+        description: >-
+            Safe projection of the automatic PSP settlement attempt. `manual_action_required` means
+            the Calibra refund ledger was booked but provider-side money movement did not complete
+            automatically and an operator must reconcile it. Raw provider diagnostics are not exposed.
+    gateway_refund_error_code:
+        type: [string, "null"]
+        description: Bounded internal error code for a non-completed automatic gateway refund.
     processed_at: { type: string, format: date-time }
     line_items:
         type: array
@@ -32,4 +42,5 @@ required:
     - order_id
     - refund_number
     - amount_minor
+    - gateway_refund_status
     - processed_at

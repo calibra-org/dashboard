@@ -12,15 +12,19 @@ export interface RecordAuditOptions {
     entityId: bigint | number | null;
     payload?: Record<string, unknown>;
     trx?: TransactionClientContract;
+    /** Financial/control-plane actions may opt into fail-closed audit persistence. */
+    strict?: boolean;
 }
 
 /**
  * Persists an admin-action row to `admin_audit_log`. Pass `ctx` to auto-derive the actor and the
- * IP address; pass `actorUserId` explicitly when the action runs outside the request lifecycle
- * (background jobs, etc.). Never blocks the calling request — failures are logged but swallowed.
+ * IP address; pass `actorUserId` explicitly when the action runs outside the request lifecycle.
+ * Most operational audit writes remain best-effort. Financial/control-plane callers can set
+ * `strict: true` so an audit failure aborts the surrounding transaction instead of committing an
+ * unaudited state change.
  */
 export async function recordAudit(options: RecordAuditOptions): Promise<void> {
-    const { ctx, actorUserId, action, entityKind, entityId, payload, trx } = options;
+    const { ctx, actorUserId, action, entityKind, entityId, payload, trx, strict = false } = options;
     let resolvedActor: bigint | number | null = actorUserId ?? null;
     if (resolvedActor === null && ctx) {
         try {
@@ -43,5 +47,6 @@ export async function recordAudit(options: RecordAuditOptions): Promise<void> {
         await row.save();
     } catch (error) {
         ctx?.logger.warn({ err: error }, "admin_audit_log_write_failed");
+        if (strict) throw error;
     }
 }

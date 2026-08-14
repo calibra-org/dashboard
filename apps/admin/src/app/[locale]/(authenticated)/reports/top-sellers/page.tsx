@@ -13,11 +13,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return { title: t("title") };
 }
 
-/**
- * Thin server shell: resolves the locale for next-intl's static optimization and renders the client
- * view. The top-sellers report is a static fixture today, so the view renders instantly without a
- * server fetch.
- */
+/** Thin locale-aware shell; the client view loads the canonical Admin top-products report. */
 export default async function TopSellersPage({ params }: PageProps) {
     const { locale } = await params;
     setRequestLocale(locale);
