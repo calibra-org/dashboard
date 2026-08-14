@@ -1,0 +1,544 @@
+openapi: 3.1.0
+info:
+    title: Calibra Admin Tickets API overlay
+    version: "1.0.0"
+paths:
+    /api/v1/admin/tickets/summary:
+        get:
+            operationId: adminTicketsSummary
+            summary: Read support ticket KPIs
+            tags: [Admin / Tickets]
+            responses:
+                "200":
+                    description: Ticket KPI summary.
+                    content:
+                        application/json:
+                            schema: { $ref: "#/components/schemas/TicketSummaryEnvelope" }
+        head:
+            operationId: adminTicketsSummaryHead
+            summary: Read support ticket KPI headers
+            tags: [Admin / Tickets]
+            responses:
+                "200": { description: Ticket KPI summary headers. }
+
+    /api/v1/admin/tickets/trends:
+        get:
+            operationId: adminTicketsTrends
+            summary: Read 30-day support ticket trends
+            tags: [Admin / Tickets]
+            responses:
+                "200":
+                    description: Daily opened and resolved ticket counts.
+                    content:
+                        application/json:
+                            schema: { $ref: "#/components/schemas/TicketTrendsEnvelope" }
+        head:
+            operationId: adminTicketsTrendsHead
+            summary: Read ticket trend headers
+            tags: [Admin / Tickets]
+            responses:
+                "200": { description: Ticket trend headers. }
+
+    /api/v1/admin/tickets/settings:
+        get:
+            operationId: adminTicketsSettingsShow
+            summary: Read tenant ticket settings
+            tags: [Admin / Tickets]
+            responses:
+                "200":
+                    description: Ticket settings.
+                    content:
+                        application/json:
+                            schema: { $ref: "#/components/schemas/TicketSettingsEnvelope" }
+        head:
+            operationId: adminTicketsSettingsShowHead
+            summary: Read ticket settings headers
+            tags: [Admin / Tickets]
+            responses:
+                "200": { description: Ticket settings headers. }
+        patch:
+            operationId: adminTicketsSettingsUpdate
+            summary: Update tenant ticket settings
+            tags: [Admin / Tickets]
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema: { $ref: "#/components/schemas/TicketSettingsUpdateInput" }
+            responses:
+                "200":
+                    description: Ticket settings updated or unchanged.
+                    content:
+                        application/json:
+                            schema: { $ref: "#/components/schemas/TicketSettingsMutationEnvelope" }
+                "422": { description: Invalid settings or assignee. }
+
+    /api/v1/admin/tickets/resources:
+        get:
+            operationId: adminTicketsResources
+            summary: Search customers or admin assignees for ticket workflows
+            tags: [Admin / Tickets]
+            parameters:
+                - name: kind
+                  in: query
+                  required: true
+                  schema: { type: string, enum: [customers, assignees] }
+                - { name: q, in: query, schema: { type: string, maxLength: 120 } }
+                - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 50 } }
+            responses:
+                "200":
+                    description: Matching resources.
+                    content:
+                        application/json:
+                            schema: { $ref: "#/components/schemas/TicketResourcesEnvelope" }
+                "422": { description: Invalid resource query. }
+        head:
+            operationId: adminTicketsResourcesHead
+            summary: Read ticket resource-search headers
+            tags: [Admin / Tickets]
+            responses:
+                "200": { description: Resource-search headers. }
+
+    /api/v1/admin/tickets:
+        get:
+            operationId: adminTicketsIndex
+            summary: List tenant support tickets
+            description: >
+                Paginated operator queue using the shared TableView grammar
+                (`filter[]=field:op:value`, `filterOr[]=...`, `sort[]=field:dir`).
+                Free-text `q` searches reference, subject, requester name, email, and phone.
+                The `sla` extra applies the computed healthy or breached SLA scope.
+            tags: [Admin / Tickets]
+            parameters:
+                - $ref: "./common/components/parameters/table-view/Page.yaml"
+                - $ref: "./common/components/parameters/table-view/Limit.yaml"
+                - $ref: "./common/components/parameters/table-view/Filter.yaml"
+                - $ref: "./common/components/parameters/table-view/FilterOr.yaml"
+                - $ref: "./common/components/parameters/table-view/Sort.yaml"
+                - { name: q, in: query, schema: { type: string, maxLength: 120 } }
+                - { name: sla, in: query, schema: { type: string, enum: [all, healthy, breached] } }
+            responses:
+                "200":
+                    description: Paginated ticket queue.
+                    content:
+                        application/json:
+                            schema: { $ref: "#/components/schemas/TicketListEnvelope" }
+                "422": { description: Invalid ticket query. }
+        head:
+            operationId: adminTicketsIndexHead
+            summary: Read ticket queue headers
+            tags: [Admin / Tickets]
+            responses:
+                "200": { description: Ticket queue headers. }
+        post:
+            operationId: adminTicketsStore
+            summary: Create a support ticket
+            tags: [Admin / Tickets]
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema: { $ref: "#/components/schemas/TicketCreateInput" }
+            responses:
+                "201":
+                    description: Ticket created with its requester message.
+                    content:
+                        application/json:
+                            schema: { $ref: "#/components/schemas/TicketDetailEnvelope" }
+                "422": { description: Invalid ticket, customer, or assignee. }
+
+    /api/v1/admin/tickets/{id}:
+        parameters:
+            - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+        get:
+            operationId: adminTicketsShow
+            summary: Show a ticket, conversation, and operational history
+            tags: [Admin / Tickets]
+            responses:
+                "200":
+                    description: Ticket detail.
+                    content:
+                        application/json:
+                            schema: { $ref: "#/components/schemas/TicketDetailEnvelope" }
+                "404": { description: Ticket not found. }
+                "422": { description: Invalid ticket identifier. }
+        head:
+            operationId: adminTicketsShowHead
+            summary: Read ticket detail headers
+            tags: [Admin / Tickets]
+            responses:
+                "200": { description: Ticket detail headers. }
+        patch:
+            operationId: adminTicketsUpdate
+            summary: Update ticket metadata using optimistic concurrency
+            tags: [Admin / Tickets]
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema: { $ref: "#/components/schemas/TicketUpdateInput" }
+            responses:
+                "200":
+                    description: Ticket updated or unchanged.
+                    content:
+                        application/json:
+                            schema: { $ref: "#/components/schemas/TicketMutationEnvelope" }
+                "404": { description: Ticket not found. }
+                "409": { description: Ticket version conflict. }
+                "422": { description: Invalid ticket update. }
+
+    /api/v1/admin/tickets/{id}/transition:
+        parameters:
+            - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+        post:
+            operationId: adminTicketsTransition
+            summary: Transition a ticket through the support workflow
+            tags: [Admin / Tickets]
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema: { $ref: "#/components/schemas/TicketTransitionInput" }
+            responses:
+                "200":
+                    description: Ticket transition applied or unchanged.
+                    content:
+                        application/json:
+                            schema: { $ref: "#/components/schemas/TicketMutationEnvelope" }
+                "409": { description: Ticket version conflict. }
+                "422": { description: Invalid or disallowed transition. }
+
+    /api/v1/admin/tickets/{id}/messages:
+        parameters:
+            - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+        post:
+            operationId: adminTicketsMessagesStore
+            summary: Add an operator reply or internal note
+            tags: [Admin / Tickets]
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema: { $ref: "#/components/schemas/TicketMessageInput" }
+            responses:
+                "201":
+                    description: Ticket message recorded.
+                    content:
+                        application/json:
+                            schema: { $ref: "#/components/schemas/TicketMessageMutationEnvelope" }
+                "409": { description: Ticket version conflict. }
+                "422": { description: Invalid message payload. }
+
+components:
+    schemas:
+        TicketStatus:
+            type: string
+            enum: [open, pending, waiting_customer, resolved, closed]
+
+        TicketPriority:
+            type: string
+            enum: [low, normal, high, urgent]
+
+        TicketChannel:
+            type: string
+            enum: [admin, web, email, phone, api]
+
+        TicketQueueItem:
+            type: object
+            additionalProperties: true
+            required:
+                - id
+                - ticket_number
+                - reference
+                - requester_name
+                - requester_email
+                - requester_phone
+                - subject
+                - status
+                - priority
+                - channel
+                - category
+                - tags
+                - assigned_user_id
+                - version
+                - first_response_due_at
+                - resolution_due_at
+                - first_response_at
+                - resolved_at
+                - closed_at
+                - last_message_at
+                - created_at
+                - updated_at
+            properties:
+                id: { type: integer }
+                ticket_number: { type: integer }
+                reference: { type: string }
+                customer_id: { type: [integer, "null"] }
+                requester_name: { type: string }
+                requester_email: { type: [string, "null"] }
+                requester_phone: { type: [string, "null"] }
+                subject: { type: string }
+                status: { $ref: "#/components/schemas/TicketStatus" }
+                priority: { $ref: "#/components/schemas/TicketPriority" }
+                channel: { $ref: "#/components/schemas/TicketChannel" }
+                category: { type: [string, "null"] }
+                tags:
+                    type: array
+                    items: { type: string }
+                assigned_user_id: { type: [integer, "null"] }
+                assignee_email: { type: [string, "null"] }
+                version: { type: integer, minimum: 1 }
+                first_response_due_at: { type: [string, "null"], format: date-time }
+                resolution_due_at: { type: [string, "null"], format: date-time }
+                first_response_at: { type: [string, "null"], format: date-time }
+                resolved_at: { type: [string, "null"], format: date-time }
+                closed_at: { type: [string, "null"], format: date-time }
+                last_message_at: { type: string, format: date-time }
+                created_at: { type: string, format: date-time }
+                updated_at: { type: string, format: date-time }
+
+        TicketMessage:
+            type: object
+            additionalProperties: true
+            required: [id, ticket_id, author_user_id, kind, body, created_at]
+            properties:
+                id: { type: integer }
+                ticket_id: { type: integer }
+                author_user_id: { type: [integer, "null"] }
+                author_customer_id: { type: [integer, "null"] }
+                author_email: { type: [string, "null"] }
+                kind: { type: string, enum: [requester_message, reply, internal_note, system] }
+                body: { type: string }
+                created_at: { type: string, format: date-time }
+
+        TicketEvent:
+            type: object
+            additionalProperties: true
+            required: [id, ticket_id, actor_user_id, event_type, payload, created_at]
+            properties:
+                id: { type: integer }
+                ticket_id: { type: integer }
+                actor_user_id: { type: [integer, "null"] }
+                actor_email: { type: [string, "null"] }
+                event_type: { type: string }
+                payload: { type: object, additionalProperties: true }
+                created_at: { type: string, format: date-time }
+
+        TicketDetail:
+            allOf:
+                - $ref: "#/components/schemas/TicketQueueItem"
+                - type: object
+                  required: [messages, events]
+                  properties:
+                      customer_first_name: { type: [string, "null"] }
+                      customer_last_name: { type: [string, "null"] }
+                      messages:
+                          type: array
+                          items: { $ref: "#/components/schemas/TicketMessage" }
+                      events:
+                          type: array
+                          items: { $ref: "#/components/schemas/TicketEvent" }
+
+        TicketSummary:
+            type: object
+            additionalProperties: false
+            required:
+                - total
+                - active
+                - waiting_customer
+                - resolved_30d
+                - sla_breached
+                - avg_first_response_minutes
+                - avg_resolution_minutes
+            properties:
+                total: { type: integer, minimum: 0 }
+                active: { type: integer, minimum: 0 }
+                waiting_customer: { type: integer, minimum: 0 }
+                resolved_30d: { type: integer, minimum: 0 }
+                sla_breached: { type: integer, minimum: 0 }
+                avg_first_response_minutes: { type: integer, minimum: 0 }
+                avg_resolution_minutes: { type: integer, minimum: 0 }
+
+        TicketTrendPoint:
+            type: object
+            additionalProperties: false
+            required: [day, opened, resolved]
+            properties:
+                day: { type: string, format: date }
+                opened: { type: integer, minimum: 0 }
+                resolved: { type: integer, minimum: 0 }
+
+        TicketSettings:
+            type: object
+            additionalProperties: true
+            required:
+                - tenant_id
+                - reference_prefix
+                - first_response_minutes
+                - resolution_minutes
+                - default_priority
+                - default_assignee_user_id
+            properties:
+                tenant_id: { type: integer }
+                reference_prefix: { type: string, minLength: 1, maxLength: 12 }
+                first_response_minutes: { type: integer, minimum: 1, maximum: 10080 }
+                resolution_minutes: { type: integer, minimum: 1, maximum: 43200 }
+                default_priority: { $ref: "#/components/schemas/TicketPriority" }
+                default_assignee_user_id: { type: [integer, "null"] }
+
+        TicketResource:
+            type: object
+            additionalProperties: false
+            required: [id, label]
+            properties:
+                id: { type: integer }
+                label: { type: string }
+                email: { type: [string, "null"] }
+                phone: { type: [string, "null"] }
+
+        PaginationMeta:
+            type: object
+            additionalProperties: true
+            required: [page, total, lastPage]
+            properties:
+                page: { type: integer, minimum: 1 }
+                limit: { type: integer, minimum: 1 }
+                perPage: { type: integer, minimum: 1 }
+                total: { type: integer, minimum: 0 }
+                lastPage: { type: integer, minimum: 1 }
+
+        TicketCreateInput:
+            type: object
+            additionalProperties: false
+            required: [requester_name, subject, message]
+            properties:
+                customer_id: { type: [integer, "null"], minimum: 1 }
+                requester_name: { type: string, minLength: 1, maxLength: 180 }
+                requester_email: { type: [string, "null"], format: email, maxLength: 254 }
+                requester_phone: { type: [string, "null"], maxLength: 32 }
+                subject: { type: string, minLength: 2, maxLength: 255 }
+                message: { type: string, minLength: 1, maxLength: 20000 }
+                priority: { $ref: "#/components/schemas/TicketPriority" }
+                channel: { $ref: "#/components/schemas/TicketChannel" }
+                category: { type: [string, "null"], maxLength: 80 }
+                tags:
+                    type: array
+                    maxItems: 20
+                    items: { type: string, minLength: 1, maxLength: 40 }
+                assigned_user_id: { type: [integer, "null"], minimum: 1 }
+
+        TicketUpdateInput:
+            type: object
+            additionalProperties: false
+            required: [expected_version]
+            properties:
+                expected_version: { type: integer, minimum: 1 }
+                subject: { type: string, minLength: 2, maxLength: 255 }
+                priority: { $ref: "#/components/schemas/TicketPriority" }
+                category: { type: [string, "null"], maxLength: 80 }
+                tags:
+                    type: array
+                    maxItems: 20
+                    items: { type: string, minLength: 1, maxLength: 40 }
+                assigned_user_id: { type: [integer, "null"], minimum: 1 }
+
+        TicketTransitionInput:
+            type: object
+            additionalProperties: false
+            required: [status, expected_version]
+            properties:
+                status: { $ref: "#/components/schemas/TicketStatus" }
+                expected_version: { type: integer, minimum: 1 }
+                reason: { type: [string, "null"], maxLength: 1000 }
+
+        TicketMessageInput:
+            type: object
+            additionalProperties: false
+            required: [kind, body, expected_version]
+            properties:
+                kind: { type: string, enum: [reply, internal_note] }
+                body: { type: string, minLength: 1, maxLength: 20000 }
+                expected_version: { type: integer, minimum: 1 }
+
+        TicketSettingsUpdateInput:
+            type: object
+            additionalProperties: false
+            properties:
+                reference_prefix: { type: string, minLength: 1, maxLength: 12, pattern: "^[A-Za-z0-9-]+$" }
+                first_response_minutes: { type: integer, minimum: 1, maximum: 10080 }
+                resolution_minutes: { type: integer, minimum: 1, maximum: 43200 }
+                default_priority: { $ref: "#/components/schemas/TicketPriority" }
+                default_assignee_user_id: { type: [integer, "null"], minimum: 1 }
+
+        TicketListEnvelope:
+            type: object
+            additionalProperties: false
+            required: [data, meta]
+            properties:
+                data:
+                    type: array
+                    items: { $ref: "#/components/schemas/TicketQueueItem" }
+                meta: { $ref: "#/components/schemas/PaginationMeta" }
+
+        TicketDetailEnvelope:
+            type: object
+            additionalProperties: false
+            required: [data]
+            properties:
+                data: { $ref: "#/components/schemas/TicketDetail" }
+
+        TicketMutationEnvelope:
+            type: object
+            additionalProperties: false
+            required: [data, changed]
+            properties:
+                data: { $ref: "#/components/schemas/TicketDetail" }
+                changed: { type: boolean }
+
+        TicketSummaryEnvelope:
+            type: object
+            additionalProperties: false
+            required: [data]
+            properties:
+                data: { $ref: "#/components/schemas/TicketSummary" }
+
+        TicketTrendsEnvelope:
+            type: object
+            additionalProperties: false
+            required: [data]
+            properties:
+                data:
+                    type: array
+                    items: { $ref: "#/components/schemas/TicketTrendPoint" }
+
+        TicketSettingsEnvelope:
+            type: object
+            additionalProperties: false
+            required: [data]
+            properties:
+                data: { $ref: "#/components/schemas/TicketSettings" }
+
+        TicketSettingsMutationEnvelope:
+            type: object
+            additionalProperties: false
+            required: [data, changed]
+            properties:
+                data: { $ref: "#/components/schemas/TicketSettings" }
+                changed: { type: boolean }
+
+        TicketResourcesEnvelope:
+            type: object
+            additionalProperties: false
+            required: [data]
+            properties:
+                data:
+                    type: array
+                    items: { $ref: "#/components/schemas/TicketResource" }
+
+        TicketMessageMutationEnvelope:
+            type: object
+            additionalProperties: false
+            required: [data, ticket]
+            properties:
+                data: { $ref: "#/components/schemas/TicketMessage" }
+                ticket: { $ref: "#/components/schemas/TicketQueueItem" }

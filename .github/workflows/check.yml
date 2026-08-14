@@ -33,6 +33,8 @@ jobs:
                   cache: "pnpm"
             - run: pnpm install --frozen-lockfile
             - run: pnpm run format && pnpm run lint
+            - name: Verify ticket full-stack release invariants
+              run: pnpm run verify:tickets
 
     typecheck:
         runs-on: ubuntu-latest

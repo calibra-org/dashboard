@@ -9,13 +9,15 @@ const REF_DIR = join(ROOT, "reference");
 const SPEC_DIR = join(REF_DIR, "openapi");
 const SRC_HTML = join(REF_DIR, "scalar", "index.html");
 
-const SPECS = ["storefront.v1.yaml", "admin.v1.yaml", "platform.v1.yaml"];
+const DIRECT_SPECS = ["storefront.v1.yaml", "platform.v1.yaml"];
 
 main();
 function main() {
-    SPECS.forEach((spec) => {
+    mkdirSync(OUT_DIR, { recursive: true });
+    DIRECT_SPECS.forEach((spec) => {
         buildSpec(join(SPEC_DIR, spec), join(OUT_DIR, spec));
     });
+    buildAdminSpec();
     copyIndex();
 }
 
@@ -29,9 +31,19 @@ function buildSpec(source, output) {
     }
 }
 
+function buildAdminSpec() {
+    try {
+        execSync("pnpm build:json:admin", { cwd: ROOT, stdio: "inherit" });
+        copyFileSync(join(OUT_DIR, "admin.v1.json"), join(OUT_DIR, "admin.v1.yaml"));
+        console.log("✓ Built composed admin spec with ticket operations");
+    } catch (err) {
+        console.error("✗ Building composed admin spec failed:", err.message);
+        process.exit(1);
+    }
+}
+
 function copyIndex() {
     try {
-        mkdirSync(OUT_DIR, { recursive: true });
         copyFileSync(SRC_HTML, join(OUT_DIR, "index.html"));
         console.log("✓ Copied index.html to dist/");
     } catch (err) {

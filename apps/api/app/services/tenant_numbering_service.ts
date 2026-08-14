@@ -1,39 +1,30 @@
 import { currentTenantId, currentTrx } from "#services/tenant_context";
 
 /**
- * Per-tenant monotonic numbering, replacing the old database-global `order_number_seq` /
- * `refund_number_seq`. Each tenant's `order` / `refund` counters restart independently — tenant A and
- * tenant B can both have order #1000.
- *
- * Allocation runs inside the request transaction (so it rides the tenant's `app.current_tenant` GUC
- * and is covered by the same commit/rollback). The atomic `UPDATE … RETURNING` takes a row lock on
- * the counter, so two concurrent submits for the same tenant serialize at the engine level and never
- * collide or skip a value — gap-free under concurrency, the same guarantee the old sequence gave but
- * scoped per tenant.
+ * Per-tenant monotonic numbering for business documents and support tickets. Every counter restarts
+ * independently per tenant and advances inside the request transaction under a row lock.
  */
-export type CounterKind = "order" | "refund" | "invoice" | "proforma" | "credit_note";
+export type CounterKind = "order" | "refund" | "invoice" | "proforma" | "credit_note" | "ticket";
 
-/** First number handed out for a kind when its counter row doesn't exist yet (matches the old sequences' START 1000). */
+/** First number handed out for a kind when its counter row does not exist yet. */
 const COUNTER_START: Record<CounterKind, number> = {
     order: 1000,
     refund: 1000,
     invoice: 1000,
     proforma: 1000,
     credit_note: 1000,
+    ticket: 1000,
 };
 
 /**
- * Allocate and return the next number for `kind` within the current tenant. Must be called inside a
- * tenant context (throws otherwise). The returned number is reserved for this transaction; a
- * rollback reverts the allocation together with the caller transaction, so only committed allocations
- * advance the tenant counter. The atomic row update still serializes concurrent committed allocations.
+ * Allocate and return the next number for `kind` within the current tenant. The allocation belongs
+ * to the caller transaction, so rollbacks revert it and concurrent committed allocations serialize.
  */
 export async function nextNumber(kind: CounterKind): Promise<number> {
     const tenantId = currentTenantId();
     const trx = currentTrx();
     const start = COUNTER_START[kind];
 
-    /** Seed the counter row at `start` if absent; the increment below hands out `start` first. */
     await trx
         .table("tenant_number_counters")
         .insert({ tenant_id: tenantId, kind, next_value: start })
@@ -49,12 +40,8 @@ export async function nextNumber(kind: CounterKind): Promise<number> {
 }
 
 /**
- * Reserve a contiguous block of `count` numbers for `kind` within the current tenant and return the
- * FIRST number in the block (so the caller assigns `base`, `base + 1`, … `base + count - 1`). One
- * atomic `UPDATE … RETURNING` advances the counter by `count` under its row lock — the gap-free,
- * per-tenant equivalent of grabbing a sequence range. Used by bulk inserts (`db:bulk-seed`) that
- * would otherwise call {@link nextNumber} once per row. Returns the current value unchanged when
- * `count <= 0`.
+ * Reserve a contiguous block of `count` numbers for `kind` and return the first number in the block.
+ * One atomic update advances the counter while holding the row lock.
  */
 export async function reserveNumberBlock(kind: CounterKind, count: number): Promise<number> {
     const tenantId = currentTenantId();
