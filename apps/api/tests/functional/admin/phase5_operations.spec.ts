@@ -133,6 +133,32 @@ test.group("Phase 5 order operations", (group) => {
         operations.assertStatus(200);
         assert.equal(operations.body().data.fulfillments[0].status, "delivered");
         assert.equal(operations.body().data.fulfillments[0].shipments[0].events.length, 3);
+        assert.equal(operations.body().data.lines[0].returnable_quantity, 1);
+    });
+
+    test("routes legacy mark-shipped through fulfillment without double-decrementing reserved stock", async ({ client, assert }) => {
+        const admin = await adminUser();
+        const { product, order } = await processingOrder(1);
+        await moveToProcessing(client, admin, Number(order.id));
+
+        const reserved = await db.from("inventory_items").where("product_id", product.id).whereNull("variation_id").first();
+        assert.equal(Number(reserved?.stock_quantity), 99);
+
+        const shipped = await client
+            .post(`/api/v1/admin/orders/${order.id}/mark-shipped`)
+            .loginAs(admin)
+            .json({ carrier: "post", tracking_number: "LEGACY-PHASE5", notify_customer: false });
+        shipped.assertStatus(200);
+        assert.equal(shipped.body().data.status, "processing");
+
+        const operations = await client.get(`/api/v1/admin/orders/${order.id}/operations`).loginAs(admin);
+        operations.assertStatus(200);
+        assert.equal(operations.body().data.fulfillments.length, 1);
+        assert.equal(operations.body().data.fulfillments[0].status, "shipped");
+        assert.equal(operations.body().data.fulfillments[0].shipments[0].status, "in_transit");
+
+        const after = await db.from("inventory_items").where("product_id", product.id).whereNull("variation_id").first();
+        assert.equal(Number(after?.stock_quantity), 99);
     });
 
     test("blocks returns before delivery and keeps create retries idempotent after delivery", async ({ client, assert }) => {
@@ -150,6 +176,14 @@ test.group("Phase 5 order operations", (group) => {
         early.assertStatus(409);
 
         await deliverSingleLine(client, admin, Number(order.id), lineId);
+
+        const excessiveMoney = await client
+            .post(`/api/v1/admin/orders/${order.id}/returns`)
+            .loginAs(admin)
+            .header("Idempotency-Key", "phase5-rma-too-much")
+            .json({ items: [{ order_line_item_id: lineId, quantity: 1, refund_amount_minor: 1_000_001 }], reason: "damaged" });
+        excessiveMoney.assertStatus(422);
+
         const created = await client
             .post(`/api/v1/admin/orders/${order.id}/returns`)
             .loginAs(admin)
