@@ -3,6 +3,7 @@ import { DateTime } from "luxon";
 
 import { OrderStatus } from "#enums/order_status";
 import type User from "#models/user";
+import { phase5OrderOperationsQueryService } from "#services/phase5_order_operations_query_service";
 import { phase5OrderOperationsService } from "#services/phase5_order_operations_service";
 import { currentTrx } from "#services/tenant_context";
 
@@ -34,7 +35,7 @@ export class LegacyMarkShippedService {
         const key = `legacy-mark-shipped:${orderId}`;
         let fulfillment = await trx.from("order_fulfillments").where("order_id", orderId).where("idempotency_key", key).first();
         if (!fulfillment) {
-            const operations = (await phase5OrderOperationsService.orderOperations(orderId)).data;
+            const operations = (await phase5OrderOperationsQueryService.orderOperations(orderId)).data;
             const active = operations.fulfillments.filter((item) => item.status !== "cancelled" && item.status !== "delivered");
             const alreadyAllocated = operations.lines.some((line) => line.fulfilled_quantity > 0);
             if (active.length > 0 || alreadyAllocated) {
