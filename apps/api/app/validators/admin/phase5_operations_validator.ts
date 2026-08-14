@@ -32,7 +32,13 @@ export const createShipmentValidator = vine.compile(
         carrier: vine.string().trim().maxLength(120).optional().nullable(),
         service: vine.string().trim().maxLength(120).optional().nullable(),
         tracking_number: vine.string().trim().maxLength(190).optional().nullable(),
-        tracking_url: vine.string().trim().url().maxLength(1000).optional().nullable(),
+        tracking_url: vine
+            .string()
+            .trim()
+            .url({ require_protocol: true, protocols: ["http", "https"] })
+            .maxLength(1000)
+            .optional()
+            .nullable(),
     }),
 );
 
