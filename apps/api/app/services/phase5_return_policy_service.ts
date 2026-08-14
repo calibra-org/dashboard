@@ -26,8 +26,6 @@ interface ReturnRefundInput {
     reason?: string | null;
 }
 
-type DbRow = Record<string, unknown>;
-
 function numberValue(value: unknown): number {
     const parsed = Number(value ?? 0);
     return Number.isFinite(parsed) ? parsed : 0;
@@ -49,7 +47,11 @@ function prorate(total: number, quantity: number, sourceQuantity: number): numbe
 export class Phase5ReturnPolicyService {
     constructor(private readonly refunds = new RefundService()) {}
 
-    async prepareCreate(orderId: number, input: ReturnCreateInput): Promise<ReturnCreateInput> {
+    async prepareCreate(
+        orderId: number,
+        input: ReturnCreateInput,
+        idempotencyKey?: string | null,
+    ): Promise<ReturnCreateInput> {
         const trx = currentTrx();
         const order = await trx.from("orders").where("id", orderId).whereNull("deleted_at").first();
         if (!order) throw new Exception("Order not found", { status: 404, code: "E_NOT_FOUND" });
@@ -76,12 +78,19 @@ export class Phase5ReturnPolicyService {
             .sum("item.quantity as delivered_quantity");
         const delivered = new Map(deliveredRows.map((row) => [Number(row.order_line_item_id), numberValue(row.delivered_quantity)]));
 
-        const priorRows = await trx
+        let priorQuery = trx
             .from("order_return_items as item")
             .join("order_returns as return_record", "return_record.id", "item.return_id")
             .where("return_record.order_id", orderId)
             .whereNot("return_record.status", "cancelled")
-            .whereIn("item.order_line_item_id", lineIds)
+            .whereIn("item.order_line_item_id", lineIds);
+        const normalizedKey = idempotencyKey?.trim() || null;
+        if (normalizedKey) {
+            priorQuery = priorQuery.where((query) => {
+                query.whereNull("return_record.idempotency_key").orWhereNot("return_record.idempotency_key", normalizedKey);
+            });
+        }
+        const priorRows = await priorQuery
             .groupBy("item.order_line_item_id")
             .select("item.order_line_item_id")
             .sum("item.requested_quantity as returned_quantity");
@@ -91,7 +100,7 @@ export class Phase5ReturnPolicyService {
 
         const noFulfillmentHistory = numberValue(fulfillmentCount?.total) === 0;
         const legacyDelivered =
-            noFulfillmentHistory && [OrderStatus.Completed, OrderStatus.Refunded].includes(order.status as OrderStatus);
+            noFulfillmentHistory && (order.status === OrderStatus.Completed || order.status === OrderStatus.Refunded);
 
         const enriched = input.items.map((item) => {
             const line = lines.find((candidate) => Number(candidate.id) === Number(item.order_line_item_id));
@@ -155,9 +164,10 @@ export class Phase5ReturnPolicyService {
                 const requested = Math.max(1, numberValue(item.requested_quantity));
                 const soldQuantity = Math.max(1, numberValue(source.quantity));
                 const storedGross = numberValue(item.refund_amount_minor);
-                const gross = storedGross > 0
-                    ? prorate(storedGross, received, requested)
-                    : prorate(numberValue(source.total) + numberValue(source.total_tax), received, soldQuantity);
+                const gross =
+                    storedGross > 0
+                        ? prorate(storedGross, received, requested)
+                        : prorate(numberValue(source.total) + numberValue(source.total_tax), received, soldQuantity);
                 const tax = prorate(numberValue(source.total_tax), received, soldQuantity);
                 if (gross <= 0) {
                     throw new Exception("Return refund amount is not positive", {
