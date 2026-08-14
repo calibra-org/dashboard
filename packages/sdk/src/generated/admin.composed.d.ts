@@ -15,11 +15,16 @@ import type {
     paths as Phase4Paths,
 } from "./admin.phase4";
 import type {
+    components as Phase5Components,
+    operations as Phase5Operations,
+    paths as Phase5Paths,
+} from "./admin.phase5";
+import type {
     components as TicketComponents,
     operations as TicketOperations,
     paths as TicketPaths,
 } from "./admin.tickets";
 
-export type paths = CorePaths & Phase4Paths & TicketPaths;
-export type components = CoreComponents & Phase4Components & TicketComponents;
-export type operations = CoreOperations & Phase4Operations & TicketOperations;
+export type paths = CorePaths & Phase4Paths & TicketPaths & Phase5Paths;
+export type components = CoreComponents & Phase4Components & TicketComponents & Phase5Components;
+export type operations = CoreOperations & Phase4Operations & TicketOperations & Phase5Operations;

@@ -10,6 +10,7 @@ import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import { Switch } from "#/components/ui/switch";
 import { toast } from "#/components/ui/toast";
+import { FulfillmentOperationsCard } from "#/features/operations/fulfillment-operations-card";
 import { formatDateTime } from "#/lib/format";
 import { useMarkShipped } from "#/lib/queries/orders";
 import type { AdminOrder } from "#/lib/types";
@@ -20,9 +21,8 @@ interface ShippingCardProps {
 }
 
 /**
- * Tracking + carrier capture. Save calls `POST /mark-shipped` which doubles as the processing →
- * completed transition; idempotent re-saves just update the metadata. `notify_customer` controls
- * whether the (stubbed) shipping email goes out. Renders as a section body.
+ * Keeps the historical single-shipment action available for compatibility while the line-aware
+ * fulfillment/RMA workbench below is the canonical operational history for new shipment activity.
  */
 export function ShippingCard({ order, locale }: ShippingCardProps) {
     const t = useTranslations("Orders.detail.shippingCard");
@@ -58,48 +58,33 @@ export function ShippingCard({ order, locale }: ShippingCardProps) {
     };
 
     return (
-        <div className="flex flex-col gap-3">
-            {info?.shippedAt && <p className="text-muted-foreground text-xs">{formatDateTime(info.shippedAt, locale)}</p>}
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="shipping-tracking">{t("tracking")}</Label>
-                    <div className="flex gap-2">
-                        <Input
-                            id="shipping-tracking"
-                            value={tracking}
-                            onChange={(event) => setTracking(event.target.value)}
-                            placeholder={t("trackingPlaceholder")}
-                        />
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={copy}
-                            disabled={!tracking}
-                            aria-label={t("trackingCopied")}
-                        >
-                            <Copy className="size-4" aria-hidden="true" />
-                        </Button>
+        <div className="grid gap-6">
+            <div className="flex flex-col gap-3 rounded-lg border border-dashed p-3">
+                {info?.shippedAt && <p className="text-muted-foreground text-xs">{formatDateTime(info.shippedAt, locale)}</p>}
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                    <div className="flex flex-col gap-1.5">
+                        <Label htmlFor="shipping-tracking">{t("tracking")}</Label>
+                        <div className="flex gap-2">
+                            <Input id="shipping-tracking" value={tracking} onChange={(event) => setTracking(event.target.value)} placeholder={t("trackingPlaceholder")} />
+                            <Button variant="outline" size="icon" onClick={copy} disabled={!tracking} aria-label={t("trackingCopied")}>
+                                <Copy className="size-4" aria-hidden="true" />
+                            </Button>
+                        </div>
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                        <Label htmlFor="shipping-carrier">{t("carrier")}</Label>
+                        <Input id="shipping-carrier" value={carrier} onChange={(event) => setCarrier(event.target.value)} placeholder={t("carrierPlaceholder")} />
                     </div>
                 </div>
-                <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="shipping-carrier">{t("carrier")}</Label>
-                    <Input
-                        id="shipping-carrier"
-                        value={carrier}
-                        onChange={(event) => setCarrier(event.target.value)}
-                        placeholder={t("carrierPlaceholder")}
-                    />
+                <div className="flex items-center justify-between gap-3">
+                    <label className="flex items-center gap-2 text-sm">
+                        <Switch checked={notify} onCheckedChange={(value) => setNotify(value === true)} aria-label={t("save")} />
+                        <span>{t("save")}</span>
+                    </label>
+                    <Button onClick={save} disabled={mutation.isPending}>{t("save")}</Button>
                 </div>
             </div>
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm">
-                    <Switch checked={notify} onCheckedChange={(value) => setNotify(value === true)} aria-label={t("save")} />
-                    <span>{t("save")}</span>
-                </div>
-                <Button onClick={save} disabled={mutation.isPending}>
-                    {t("save")}
-                </Button>
-            </div>
+            <FulfillmentOperationsCard orderId={order.id} />
         </div>
     );
 }

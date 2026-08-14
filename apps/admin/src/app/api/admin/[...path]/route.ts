@@ -28,6 +28,8 @@ const MUTATION_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
  *   401 is propagated so the React Query hook surfaces it.
  * - `Accept-Language` is forwarded from the incoming request (client hooks set it from
  *   `useLocale()`); falls back to the admin's default locale when absent.
+ * - `Idempotency-Key` is forwarded for retry-safe create/financial operations. The browser never
+ *   gets to choose an authorization token; this request-scoped key is only operation identity.
  */
 async function proxy(request: NextRequest, context: RouteContext): Promise<Response> {
     const session = await getSession();
@@ -73,6 +75,7 @@ async function proxy(request: NextRequest, context: RouteContext): Promise<Respo
             tenant,
             request.headers.get("content-type"),
             request.headers.get("if-match"),
+            request.headers.get("idempotency-key"),
             method,
         ),
         cache: "no-store",
@@ -121,6 +124,7 @@ function buildUpstreamHeaders(
     tenant: string | null,
     contentType: string | null,
     ifMatch: string | null,
+    idempotencyKey: string | null,
     method: string,
 ): Record<string, string> {
     const headers: Record<string, string> = {
@@ -136,6 +140,9 @@ function buildUpstreamHeaders(
     }
     if (typeof ifMatch === "string" && ifMatch.length > 0) {
         headers["if-match"] = ifMatch;
+    }
+    if (MUTATION_METHODS.has(method) && typeof idempotencyKey === "string" && idempotencyKey.length > 0) {
+        headers["idempotency-key"] = idempotencyKey;
     }
     return headers;
 }

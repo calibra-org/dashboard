@@ -52,6 +52,7 @@ export class OrderStateMachine {
 
         const run = async (trx: TransactionClientContract): Promise<void> => {
             order.useTransaction(trx);
+            await this.assertFulfillmentSafeTransition(order, fromStatus, to, trx);
 
             for (const effect of transition.effects) {
                 await this.applySideEffect(effect, order, trx);
@@ -91,6 +92,31 @@ export class OrderStateMachine {
         if (to === "completed") {
             await emitter.emit("order:completed", { order });
         }
+    }
+
+    /**
+     * A processing order historically restored every reserved line when cancelled. Once Phase 5
+     * fulfillment activity exists that blanket restore can credit stock for items already packed,
+     * shipped, or delivered. Operators must cancel pending/packed fulfillments first; shipped or
+     * delivered work makes the order itself non-cancellable and must be handled through returns.
+     */
+    private async assertFulfillmentSafeTransition(
+        order: Order,
+        from: OrderStatus,
+        to: OrderStatus,
+        trx: TransactionClientContract,
+    ): Promise<void> {
+        if (from !== "processing" || to !== "cancelled") return;
+        const active = await trx
+            .from("order_fulfillments")
+            .where("order_id", Number(order.id))
+            .whereNot("status", "cancelled")
+            .first();
+        if (!active) return;
+        throw new Exception("Order has active fulfillment activity and cannot be cancelled directly", {
+            status: 409,
+            code: "E_ORDER_HAS_ACTIVE_FULFILLMENT",
+        });
     }
 
     private async applySideEffect(effect: OrderTransitionEffect, order: Order, trx: TransactionClientContract): Promise<void> {

@@ -35,6 +35,8 @@ jobs:
             - run: pnpm run format && pnpm run lint
             - name: Verify ticket full-stack release invariants
               run: pnpm run verify:tickets
+            - name: Verify Phase 5 fulfillment and operations invariants
+              run: pnpm run verify:phase5
 
     typecheck:
         runs-on: ubuntu-latest
