@@ -174,3 +174,27 @@ The first-action audit above has now been performed against the current Phase 5 
 ### Remaining release work
 
 Phase 5 remains **IN PROGRESS** until executable evidence exists for the release gate above. The GitHub-hosted workflow attempts observed for this branch have failed before runner steps execute under the repository/org runner allocation/billing condition; that infrastructure state is neither a code-test failure nor green evidence. The branch must remain unmerged until format/lint/typecheck/build, focused API/Admin tests, migration/codegen drift checks, runtime smoke, RTL/LTR visual QA and the final evidence-based 99/100 audit have actually executed.
+
+---
+
+## Phase 5 hardening checkpoint — appended 2026-08-14
+
+A second append-only audit pass found and closed additional integration and edge-case gaps without changing the menu architecture or creating parallel subsystems.
+
+### Cross-layer correctness added
+
+- The existing Admin same-origin proxy now forwards `Idempotency-Key` on mutation requests. Phase 5 browser retries therefore reach the API with the stable logical-operation key produced by the existing React Query mutation layer instead of silently losing that safety boundary at the proxy.
+- New and legacy shipment tracking URLs are restricted to explicit `http`/`https` protocols before they can be persisted or rendered as external Admin links.
+- Phase 5 quantity and identifier validators remain integer-bounded; fractional fulfillment quantities are rejected before domain allocation logic.
+
+### RMA policy hardening added
+
+- The current v1 RMA state machine has no partially-received status, so final receipt now requires every approved line and approved unit to be accounted for before moving the return to `received`. This prevents approved units from becoming stranded in a terminal physical-receipt step.
+- An explicitly requested zero refund is no longer interpreted as “use the default full line value.” Zero remains zero and the refund action rejects it as non-positive, preventing a surprising financial escalation.
+- When an operator intentionally chooses a lower positive RMA refund than the full line value, the tax component is reduced proportionally rather than retaining the full default tax allocation.
+- Dedicated functional hardening coverage was added for fractional fulfillment rejection, non-web tracking URLs, complete final RMA receipt coverage and explicit-zero refund behavior.
+- The Phase 5 static verifier now checks the Admin proxy idempotency boundary, URL-protocol restriction, final-receipt invariant and new hardening regression source.
+
+### Release status after this checkpoint
+
+Phase 5 is still **IN PROGRESS**. Source-level hardening is ahead of the executable release evidence because GitHub-hosted runners are still failing before job steps execute. No 99/100 release claim and no merge are allowed until the existing release gate actually runs successfully.
