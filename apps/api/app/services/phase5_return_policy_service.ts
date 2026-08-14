@@ -145,22 +145,24 @@ export class Phase5ReturnPolicyService {
 
     /**
      * Receiving is the final physical inspection in the v1 RMA state machine. Because there is no
-     * partially-received state, every positively-approved line must be present in the receipt
-     * payload before the return may advance to `received`; otherwise an omitted package could be
-     * stranded forever with approved quantity but no remaining transition that can receive it.
+     * partially-received state, every positively-approved line and unit must be accounted for in
+     * one final receipt before the return may advance to `received`. This prevents approved units
+     * from becoming stranded with no legal state transition left to receive them later.
      */
     async assertFinalReceiptCoverage(id: number, input: ReturnReceiveInput): Promise<void> {
         const trx = currentTrx();
         const row = await trx.from("order_returns").where("id", id).first();
         if (!row) throw new Exception("Return not found", { status: 404, code: "E_RETURN_NOT_FOUND" });
         const items = await trx.from("order_return_items").where("return_id", id);
-        const approvedLineIds = items
+        const submitted = new Map(input.items.map((item) => [Number(item.order_line_item_id), item]));
+        const incomplete = items
             .filter((item) => numberValue(item.approved_quantity) > 0)
-            .map((item) => Number(item.order_line_item_id));
-        const submittedLineIds = new Set(input.items.map((item) => Number(item.order_line_item_id)));
-        const missing = approvedLineIds.some((lineId) => !submittedLineIds.has(lineId));
-        if (missing) {
-            throw new Exception("Receipt must account for every approved return line", {
+            .some((item) => {
+                const receipt = submitted.get(Number(item.order_line_item_id));
+                return !receipt || numberValue(receipt.received_quantity) !== numberValue(item.approved_quantity);
+            });
+        if (incomplete) {
+            throw new Exception("Final receipt must account for every approved return unit", {
                 status: 422,
                 code: "E_RETURN_RECEIPT_INCOMPLETE",
             });
