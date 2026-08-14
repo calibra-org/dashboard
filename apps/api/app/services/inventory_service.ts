@@ -7,7 +7,7 @@ import { recordInventoryMovement, recordInventoryOversellAttempt } from "#servic
 import { withTenantTransaction } from "#services/tenant_context";
 
 /** Source-system that triggered an inventory movement; recorded on the ledger row. */
-export type InventoryRefKind = "order" | "refund" | "manual";
+export type InventoryRefKind = "order" | "refund" | "return" | "manual";
 
 /** Discriminator for `inventory_movements.kind`. */
 export type InventoryMovementKind = "sale" | "return" | "restock" | "adjustment" | "reservation" | "release";
@@ -68,6 +68,32 @@ export default class InventoryService {
         await this.mutate(target, "restock", Math.abs(quantity), ref, trx);
     }
 
+    /** Records sellable stock received through a Return/RMA without conflating it with a financial refund. */
+    async returnItems(
+        target: InventoryTarget,
+        quantity: number,
+        ref: InventoryRef,
+        trx?: TransactionClientContract,
+    ): Promise<void> {
+        await this.mutate(target, "return", Math.abs(quantity), ref, trx);
+    }
+
+    /** Operator-only signed stock adjustment. Callers must supply a human reason for the immutable ledger. */
+    async adjust(
+        target: InventoryTarget,
+        quantityDelta: number,
+        ref: InventoryRef,
+        reason: string,
+        trx?: TransactionClientContract,
+    ): Promise<void> {
+        if (!Number.isInteger(quantityDelta) || quantityDelta === 0) {
+            throw new Error("Inventory adjustment delta must be a non-zero integer");
+        }
+        const note = reason.trim();
+        if (note.length < 3) throw new Error("Inventory adjustment reason is required");
+        await this.mutate(target, "adjustment", quantityDelta, ref, trx, note);
+    }
+
     async snapshot(target: InventoryTarget): Promise<InventorySnapshot> {
         const item = await this.resolveItem(target);
         if (!item) {
@@ -103,6 +129,7 @@ export default class InventoryService {
         delta: number,
         ref: InventoryRef,
         externalTrx?: TransactionClientContract,
+        notes?: string | null,
     ) {
         /**
          * When the caller already owns a transaction (e.g. the order finalizer wrapping the entire
@@ -144,6 +171,7 @@ export default class InventoryService {
             movement.quantityDelta = delta;
             movement.refKind = ref.kind;
             movement.refId = ref.id ?? null;
+            movement.notes = notes ?? null;
             await movement.save();
             recordInventoryMovement(kind);
         };
