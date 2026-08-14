@@ -21,12 +21,56 @@ function mergeRecord(baseRecord = {}, overlayRecord = {}, label, allowIdentical 
     return merged;
 }
 
-for (const overlay of [tickets, completion]) {
+function rewriteRefs(value, replacements) {
+    if (Array.isArray(value)) return value.map((item) => rewriteRefs(item, replacements));
+    if (!value || typeof value !== "object") return value;
+    const rewritten = {};
+    for (const [key, item] of Object.entries(value)) {
+        if (key === "$ref" && typeof item === "string" && replacements.has(item)) rewritten[key] = replacements.get(item);
+        else rewritten[key] = rewriteRefs(item, replacements);
+    }
+    return rewritten;
+}
+
+function namespaceConflictingComponents(overlay, namespace) {
+    const replacements = new Map();
+    const componentSections = Object.keys(overlay.components ?? {});
+    for (const section of componentSections) {
+        const baseSection = base.components?.[section] ?? {};
+        for (const [key, value] of Object.entries(overlay.components?.[section] ?? {})) {
+            if (!Object.hasOwn(baseSection, key) || isDeepStrictEqual(baseSection[key], value)) continue;
+            const namespaced = `${namespace}${key}`;
+            if (Object.hasOwn(baseSection, namespaced) || Object.hasOwn(overlay.components?.[section] ?? {}, namespaced)) {
+                throw new Error(`Admin OpenAPI namespace collision in components.${section}: ${namespaced}`);
+            }
+            replacements.set(`#/components/${section}/${key}`, `#/components/${section}/${namespaced}`);
+        }
+    }
+    if (replacements.size === 0) return overlay;
+
+    const rewritten = rewriteRefs(overlay, replacements);
+    for (const section of Object.keys(rewritten.components ?? {})) {
+        const sectionRecord = rewritten.components[section];
+        for (const [oldRef, newRef] of replacements) {
+            const prefix = `#/components/${section}/`;
+            if (!oldRef.startsWith(prefix) || !newRef.startsWith(prefix)) continue;
+            const oldKey = oldRef.slice(prefix.length);
+            const newKey = newRef.slice(prefix.length);
+            if (!Object.hasOwn(sectionRecord, oldKey)) continue;
+            sectionRecord[newKey] = sectionRecord[oldKey];
+            delete sectionRecord[oldKey];
+        }
+    }
+    return rewritten;
+}
+
+for (const [overlaySource, namespace] of [
+    [tickets, "TicketOverlay"],
+    [completion, "CompletionOverlay"],
+]) {
+    const overlay = namespaceConflictingComponents(overlaySource, namespace);
     base.paths = mergeRecord(base.paths, overlay.paths, "paths");
-    const componentSections = new Set([
-        ...Object.keys(base.components ?? {}),
-        ...Object.keys(overlay.components ?? {}),
-    ]);
+    const componentSections = new Set([...Object.keys(base.components ?? {}), ...Object.keys(overlay.components ?? {})]);
     const merged = {};
     for (const section of componentSections) {
         merged[section] = mergeRecord(
