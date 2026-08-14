@@ -7,6 +7,7 @@ const mustExist = [
     "apps/api/database/migrations/1762000000000_create_phase5_order_operations.ts",
     "apps/api/database/phase5_schema.generated.ts",
     "apps/api/app/services/phase5_order_operations_service.ts",
+    "apps/api/app/services/phase5_order_operations_query_service.ts",
     "apps/api/app/services/phase5_return_policy_service.ts",
     "apps/api/app/services/legacy_mark_shipped_service.ts",
     "apps/api/app/services/inventory_operations_service.ts",
@@ -86,6 +87,22 @@ assertContains("apps/api/app/services/phase5_order_operations_service.ts", [
 assertNotContains("apps/api/app/services/phase5_order_operations_service.ts", [
     "inventory.decrement",
     "stock_quantity -",
+]);
+assertContains("apps/api/app/services/phase5_order_operations_query_service.ts", [
+    '"name_snapshot as name"',
+    '"sku_snapshot as sku"',
+    "order_fulfillments",
+    "order_shipment_events",
+    "order_returns",
+]);
+assertContains("apps/api/app/controllers/admin/order_operations_controller.ts", [
+    "phase5OrderOperationsQueryService",
+    "phase5OrderOperationsQueryService.orderOperations",
+    "phase5ReturnPolicyService",
+]);
+assertContains("apps/api/app/services/legacy_mark_shipped_service.ts", [
+    "phase5OrderOperationsQueryService",
+    "legacy-mark-shipped",
 ]);
 
 assertContains("apps/api/app/services/phase5_return_policy_service.ts", [
