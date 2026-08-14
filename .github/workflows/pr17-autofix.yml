@@ -14,7 +14,6 @@ concurrency:
 
 jobs:
   format-and-codegen:
-    if: github.actor != 'github-actions[bot]' || !contains(github.event.head_commit.message, 'chore(ci): apply reproducible formatter and SDK codegen')
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
