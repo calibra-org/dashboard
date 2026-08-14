@@ -6,7 +6,9 @@ import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { StatusBadge, type StatusTone } from "#/components/StatusBadge";
+import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
+import { InventoryOperationsPanel } from "#/features/operations/inventory-operations-panel";
 import { formatNumber } from "#/lib/format";
 import { Link } from "#/lib/i18n/navigation";
 import { type StockParams, type StockReportRow, useStockReport } from "#/lib/queries/analytics";
@@ -21,9 +23,11 @@ const STATUS_FILTERS: NonNullable<StockParams["status"]>[] = ["all", "instock", 
 export function StockView() {
     const locale = useLocale() as Locale;
     const t = useTranslations("Analytics");
+    const inventoryT = useTranslations("InventoryOperations");
     const [page, setPage] = useState(1);
     const [q, setQ] = useState("");
     const [status, setStatus] = useState<NonNullable<StockParams["status"]>>("all");
+    const [selectedInventoryId, setSelectedInventoryId] = useState<number | null>(null);
     const report = useStockReport({ page, q: q || undefined, status, orderBy: "name", orderDir: "asc" });
     const num = (v: number) => formatNumber(v, locale);
     const counts = report.data?.counts;
@@ -42,14 +46,17 @@ export function StockView() {
         {
             id: "status",
             header: t("table.status"),
-            cell: (r) => (
-                <StatusBadge tone={STATUS_TONE[r.status] ?? "neutral"}>{t(`stockStatus.${r.status}` as never)}</StatusBadge>
-            ),
+            cell: (r) => <StatusBadge tone={STATUS_TONE[r.status] ?? "neutral"}>{t(`stockStatus.${r.status}` as never)}</StatusBadge>,
         },
+        { id: "stock", header: t("table.stock"), cell: (r) => (r.stock === null ? t("stockUnknown") : num(r.stock)), className: "text-end" },
         {
-            id: "stock",
-            header: t("table.stock"),
-            cell: (r) => (r.stock === null ? t("stockUnknown") : num(r.stock)),
+            id: "ledger",
+            header: "",
+            cell: (r) => (
+                <Button type="button" size="sm" variant="outline" onClick={() => setSelectedInventoryId(r.inventory_id)}>
+                    {inventoryT("openLedger")}
+                </Button>
+            ),
             className: "text-end",
         },
     ];
@@ -64,15 +71,10 @@ export function StockView() {
                         <button
                             key={value}
                             type="button"
-                            onClick={() => {
-                                setStatus(value);
-                                setPage(1);
-                            }}
+                            onClick={() => { setStatus(value); setPage(1); }}
                             className={cn(
                                 "inline-flex h-7 items-center rounded-[5px] px-2.5 text-xs transition-colors",
-                                status === value
-                                    ? "bg-accent font-medium text-accent-foreground"
-                                    : "text-muted-foreground hover:text-foreground",
+                                status === value ? "bg-accent font-medium text-accent-foreground" : "text-muted-foreground hover:text-foreground",
                             )}
                         >
                             {t(`stockFilter.${value}` as never)}
@@ -80,21 +82,14 @@ export function StockView() {
                     ))}
                 </div>
                 <div className="relative max-w-xs">
-                    <Search
-                        className="absolute start-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
-                        aria-hidden="true"
-                    />
-                    <Input
-                        value={q}
-                        onChange={(e) => {
-                            setQ(e.target.value);
-                            setPage(1);
-                        }}
-                        placeholder={t("searchProducts")}
-                        className="ps-8"
-                    />
+                    <Search className="absolute start-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+                    <Input value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }} placeholder={t("searchProducts")} className="ps-8" />
                 </div>
             </div>
+
+            {selectedInventoryId !== null ? (
+                <InventoryOperationsPanel inventoryItemId={selectedInventoryId} locale={locale} onClose={() => setSelectedInventoryId(null)} />
+            ) : null}
 
             <ReportTableCard<StockReportRow>
                 title={t("reports.stock")}
