@@ -295,22 +295,13 @@ export function Sidebar() {
                                     navT("content"),
                                     contentItems,
                                 )}
-                                {collapsible(
-                                    "seo-sidebar-items",
-                                    seoActive,
-                                    seoOpen,
-                                    setSeoOpen,
-                                    Search,
-                                    navT("seo"),
-                                    seoItems,
-                                    {
-                                        0: navT("seoSectionControl"),
-                                        2: navT("seoSectionCatalog"),
-                                        6: navT("seoSectionContent"),
-                                        10: navT("seoSectionMonitoring"),
-                                        14: navT("seoSectionSystem"),
-                                    },
-                                )}
+                                {collapsible("seo-sidebar-items", seoActive, seoOpen, setSeoOpen, Search, navT("seo"), seoItems, {
+                                    0: navT("seoSectionControl"),
+                                    2: navT("seoSectionCatalog"),
+                                    6: navT("seoSectionContent"),
+                                    10: navT("seoSectionMonitoring"),
+                                    14: navT("seoSectionSystem"),
+                                })}
                                 {collapsible(
                                     "ticket-sidebar-items",
                                     ticketActive,

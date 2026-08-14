@@ -1,7 +1,11 @@
 import type { HttpContext } from "@adonisjs/core/http";
 
 import { publicSupportService } from "#services/support/public_support_service";
-import { publicTicketCreateValidator, publicTicketCsatValidator, publicTicketReplyValidator } from "#validators/support_public_validator";
+import {
+    publicTicketCreateValidator,
+    publicTicketCsatValidator,
+    publicTicketReplyValidator,
+} from "#validators/support_public_validator";
 
 export default class SupportPublicController {
     async store(ctx: HttpContext) {

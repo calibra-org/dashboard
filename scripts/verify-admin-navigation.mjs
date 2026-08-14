@@ -71,7 +71,10 @@ check(hrefs.length > 0, "Sidebar contains no static navigation hrefs");
 check(new Set(hrefs).size === hrefs.length, "Sidebar contains duplicate href entries");
 
 for (const href of hrefs) {
-    check(pagePatterns.some((pattern) => routePatternMatches(pattern, href)), `Sidebar dead link: ${href} has no authenticated page`);
+    check(
+        pagePatterns.some((pattern) => routePatternMatches(pattern, href)),
+        `Sidebar dead link: ${href} has no authenticated page`,
+    );
 }
 
 const importMatch = sidebar.match(/import\s*\{\s*([^}]*)\}\s*from\s*"#\/icons";/);
@@ -105,7 +108,7 @@ for (const control of ["ChevronDown", "Box"]) {
     if (sidebar.includes(`<${control}`)) check(localIconNames.has(control), `Sidebar JSX uses ${control} without importing it`);
 }
 
-check(!sidebar.includes('label: { fa:'), "Sidebar must not carry local bilingual navigation copy; use Nav translation keys");
+check(!sidebar.includes("label: { fa:"), "Sidebar must not carry local bilingual navigation copy; use Nav translation keys");
 
 const fa = messages("fa");
 const en = messages("en");

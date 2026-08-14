@@ -247,13 +247,7 @@ export function TransactionsCenter() {
                     hint={stats ? formatMoney(stats.by_status.verified?.amount_minor ?? 0, locale) : "—"}
                     tone="good"
                 />
-                <Metric
-                    icon={Clock3}
-                    label={t.pending}
-                    value={stats ? formatNumber(pending, locale) : "—"}
-                    hint=""
-                    tone="warn"
-                />
+                <Metric icon={Clock3} label={t.pending} value={stats ? formatNumber(pending, locale) : "—"} hint="" tone="warn" />
                 <Metric
                     icon={AlertCircle}
                     label={t.attention}
@@ -428,13 +422,20 @@ export function TransactionsCenter() {
                             <table className="w-full min-w-[1060px] text-sm">
                                 <thead className="bg-muted/45 text-muted-foreground">
                                     <tr className="border-b">
-                                        {[t.transaction, t.order, t.gateway, t.status, t.reconcile, t.amount, t.reference, t.time].map(
-                                            (label) => (
-                                                <th key={label} className="px-4 py-3 text-start font-medium text-xs">
-                                                    {label}
-                                                </th>
-                                            ),
-                                        )}
+                                        {[
+                                            t.transaction,
+                                            t.order,
+                                            t.gateway,
+                                            t.status,
+                                            t.reconcile,
+                                            t.amount,
+                                            t.reference,
+                                            t.time,
+                                        ].map((label) => (
+                                            <th key={label} className="px-4 py-3 text-start font-medium text-xs">
+                                                {label}
+                                            </th>
+                                        ))}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -618,15 +619,7 @@ function TransactionRow({
     );
 }
 
-function TransactionCard({
-    row,
-    locale,
-    onOpen,
-}: {
-    row: AdminTransaction;
-    locale: Locale;
-    onOpen: () => void;
-}) {
+function TransactionCard({ row, locale, onOpen }: { row: AdminTransaction; locale: Locale; onOpen: () => void }) {
     return (
         <button
             type="button"
@@ -783,7 +776,10 @@ function TransactionDrawer({
                         ) : null}
                         <section>
                             <h3 className="mb-2 font-semibold text-sm">{t.payload}</h3>
-                            <pre className="max-h-64 overflow-auto rounded-xl border bg-muted/35 p-3 text-[11px] leading-5" dir="ltr">
+                            <pre
+                                className="max-h-64 overflow-auto rounded-xl border bg-muted/35 p-3 text-[11px] leading-5"
+                                dir="ltr"
+                            >
                                 {JSON.stringify(row.gateway_payload ?? {}, null, 2)}
                             </pre>
                         </section>
@@ -829,9 +825,7 @@ function ReconciliationPanel({
                 <div>
                     <h3 className="font-semibold text-sm">{t.reconcile}</h3>
                     <p className="mt-1 text-muted-foreground text-xs">
-                        {row.reconciliation_checked_at
-                            ? formatDateTime(row.reconciliation_checked_at, locale)
-                            : t.neverChecked}
+                        {row.reconciliation_checked_at ? formatDateTime(row.reconciliation_checked_at, locale) : t.neverChecked}
                     </p>
                 </div>
                 <Button size="sm" variant="outline" onClick={onCheck} disabled={checking}>
@@ -891,9 +885,7 @@ function RefundPanel({ transaction, locale, t }: { transaction: AdminTransaction
     const [amount, setAmount] = useState("");
     const [reason, setReason] = useState("");
     const financialsReady = order.isSuccess && refunds.isSuccess;
-    const refundedTotal = financialsReady
-        ? (refunds.data?.data ?? []).reduce((sum, item) => sum + item.amount_minor, 0)
-        : 0;
+    const refundedTotal = financialsReady ? (refunds.data?.data ?? []).reduce((sum, item) => sum + item.amount_minor, 0) : 0;
     const orderTotal = financialsReady ? Number(order.data.grandTotal) : 0;
     const remaining = financialsReady ? Math.max(0, orderTotal - refundedTotal) : 0;
 

@@ -17,7 +17,8 @@ export default class SeoRunCrawls extends BaseCommand {
     static options: CommandOptions = { startApp: true };
 
     async run() {
-        const candidates = (await db.connection("postgres_admin")
+        const candidates = (await db
+            .connection("postgres_admin")
             .from("seo_crawl_targets")
             .whereIn("status", ["queued", "failed"])
             .where("attempts", "<", 3)

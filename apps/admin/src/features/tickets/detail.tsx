@@ -59,11 +59,7 @@ function TicketControls({ data, locale }: { data: Ticket; locale: Locale }) {
     const statusOptions = useMemo(() => [data.status, ...ALLOWED_TRANSITIONS[data.status]], [data.status]);
     const assigneeOptions = useMemo(() => {
         const options = [...(assignees.data ?? [])];
-        if (
-            data.assigned_user_id !== null &&
-            !options.some((item) => item.id === data.assigned_user_id) &&
-            data.assignee_email
-        ) {
+        if (data.assigned_user_id !== null && !options.some((item) => item.id === data.assigned_user_id) && data.assignee_email) {
             options.unshift({ id: data.assigned_user_id, label: data.assignee_email, email: data.assignee_email });
         }
         return options;
@@ -248,7 +244,7 @@ function TicketLoaded({
                             {(data.messages ?? []).map((message) => {
                                 const requester = message.kind === "requester_message";
                                 const internal = message.kind === "internal_note";
-                                const author = requester ? data.requester_name : message.author_email ?? t.system;
+                                const author = requester ? data.requester_name : (message.author_email ?? t.system);
                                 return (
                                     <div
                                         key={message.id}
@@ -451,11 +447,6 @@ export function TicketDetail({ id }: { id: number }) {
         );
     }
     return (
-        <TicketLoaded
-            data={ticket.data}
-            locale={locale}
-            refetch={() => void ticket.refetch()}
-            isFetching={ticket.isFetching}
-        />
+        <TicketLoaded data={ticket.data} locale={locale} refetch={() => void ticket.refetch()} isFetching={ticket.isFetching} />
     );
 }

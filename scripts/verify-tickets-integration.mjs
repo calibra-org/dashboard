@@ -84,7 +84,7 @@ for (const invariant of [
 
 const service = read("apps/api/app/services/support/ticket_service.ts");
 for (const invariant of [
-    "nextNumber(\"ticket\")",
+    'nextNumber("ticket")',
     "ensureAssignee",
     "ensureCustomer",
     "expected_version",
@@ -146,10 +146,7 @@ check(detail.includes("ArrowStart"), "Ticket back navigation must use the RTL-aw
 
 const settle = read("apps/admin/src/lib/queries/use-settle-mutation.ts");
 check(settle.includes("setPendingState(rollback)"), "Failed settled mutations must roll optimistic state back");
-check(
-    settle.includes("void flush().catch"),
-    "Timer-triggered settled mutations must not leak unhandled promise rejections",
-);
+check(settle.includes("void flush().catch"), "Timer-triggered settled mutations must not leak unhandled promise rejections");
 
 const sidebar = read("apps/admin/src/components/Sidebar.tsx");
 check(sidebar.includes('labelKey: "ticketQueue"'), "Ticket queue navigation must use a translation key");

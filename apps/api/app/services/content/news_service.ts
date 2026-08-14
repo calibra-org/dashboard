@@ -29,14 +29,32 @@ export class NewsService {
     async adminSummary() {
         const trx = currentTrx();
         const [statuses, performance, scheduled] = await Promise.all([
-            trx.from("content_posts").where("type", "news").whereNull("deleted_at").select("status").count("id as total").groupBy("status"),
-            trx.from("content_posts").where("type", "news").whereNull("deleted_at").select(
-                trx.raw("COALESCE(SUM(views_count),0)::bigint AS views"),
-                trx.raw("COALESCE(SUM(product_clicks_count),0)::bigint AS product_clicks"),
-                trx.raw("COALESCE(SUM(assisted_orders_count),0)::bigint AS assisted_orders"),
-                trx.raw("COALESCE(SUM(assisted_revenue_minor),0)::bigint AS assisted_revenue_minor"),
-            ).first(),
-            trx.from("content_posts").where("type", "news").where("status", "scheduled").whereNotNull("scheduled_at").where("scheduled_at", "<=", trx.raw("now() + interval '7 days'")).count("id as total").first(),
+            trx
+                .from("content_posts")
+                .where("type", "news")
+                .whereNull("deleted_at")
+                .select("status")
+                .count("id as total")
+                .groupBy("status"),
+            trx
+                .from("content_posts")
+                .where("type", "news")
+                .whereNull("deleted_at")
+                .select(
+                    trx.raw("COALESCE(SUM(views_count),0)::bigint AS views"),
+                    trx.raw("COALESCE(SUM(product_clicks_count),0)::bigint AS product_clicks"),
+                    trx.raw("COALESCE(SUM(assisted_orders_count),0)::bigint AS assisted_orders"),
+                    trx.raw("COALESCE(SUM(assisted_revenue_minor),0)::bigint AS assisted_revenue_minor"),
+                )
+                .first(),
+            trx
+                .from("content_posts")
+                .where("type", "news")
+                .where("status", "scheduled")
+                .whereNotNull("scheduled_at")
+                .where("scheduled_at", "<=", trx.raw("now() + interval '7 days'"))
+                .count("id as total")
+                .first(),
         ]);
         const byStatus = Object.fromEntries(statuses.map((row) => [String(row.status), numberValue(row.total)]));
         return {

@@ -29,7 +29,10 @@ export class LegacyMarkShippedService {
             return;
         }
         if (order.status !== OrderStatus.Processing) {
-            throw new Exception("Only processing orders can be marked shipped", { status: 422, code: "E_FULFILLMENT_ORDER_STATE" });
+            throw new Exception("Only processing orders can be marked shipped", {
+                status: 422,
+                code: "E_FULFILLMENT_ORDER_STATE",
+            });
         }
 
         const key = `legacy-mark-shipped:${orderId}`;
@@ -61,7 +64,8 @@ export class LegacyMarkShippedService {
 
         let current = (await phase5OrderOperationsService.fulfillment(Number(fulfillment.id))).data;
         if (current.status === "pending") {
-            current = (await phase5OrderOperationsService.transitionFulfillment(current.id, "packed", current.version, actor)).data;
+            current = (await phase5OrderOperationsService.transitionFulfillment(current.id, "packed", current.version, actor))
+                .data;
         }
         if (current.status === "cancelled") {
             throw new Exception("Compatibility fulfillment was cancelled", { status: 409, code: "E_FULFILLMENT_CANCELLED" });
@@ -79,15 +83,20 @@ export class LegacyMarkShippedService {
                     },
                     actor,
                 )
-            ).data as typeof current.shipments[number];
+            ).data as (typeof current.shipments)[number];
         } else {
-            await trx.from("order_shipments").where("id", shipment.id).update({
-                carrier: input.carrier ?? shipment.carrier,
-                tracking_number: input.tracking_number ?? shipment.tracking_number,
-                tracking_url: input.tracking_url ?? shipment.tracking_url,
-                updated_at: new Date(),
-            });
-            shipment = (await phase5OrderOperationsService.fulfillment(current.id)).data.shipments.find((item) => item.id === shipment.id)!;
+            await trx
+                .from("order_shipments")
+                .where("id", shipment.id)
+                .update({
+                    carrier: input.carrier ?? shipment.carrier,
+                    tracking_number: input.tracking_number ?? shipment.tracking_number,
+                    tracking_url: input.tracking_url ?? shipment.tracking_url,
+                    updated_at: new Date(),
+                });
+            shipment = (await phase5OrderOperationsService.fulfillment(current.id)).data.shipments.find(
+                (item) => item.id === shipment.id,
+            )!;
         }
 
         if (shipment.status === "label_created") {
@@ -118,7 +127,10 @@ export class LegacyMarkShippedService {
             carrier: input.carrier ?? previous.carrier ?? null,
             shipped_at: preserveTimestamp && previous.shipped_at ? previous.shipped_at : DateTime.utc().toISO(),
         };
-        await trx.from("orders").where("id", orderId).update({ attributes: JSON.stringify({ ...attributes, shipping }), updated_at: new Date() });
+        await trx
+            .from("orders")
+            .where("id", orderId)
+            .update({ attributes: JSON.stringify({ ...attributes, shipping }), updated_at: new Date() });
     }
 }
 

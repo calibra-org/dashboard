@@ -84,7 +84,8 @@ export class WebhookIdempotencyService {
         if (opts.trx) row.useTransaction(opts.trx);
         row.outcome = outcome;
         row.processedAt = DateTime.utc();
-        if (opts.paymentAttemptId !== undefined && opts.paymentAttemptId !== null) row.paymentAttemptId = Number(opts.paymentAttemptId);
+        if (opts.paymentAttemptId !== undefined && opts.paymentAttemptId !== null)
+            row.paymentAttemptId = Number(opts.paymentAttemptId);
         if (opts.orderId !== undefined && opts.orderId !== null) row.orderId = Number(opts.orderId);
         await row.save();
     }

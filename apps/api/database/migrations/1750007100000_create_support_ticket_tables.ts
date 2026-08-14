@@ -10,7 +10,13 @@ export default class extends BaseSchema {
             table.integer("first_response_minutes").notNullable().defaultTo(60);
             table.integer("resolution_minutes").notNullable().defaultTo(1440);
             table.string("default_priority", 16).notNullable().defaultTo("normal");
-            table.bigInteger("default_assignee_user_id").unsigned().nullable().references("id").inTable("users").onDelete("SET NULL");
+            table
+                .bigInteger("default_assignee_user_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("users")
+                .onDelete("SET NULL");
             table.timestamps(true, true);
         });
 
@@ -51,9 +57,21 @@ export default class extends BaseSchema {
         this.schema.createTable("support_ticket_messages", (table) => {
             table.bigIncrements("id").notNullable();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("ticket_id").unsigned().notNullable().references("id").inTable("support_tickets").onDelete("CASCADE");
+            table
+                .bigInteger("ticket_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("support_tickets")
+                .onDelete("CASCADE");
             table.bigInteger("author_user_id").unsigned().nullable().references("id").inTable("users").onDelete("SET NULL");
-            table.bigInteger("author_customer_id").unsigned().nullable().references("id").inTable("customers").onDelete("SET NULL");
+            table
+                .bigInteger("author_customer_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("customers")
+                .onDelete("SET NULL");
             table.string("kind", 24).notNullable().defaultTo("requester_message");
             table.text("body").notNullable();
             table.timestamp("created_at", { useTz: true }).notNullable().defaultTo(this.now());
@@ -63,7 +81,13 @@ export default class extends BaseSchema {
         this.schema.createTable("support_ticket_events", (table) => {
             table.bigIncrements("id").notNullable();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("ticket_id").unsigned().notNullable().references("id").inTable("support_tickets").onDelete("CASCADE");
+            table
+                .bigInteger("ticket_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("support_tickets")
+                .onDelete("CASCADE");
             table.bigInteger("actor_user_id").unsigned().nullable().references("id").inTable("users").onDelete("SET NULL");
             table.string("event_type", 48).notNullable();
             table.jsonb("payload").notNullable().defaultTo(this.raw("'{}'::jsonb"));
@@ -85,10 +109,14 @@ export default class extends BaseSchema {
 
         const tenantTables = ["support_ticket_settings", "support_tickets", "support_ticket_messages", "support_ticket_events"];
         for (const table of tenantTables) {
-            this.schema.raw(`ALTER TABLE ${table} ALTER COLUMN tenant_id SET DEFAULT NULLIF(current_setting('app.current_tenant', true), '')::bigint`);
+            this.schema.raw(
+                `ALTER TABLE ${table} ALTER COLUMN tenant_id SET DEFAULT NULLIF(current_setting('app.current_tenant', true), '')::bigint`,
+            );
             this.schema.raw(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`);
             this.schema.raw(`ALTER TABLE ${table} FORCE ROW LEVEL SECURITY`);
-            this.schema.raw(`CREATE POLICY tenant_isolation ON ${table} USING (${TENANT_PREDICATE}) WITH CHECK (${TENANT_PREDICATE})`);
+            this.schema.raw(
+                `CREATE POLICY tenant_isolation ON ${table} USING (${TENANT_PREDICATE}) WITH CHECK (${TENANT_PREDICATE})`,
+            );
         }
     }
 

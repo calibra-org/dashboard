@@ -2118,6 +2118,23 @@ export interface paths {
         patch: operations["adminPaymentGatewayPatch"];
         trace?: never;
     };
+    "/api/v1/admin/payment-gateways/{id}/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verify payment gateway connection */
+        post: operations["verifyPaymentGatewayConnection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/payment-attempts": {
         parameters: {
             query?: never;
@@ -2127,11 +2144,11 @@ export interface paths {
         };
         /**
          * List payment attempts
-         * @description Paginated audit log of every `payment_attempts` row — every init + callback writes here. Filter, sort, and paginate via the unified TableView wire grammar (`filter[]=field:op:value`, `sort[]=field:dir`, `page`, `limit`). Read-only on the admin surface; the payment service is the sole writer.
+         * @description Paginated operational ledger of payment attempts. Search with `q` across attempt/order ids, gateway code, PSP authority and PSP transaction/reference id. Structured filters, sorting and pagination use the unified TableView wire grammar.
          *
-         *     **TableView filterable fields**: `id`, `order_id`, `gateway_id`, `gateway_code_snapshot`, `status`, `amount_minor`, `created_at`, `initiated_at`, `verified_at`.
+         *     **TableView filterable fields**: `id`, `order_id`, `gateway_id`, `gateway_code_snapshot`, `status`, `amount_minor`, `reconciliation_status`, `reconciliation_provider_status`, `created_at`, `initiated_at`, `verified_at`, `reconciliation_checked_at`.
          *
-         *     **TableView orderable fields**: `id`, `status`, `amount_minor`, `created_at`, `initiated_at`, `verified_at`.
+         *     **TableView orderable fields**: `id`, `status`, `amount_minor`, `reconciliation_status`, `created_at`, `initiated_at`, `verified_at`, `reconciliation_checked_at`.
          */
         get: operations["adminPaymentAttemptsIndex"];
         put?: never;
@@ -5569,6 +5586,684 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/tickets/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read support ticket KPIs */
+        get: operations["adminTicketsSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        /** Read support ticket KPI headers */
+        head: operations["adminTicketsSummaryHead"];
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/trends": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read 30-day support ticket trends */
+        get: operations["adminTicketsTrends"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        /** Read ticket trend headers */
+        head: operations["adminTicketsTrendsHead"];
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read tenant ticket settings */
+        get: operations["adminTicketsSettingsShow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        /** Read ticket settings headers */
+        head: operations["adminTicketsSettingsShowHead"];
+        /** Update tenant ticket settings */
+        patch: operations["adminTicketsSettingsUpdate"];
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/resources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search customers or admin assignees for ticket workflows */
+        get: operations["adminTicketsResources"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        /** Read ticket resource-search headers */
+        head: operations["adminTicketsResourcesHead"];
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List tenant support tickets
+         * @description Paginated operator queue using the shared TableView grammar (`filter[]=field:op:value`, `filterOr[]=...`, `sort[]=field:dir`). Free-text `q` searches reference, subject, requester name, email, and phone. The `sla` extra applies the computed healthy or breached SLA scope.
+         */
+        get: operations["adminTicketsIndex"];
+        put?: never;
+        /** Create a support ticket */
+        post: operations["adminTicketsStore"];
+        delete?: never;
+        options?: never;
+        /** Read ticket queue headers */
+        head: operations["adminTicketsIndexHead"];
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        /** Show a ticket, conversation, and operational history */
+        get: operations["adminTicketsShow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        /** Read ticket detail headers */
+        head: operations["adminTicketsShowHead"];
+        /** Update ticket metadata using optimistic concurrency */
+        patch: operations["adminTicketsUpdate"];
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/{id}/transition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Transition a ticket through the support workflow */
+        post: operations["adminTicketsTransition"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/{id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add an operator reply or internal note */
+        post: operations["adminTicketsMessagesStore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/workflow-statuses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listTicketWorkflowStatuses"];
+        put?: never;
+        post: operations["createTicketWorkflowStatus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/saved-views": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listTicketSavedViews"];
+        put?: never;
+        post: operations["createTicketSavedView"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/saved-views/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["deleteTicketSavedView"];
+        options?: never;
+        head?: never;
+        patch: operations["updateTicketSavedView"];
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/bulk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["bulkUpdateTickets"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/{ticketId}/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ticketId: number;
+            };
+            cookie?: never;
+        };
+        get: operations["listTicketAttachments"];
+        put?: never;
+        post: operations["createTicketAttachment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/attachments/{attachmentId}/scan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                attachmentId: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["recordTicketAttachmentScan"];
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/{ticketId}/merge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ticketId: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["mergeTicket"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/operations/presence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listSupportPresence"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/operations/presence/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["heartbeatSupportPresence"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/operations/channels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listSupportChannels"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["configureSupportChannel"];
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/operations/routing-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listSupportRoutingRules"];
+        put?: never;
+        post: operations["createSupportRoutingRule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/operations/routing-rules/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["updateSupportRoutingRule"];
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/operations/automation-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listSupportAutomationRules"];
+        put?: never;
+        post: operations["createSupportAutomationRule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/operations/automation-rules/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["updateSupportAutomationRule"];
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/operations/campaigns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listSupportCampaigns"];
+        put?: never;
+        post: operations["createSupportCampaign"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/operations/campaigns/{id}/recipients": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["addSupportCampaignRecipients"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/operations/campaigns/{id}/transition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["transitionSupportCampaign"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/operations/campaigns/{id}/template-review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["reviewSupportCampaignTemplate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/operations/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getSupportOperationsReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/seo/actions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listSeoActions"];
+        put?: never;
+        post: operations["proposeSeoAction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/seo/actions/{id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["reviewSeoAction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/seo/actions/{id}/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["applySeoAction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/seo/actions/{id}/rollback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["rollbackSeoAction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/seo/media/bulk-alt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["proposeBulkMediaAlt"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/seo/crawls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listSeoCrawlRuns"];
+        put?: never;
+        post: operations["queueSeoCrawlRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/seo/crawls/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        get: operations["getSeoCrawlRun"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/seo/exports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["createSeoExport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/seo/exports/{id}/data": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        get: operations["downloadSeoExport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/news": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listAdminNews"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/news/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getAdminNewsSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/news/scheduler-runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listContentSchedulerRuns"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -5970,7 +6665,7 @@ export interface components {
         };
         /**
          * AdminRefund
-         * @description One `order_refunds` row plus its line-item breakdown.
+         * @description One `order_refunds` row plus its line-item breakdown and bounded gateway-settlement projection.
          */
         AdminRefund: {
             id: number;
@@ -5982,8 +6677,15 @@ export interface components {
             reason?: string | null;
             refunded_by_user_id?: number | null;
             restock_requested?: boolean;
-            /** @description Null for bank-transfer / non-PSP refunds, and for PSP calls that failed. */
+            /** @description PSP-side refund identifier when automatic gateway settlement completed. */
             gateway_refund_id?: string | null;
+            /**
+             * @description Safe projection of the automatic PSP settlement attempt. `manual_action_required` means the Calibra refund ledger was booked but provider-side money movement did not complete automatically and an operator must reconcile it. Raw provider diagnostics are not exposed.
+             * @enum {string}
+             */
+            gateway_refund_status: "completed" | "manual_action_required" | "unknown";
+            /** @description Bounded internal error code for a non-completed automatic gateway refund. */
+            gateway_refund_error_code?: string | null;
             /** Format: date-time */
             processed_at: string;
             line_items?: {
@@ -6789,7 +7491,7 @@ export interface components {
         };
         /**
          * AdminPaymentAttempt
-         * @description `payment_attempts` row — matches `PaymentAttemptTransformer.forList()` for list endpoints and `forDetail()` (adds `gateway_payload`) for detail. `idempotency_key` is never picked by the transformer, so it cannot leak. Read-only on the admin surface.
+         * @description Operational `payment_attempts` projection. List responses omit large provider payloads; detail responses additionally include `gateway_payload` and `reconciliation_evidence`. The transformer never exposes idempotency or credential material.
          */
         AdminPaymentAttempt: {
             id: number;
@@ -6804,14 +7506,25 @@ export interface components {
             gateway_transaction_id?: string | null;
             error_code?: string | null;
             error_message?: string | null;
+            /** @enum {string} */
+            reconciliation_status: "unchecked" | "matched" | "mismatch" | "unsupported" | "error";
+            reconciliation_provider_status?: string | null;
+            /** Format: date-time */
+            reconciliation_checked_at?: string | null;
+            reconciliation_checked_by_user_id?: number | null;
+            reconciliation_error_code?: string | null;
             /** Format: date-time */
             initiated_at?: string | null;
             /** Format: date-time */
             verified_at?: string | null;
             /** Format: date-time */
             created_at?: string | null;
-            /** @description PSP response payload. Present on `forDetail()` only. */
+            /** @description PSP request/response evidence. Present on detail responses only. */
             gateway_payload?: {
+                [key: string]: unknown;
+            };
+            /** @description Latest provider reconciliation evidence. Present on detail responses only. */
+            reconciliation_evidence?: {
                 [key: string]: unknown;
             };
         };
@@ -7846,6 +8559,240 @@ export interface components {
                 total?: number;
                 last_page?: number;
             };
+        };
+        /** @enum {string} */
+        TicketStatus: "open" | "pending" | "waiting_customer" | "resolved" | "closed";
+        /** @enum {string} */
+        TicketPriority: "low" | "normal" | "high" | "urgent";
+        /** @enum {string} */
+        TicketChannel: "admin" | "web" | "email" | "phone" | "api";
+        TicketQueueItem: {
+            id: number;
+            ticket_number: number;
+            reference: string;
+            customer_id?: number | null;
+            requester_name: string;
+            requester_email: string | null;
+            requester_phone: string | null;
+            subject: string;
+            status: components["schemas"]["TicketStatus"];
+            priority: components["schemas"]["TicketPriority"];
+            channel: components["schemas"]["TicketChannel"];
+            category: string | null;
+            tags: string[];
+            assigned_user_id: number | null;
+            assignee_email?: string | null;
+            version: number;
+            /** Format: date-time */
+            first_response_due_at: string | null;
+            /** Format: date-time */
+            resolution_due_at: string | null;
+            /** Format: date-time */
+            first_response_at: string | null;
+            /** Format: date-time */
+            resolved_at: string | null;
+            /** Format: date-time */
+            closed_at: string | null;
+            /** Format: date-time */
+            last_message_at: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        } & {
+            [key: string]: unknown;
+        };
+        TicketMessage: {
+            id: number;
+            ticket_id: number;
+            author_user_id: number | null;
+            author_customer_id?: number | null;
+            author_email?: string | null;
+            /** @enum {string} */
+            kind: "requester_message" | "reply" | "internal_note" | "system";
+            body: string;
+            /** Format: date-time */
+            created_at: string;
+        } & {
+            [key: string]: unknown;
+        };
+        TicketEvent: {
+            id: number;
+            ticket_id: number;
+            actor_user_id: number | null;
+            actor_email?: string | null;
+            event_type: string;
+            payload: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            created_at: string;
+        } & {
+            [key: string]: unknown;
+        };
+        TicketDetail: components["schemas"]["TicketQueueItem"] & {
+            customer_first_name?: string | null;
+            customer_last_name?: string | null;
+            messages: components["schemas"]["TicketMessage"][];
+            events: components["schemas"]["TicketEvent"][];
+        };
+        TicketSummary: {
+            total: number;
+            active: number;
+            waiting_customer: number;
+            resolved_30d: number;
+            sla_breached: number;
+            avg_first_response_minutes: number;
+            avg_resolution_minutes: number;
+        };
+        TicketTrendPoint: {
+            /** Format: date */
+            day: string;
+            opened: number;
+            resolved: number;
+        };
+        TicketSettings: {
+            tenant_id: number;
+            reference_prefix: string;
+            first_response_minutes: number;
+            resolution_minutes: number;
+            default_priority: components["schemas"]["TicketPriority"];
+            default_assignee_user_id: number | null;
+        } & {
+            [key: string]: unknown;
+        };
+        TicketResource: {
+            id: number;
+            label: string;
+            email?: string | null;
+            phone?: string | null;
+        };
+        TicketCreateInput: {
+            customer_id?: number | null;
+            requester_name: string;
+            /** Format: email */
+            requester_email?: string | null;
+            requester_phone?: string | null;
+            subject: string;
+            message: string;
+            priority?: components["schemas"]["TicketPriority"];
+            channel?: components["schemas"]["TicketChannel"];
+            category?: string | null;
+            tags?: string[];
+            assigned_user_id?: number | null;
+        };
+        TicketUpdateInput: {
+            expected_version: number;
+            subject?: string;
+            priority?: components["schemas"]["TicketPriority"];
+            category?: string | null;
+            tags?: string[];
+            assigned_user_id?: number | null;
+        };
+        TicketTransitionInput: {
+            status: components["schemas"]["TicketStatus"];
+            expected_version: number;
+            reason?: string | null;
+        };
+        TicketMessageInput: {
+            /** @enum {string} */
+            kind: "reply" | "internal_note";
+            body: string;
+            expected_version: number;
+        };
+        TicketSettingsUpdateInput: {
+            reference_prefix?: string;
+            first_response_minutes?: number;
+            resolution_minutes?: number;
+            default_priority?: components["schemas"]["TicketPriority"];
+            default_assignee_user_id?: number | null;
+        };
+        TicketListEnvelope: {
+            data: components["schemas"]["TicketQueueItem"][];
+            meta: components["schemas"]["TicketOverlayPaginationMeta"];
+        };
+        TicketDetailEnvelope: {
+            data: components["schemas"]["TicketDetail"];
+        };
+        TicketMutationEnvelope: {
+            data: components["schemas"]["TicketDetail"];
+            changed: boolean;
+        };
+        TicketSummaryEnvelope: {
+            data: components["schemas"]["TicketSummary"];
+        };
+        TicketTrendsEnvelope: {
+            data: components["schemas"]["TicketTrendPoint"][];
+        };
+        TicketSettingsEnvelope: {
+            data: components["schemas"]["TicketSettings"];
+        };
+        TicketSettingsMutationEnvelope: {
+            data: components["schemas"]["TicketSettings"];
+            changed: boolean;
+        };
+        TicketResourcesEnvelope: {
+            data: components["schemas"]["TicketResource"][];
+        };
+        TicketMessageMutationEnvelope: {
+            data: components["schemas"]["TicketMessage"];
+            ticket: components["schemas"]["TicketQueueItem"];
+        };
+        TicketOverlayPaginationMeta: {
+            page: number;
+            limit?: number;
+            perPage?: number;
+            total: number;
+            lastPage: number;
+        } & {
+            [key: string]: unknown;
+        };
+        Resource: {
+            [key: string]: unknown;
+        };
+        ListResource: {
+            data: {
+                [key: string]: unknown;
+            }[];
+        };
+        VersionedTicket: {
+            id: number;
+            expected_version: number;
+        };
+        SavedViewInput: {
+            name: string;
+            query: {
+                [key: string]: unknown;
+            };
+            is_shared?: boolean;
+        };
+        BulkTicketInput: {
+            tickets: components["schemas"]["VersionedTicket"][];
+            /** @enum {string} */
+            operation: "assign" | "priority" | "category" | "tags" | "transition";
+            assigned_user_id?: number | null;
+            /** @enum {string} */
+            priority?: "low" | "normal" | "high" | "urgent";
+            category?: string | null;
+            tags?: string[];
+            /** @enum {string} */
+            status?: "open" | "pending" | "waiting_customer" | "resolved" | "closed";
+            reason?: string | null;
+        };
+        SeoActionInput: {
+            /** @enum {string} */
+            action_type: "media_alt" | "content_refresh" | "seo_profile";
+            /** @enum {string} */
+            entity_kind: "media" | "content_post" | "product" | "category" | "brand" | "attribute" | "page";
+            entity_id?: number | null;
+            entity_key?: string | null;
+            expected_version?: number | null;
+            after_payload: {
+                [key: string]: unknown;
+            };
+        };
+        NewsEnvelope: {
+            [key: string]: unknown;
         };
     };
     responses: {
@@ -11415,6 +12362,34 @@ export interface operations {
             422: components["responses"]["ValidationError"];
         };
     };
+    verifyPaymentGatewayConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Provider-backed connection verification succeeded. The returned gateway has `health_status=healthy` and a fresh `last_verified_at` value. Verification never enables the gateway by itself. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminPaymentGateway"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
     adminPaymentAttemptsIndex: {
         parameters: {
             query?: {
@@ -11428,6 +12403,8 @@ export interface operations {
                 "filterOr[]"?: components["parameters"]["FilterOr"];
                 /** @description Sort entries in the format `field:direction` (case-insensitive `asc` or `desc`). Multiple entries chain in the order supplied. The endpoint description enumerates the allowed `field` set. */
                 "sort[]"?: components["parameters"]["Sort"];
+                /** @description Search attempt/order ids, gateway code, authority or PSP transaction/reference id. */
+                q?: string;
             };
             header?: never;
             path?: never;
@@ -11449,6 +12426,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationError"];
         };
     };
     adminPaymentAttemptShow: {
@@ -16389,6 +17367,1399 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    adminTicketsSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ticket KPI summary. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketSummaryEnvelope"];
+                };
+            };
+        };
+    };
+    adminTicketsSummaryHead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ticket KPI summary headers. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTicketsTrends: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Daily opened and resolved ticket counts. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketTrendsEnvelope"];
+                };
+            };
+        };
+    };
+    adminTicketsTrendsHead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ticket trend headers. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTicketsSettingsShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ticket settings. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketSettingsEnvelope"];
+                };
+            };
+        };
+    };
+    adminTicketsSettingsShowHead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ticket settings headers. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTicketsSettingsUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TicketSettingsUpdateInput"];
+            };
+        };
+        responses: {
+            /** @description Ticket settings updated or unchanged. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketSettingsMutationEnvelope"];
+                };
+            };
+            /** @description Invalid settings or assignee. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTicketsResources: {
+        parameters: {
+            query: {
+                kind: "customers" | "assignees";
+                q?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Matching resources. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketResourcesEnvelope"];
+                };
+            };
+            /** @description Invalid resource query. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTicketsResourcesHead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Resource-search headers. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTicketsIndex: {
+        parameters: {
+            query?: {
+                /** @description 1-indexed page number. Defaults to 1. */
+                page?: components["parameters"]["Page"];
+                /** @description Items per page. Capped at 100. Defaults to 20. */
+                limit?: components["parameters"]["Limit"];
+                /** @description AND-joined filter constraints. Each entry is `field:operator:value`, with `field:value` accepted as shorthand for `field:eq:value`. Void operators (`isnull`, `notnull`) omit the value slot: `field:isnull`. Multiple constraints on different fields combine with AND. The endpoint description enumerates the allowed `field` set and the operator validity per field type. */
+                "filter[]"?: components["parameters"]["Filter"];
+                /** @description OR-joined filter constraints — at least one must match. Combined with `filter[]` as `(AND constraints) AND (OR constraints)`. Same grammar as `filter[]`. */
+                "filterOr[]"?: components["parameters"]["FilterOr"];
+                /** @description Sort entries in the format `field:direction` (case-insensitive `asc` or `desc`). Multiple entries chain in the order supplied. The endpoint description enumerates the allowed `field` set. */
+                "sort[]"?: components["parameters"]["Sort"];
+                q?: string;
+                sla?: "all" | "healthy" | "breached";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Paginated ticket queue. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketListEnvelope"];
+                };
+            };
+            /** @description Invalid ticket query. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTicketsStore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TicketCreateInput"];
+            };
+        };
+        responses: {
+            /** @description Ticket created with its requester message. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketDetailEnvelope"];
+                };
+            };
+            /** @description Invalid ticket */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTicketsIndexHead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ticket queue headers. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTicketsShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ticket detail. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketDetailEnvelope"];
+                };
+            };
+            /** @description Ticket not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid ticket identifier. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTicketsShowHead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ticket detail headers. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTicketsUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TicketUpdateInput"];
+            };
+        };
+        responses: {
+            /** @description Ticket updated or unchanged. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketMutationEnvelope"];
+                };
+            };
+            /** @description Ticket not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Ticket version conflict. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid ticket update. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTicketsTransition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TicketTransitionInput"];
+            };
+        };
+        responses: {
+            /** @description Ticket transition applied or unchanged. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketMutationEnvelope"];
+                };
+            };
+            /** @description Ticket version conflict. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid or disallowed transition. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTicketsMessagesStore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TicketMessageInput"];
+            };
+        };
+        responses: {
+            /** @description Ticket message recorded. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketMessageMutationEnvelope"];
+                };
+            };
+            /** @description Ticket version conflict. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid message payload. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listTicketWorkflowStatuses: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ticket workflow catalog */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListResource"];
+                };
+            };
+        };
+    };
+    createTicketWorkflowStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    code: string;
+                    label_fa: string;
+                    label_en: string;
+                    /** @enum {string} */
+                    semantic_group: "active" | "waiting" | "resolved" | "closed";
+                    is_terminal?: boolean;
+                    is_customer_waiting?: boolean;
+                    is_enabled?: boolean;
+                    sort_order?: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Workflow status created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Resource"];
+                };
+            };
+        };
+    };
+    listTicketSavedViews: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Saved views */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListResource"];
+                };
+            };
+        };
+    };
+    createTicketSavedView: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SavedViewInput"];
+            };
+        };
+        responses: {
+            /** @description Saved view created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Resource"];
+                };
+            };
+        };
+    };
+    deleteTicketSavedView: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Saved view deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    updateTicketSavedView: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SavedViewInput"];
+            };
+        };
+        responses: {
+            /** @description Saved view updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Resource"];
+                };
+            };
+        };
+    };
+    bulkUpdateTickets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkTicketInput"];
+            };
+        };
+        responses: {
+            /** @description Per-ticket bulk operation results */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Resource"];
+                };
+            };
+        };
+    };
+    listTicketAttachments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ticketId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ticket attachment metadata */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListResource"];
+                };
+            };
+        };
+    };
+    createTicketAttachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ticketId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    media_id: number;
+                    message_id?: number | null;
+                    sha256?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Pending attachment metadata created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Resource"];
+                };
+            };
+        };
+    };
+    recordTicketAttachmentScan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                attachmentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    status: "clean" | "infected" | "error";
+                    evidence?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Scan result recorded */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Resource"];
+                };
+            };
+        };
+    };
+    mergeTicket: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ticketId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    target_ticket_id: number;
+                    expected_source_version: number;
+                    expected_target_version: number;
+                    reason?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Merge recorded */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Resource"];
+                };
+            };
+        };
+    };
+    listSupportPresence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Agent presence snapshots */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListResource"];
+                };
+            };
+        };
+    };
+    heartbeatSupportPresence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    state: "offline" | "available" | "busy" | "away";
+                    capacity: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Presence snapshot updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Resource"];
+                };
+            };
+        };
+    };
+    listSupportChannels: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Truthful channel registry */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListResource"];
+                };
+            };
+        };
+    };
+    configureSupportChannel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    channel: string;
+                    enabled: boolean;
+                    credential_env_ref?: string | null;
+                    configuration?: {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+        responses: {
+            /** @description Channel configuration stored without secret material */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Resource"];
+                };
+            };
+        };
+    };
+    listSupportRoutingRules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Routing rules */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListResource"];
+                };
+            };
+        };
+    };
+    createSupportRoutingRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Routing rule created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Resource"];
+                };
+            };
+        };
+    };
+    updateSupportRoutingRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Routing rule updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Resource"];
+                };
+            };
+        };
+    };
+    listSupportAutomationRules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Automation rules */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListResource"];
+                };
+            };
+        };
+    };
+    createSupportAutomationRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Automation rule created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Resource"];
+                };
+            };
+        };
+    };
+    updateSupportAutomationRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Automation rule updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Resource"];
+                };
+            };
+        };
+    };
+    listSupportCampaigns: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Campaigns */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListResource"];
+                };
+            };
+        };
+    };
+    createSupportCampaign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Campaign created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Resource"];
+                };
+            };
+        };
+    };
+    addSupportCampaignRecipients: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recipient set updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Resource"];
+                };
+            };
+        };
+    };
+    transitionSupportCampaign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Campaign transitioned */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Resource"];
+                };
+            };
+        };
+    };
+    reviewSupportCampaignTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Template review recorded */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Resource"];
+                };
+            };
+        };
+    };
+    getSupportOperationsReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Persisted support KPIs and workload evidence */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Resource"];
+                };
+            };
+        };
+    };
+    listSeoActions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Governed SEO action queue */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListResource"];
+                };
+            };
+        };
+    };
+    proposeSeoAction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SeoActionInput"];
+            };
+        };
+        responses: {
+            /** @description SEO action proposed */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Resource"];
+                };
+            };
+        };
+    };
+    reviewSeoAction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description SEO action reviewed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Resource"];
+                };
+            };
+        };
+    };
+    applySeoAction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Approved SEO action applied */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Resource"];
+                };
+            };
+        };
+    };
+    rollbackSeoAction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Applied SEO action rolled back when state has not drifted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Resource"];
+                };
+            };
+        };
+    };
+    proposeBulkMediaAlt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description ALT changes proposed for approval */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListResource"];
+                };
+            };
+        };
+    };
+    listSeoCrawlRuns: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Crawl runs */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListResource"];
+                };
+            };
+        };
+    };
+    queueSeoCrawlRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Crawl run queued */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Resource"];
+                };
+            };
+        };
+    };
+    getSeoCrawlRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Crawl targets and evidence */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Resource"];
+                };
+            };
+        };
+    };
+    createSeoExport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Export metadata created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Resource"];
+                };
+            };
+        };
+    };
+    downloadSeoExport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV or JSON generated from persisted SEO data. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+        };
+    };
+    listAdminNews: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description News posts from Content OS */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NewsEnvelope"];
+                };
+            };
+        };
+    };
+    getAdminNewsSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description News status and commerce summary */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NewsEnvelope"];
+                };
+            };
+        };
+    };
+    listContentSchedulerRuns: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Publish and ingestion scheduler run ledger */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListResource"];
+                };
             };
         };
     };

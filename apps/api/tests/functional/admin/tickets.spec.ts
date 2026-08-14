@@ -235,7 +235,11 @@ test.group("Calibra ticket operations", (group) => {
 
     test("returns operational summary, trends, and resources", async ({ client, assert }) => {
         const { user } = await createUser("admin");
-        await client.post(URL).withGuard("api").loginAs(user).json(payload({ priority: "urgent" }));
+        await client
+            .post(URL)
+            .withGuard("api")
+            .loginAs(user)
+            .json(payload({ priority: "urgent" }));
 
         const summary = await client.get(`${URL}/summary`).withGuard("api").loginAs(user);
         summary.assertStatus(200);

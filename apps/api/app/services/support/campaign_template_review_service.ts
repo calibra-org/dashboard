@@ -8,10 +8,7 @@ function numberValue(value: unknown): number {
 }
 
 export class CampaignTemplateReviewService {
-    async review(
-        campaignId: number,
-        input: { expected_version: number; decision: "approved" | "rejected" },
-    ) {
+    async review(campaignId: number, input: { expected_version: number; decision: "approved" | "rejected" }) {
         const trx = currentTrx();
         const campaign = await trx.from("support_campaigns").where("id", campaignId).forUpdate().first();
         if (!campaign) {

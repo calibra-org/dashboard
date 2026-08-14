@@ -10,7 +10,12 @@ export default class extends BaseSchema {
             table.string("reconciliation_status", 20).notNullable().defaultTo("unchecked");
             table.string("reconciliation_provider_status", 20).nullable();
             table.timestamp("reconciliation_checked_at", { useTz: true }).nullable();
-            table.bigInteger("reconciliation_checked_by_user_id").nullable().references("id").inTable("users").onDelete("SET NULL");
+            table
+                .bigInteger("reconciliation_checked_by_user_id")
+                .nullable()
+                .references("id")
+                .inTable("users")
+                .onDelete("SET NULL");
             table.string("reconciliation_error_code", 80).nullable();
             table.jsonb("reconciliation_evidence").notNullable().defaultTo("{}");
             table.index(["reconciliation_status", "created_at"], "payment_attempts_reconciliation_status_idx");

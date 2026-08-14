@@ -26,18 +26,38 @@ export default class extends BaseSchema {
         this.schema.createTable("order_fulfillment_items", (table) => {
             table.bigIncrements("id").notNullable();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("fulfillment_id").unsigned().notNullable().references("id").inTable("order_fulfillments").onDelete("CASCADE");
-            table.bigInteger("order_line_item_id").unsigned().notNullable().references("id").inTable("order_line_items").onDelete("RESTRICT");
+            table
+                .bigInteger("fulfillment_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("order_fulfillments")
+                .onDelete("CASCADE");
+            table
+                .bigInteger("order_line_item_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("order_line_items")
+                .onDelete("RESTRICT");
             table.integer("quantity").notNullable();
             table.timestamps(true, true);
-            table.unique(["tenant_id", "fulfillment_id", "order_line_item_id"], { indexName: "order_fulfillment_items_line_unique" });
+            table.unique(["tenant_id", "fulfillment_id", "order_line_item_id"], {
+                indexName: "order_fulfillment_items_line_unique",
+            });
             table.index(["tenant_id", "order_line_item_id"], "order_fulfillment_items_line_idx");
         });
 
         this.schema.createTable("order_shipments", (table) => {
             table.bigIncrements("id").notNullable();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("fulfillment_id").unsigned().notNullable().references("id").inTable("order_fulfillments").onDelete("CASCADE");
+            table
+                .bigInteger("fulfillment_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("order_fulfillments")
+                .onDelete("CASCADE");
             table.string("status", 32).notNullable().defaultTo("label_created");
             table.string("carrier", 120).nullable();
             table.string("service", 120).nullable();
@@ -54,7 +74,13 @@ export default class extends BaseSchema {
         this.schema.createTable("order_shipment_events", (table) => {
             table.bigIncrements("id").notNullable();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("shipment_id").unsigned().notNullable().references("id").inTable("order_shipments").onDelete("CASCADE");
+            table
+                .bigInteger("shipment_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("order_shipments")
+                .onDelete("CASCADE");
             table.string("status", 32).notNullable();
             table.string("location", 190).nullable();
             table.text("message").nullable();
@@ -95,7 +121,13 @@ export default class extends BaseSchema {
             table.bigIncrements("id").notNullable();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
             table.bigInteger("return_id").unsigned().notNullable().references("id").inTable("order_returns").onDelete("CASCADE");
-            table.bigInteger("order_line_item_id").unsigned().notNullable().references("id").inTable("order_line_items").onDelete("RESTRICT");
+            table
+                .bigInteger("order_line_item_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("order_line_items")
+                .onDelete("RESTRICT");
             table.integer("requested_quantity").notNullable();
             table.integer("approved_quantity").notNullable().defaultTo(0);
             table.integer("received_quantity").notNullable().defaultTo(0);
@@ -131,10 +163,14 @@ export default class extends BaseSchema {
             "order_return_items",
         ];
         for (const table of tenantTables) {
-            this.schema.raw(`ALTER TABLE ${table} ALTER COLUMN tenant_id SET DEFAULT NULLIF(current_setting('app.current_tenant', true), '')::bigint`);
+            this.schema.raw(
+                `ALTER TABLE ${table} ALTER COLUMN tenant_id SET DEFAULT NULLIF(current_setting('app.current_tenant', true), '')::bigint`,
+            );
             this.schema.raw(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`);
             this.schema.raw(`ALTER TABLE ${table} FORCE ROW LEVEL SECURITY`);
-            this.schema.raw(`CREATE POLICY tenant_isolation ON ${table} USING (${TENANT_PREDICATE}) WITH CHECK (${TENANT_PREDICATE})`);
+            this.schema.raw(
+                `CREATE POLICY tenant_isolation ON ${table} USING (${TENANT_PREDICATE}) WITH CHECK (${TENANT_PREDICATE})`,
+            );
         }
 
         this.schema.raw(`ALTER TABLE inventory_movements DROP CONSTRAINT IF EXISTS inventory_movements_ref_kind_check`);

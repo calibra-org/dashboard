@@ -198,9 +198,15 @@ export class StoreOperationsConfigService {
             .insert({ name: input.name, is_fallback: input.is_fallback ?? false })
             .returning("*");
         if (input.locations?.length) {
-            await trx.table("shipping_zone_locations").insert(
-                input.locations.map((location) => ({ zone_id: row.id, type: location.type, code: location.code.toUpperCase() })),
-            );
+            await trx
+                .table("shipping_zone_locations")
+                .insert(
+                    input.locations.map((location) => ({
+                        zone_id: row.id,
+                        type: location.type,
+                        code: location.code.toUpperCase(),
+                    })),
+                );
         }
         return this.shippingZone(Number(row.id));
     }
@@ -233,9 +239,9 @@ export class StoreOperationsConfigService {
         const trx = currentTrx();
         await trx.from("shipping_zone_locations").where("zone_id", id).delete();
         if (normalized.length > 0) {
-            await trx.table("shipping_zone_locations").insert(
-                normalized.map((location) => ({ zone_id: id, type: location.type, code: location.code })),
-            );
+            await trx
+                .table("shipping_zone_locations")
+                .insert(normalized.map((location) => ({ zone_id: id, type: location.type, code: location.code })));
         }
         return this.shippingZone(id);
     }
@@ -334,7 +340,11 @@ export class StoreOperationsConfigService {
         if (!existing) throw new Exception("Tax rate not found", { status: 404, code: "E_TAX_RATE_NOT_FOUND" });
         if (input.tax_class_id !== undefined) await this.assertTaxClass(input.tax_class_id);
         const patch = this.taxRatePatch(input);
-        const [row] = await trx.from("tax_rates").where("id", id).update({ ...patch, updated_at: new Date() }).returning("*");
+        const [row] = await trx
+            .from("tax_rates")
+            .where("id", id)
+            .update({ ...patch, updated_at: new Date() })
+            .returning("*");
         return { data: taxRateRow(row) };
     }
 

@@ -113,11 +113,13 @@ export class PublicSupportService {
         const ticketId = numberValue(createdData.id);
         const token = randomBytes(32).toString("base64url");
         const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-        await currentTrx().table("support_public_tokens").insert({
-            ticket_id: ticketId,
-            token_hash: hashToken(token),
-            expires_at: expiresAt,
-        });
+        await currentTrx()
+            .table("support_public_tokens")
+            .insert({
+                ticket_id: ticketId,
+                token_hash: hashToken(token),
+                expires_at: expiresAt,
+            });
         return {
             data: {
                 ticket: await publicTicket(ticketId),
@@ -129,10 +131,7 @@ export class PublicSupportService {
 
     async show(token: string) {
         const access = await tokenRow(token);
-        await currentTrx()
-            .from("support_public_tokens")
-            .where("id", numberValue(access.id))
-            .update({ last_used_at: new Date() });
+        await currentTrx().from("support_public_tokens").where("id", numberValue(access.id)).update({ last_used_at: new Date() });
         return { data: await publicTicket(numberValue(access.ticket_id)) };
     }
 
@@ -188,16 +187,15 @@ export class PublicSupportService {
                 body: input.body,
             })
             .returning(["id"]);
-        await currentTrx().table("support_ticket_events").insert({
-            ticket_id: ticketId,
-            actor_user_id: null,
-            event_type: "message.requester",
-            payload: JSON.stringify({ message_id: numberValue(message.id), source: "public_token" }),
-        });
         await currentTrx()
-            .from("support_public_tokens")
-            .where("id", numberValue(access.id))
-            .update({ last_used_at: now });
+            .table("support_ticket_events")
+            .insert({
+                ticket_id: ticketId,
+                actor_user_id: null,
+                event_type: "message.requester",
+                payload: JSON.stringify({ message_id: numberValue(message.id), source: "public_token" }),
+            });
+        await currentTrx().from("support_public_tokens").where("id", numberValue(access.id)).update({ last_used_at: now });
         return { data: await publicTicket(ticketId) };
     }
 
@@ -234,12 +232,14 @@ export class PublicSupportService {
                 response_token_hash: hashToken(token),
             })
             .returning(["id", "ticket_id", "score", "comment", "created_at"]);
-        await currentTrx().table("support_ticket_events").insert({
-            ticket_id: ticketId,
-            actor_user_id: null,
-            event_type: "ticket.csat_submitted",
-            payload: JSON.stringify({ score: input.score }),
-        });
+        await currentTrx()
+            .table("support_ticket_events")
+            .insert({
+                ticket_id: ticketId,
+                actor_user_id: null,
+                event_type: "ticket.csat_submitted",
+                payload: JSON.stringify({ score: input.score }),
+            });
         return { data: { ...row, id: numberValue(row.id), ticket_id: ticketId } };
     }
 }

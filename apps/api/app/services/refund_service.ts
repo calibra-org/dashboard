@@ -138,8 +138,7 @@ export class RefundService {
                     this.assertIdempotentReplayMatches(existing, payload);
                     return {
                         refund: existing,
-                        customerId:
-                            order.customerId === null || order.customerId === undefined ? null : Number(order.customerId),
+                        customerId: order.customerId === null || order.customerId === undefined ? null : Number(order.customerId),
                         created: false,
                     };
                 }

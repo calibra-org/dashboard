@@ -33,8 +33,20 @@ export default class extends BaseSchema {
         this.schema.createTable("support_ticket_attachments", (table) => {
             table.bigIncrements("id").notNullable();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("ticket_id").unsigned().notNullable().references("id").inTable("support_tickets").onDelete("CASCADE");
-            table.bigInteger("message_id").unsigned().nullable().references("id").inTable("support_ticket_messages").onDelete("CASCADE");
+            table
+                .bigInteger("ticket_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("support_tickets")
+                .onDelete("CASCADE");
+            table
+                .bigInteger("message_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("support_ticket_messages")
+                .onDelete("CASCADE");
             table.bigInteger("media_id").unsigned().notNullable().references("id").inTable("media").onDelete("RESTRICT");
             table.bigInteger("uploaded_by_user_id").unsigned().nullable().references("id").inTable("users").onDelete("SET NULL");
             table.string("filename", 512).notNullable();
@@ -51,8 +63,20 @@ export default class extends BaseSchema {
         this.schema.createTable("support_ticket_merges", (table) => {
             table.bigIncrements("id").notNullable();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("source_ticket_id").unsigned().notNullable().references("id").inTable("support_tickets").onDelete("RESTRICT");
-            table.bigInteger("target_ticket_id").unsigned().notNullable().references("id").inTable("support_tickets").onDelete("RESTRICT");
+            table
+                .bigInteger("source_ticket_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("support_tickets")
+                .onDelete("RESTRICT");
+            table
+                .bigInteger("target_ticket_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("support_tickets")
+                .onDelete("RESTRICT");
             table.bigInteger("merged_by_user_id").unsigned().nullable().references("id").inTable("users").onDelete("SET NULL");
             table.string("reason", 500).nullable();
             table.timestamp("created_at", { useTz: true }).notNullable().defaultTo(this.now());
@@ -130,7 +154,13 @@ export default class extends BaseSchema {
         this.schema.createTable("support_campaign_recipients", (table) => {
             table.bigIncrements("id").notNullable();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("campaign_id").unsigned().notNullable().references("id").inTable("support_campaigns").onDelete("CASCADE");
+            table
+                .bigInteger("campaign_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("support_campaigns")
+                .onDelete("CASCADE");
             table.string("recipient_key", 254).notNullable();
             table.string("status", 24).notNullable().defaultTo("pending");
             table.boolean("opted_out").notNullable().defaultTo(false);
@@ -146,7 +176,13 @@ export default class extends BaseSchema {
         this.schema.createTable("support_csat_responses", (table) => {
             table.bigIncrements("id").notNullable();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("ticket_id").unsigned().notNullable().references("id").inTable("support_tickets").onDelete("CASCADE");
+            table
+                .bigInteger("ticket_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("support_tickets")
+                .onDelete("CASCADE");
             table.smallint("score").notNullable();
             table.text("comment").nullable();
             table.string("response_token_hash", 64).nullable();
@@ -157,7 +193,13 @@ export default class extends BaseSchema {
         this.schema.createTable("support_public_tokens", (table) => {
             table.bigIncrements("id").notNullable();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("ticket_id").unsigned().notNullable().references("id").inTable("support_tickets").onDelete("CASCADE");
+            table
+                .bigInteger("ticket_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("support_tickets")
+                .onDelete("CASCADE");
             table.string("token_hash", 64).notNullable();
             table.timestamp("expires_at", { useTz: true }).notNullable();
             table.timestamp("last_used_at", { useTz: true }).nullable();
@@ -181,25 +223,53 @@ export default class extends BaseSchema {
             "support_public_tokens",
         ];
         for (const table of tenantTables) {
-            this.schema.raw(`ALTER TABLE ${table} ALTER COLUMN tenant_id SET DEFAULT NULLIF(current_setting('app.current_tenant', true), '')::bigint`);
+            this.schema.raw(
+                `ALTER TABLE ${table} ALTER COLUMN tenant_id SET DEFAULT NULLIF(current_setting('app.current_tenant', true), '')::bigint`,
+            );
             this.schema.raw(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`);
             this.schema.raw(`ALTER TABLE ${table} FORCE ROW LEVEL SECURITY`);
             this.schema.raw(`CREATE POLICY tenant_isolation ON ${table} USING (${TENANT}) WITH CHECK (${TENANT})`);
         }
 
-        this.schema.raw("ALTER TABLE support_ticket_attachments ADD CONSTRAINT support_ticket_attachment_scan_check CHECK (scan_status IN ('pending','clean','infected','error'))");
-        this.schema.raw("ALTER TABLE support_ticket_merges ADD CONSTRAINT support_ticket_merge_distinct_check CHECK (source_ticket_id <> target_ticket_id)");
-        this.schema.raw("ALTER TABLE support_agent_presence ADD CONSTRAINT support_presence_state_check CHECK (state IN ('offline','available','busy','away'))");
-        this.schema.raw("ALTER TABLE support_agent_presence ADD CONSTRAINT support_presence_capacity_check CHECK (capacity BETWEEN 0 AND 500 AND active_count BETWEEN 0 AND 500)");
-        this.schema.raw("ALTER TABLE support_channel_integrations ADD CONSTRAINT support_channel_name_check CHECK (channel IN ('web','email','phone','api','whatsapp','telegram','instagram','rubika','bale','eitaa','sms'))");
-        this.schema.raw("ALTER TABLE support_channel_integrations ADD CONSTRAINT support_channel_status_check CHECK (status IN ('disabled','configured','connected','error'))");
-        this.schema.raw("ALTER TABLE support_campaigns ADD CONSTRAINT support_campaign_status_check CHECK (status IN ('draft','scheduled','running','paused','completed','cancelled'))");
-        this.schema.raw("ALTER TABLE support_campaigns ADD CONSTRAINT support_campaign_template_status_check CHECK (template_status IN ('draft','pending','approved','rejected'))");
-        this.schema.raw("ALTER TABLE support_campaigns ADD CONSTRAINT support_campaign_cost_check CHECK (estimated_cost_minor >= 0)");
-        this.schema.raw("ALTER TABLE support_campaign_recipients ADD CONSTRAINT support_campaign_recipient_status_check CHECK (status IN ('pending','skipped','queued','sent','delivered','failed'))");
-        this.schema.raw("ALTER TABLE support_campaign_recipients ADD CONSTRAINT support_campaign_recipient_cost_check CHECK (actual_cost_minor >= 0)");
-        this.schema.raw("ALTER TABLE support_csat_responses ADD CONSTRAINT support_csat_score_check CHECK (score BETWEEN 1 AND 5)");
-        this.schema.raw("ALTER TABLE support_ticket_workflow_statuses ADD CONSTRAINT support_workflow_semantic_group_check CHECK (semantic_group IN ('active','waiting','resolved','closed'))");
+        this.schema.raw(
+            "ALTER TABLE support_ticket_attachments ADD CONSTRAINT support_ticket_attachment_scan_check CHECK (scan_status IN ('pending','clean','infected','error'))",
+        );
+        this.schema.raw(
+            "ALTER TABLE support_ticket_merges ADD CONSTRAINT support_ticket_merge_distinct_check CHECK (source_ticket_id <> target_ticket_id)",
+        );
+        this.schema.raw(
+            "ALTER TABLE support_agent_presence ADD CONSTRAINT support_presence_state_check CHECK (state IN ('offline','available','busy','away'))",
+        );
+        this.schema.raw(
+            "ALTER TABLE support_agent_presence ADD CONSTRAINT support_presence_capacity_check CHECK (capacity BETWEEN 0 AND 500 AND active_count BETWEEN 0 AND 500)",
+        );
+        this.schema.raw(
+            "ALTER TABLE support_channel_integrations ADD CONSTRAINT support_channel_name_check CHECK (channel IN ('web','email','phone','api','whatsapp','telegram','instagram','rubika','bale','eitaa','sms'))",
+        );
+        this.schema.raw(
+            "ALTER TABLE support_channel_integrations ADD CONSTRAINT support_channel_status_check CHECK (status IN ('disabled','configured','connected','error'))",
+        );
+        this.schema.raw(
+            "ALTER TABLE support_campaigns ADD CONSTRAINT support_campaign_status_check CHECK (status IN ('draft','scheduled','running','paused','completed','cancelled'))",
+        );
+        this.schema.raw(
+            "ALTER TABLE support_campaigns ADD CONSTRAINT support_campaign_template_status_check CHECK (template_status IN ('draft','pending','approved','rejected'))",
+        );
+        this.schema.raw(
+            "ALTER TABLE support_campaigns ADD CONSTRAINT support_campaign_cost_check CHECK (estimated_cost_minor >= 0)",
+        );
+        this.schema.raw(
+            "ALTER TABLE support_campaign_recipients ADD CONSTRAINT support_campaign_recipient_status_check CHECK (status IN ('pending','skipped','queued','sent','delivered','failed'))",
+        );
+        this.schema.raw(
+            "ALTER TABLE support_campaign_recipients ADD CONSTRAINT support_campaign_recipient_cost_check CHECK (actual_cost_minor >= 0)",
+        );
+        this.schema.raw(
+            "ALTER TABLE support_csat_responses ADD CONSTRAINT support_csat_score_check CHECK (score BETWEEN 1 AND 5)",
+        );
+        this.schema.raw(
+            "ALTER TABLE support_ticket_workflow_statuses ADD CONSTRAINT support_workflow_semantic_group_check CHECK (semantic_group IN ('active','waiting','resolved','closed'))",
+        );
 
         this.schema.raw(`
             INSERT INTO support_ticket_workflow_statuses
@@ -231,6 +301,7 @@ export default class extends BaseSchema {
             "support_ticket_attachments",
             "support_ticket_saved_views",
             "support_ticket_workflow_statuses",
-        ]) this.schema.dropTable(table);
+        ])
+            this.schema.dropTable(table);
     }
 }

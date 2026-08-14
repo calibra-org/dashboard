@@ -84,7 +84,7 @@ check(routes.includes("middleware.admin()"), "Admin payment routes must require 
 
 const transactionUi = read("apps/admin/src/views/transactions/transactions-center.tsx");
 for (const invariant of [
-    "useTranslations(\"Transactions\")",
+    'useTranslations("Transactions")',
     "useTransactions",
     "useTransactionSummary",
     "useReconcileTransaction",
@@ -120,7 +120,7 @@ check(
 );
 
 const sidebar = read("apps/admin/src/components/Sidebar.tsx");
-check(sidebar.includes('/transactions'), "Sidebar must link to /transactions");
+check(sidebar.includes("/transactions"), "Sidebar must link to /transactions");
 check(sidebar.includes('labelKey: "transactions"'), "Transaction navigation must use the Nav translation catalog");
 check(
     !sidebar.includes('label: { fa: "تراکنش‌ها", en: "Transactions" }'),
@@ -146,7 +146,7 @@ for (const invariant of [
 
 const reconciliation = read("apps/api/app/services/payment_reconciliation_service.ts");
 for (const invariant of [
-    'createLock(`order:${Number(attempt.orderId)}`',
+    "createLock(`order:${Number(attempt.orderId)}`",
     ".forUpdate()",
     "adapter.reconcile",
     'status: "unsupported"',

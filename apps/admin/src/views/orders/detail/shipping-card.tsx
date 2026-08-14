@@ -65,15 +65,31 @@ export function ShippingCard({ order, locale }: ShippingCardProps) {
                     <div className="flex flex-col gap-1.5">
                         <Label htmlFor="shipping-tracking">{t("tracking")}</Label>
                         <div className="flex gap-2">
-                            <Input id="shipping-tracking" value={tracking} onChange={(event) => setTracking(event.target.value)} placeholder={t("trackingPlaceholder")} />
-                            <Button variant="outline" size="icon" onClick={copy} disabled={!tracking} aria-label={t("trackingCopied")}>
+                            <Input
+                                id="shipping-tracking"
+                                value={tracking}
+                                onChange={(event) => setTracking(event.target.value)}
+                                placeholder={t("trackingPlaceholder")}
+                            />
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={copy}
+                                disabled={!tracking}
+                                aria-label={t("trackingCopied")}
+                            >
                                 <Copy className="size-4" aria-hidden="true" />
                             </Button>
                         </div>
                     </div>
                     <div className="flex flex-col gap-1.5">
                         <Label htmlFor="shipping-carrier">{t("carrier")}</Label>
-                        <Input id="shipping-carrier" value={carrier} onChange={(event) => setCarrier(event.target.value)} placeholder={t("carrierPlaceholder")} />
+                        <Input
+                            id="shipping-carrier"
+                            value={carrier}
+                            onChange={(event) => setCarrier(event.target.value)}
+                            placeholder={t("carrierPlaceholder")}
+                        />
                     </div>
                 </div>
                 <div className="flex items-center justify-between gap-3">
@@ -81,7 +97,9 @@ export function ShippingCard({ order, locale }: ShippingCardProps) {
                         <Switch checked={notify} onCheckedChange={(value) => setNotify(value === true)} aria-label={t("save")} />
                         <span>{t("save")}</span>
                     </label>
-                    <Button onClick={save} disabled={mutation.isPending}>{t("save")}</Button>
+                    <Button onClick={save} disabled={mutation.isPending}>
+                        {t("save")}
+                    </Button>
                 </div>
             </div>
             <FulfillmentOperationsCard orderId={order.id} />

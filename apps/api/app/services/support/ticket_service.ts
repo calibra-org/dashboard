@@ -145,12 +145,14 @@ function sameValue(current: unknown, next: unknown): boolean {
 }
 
 async function insertEvent(ticketId: number, actorUserId: number | null, eventType: string, payload: Record<string, unknown>) {
-    await currentTrx().table("support_ticket_events").insert({
-        ticket_id: ticketId,
-        actor_user_id: actorUserId,
-        event_type: eventType,
-        payload: JSON.stringify(payload),
-    });
+    await currentTrx()
+        .table("support_ticket_events")
+        .insert({
+            ticket_id: ticketId,
+            actor_user_id: actorUserId,
+            event_type: eventType,
+            payload: JSON.stringify(payload),
+        });
 }
 
 async function ensureAssignee(userId: number | null | undefined): Promise<void> {
@@ -196,7 +198,14 @@ export class SupportTicketService {
             .where("tenant_id", Number(currentTenantId()))
             .update(patch)
             .returning("*");
-        return { data: { ...row, tenant_id: numberValue(row.tenant_id), default_assignee_user_id: numberOrNull(row.default_assignee_user_id) }, changed: true };
+        return {
+            data: {
+                ...row,
+                tenant_id: numberValue(row.tenant_id),
+                default_assignee_user_id: numberOrNull(row.default_assignee_user_id),
+            },
+            changed: true,
+        };
     }
 
     async list(input: TicketListInput) {
@@ -226,15 +235,23 @@ export class SupportTicketService {
         if (input.sla === "breached") {
             query = query.where((builder) => {
                 builder
-                    .where((nested) => nested.whereNull("t.first_response_at").where("t.first_response_due_at", "<", trx.raw("now()")))
-                    .orWhere((nested) => nested.whereNotIn("t.status", ["resolved", "closed"]).where("t.resolution_due_at", "<", trx.raw("now()")));
+                    .where((nested) =>
+                        nested.whereNull("t.first_response_at").where("t.first_response_due_at", "<", trx.raw("now()")),
+                    )
+                    .orWhere((nested) =>
+                        nested.whereNotIn("t.status", ["resolved", "closed"]).where("t.resolution_due_at", "<", trx.raw("now()")),
+                    );
             });
         }
         if (input.sla === "healthy") {
             query = query.whereNot((builder) => {
                 builder
-                    .where((nested) => nested.whereNull("t.first_response_at").where("t.first_response_due_at", "<", trx.raw("now()")))
-                    .orWhere((nested) => nested.whereNotIn("t.status", ["resolved", "closed"]).where("t.resolution_due_at", "<", trx.raw("now()")));
+                    .where((nested) =>
+                        nested.whereNull("t.first_response_at").where("t.first_response_due_at", "<", trx.raw("now()")),
+                    )
+                    .orWhere((nested) =>
+                        nested.whereNotIn("t.status", ["resolved", "closed"]).where("t.resolution_due_at", "<", trx.raw("now()")),
+                    );
             });
         }
 
@@ -261,7 +278,12 @@ export class SupportTicketService {
             .from("support_tickets as t")
             .leftJoin("users as assignee", "assignee.id", "t.assigned_user_id")
             .leftJoin("customers as c", "c.id", "t.customer_id")
-            .select("t.*", "assignee.email as assignee_email", "c.first_name as customer_first_name", "c.last_name as customer_last_name")
+            .select(
+                "t.*",
+                "assignee.email as assignee_email",
+                "c.first_name as customer_first_name",
+                "c.last_name as customer_last_name",
+            )
             .where("t.id", ticketId)
             .first();
         if (!row) throw new Exception("Support ticket not found", { status: 404, code: "E_TICKET_NOT_FOUND" });
@@ -295,11 +317,15 @@ export class SupportTicketService {
         const settings = (await this.settings()).data;
         const ticketNumber = Number(await nextNumber("ticket"));
         if (!Number.isSafeInteger(ticketNumber) || ticketNumber < 1) {
-            throw new Exception("Ticket number is outside the supported numeric range", { status: 500, code: "E_TICKET_NUMBER_RANGE" });
+            throw new Exception("Ticket number is outside the supported numeric range", {
+                status: 500,
+                code: "E_TICKET_NUMBER_RANGE",
+            });
         }
         const prefix = String(settings.reference_prefix ?? "TKT").toUpperCase();
         const priority = input.priority ?? (settings.default_priority as TicketPriority) ?? "normal";
-        const assignedUserId = input.assigned_user_id === undefined ? numberOrNull(settings.default_assignee_user_id) : input.assigned_user_id;
+        const assignedUserId =
+            input.assigned_user_id === undefined ? numberOrNull(settings.default_assignee_user_id) : input.assigned_user_id;
         await ensureAssignee(assignedUserId);
         const trx = currentTrx();
         const now = new Date();
@@ -362,17 +388,27 @@ export class SupportTicketService {
             .where("version", input.expected_version)
             .update(patch)
             .returning("*");
-        if (!row) throw new Exception("Support ticket changed by another operator", { status: 409, code: "E_TICKET_VERSION_CONFLICT" });
+        if (!row)
+            throw new Exception("Support ticket changed by another operator", { status: 409, code: "E_TICKET_VERSION_CONFLICT" });
         await insertEvent(ticketId, actorUserId, "ticket.updated", { fields: changedFields });
         return { ...(await this.find(ticketId)), changed: true };
     }
 
-    async transition(ticketId: number, status: TicketStatus, expectedVersion: number, reason: string | null | undefined, actorUserId: number | null) {
+    async transition(
+        ticketId: number,
+        status: TicketStatus,
+        expectedVersion: number,
+        reason: string | null | undefined,
+        actorUserId: number | null,
+    ) {
         const current = (await this.find(ticketId)).data;
         const currentStatus = String(current.status) as TicketStatus;
         if (currentStatus === status) return { data: current, changed: false };
         if (!ALLOWED_TRANSITIONS[currentStatus]?.includes(status)) {
-            throw new Exception("Support ticket status transition is not allowed", { status: 422, code: "E_TICKET_TRANSITION_INVALID" });
+            throw new Exception("Support ticket status transition is not allowed", {
+                status: 422,
+                code: "E_TICKET_TRANSITION_INVALID",
+            });
         }
         const patch: Record<string, unknown> = {
             status,
@@ -387,12 +423,23 @@ export class SupportTicketService {
             .where("version", expectedVersion)
             .update(patch)
             .returning("*");
-        if (!row) throw new Exception("Support ticket changed by another operator", { status: 409, code: "E_TICKET_VERSION_CONFLICT" });
-        await insertEvent(ticketId, actorUserId, "ticket.status_changed", { from: currentStatus, to: status, reason: reason ?? null });
+        if (!row)
+            throw new Exception("Support ticket changed by another operator", { status: 409, code: "E_TICKET_VERSION_CONFLICT" });
+        await insertEvent(ticketId, actorUserId, "ticket.status_changed", {
+            from: currentStatus,
+            to: status,
+            reason: reason ?? null,
+        });
         return { ...(await this.find(ticketId)), changed: true };
     }
 
-    async addMessage(ticketId: number, kind: "reply" | "internal_note", body: string, expectedVersion: number, actorUserId: number | null) {
+    async addMessage(
+        ticketId: number,
+        kind: "reply" | "internal_note",
+        body: string,
+        expectedVersion: number,
+        actorUserId: number | null,
+    ) {
         const current = (await this.find(ticketId)).data;
         const now = new Date();
         const patch: Record<string, unknown> = { last_message_at: now, updated_at: now, version: expectedVersion + 1 };
@@ -403,12 +450,15 @@ export class SupportTicketService {
             .where("version", expectedVersion)
             .update(patch)
             .returning("*");
-        if (!ticket) throw new Exception("Support ticket changed by another operator", { status: 409, code: "E_TICKET_VERSION_CONFLICT" });
+        if (!ticket)
+            throw new Exception("Support ticket changed by another operator", { status: 409, code: "E_TICKET_VERSION_CONFLICT" });
         const [message] = await currentTrx()
             .table("support_ticket_messages")
             .insert({ ticket_id: ticketId, author_user_id: actorUserId, author_customer_id: null, kind, body })
             .returning("*");
-        await insertEvent(ticketId, actorUserId, kind === "reply" ? "message.reply" : "message.internal_note", { message_id: numberValue(message.id) });
+        await insertEvent(ticketId, actorUserId, kind === "reply" ? "message.reply" : "message.internal_note", {
+            message_id: numberValue(message.id),
+        });
         return { data: messageRow(message as DbRow), ticket: ticketRow(ticket as DbRow) };
     }
 
@@ -444,14 +494,25 @@ export class SupportTicketService {
             GROUP BY days.day
             ORDER BY days.day ASC
         `);
-        return { data: result.rows.map((row: DbRow) => ({ day: row.day, opened: numberValue(row.opened), resolved: numberValue(row.resolved) })) };
+        return {
+            data: result.rows.map((row: DbRow) => ({
+                day: row.day,
+                opened: numberValue(row.opened),
+                resolved: numberValue(row.resolved),
+            })),
+        };
     }
 
     async resources(kind: "customers" | "assignees", q = "", limit = 30) {
         const trx = currentTrx();
         const safeLimit = Math.max(1, Math.min(50, limit));
         if (kind === "assignees") {
-            let query = trx.from("users").select("id", "email").where("role", "admin").whereNull("deleted_at").orderBy("email", "asc");
+            let query = trx
+                .from("users")
+                .select("id", "email")
+                .where("role", "admin")
+                .whereNull("deleted_at")
+                .orderBy("email", "asc");
             if (q) query = query.whereILike("email", `%${q}%`);
             const rows = await query.limit(safeLimit);
             return { data: rows.map((row) => ({ id: numberValue(row.id), label: String(row.email), email: String(row.email) })) };

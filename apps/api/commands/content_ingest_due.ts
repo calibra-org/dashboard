@@ -78,7 +78,9 @@ export default class ContentIngestDue extends BaseCommand {
                     await contentSchedulerObservabilityService.complete(runId, tenantQueued);
                 } catch (error) {
                     await contentSchedulerObservabilityService.fail(runId, error, tenantQueued);
-                    this.logger.error(`tenant ${tenantId}: ingest scheduler failed: ${error instanceof Error ? error.message : String(error)}`);
+                    this.logger.error(
+                        `tenant ${tenantId}: ingest scheduler failed: ${error instanceof Error ? error.message : String(error)}`,
+                    );
                 }
             },
             Number.isSafeInteger(this.tenant) && this.tenant > 0 ? this.tenant : undefined,

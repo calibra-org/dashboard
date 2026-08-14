@@ -239,11 +239,7 @@ export default class TicketOperationsController {
     async campaignTransition(ctx: HttpContext) {
         const campaignId = paramId(ctx);
         const payload = await ctx.request.validateUsing(ticketCampaignTransitionValidator);
-        const result = await ticketOperationsService.transitionCampaign(
-            campaignId,
-            payload.expected_version,
-            payload.status,
-        );
+        const result = await ticketOperationsService.transitionCampaign(campaignId, payload.expected_version, payload.status);
         await audit(ctx, "support.campaign.transition", "support_campaign", campaignId, {
             status: payload.status,
             expected_version: payload.expected_version,

@@ -5,10 +5,7 @@ import { isIP, type LookupFunction } from "node:net";
 
 import { Exception } from "@adonisjs/core/exceptions";
 
-import {
-    isPrivateContentSourceAddress,
-    normalizeContentSourceHostname,
-} from "#services/content/source_ingest_service";
+import { isPrivateContentSourceAddress, normalizeContentSourceHostname } from "#services/content/source_ingest_service";
 import { currentTrx } from "#services/tenant_context";
 
 export interface PreparedSeoCrawlTarget {
@@ -124,11 +121,7 @@ async function resolvePublicTarget(value: string, baseUrl: string) {
     return { url, address: selected.address, family: selected.family };
 }
 
-async function requestDocument(
-    value: string,
-    baseUrl: string,
-    maxBytes = 2_000_000,
-): Promise<SeoCrawlFetchResult> {
+async function requestDocument(value: string, baseUrl: string, maxBytes = 2_000_000): Promise<SeoCrawlFetchResult> {
     const target = await resolvePublicTarget(value, baseUrl);
     const started = Date.now();
 
@@ -188,9 +181,7 @@ async function requestDocument(
                         canonicalUrl,
                         robotsMeta,
                         indexable: isHtml
-                            ? statusCode >= 200 &&
-                              statusCode < 300 &&
-                              !/(^|[,\s])noindex([,\s]|$)/.test(directives)
+                            ? statusCode >= 200 && statusCode < 300 && !/(^|[,\s])noindex([,\s]|$)/.test(directives)
                             : null,
                         durationMs: Math.max(0, Date.now() - started),
                         bytesReceived: total,
@@ -213,17 +204,23 @@ export async function prepareSeoCrawlTarget(targetId: number): Promise<PreparedS
     const run = await trx.from("seo_crawl_runs").where("id", target.crawl_run_id).first();
     if (!run) return null;
 
-    await trx.from("seo_crawl_targets").where("id", targetId).update({
-        status: "processing",
-        attempts: numberValue(target.attempts) + 1,
-        claimed_at: new Date(),
-        updated_at: new Date(),
-    });
-    await trx.from("seo_crawl_runs").where("id", run.id).update({
-        status: "running",
-        started_at: run.started_at ?? new Date(),
-        updated_at: new Date(),
-    });
+    await trx
+        .from("seo_crawl_targets")
+        .where("id", targetId)
+        .update({
+            status: "processing",
+            attempts: numberValue(target.attempts) + 1,
+            claimed_at: new Date(),
+            updated_at: new Date(),
+        });
+    await trx
+        .from("seo_crawl_runs")
+        .where("id", run.id)
+        .update({
+            status: "running",
+            started_at: run.started_at ?? new Date(),
+            updated_at: new Date(),
+        });
     return {
         targetId,
         runId: numberValue(run.id),
@@ -232,9 +229,7 @@ export async function prepareSeoCrawlTarget(targetId: number): Promise<PreparedS
     };
 }
 
-export async function requestSeoCrawlTarget(
-    prepared: PreparedSeoCrawlTarget,
-): Promise<SeoCrawlFetchResult> {
+export async function requestSeoCrawlTarget(prepared: PreparedSeoCrawlTarget): Promise<SeoCrawlFetchResult> {
     return requestDocument(prepared.url, prepared.baseUrl);
 }
 
@@ -250,22 +245,21 @@ async function finalizeRun(runId: number) {
     const pending = (map.get("queued") ?? 0) + (map.get("processing") ?? 0);
     const completed = map.get("completed") ?? 0;
     const failed = map.get("failed") ?? 0;
-    const status =
-        pending > 0 ? "running" : failed > 0 && completed > 0 ? "partial" : failed > 0 ? "failed" : "completed";
+    const status = pending > 0 ? "running" : failed > 0 && completed > 0 ? "partial" : failed > 0 ? "failed" : "completed";
 
-    await trx.from("seo_crawl_runs").where("id", runId).update({
-        status,
-        completed_count: completed,
-        failed_count: failed,
-        finished_at: pending === 0 ? new Date() : null,
-        updated_at: new Date(),
-    });
+    await trx
+        .from("seo_crawl_runs")
+        .where("id", runId)
+        .update({
+            status,
+            completed_count: completed,
+            failed_count: failed,
+            finished_at: pending === 0 ? new Date() : null,
+            updated_at: new Date(),
+        });
 }
 
-export async function completeSeoCrawlTarget(
-    prepared: PreparedSeoCrawlTarget,
-    fetched: SeoCrawlFetchResult,
-) {
+export async function completeSeoCrawlTarget(prepared: PreparedSeoCrawlTarget, fetched: SeoCrawlFetchResult) {
     const trx = currentTrx();
     const success = fetched.statusCode >= 200 && fetched.statusCode < 300;
     await trx

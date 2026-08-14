@@ -57,11 +57,7 @@ function prorate(total: number, quantity: number, sourceQuantity: number): numbe
 export class Phase5ReturnPolicyService {
     constructor(private readonly refunds = new RefundService()) {}
 
-    async prepareCreate(
-        orderId: number,
-        input: ReturnCreateInput,
-        idempotencyKey?: string | null,
-    ): Promise<ReturnCreateInput> {
+    async prepareCreate(orderId: number, input: ReturnCreateInput, idempotencyKey?: string | null): Promise<ReturnCreateInput> {
         const trx = currentTrx();
         const order = await trx.from("orders").where("id", orderId).whereNull("deleted_at").first();
         if (!order) throw new Exception("Order not found", { status: 404, code: "E_NOT_FOUND" });
@@ -86,7 +82,9 @@ export class Phase5ReturnPolicyService {
             .groupBy("item.order_line_item_id")
             .select("item.order_line_item_id")
             .sum("item.quantity as delivered_quantity");
-        const delivered = new Map(deliveredRows.map((row) => [Number(row.order_line_item_id), numberValue(row.delivered_quantity)]));
+        const delivered = new Map(
+            deliveredRows.map((row) => [Number(row.order_line_item_id), numberValue(row.delivered_quantity)]),
+        );
 
         let priorQuery = trx
             .from("order_return_items as item")
@@ -116,7 +114,7 @@ export class Phase5ReturnPolicyService {
             const line = lines.find((candidate) => Number(candidate.id) === Number(item.order_line_item_id));
             if (!line) throw new Exception("Return line not found", { status: 422, code: "E_RETURN_LINE_INVALID" });
             const soldQuantity = numberValue(line.quantity);
-            const deliveredQuantity = legacyDelivered ? soldQuantity : delivered.get(Number(line.id)) ?? 0;
+            const deliveredQuantity = legacyDelivered ? soldQuantity : (delivered.get(Number(line.id)) ?? 0);
             const remainingReturnable = Math.max(0, deliveredQuantity - (alreadyReturned.get(Number(line.id)) ?? 0));
             if (item.quantity > remainingReturnable) {
                 throw new Exception("Return quantity exceeds delivered returnable quantity", {

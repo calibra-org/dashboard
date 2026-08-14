@@ -11,7 +11,15 @@ import { Input } from "#/components/ui/input";
 import { useAdjustInventory, useInventoryOperations } from "#/features/operations/queries";
 import { formatDateTime, formatNumber } from "#/lib/format";
 
-export function InventoryOperationsPanel({ inventoryItemId, locale, onClose }: { inventoryItemId: number; locale: Locale; onClose: () => void }) {
+export function InventoryOperationsPanel({
+    inventoryItemId,
+    locale,
+    onClose,
+}: {
+    inventoryItemId: number;
+    locale: Locale;
+    onClose: () => void;
+}) {
     const t = useTranslations("InventoryOperations");
     const operations = useInventoryOperations(inventoryItemId);
     const adjust = useAdjustInventory();
@@ -27,29 +35,51 @@ export function InventoryOperationsPanel({ inventoryItemId, locale, onClose }: {
                     <CardTitle className="text-base">{t("title")}</CardTitle>
                     <p className="mt-1 text-muted-foreground text-xs">{t("subtitle")}</p>
                 </div>
-                <Button type="button" size="sm" variant="outline" onClick={onClose}>{t("closeLedger")}</Button>
+                <Button type="button" size="sm" variant="outline" onClick={onClose}>
+                    {t("closeLedger")}
+                </Button>
             </CardHeader>
             <CardContent className="grid gap-5">
                 {operations.isError ? (
                     <div className="flex items-center justify-between gap-3 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm">
                         <span>{t("loadError")}</span>
-                        <Button type="button" size="sm" variant="outline" onClick={() => void operations.refetch()}>{t("retry")}</Button>
+                        <Button type="button" size="sm" variant="outline" onClick={() => void operations.refetch()}>
+                            {t("retry")}
+                        </Button>
                     </div>
                 ) : null}
                 {operations.data ? (
                     <>
                         <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/20 p-3">
                             <span className="text-muted-foreground text-xs">{t("currentStock")}</span>
-                            <span className="font-semibold text-lg">{formatNumber(operations.data.item.stock_quantity, locale)}</span>
-                            <StatusBadge tone={operations.data.item.stock_status === "instock" ? "success" : operations.data.item.stock_status === "onbackorder" ? "warning" : "danger"}>
+                            <span className="font-semibold text-lg">
+                                {formatNumber(operations.data.item.stock_quantity, locale)}
+                            </span>
+                            <StatusBadge
+                                tone={
+                                    operations.data.item.stock_status === "instock"
+                                        ? "success"
+                                        : operations.data.item.stock_status === "onbackorder"
+                                          ? "warning"
+                                          : "danger"
+                                }
+                            >
                                 {operations.data.item.stock_status}
                             </StatusBadge>
-                            <span className="ms-auto font-mono text-muted-foreground text-xs">inventory #{operations.data.item.id}</span>
+                            <span className="ms-auto font-mono text-muted-foreground text-xs">
+                                inventory #{operations.data.item.id}
+                            </span>
                         </div>
                         <div className="grid gap-3 rounded-lg border p-3 md:grid-cols-[160px_minmax(0,1fr)_auto] md:items-end">
                             <label className="grid gap-1.5 text-xs font-medium">
                                 <span>{t("adjustmentDelta")}</span>
-                                <Input value={delta} onChange={(event) => setDelta(event.target.value)} inputMode="numeric" dir="ltr" placeholder="+5 / -2" />
+                                <Input
+                                    value={delta}
+                                    onChange={(event) => setDelta(event.target.value)}
+                                    inputMode="numeric"
+                                    dir="ltr"
+                                    placeholder="+5 / -2"
+                                />
                             </label>
                             <label className="grid gap-1.5 text-xs font-medium">
                                 <span>{t("adjustmentReason")}</span>
@@ -58,7 +88,21 @@ export function InventoryOperationsPanel({ inventoryItemId, locale, onClose }: {
                             <Button
                                 type="button"
                                 disabled={!canAdjust || adjust.isPending}
-                                onClick={() => adjust.mutate({ inventory_item_id: inventoryItemId, quantity_delta: parsedDelta, reason: reason.trim() }, { onSuccess: () => { setDelta(""); setReason(""); } })}
+                                onClick={() =>
+                                    adjust.mutate(
+                                        {
+                                            inventory_item_id: inventoryItemId,
+                                            quantity_delta: parsedDelta,
+                                            reason: reason.trim(),
+                                        },
+                                        {
+                                            onSuccess: () => {
+                                                setDelta("");
+                                                setReason("");
+                                            },
+                                        },
+                                    )
+                                }
                             >
                                 {adjust.isPending ? t("saving") : t("applyAdjustment")}
                             </Button>
@@ -80,23 +124,34 @@ export function InventoryOperationsPanel({ inventoryItemId, locale, onClose }: {
                                         <tr key={movement.id}>
                                             <td className="px-3 py-2">{t(`movementKinds.${movement.kind}` as never)}</td>
                                             <td className="px-3 py-2 text-end font-mono" dir="ltr">
-                                                {movement.quantity_delta > 0 ? "+" : ""}{formatNumber(movement.quantity_delta, locale)}
+                                                {movement.quantity_delta > 0 ? "+" : ""}
+                                                {formatNumber(movement.quantity_delta, locale)}
                                             </td>
                                             <td className="px-3 py-2 font-mono text-muted-foreground text-xs">
                                                 {movement.ref_kind ? `${movement.ref_kind}:${movement.ref_id ?? "—"}` : "—"}
                                             </td>
-                                            <td className="max-w-xs truncate px-3 py-2 text-muted-foreground">{movement.notes || "—"}</td>
-                                            <td className="px-3 py-2 text-end text-muted-foreground text-xs">{formatDateTime(movement.occurred_at, locale)}</td>
+                                            <td className="max-w-xs truncate px-3 py-2 text-muted-foreground">
+                                                {movement.notes || "—"}
+                                            </td>
+                                            <td className="px-3 py-2 text-end text-muted-foreground text-xs">
+                                                {formatDateTime(movement.occurred_at, locale)}
+                                            </td>
                                         </tr>
                                     ))}
                                     {operations.data.movements.length === 0 ? (
-                                        <tr><td colSpan={5} className="px-3 py-8 text-center text-muted-foreground">{t("noMovements")}</td></tr>
+                                        <tr>
+                                            <td colSpan={5} className="px-3 py-8 text-center text-muted-foreground">
+                                                {t("noMovements")}
+                                            </td>
+                                        </tr>
                                     ) : null}
                                 </tbody>
                             </table>
                         </div>
                     </>
-                ) : operations.isPending ? <p className="text-muted-foreground text-sm">{t("loading")}</p> : null}
+                ) : operations.isPending ? (
+                    <p className="text-muted-foreground text-sm">{t("loading")}</p>
+                ) : null}
             </CardContent>
         </Card>
     );

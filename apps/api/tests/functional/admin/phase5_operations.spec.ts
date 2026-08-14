@@ -8,7 +8,13 @@ import { makeDraftOrder, resetPhase05 } from "#tests/helpers/orders";
 
 async function adminUser() {
     const admin = await UserFactory.apply("admin").create();
-    await Customer.create({ userId: admin.id, firstName: "Phase", lastName: "Five", countryDefault: "IR", isPayingCustomer: false });
+    await Customer.create({
+        userId: admin.id,
+        firstName: "Phase",
+        lastName: "Five",
+        countryDefault: "IR",
+        isPayingCustomer: false,
+    });
     return admin;
 }
 
@@ -116,7 +122,10 @@ test.group("Phase 5 order operations", (group) => {
         over.assertStatus(409);
     });
 
-    test("records shipment events and completes only after delivered fulfillment quantities cover the order", async ({ client, assert }) => {
+    test("records shipment events and completes only after delivered fulfillment quantities cover the order", async ({
+        client,
+        assert,
+    }) => {
         const admin = await adminUser();
         const { order } = await processingOrder(1);
         await moveToProcessing(client, admin, Number(order.id));
@@ -136,7 +145,10 @@ test.group("Phase 5 order operations", (group) => {
         assert.equal(operations.body().data.lines[0].returnable_quantity, 1);
     });
 
-    test("routes legacy mark-shipped through fulfillment without double-decrementing reserved stock", async ({ client, assert }) => {
+    test("routes legacy mark-shipped through fulfillment without double-decrementing reserved stock", async ({
+        client,
+        assert,
+    }) => {
         const admin = await adminUser();
         const { product, order } = await processingOrder(1);
         await moveToProcessing(client, admin, Number(order.id));
@@ -282,7 +294,10 @@ test.group("Phase 5 order operations", (group) => {
         cancelledOrder.assertStatus(200);
     });
 
-    test("persists inventory adjustments and shipping/tax configuration through existing admin categories", async ({ client, assert }) => {
+    test("persists inventory adjustments and shipping/tax configuration through existing admin categories", async ({
+        client,
+        assert,
+    }) => {
         const admin = await adminUser();
         const product = await createTaxableProduct({ regularPrice: 1_000_000 });
         const inventory = await db.from("inventory_items").where("product_id", product.id).whereNull("variation_id").first();

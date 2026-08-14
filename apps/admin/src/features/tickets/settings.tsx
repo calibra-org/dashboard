@@ -85,11 +85,9 @@ export function TicketSettingsPage() {
         );
     }
 
-    const formKey = [
-        settings.data.reference_prefix,
-        settings.data.first_response_minutes,
-        settings.data.resolution_minutes,
-    ].join(":");
+    const formKey = [settings.data.reference_prefix, settings.data.first_response_minutes, settings.data.resolution_minutes].join(
+        ":",
+    );
 
     async function submit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -204,9 +202,7 @@ export function TicketSettingsPage() {
                                 {update.isPending ? t.saving : t.saveSettings}
                             </Button>
                         </div>
-                        {update.isSuccess ? (
-                            <p className="text-success text-xs sm:col-span-2">{t.settingsSaved}</p>
-                        ) : null}
+                        {update.isSuccess ? <p className="text-success text-xs sm:col-span-2">{t.settingsSaved}</p> : null}
                         {update.isError ? <p className="text-danger text-xs sm:col-span-2">{t.settingsFailed}</p> : null}
                     </form>
                 </CardContent>

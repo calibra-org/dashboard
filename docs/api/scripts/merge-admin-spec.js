@@ -73,12 +73,7 @@ for (const [overlaySource, namespace] of [
     const componentSections = new Set([...Object.keys(base.components ?? {}), ...Object.keys(overlay.components ?? {})]);
     const merged = {};
     for (const section of componentSections) {
-        merged[section] = mergeRecord(
-            base.components?.[section],
-            overlay.components?.[section],
-            `components.${section}`,
-            true,
-        );
+        merged[section] = mergeRecord(base.components?.[section], overlay.components?.[section], `components.${section}`, true);
     }
     base.components = merged;
     const tags = Array.isArray(base.tags) ? base.tags : [];

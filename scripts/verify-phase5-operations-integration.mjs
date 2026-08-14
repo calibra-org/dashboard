@@ -66,10 +66,7 @@ assertContains("apps/api/start/routes/admin_phase5_operations.ts", [
     '"/shipping/zones"',
     '"/tax/rates"',
 ]);
-assertContains("apps/api/start/routes/admin_orders.ts", [
-    'OrderOperationsController, "legacyMarkShipped"',
-    "adminWriteLimiter",
-]);
+assertContains("apps/api/start/routes/admin_orders.ts", ['OrderOperationsController, "legacyMarkShipped"', "adminWriteLimiter"]);
 
 assertContains("apps/api/database/migrations/1762000000000_create_phase5_order_operations.ts", [
     'createTable("order_fulfillments"',
@@ -89,10 +86,7 @@ assertContains("apps/api/app/services/phase5_order_operations_service.ts", [
     "maybeCompleteOrder",
     'shipment.status !== "delivered"',
 ]);
-assertNotContains("apps/api/app/services/phase5_order_operations_service.ts", [
-    "inventory.decrement",
-    "stock_quantity -",
-]);
+assertNotContains("apps/api/app/services/phase5_order_operations_service.ts", ["inventory.decrement", "stock_quantity -"]);
 assertContains("apps/api/app/services/phase5_order_operations_query_service.ts", [
     '"name_snapshot as name"',
     '"sku_snapshot as sku"',
@@ -143,10 +137,7 @@ assertContains("apps/api/app/validators/admin/phase5_operations_validator.ts", [
     "require_protocol: true",
     "withoutDecimals()",
 ]);
-assertContains("apps/api/app/validators/admin/order_validator.ts", [
-    'protocols: ["http", "https"]',
-    "require_protocol: true",
-]);
+assertContains("apps/api/app/validators/admin/order_validator.ts", ['protocols: ["http", "https"]', "require_protocol: true"]);
 
 assertContains("apps/admin/src/app/api/admin/[...path]/route.ts", [
     'request.headers.get("idempotency-key")',
@@ -186,9 +177,17 @@ assertContains("apps/admin/src/features/operations/fulfillment-operations-card.t
 ]);
 
 assertContains("apps/admin/src/views/orders/detail/shipping-card.tsx", ["FulfillmentOperationsCard", "orderId={order.id}"]);
-assertContains("apps/admin/src/views/orders/list/status-tabs.tsx", ["useOrderOperationsSummary", "shipmentExceptions", "returnsApproval"]);
-assertContains("apps/admin/src/views/analytics/stock/stock-view.tsx", ["InventoryOperationsPanel", "selectedInventoryId", "openLedger"]);
-assertContains("apps/admin/src/lib/i18n/request.ts", ['messages/operations/${locale}.json', "...operations"]);
+assertContains("apps/admin/src/views/orders/list/status-tabs.tsx", [
+    "useOrderOperationsSummary",
+    "shipmentExceptions",
+    "returnsApproval",
+]);
+assertContains("apps/admin/src/views/analytics/stock/stock-view.tsx", [
+    "InventoryOperationsPanel",
+    "selectedInventoryId",
+    "openLedger",
+]);
+assertContains("apps/admin/src/lib/i18n/request.ts", ["messages/operations/${locale}.json", "...operations"]);
 
 assertContains("packages/sdk/src/generated/admin.composed.d.ts", [
     'from "./admin.phase5"',

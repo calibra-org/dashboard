@@ -9,7 +9,23 @@ import { BaseModel, column } from "@adonisjs/lucid/orm";
 import { DateTime } from "luxon";
 
 export class OrderFulfillmentSchema extends BaseModel {
-    static $columns = ["id", "tenantId", "orderId", "status", "idempotencyKey", "idempotencyFingerprint", "note", "createdByUserId", "version", "packedAt", "shippedAt", "deliveredAt", "cancelledAt", "createdAt", "updatedAt"] as const;
+    static $columns = [
+        "id",
+        "tenantId",
+        "orderId",
+        "status",
+        "idempotencyKey",
+        "idempotencyFingerprint",
+        "note",
+        "createdByUserId",
+        "version",
+        "packedAt",
+        "shippedAt",
+        "deliveredAt",
+        "cancelledAt",
+        "createdAt",
+        "updatedAt",
+    ] as const;
     $columns = OrderFulfillmentSchema.$columns;
     @column({ isPrimary: true }) declare id: bigint | number;
     @column() declare tenantId: bigint | number;
@@ -41,7 +57,21 @@ export class OrderFulfillmentItemSchema extends BaseModel {
 }
 
 export class OrderShipmentSchema extends BaseModel {
-    static $columns = ["id", "tenantId", "fulfillmentId", "status", "carrier", "service", "trackingNumber", "trackingUrl", "version", "shippedAt", "deliveredAt", "createdAt", "updatedAt"] as const;
+    static $columns = [
+        "id",
+        "tenantId",
+        "fulfillmentId",
+        "status",
+        "carrier",
+        "service",
+        "trackingNumber",
+        "trackingUrl",
+        "version",
+        "shippedAt",
+        "deliveredAt",
+        "createdAt",
+        "updatedAt",
+    ] as const;
     $columns = OrderShipmentSchema.$columns;
     @column({ isPrimary: true }) declare id: bigint | number;
     @column() declare tenantId: bigint | number;
@@ -59,7 +89,18 @@ export class OrderShipmentSchema extends BaseModel {
 }
 
 export class OrderShipmentEventSchema extends BaseModel {
-    static $columns = ["id", "tenantId", "shipmentId", "status", "location", "message", "evidence", "occurredAt", "createdByUserId", "createdAt"] as const;
+    static $columns = [
+        "id",
+        "tenantId",
+        "shipmentId",
+        "status",
+        "location",
+        "message",
+        "evidence",
+        "occurredAt",
+        "createdByUserId",
+        "createdAt",
+    ] as const;
     $columns = OrderShipmentEventSchema.$columns;
     @column({ isPrimary: true }) declare id: bigint | number;
     @column() declare tenantId: bigint | number;
@@ -74,7 +115,29 @@ export class OrderShipmentEventSchema extends BaseModel {
 }
 
 export class OrderReturnSchema extends BaseModel {
-    static $columns = ["id", "tenantId", "orderId", "status", "idempotencyKey", "idempotencyFingerprint", "reason", "customerNote", "internalNote", "carrier", "trackingNumber", "refundId", "createdByUserId", "approvedByUserId", "version", "approvedAt", "receivedAt", "completedAt", "cancelledAt", "createdAt", "updatedAt"] as const;
+    static $columns = [
+        "id",
+        "tenantId",
+        "orderId",
+        "status",
+        "idempotencyKey",
+        "idempotencyFingerprint",
+        "reason",
+        "customerNote",
+        "internalNote",
+        "carrier",
+        "trackingNumber",
+        "refundId",
+        "createdByUserId",
+        "approvedByUserId",
+        "version",
+        "approvedAt",
+        "receivedAt",
+        "completedAt",
+        "cancelledAt",
+        "createdAt",
+        "updatedAt",
+    ] as const;
     $columns = OrderReturnSchema.$columns;
     @column({ isPrimary: true }) declare id: bigint | number;
     @column() declare tenantId: bigint | number;
@@ -100,7 +163,21 @@ export class OrderReturnSchema extends BaseModel {
 }
 
 export class OrderReturnItemSchema extends BaseModel {
-    static $columns = ["id", "tenantId", "returnId", "orderLineItemId", "requestedQuantity", "approvedQuantity", "receivedQuantity", "damagedQuantity", "restockQuantity", "refundAmountMinor", "reason", "createdAt", "updatedAt"] as const;
+    static $columns = [
+        "id",
+        "tenantId",
+        "returnId",
+        "orderLineItemId",
+        "requestedQuantity",
+        "approvedQuantity",
+        "receivedQuantity",
+        "damagedQuantity",
+        "restockQuantity",
+        "refundAmountMinor",
+        "reason",
+        "createdAt",
+        "updatedAt",
+    ] as const;
     $columns = OrderReturnItemSchema.$columns;
     @column({ isPrimary: true }) declare id: bigint | number;
     @column() declare tenantId: bigint | number;

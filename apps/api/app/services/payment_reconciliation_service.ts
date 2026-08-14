@@ -132,7 +132,8 @@ export class PaymentReconciliationService {
             ) {
                 return "mismatch";
             }
-            if (result.amount_minor !== undefined && Number(result.amount_minor) !== Number(attempt.amountMinor)) return "mismatch";
+            if (result.amount_minor !== undefined && Number(result.amount_minor) !== Number(attempt.amountMinor))
+                return "mismatch";
             return "matched";
         }
         if (result.provider_status === "pending") {
@@ -144,7 +145,8 @@ export class PaymentReconciliationService {
         if (result.provider_status === "cancelled") {
             return attempt.status === PaymentAttemptStatus.Cancelled ? "matched" : "mismatch";
         }
-        if (result.provider_status === "refunded") return attempt.status === PaymentAttemptStatus.Refunded ? "matched" : "mismatch";
+        if (result.provider_status === "refunded")
+            return attempt.status === PaymentAttemptStatus.Refunded ? "matched" : "mismatch";
         return "error";
     }
 

@@ -190,7 +190,8 @@ export class Phase5OrderOperationsQueryService {
             returned.set(lineId, (returned.get(lineId) ?? 0) + Number(item.requested_quantity));
         }
 
-        const legacyDelivered = fulfillments.length === 0 && (order.status === OrderStatus.Completed || order.status === OrderStatus.Refunded);
+        const legacyDelivered =
+            fulfillments.length === 0 && (order.status === OrderStatus.Completed || order.status === OrderStatus.Refunded);
 
         return {
             data: {
@@ -200,7 +201,7 @@ export class Phase5OrderOperationsQueryService {
                     const lineId = Number(line.id);
                     const orderedQuantity = numberValue(line.quantity);
                     const fulfilledQuantity = allocated.get(lineId) ?? 0;
-                    const deliveredQuantity = legacyDelivered ? orderedQuantity : delivered.get(lineId) ?? 0;
+                    const deliveredQuantity = legacyDelivered ? orderedQuantity : (delivered.get(lineId) ?? 0);
                     const returnedQuantity = returned.get(lineId) ?? 0;
                     return {
                         id: numberValue(line.id),
@@ -218,12 +219,16 @@ export class Phase5OrderOperationsQueryService {
                 }),
                 fulfillments: fulfillments.map((row) => ({
                     ...fulfillmentRow(row),
-                    items: fulfillmentItems.filter((item) => Number(item.fulfillment_id) === Number(row.id)).map(fulfillmentItemRow),
+                    items: fulfillmentItems
+                        .filter((item) => Number(item.fulfillment_id) === Number(row.id))
+                        .map(fulfillmentItemRow),
                     shipments: shipments
                         .filter((shipment) => Number(shipment.fulfillment_id) === Number(row.id))
                         .map((shipment) => ({
                             ...shipmentRow(shipment),
-                            events: events.filter((event) => Number(event.shipment_id) === Number(shipment.id)).map(shipmentEventRow),
+                            events: events
+                                .filter((event) => Number(event.shipment_id) === Number(shipment.id))
+                                .map(shipmentEventRow),
                         })),
                 })),
                 returns: returns.map((row) => ({

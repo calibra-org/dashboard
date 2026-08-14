@@ -58,7 +58,11 @@ function ZoneEditor({ zone }: { zone: ShippingZone }) {
                     />
                     {shipping("fallback")}
                 </label>
-                <Button type="button" disabled={!name.trim() || update.isPending} onClick={() => update.mutate({ name: name.trim() })}>
+                <Button
+                    type="button"
+                    disabled={!name.trim() || update.isPending}
+                    onClick={() => update.mutate({ name: name.trim() })}
+                >
                     {update.isPending ? t("saving") : t("save")}
                 </Button>
             </div>
@@ -83,26 +87,36 @@ function ZoneEditor({ zone }: { zone: ShippingZone }) {
                             onChange={(event) =>
                                 setLocations((current) =>
                                     current.map((item, itemIndex) =>
-                                        itemIndex === index ? { ...item, type: event.target.value as (typeof LOCATION_TYPES)[number] } : item,
+                                        itemIndex === index
+                                            ? { ...item, type: event.target.value as (typeof LOCATION_TYPES)[number] }
+                                            : item,
                                     ),
                                 )
                             }
                         >
                             {LOCATION_TYPES.map((type) => (
-                                <option key={type} value={type}>{shipping(type)}</option>
+                                <option key={type} value={type}>
+                                    {shipping(type)}
+                                </option>
                             ))}
                         </select>
                         <Input
                             value={location.code}
                             onChange={(event) =>
                                 setLocations((current) =>
-                                    current.map((item, itemIndex) => itemIndex === index ? { ...item, code: event.target.value } : item),
+                                    current.map((item, itemIndex) =>
+                                        itemIndex === index ? { ...item, code: event.target.value } : item,
+                                    ),
                                 )
                             }
                             placeholder={shipping("locationCode")}
                             dir="ltr"
                         />
-                        <Button type="button" variant="outline" onClick={() => setLocations((current) => current.filter((_, itemIndex) => itemIndex !== index))}>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setLocations((current) => current.filter((_, itemIndex) => itemIndex !== index))}
+                        >
                             {t("delete")}
                         </Button>
                     </div>
@@ -122,7 +136,9 @@ function ZoneEditor({ zone }: { zone: ShippingZone }) {
 
             <div className="grid gap-2">
                 <h3 className="font-medium text-sm">{shipping("methods")}</h3>
-                {zone.methods.map((method) => <ZoneMethodEditor key={method.id} zoneId={zone.id} method={method} />)}
+                {zone.methods.map((method) => (
+                    <ZoneMethodEditor key={method.id} zoneId={zone.id} method={method} />
+                ))}
                 {zone.methods.length === 0 ? <p className="text-muted-foreground text-xs">{shipping("noMethods")}</p> : null}
                 {availableDefinitions.length > 0 ? (
                     <div className="flex flex-wrap items-end gap-2 rounded-lg border border-dashed p-3">
@@ -134,10 +150,20 @@ function ZoneEditor({ zone }: { zone: ShippingZone }) {
                                 onChange={(event) => setMethodId(event.target.value ? Number(event.target.value) : null)}
                             >
                                 <option value="">—</option>
-                                {availableDefinitions.map((definition) => <option key={definition.id} value={definition.id}>{definition.title_default}</option>)}
+                                {availableDefinitions.map((definition) => (
+                                    <option key={definition.id} value={definition.id}>
+                                        {definition.title_default}
+                                    </option>
+                                ))}
                             </select>
                         </label>
-                        <Button type="button" disabled={!methodId || addMethod.isPending} onClick={() => methodId && addMethod.mutate({ method_id: methodId }, { onSuccess: () => setMethodId(null) })}>
+                        <Button
+                            type="button"
+                            disabled={!methodId || addMethod.isPending}
+                            onClick={() =>
+                                methodId && addMethod.mutate({ method_id: methodId }, { onSuccess: () => setMethodId(null) })
+                            }
+                        >
                             {t("add")}
                         </Button>
                     </div>
@@ -155,11 +181,19 @@ function ZoneMethodEditor({ zoneId, method }: { zoneId: number; method: Shipping
     const remove = useDeleteShippingZoneMethod(zoneId);
     const [title, setTitle] = useState(method.title_override ?? "");
     const [ordering, setOrdering] = useState(String(method.ordering));
-    const numericSettingKeys = Object.entries(method.settings_schema ?? {}).filter(([, rule]) => rule.type === "number").map(([key]) => key);
-    const [settings, setSettings] = useState<Record<string, string>>(() => Object.fromEntries(numericSettingKeys.map((key) => [key, String(method.settings[key] ?? "")])))
+    const numericSettingKeys = Object.entries(method.settings_schema ?? {})
+        .filter(([, rule]) => rule.type === "number")
+        .map(([key]) => key);
+    const [settings, setSettings] = useState<Record<string, string>>(() =>
+        Object.fromEntries(numericSettingKeys.map((key) => [key, String(method.settings[key] ?? "")])),
+    );
 
     const save = () => {
-        const mapped = Object.fromEntries(Object.entries(settings).filter(([, value]) => value !== "").map(([key, value]) => [key, Number(value)]));
+        const mapped = Object.fromEntries(
+            Object.entries(settings)
+                .filter(([, value]) => value !== "")
+                .map(([key, value]) => [key, Number(value)]),
+        );
         update.mutate({ title_override: title.trim() || null, ordering: Math.max(0, Number(ordering) || 0), settings: mapped });
     };
 
@@ -169,14 +203,37 @@ function ZoneMethodEditor({ zoneId, method }: { zoneId: number; method: Shipping
                 <span>{method.method_title_default ?? method.method_code}</span>
                 <Input value={title} onChange={(event) => setTitle(event.target.value)} placeholder={shipping("titleOverride")} />
             </label>
-            <label className="grid gap-1 text-xs"><span>{shipping("ordering")}</span><Input value={ordering} onChange={(event) => setOrdering(event.target.value)} inputMode="numeric" /></label>
-            <label className="flex h-9 items-center gap-2 text-xs"><Switch checked={method.enabled} onCheckedChange={(checked) => update.mutate({ enabled: checked === true })} />{method.enabled ? t("enabled") : t("disabled")}</label>
+            <label className="grid gap-1 text-xs">
+                <span>{shipping("ordering")}</span>
+                <Input value={ordering} onChange={(event) => setOrdering(event.target.value)} inputMode="numeric" />
+            </label>
+            <label className="flex h-9 items-center gap-2 text-xs">
+                <Switch checked={method.enabled} onCheckedChange={(checked) => update.mutate({ enabled: checked === true })} />
+                {method.enabled ? t("enabled") : t("disabled")}
+            </label>
             {numericSettingKeys.map((key) => (
-                <label key={key} className="grid gap-1 text-xs"><span>{key === "cost" ? shipping("cost") : key === "min_amount" ? shipping("minAmount") : key}</span><Input value={settings[key] ?? ""} onChange={(event) => setSettings((current) => ({ ...current, [key]: event.target.value }))} inputMode="numeric" /></label>
+                <label key={key} className="grid gap-1 text-xs">
+                    <span>{key === "cost" ? shipping("cost") : key === "min_amount" ? shipping("minAmount") : key}</span>
+                    <Input
+                        value={settings[key] ?? ""}
+                        onChange={(event) => setSettings((current) => ({ ...current, [key]: event.target.value }))}
+                        inputMode="numeric"
+                    />
+                </label>
             ))}
             <div className="flex justify-end gap-2 md:col-span-3">
-                <Button type="button" size="sm" variant="destructive" disabled={remove.isPending} onClick={() => remove.mutate(method.id)}>{t("delete")}</Button>
-                <Button type="button" size="sm" disabled={update.isPending} onClick={save}>{update.isPending ? t("saving") : t("save")}</Button>
+                <Button
+                    type="button"
+                    size="sm"
+                    variant="destructive"
+                    disabled={remove.isPending}
+                    onClick={() => remove.mutate(method.id)}
+                >
+                    {t("delete")}
+                </Button>
+                <Button type="button" size="sm" disabled={update.isPending} onClick={save}>
+                    {update.isPending ? t("saving") : t("save")}
+                </Button>
             </div>
             <MutationMessage failed={update.isError || remove.isError} />
         </div>
@@ -193,20 +250,58 @@ export function ShippingZonesView() {
 
     return (
         <div className="grid gap-5">
-            <SubTabs namespace="Shipping.tabs" tabs={[{ href: "/shipping/zones", labelKey: "zones" }, { href: "/shipping/methods", labelKey: "methods" }]} />
+            <SubTabs
+                namespace="Shipping.tabs"
+                tabs={[
+                    { href: "/shipping/zones", labelKey: "zones" },
+                    { href: "/shipping/methods", labelKey: "methods" },
+                ]}
+            />
             <div className="flex flex-wrap items-end gap-2 rounded-xl border bg-card p-4">
-                <label className="grid min-w-64 flex-1 gap-1.5 text-xs font-medium"><span>{shipping("newZone")}</span><Input value={newName} onChange={(event) => setNewName(event.target.value)} placeholder={shipping("zoneName")} /></label>
-                <Button type="button" disabled={!newName.trim() || create.isPending} onClick={() => create.mutate({ name: newName.trim() }, { onSuccess: () => setNewName("") })}>{create.isPending ? t("saving") : t("add")}</Button>
+                <label className="grid min-w-64 flex-1 gap-1.5 text-xs font-medium">
+                    <span>{shipping("newZone")}</span>
+                    <Input
+                        value={newName}
+                        onChange={(event) => setNewName(event.target.value)}
+                        placeholder={shipping("zoneName")}
+                    />
+                </label>
+                <Button
+                    type="button"
+                    disabled={!newName.trim() || create.isPending}
+                    onClick={() => create.mutate({ name: newName.trim() }, { onSuccess: () => setNewName("") })}
+                >
+                    {create.isPending ? t("saving") : t("add")}
+                </Button>
             </div>
             {zones.isPending ? <p className="text-muted-foreground text-sm">{t("loading")}</p> : null}
-            {zones.isError ? <div className="flex items-center justify-between rounded-lg border p-3 text-sm"><span>{t("loadError")}</span><Button size="sm" variant="outline" onClick={() => void zones.refetch()}>{t("retry")}</Button></div> : null}
+            {zones.isError ? (
+                <div className="flex items-center justify-between rounded-lg border p-3 text-sm">
+                    <span>{t("loadError")}</span>
+                    <Button size="sm" variant="outline" onClick={() => void zones.refetch()}>
+                        {t("retry")}
+                    </Button>
+                </div>
+            ) : null}
             {(zones.data ?? []).map((zone) => (
                 <div key={zone.id} className="grid gap-2">
                     <ZoneEditor zone={zone} />
-                    <div className="flex justify-end"><Button type="button" size="sm" variant="destructive" disabled={zone.is_fallback || remove.isPending} onClick={() => remove.mutate(zone.id)}>{t("delete")}</Button></div>
+                    <div className="flex justify-end">
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="destructive"
+                            disabled={zone.is_fallback || remove.isPending}
+                            onClick={() => remove.mutate(zone.id)}
+                        >
+                            {t("delete")}
+                        </Button>
+                    </div>
                 </div>
             ))}
-            {zones.data?.length === 0 ? <p className="rounded-lg border p-8 text-center text-muted-foreground text-sm">{shipping("noZones")}</p> : null}
+            {zones.data?.length === 0 ? (
+                <p className="rounded-lg border p-8 text-center text-muted-foreground text-sm">{shipping("noZones")}</p>
+            ) : null}
         </div>
     );
 }

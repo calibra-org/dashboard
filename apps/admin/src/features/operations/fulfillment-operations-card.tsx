@@ -75,11 +75,20 @@ function ShipmentPanel({ orderId, shipment }: { orderId: number; shipment: Order
                     <div className="mt-1 flex flex-wrap items-center gap-2 text-muted-foreground text-xs">
                         <OperationStatus value={shipment.status} />
                         {shipment.carrier ? <span>{shipment.carrier}</span> : null}
-                        {shipment.tracking_number ? <span dir="ltr" className="font-mono">{shipment.tracking_number}</span> : null}
+                        {shipment.tracking_number ? (
+                            <span dir="ltr" className="font-mono">
+                                {shipment.tracking_number}
+                            </span>
+                        ) : null}
                     </div>
                 </div>
                 {shipment.tracking_url ? (
-                    <a href={shipment.tracking_url} target="_blank" rel="noreferrer" className="text-primary text-xs hover:underline">
+                    <a
+                        href={shipment.tracking_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-primary text-xs hover:underline"
+                    >
                         {t("trackingUrl")}
                     </a>
                 ) : null}
@@ -94,7 +103,9 @@ function ShipmentPanel({ orderId, shipment }: { orderId: number; shipment: Order
                             onChange={(event) => setStatus(event.target.value as ShipmentStatus)}
                         >
                             {nextStatuses.map((value) => (
-                                <option key={value} value={value}>{t(`status.${value}` as never)}</option>
+                                <option key={value} value={value}>
+                                    {t(`status.${value}` as never)}
+                                </option>
                             ))}
                         </select>
                     </label>
@@ -134,17 +145,24 @@ function ShipmentPanel({ orderId, shipment }: { orderId: number; shipment: Order
             <MutationError visible={append.isError} />
             {shipment.events.length > 0 ? (
                 <div className="grid gap-2 border-s ps-3">
-                    {shipment.events.slice().reverse().map((event) => (
-                        <div key={event.id} className="grid gap-0.5 text-xs">
-                            <div className="flex flex-wrap items-center gap-2">
-                                <OperationStatus value={event.status} />
-                                <span className="text-muted-foreground" dir="ltr">{event.occurred_at}</span>
+                    {shipment.events
+                        .slice()
+                        .reverse()
+                        .map((event) => (
+                            <div key={event.id} className="grid gap-0.5 text-xs">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <OperationStatus value={event.status} />
+                                    <span className="text-muted-foreground" dir="ltr">
+                                        {event.occurred_at}
+                                    </span>
+                                </div>
+                                {event.location || event.message ? (
+                                    <span className="text-muted-foreground">
+                                        {[event.location, event.message].filter(Boolean).join(" · ")}
+                                    </span>
+                                ) : null}
                             </div>
-                            {event.location || event.message ? (
-                                <span className="text-muted-foreground">{[event.location, event.message].filter(Boolean).join(" · ")}</span>
-                            ) : null}
-                        </div>
-                    ))}
+                        ))}
                 </div>
             ) : null}
         </div>
@@ -162,8 +180,18 @@ function ShipmentCreator({ orderId, fulfillmentId }: { orderId: number; fulfillm
         <div className="grid gap-2 rounded-lg border border-dashed p-3 md:grid-cols-2 xl:grid-cols-4">
             <Input value={carrier} onChange={(event) => setCarrier(event.target.value)} placeholder={t("carrier")} />
             <Input value={service} onChange={(event) => setService(event.target.value)} placeholder={t("service")} />
-            <Input value={trackingNumber} onChange={(event) => setTrackingNumber(event.target.value)} placeholder={t("trackingNumber")} dir="ltr" />
-            <Input value={trackingUrl} onChange={(event) => setTrackingUrl(event.target.value)} placeholder={t("trackingUrl")} dir="ltr" />
+            <Input
+                value={trackingNumber}
+                onChange={(event) => setTrackingNumber(event.target.value)}
+                placeholder={t("trackingNumber")}
+                dir="ltr"
+            />
+            <Input
+                value={trackingUrl}
+                onChange={(event) => setTrackingUrl(event.target.value)}
+                placeholder={t("trackingUrl")}
+                dir="ltr"
+            />
             <div className="flex justify-end md:col-span-2 xl:col-span-4">
                 <Button
                     type="button"
@@ -196,7 +224,15 @@ function ShipmentCreator({ orderId, fulfillmentId }: { orderId: number; fulfillm
     );
 }
 
-function FulfillmentPanel({ orderId, fulfillment, lines }: { orderId: number; fulfillment: OrderFulfillment; lines: OrderOperationsLine[] }) {
+function FulfillmentPanel({
+    orderId,
+    fulfillment,
+    lines,
+}: {
+    orderId: number;
+    fulfillment: OrderFulfillment;
+    lines: OrderOperationsLine[];
+}) {
     const t = useTranslations("OrderOperations");
     const transition = useTransitionFulfillment(orderId, fulfillment.id);
     const lineName = (id: number) => lines.find((line) => line.id === id)?.name ?? `#${id}`;
@@ -206,27 +242,79 @@ function FulfillmentPanel({ orderId, fulfillment, lines }: { orderId: number; fu
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                     <div className="font-semibold text-sm">{t("fulfillment", { id: fulfillment.id })}</div>
-                    <div className="mt-1"><OperationStatus value={fulfillment.status} /></div>
+                    <div className="mt-1">
+                        <OperationStatus value={fulfillment.status} />
+                    </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                    {fulfillment.status === "pending" ? <Button type="button" size="sm" variant="outline" disabled={transition.isPending} onClick={() => run("packed")}>{t("markPacked")}</Button> : null}
-                    {fulfillment.status === "packed" ? <Button type="button" size="sm" variant="outline" disabled={transition.isPending || fulfillment.shipments.length === 0} onClick={() => run("shipped")}>{t("markShipped")}</Button> : null}
-                    {fulfillment.status === "shipped" ? <Button type="button" size="sm" disabled={transition.isPending || fulfillment.shipments.length === 0 || fulfillment.shipments.some((shipment) => shipment.status !== "delivered")} onClick={() => run("delivered")}>{t("markDelivered")}</Button> : null}
-                    {["pending", "packed"].includes(fulfillment.status) ? <Button type="button" size="sm" variant="destructive" disabled={transition.isPending} onClick={() => run("cancelled")}>{t("cancelFulfillment")}</Button> : null}
+                    {fulfillment.status === "pending" ? (
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            disabled={transition.isPending}
+                            onClick={() => run("packed")}
+                        >
+                            {t("markPacked")}
+                        </Button>
+                    ) : null}
+                    {fulfillment.status === "packed" ? (
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            disabled={transition.isPending || fulfillment.shipments.length === 0}
+                            onClick={() => run("shipped")}
+                        >
+                            {t("markShipped")}
+                        </Button>
+                    ) : null}
+                    {fulfillment.status === "shipped" ? (
+                        <Button
+                            type="button"
+                            size="sm"
+                            disabled={
+                                transition.isPending ||
+                                fulfillment.shipments.length === 0 ||
+                                fulfillment.shipments.some((shipment) => shipment.status !== "delivered")
+                            }
+                            onClick={() => run("delivered")}
+                        >
+                            {t("markDelivered")}
+                        </Button>
+                    ) : null}
+                    {["pending", "packed"].includes(fulfillment.status) ? (
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="destructive"
+                            disabled={transition.isPending}
+                            onClick={() => run("cancelled")}
+                        >
+                            {t("cancelFulfillment")}
+                        </Button>
+                    ) : null}
                 </div>
             </div>
             <MutationError visible={transition.isError} />
             <div className="grid gap-1">
                 {fulfillment.items.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between gap-3 rounded-md bg-background px-3 py-2 text-sm">
+                    <div
+                        key={item.id}
+                        className="flex items-center justify-between gap-3 rounded-md bg-background px-3 py-2 text-sm"
+                    >
                         <span className="truncate">{lineName(item.order_line_item_id)}</span>
                         <span className="font-mono text-xs">× {item.quantity}</span>
                     </div>
                 ))}
             </div>
-            {!(["cancelled", "delivered"] as string[]).includes(fulfillment.status) ? <ShipmentCreator orderId={orderId} fulfillmentId={fulfillment.id} /> : null}
+            {!(["cancelled", "delivered"] as string[]).includes(fulfillment.status) ? (
+                <ShipmentCreator orderId={orderId} fulfillmentId={fulfillment.id} />
+            ) : null}
             <div className="grid gap-2">
-                {fulfillment.shipments.map((shipment) => <ShipmentPanel key={shipment.id} orderId={orderId} shipment={shipment} />)}
+                {fulfillment.shipments.map((shipment) => (
+                    <ShipmentPanel key={shipment.id} orderId={orderId} shipment={shipment} />
+                ))}
             </div>
         </div>
     );
@@ -242,7 +330,10 @@ function ReturnPanel({ orderId, item, lines }: { orderId: number; item: OrderRet
         Object.fromEntries(
             item.items.map((line) => [
                 line.order_line_item_id,
-                { damaged: line.damaged_quantity, restock: line.restock_quantity || line.approved_quantity || line.requested_quantity },
+                {
+                    damaged: line.damaged_quantity,
+                    restock: line.restock_quantity || line.approved_quantity || line.requested_quantity,
+                },
             ]),
         ),
     );
@@ -254,7 +345,9 @@ function ReturnPanel({ orderId, item, lines }: { orderId: number; item: OrderRet
                     <div className="font-semibold text-sm">{t("return", { id: item.id })}</div>
                     <div className="mt-1 flex flex-wrap items-center gap-2">
                         <OperationStatus value={item.status} />
-                        {item.refund_id ? <span className="font-mono text-muted-foreground text-xs">refund:{item.refund_id}</span> : null}
+                        {item.refund_id ? (
+                            <span className="font-mono text-muted-foreground text-xs">refund:{item.refund_id}</span>
+                        ) : null}
                     </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -263,13 +356,40 @@ function ReturnPanel({ orderId, item, lines }: { orderId: number; item: OrderRet
                             type="button"
                             size="sm"
                             disabled={approve.isPending}
-                            onClick={() => approve.mutate({ expected_version: item.version, items: item.items.map((line) => ({ order_line_item_id: line.order_line_item_id, approved_quantity: line.requested_quantity })) })}
+                            onClick={() =>
+                                approve.mutate({
+                                    expected_version: item.version,
+                                    items: item.items.map((line) => ({
+                                        order_line_item_id: line.order_line_item_id,
+                                        approved_quantity: line.requested_quantity,
+                                    })),
+                                })
+                            }
                         >
                             {t("approveReturn")}
                         </Button>
                     ) : null}
-                    {["requested", "approved", "in_transit"].includes(item.status) ? <Button type="button" size="sm" variant="destructive" disabled={transition.isPending} onClick={() => transition.mutate({ status: "cancelled", expected_version: item.version })}>{t("cancelReturn")}</Button> : null}
-                    {item.status === "received" && !item.refund_id ? <Button type="button" size="sm" disabled={refund.isPending} onClick={() => refund.mutate({ expected_version: item.version, reason: item.reason })}>{t("refundReturn")}</Button> : null}
+                    {["requested", "approved", "in_transit"].includes(item.status) ? (
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="destructive"
+                            disabled={transition.isPending}
+                            onClick={() => transition.mutate({ status: "cancelled", expected_version: item.version })}
+                        >
+                            {t("cancelReturn")}
+                        </Button>
+                    ) : null}
+                    {item.status === "received" && !item.refund_id ? (
+                        <Button
+                            type="button"
+                            size="sm"
+                            disabled={refund.isPending}
+                            onClick={() => refund.mutate({ expected_version: item.version, reason: item.reason })}
+                        >
+                            {t("refundReturn")}
+                        </Button>
+                    ) : null}
                 </div>
             </div>
             {item.reason ? <p className="text-muted-foreground text-xs">{item.reason}</p> : null}
@@ -279,10 +399,15 @@ function ReturnPanel({ orderId, item, lines }: { orderId: number; item: OrderRet
                     const state = inspection[line.order_line_item_id] ?? { damaged: 0, restock: line.approved_quantity };
                     const editable = ["approved", "in_transit"].includes(item.status);
                     return (
-                        <div key={line.id} className="grid gap-2 rounded-md bg-background p-3 md:grid-cols-[minmax(0,1fr)_100px_100px] md:items-end">
+                        <div
+                            key={line.id}
+                            className="grid gap-2 rounded-md bg-background p-3 md:grid-cols-[minmax(0,1fr)_100px_100px] md:items-end"
+                        >
                             <div>
                                 <div className="text-sm">{lineName(line.order_line_item_id)}</div>
-                                <div className="text-muted-foreground text-xs">{t("ordered")}: {line.requested_quantity} · {t("received")}: {line.received_quantity}</div>
+                                <div className="text-muted-foreground text-xs">
+                                    {t("ordered")}: {line.requested_quantity} · {t("received")}: {line.received_quantity}
+                                </div>
                             </div>
                             {editable ? (
                                 <>
@@ -292,12 +417,18 @@ function ReturnPanel({ orderId, item, lines }: { orderId: number; item: OrderRet
                                             inputMode="numeric"
                                             value={String(state.damaged)}
                                             onChange={(event) => {
-                                                const damaged = Math.max(0, Math.min(line.approved_quantity, Number(event.target.value) || 0));
+                                                const damaged = Math.max(
+                                                    0,
+                                                    Math.min(line.approved_quantity, Number(event.target.value) || 0),
+                                                );
                                                 setInspection((old) => ({
                                                     ...old,
                                                     [line.order_line_item_id]: {
                                                         damaged,
-                                                        restock: Math.min(old[line.order_line_item_id]?.restock ?? line.approved_quantity, line.approved_quantity - damaged),
+                                                        restock: Math.min(
+                                                            old[line.order_line_item_id]?.restock ?? line.approved_quantity,
+                                                            line.approved_quantity - damaged,
+                                                        ),
                                                     },
                                                 }));
                                             }}
@@ -313,7 +444,13 @@ function ReturnPanel({ orderId, item, lines }: { orderId: number; item: OrderRet
                                                     ...old,
                                                     [line.order_line_item_id]: {
                                                         ...state,
-                                                        restock: Math.max(0, Math.min(line.approved_quantity - state.damaged, Number(event.target.value) || 0)),
+                                                        restock: Math.max(
+                                                            0,
+                                                            Math.min(
+                                                                line.approved_quantity - state.damaged,
+                                                                Number(event.target.value) || 0,
+                                                            ),
+                                                        ),
                                                     },
                                                 }))
                                             }
@@ -321,7 +458,9 @@ function ReturnPanel({ orderId, item, lines }: { orderId: number; item: OrderRet
                                     </label>
                                 </>
                             ) : (
-                                <div className="md:col-span-2 text-end text-muted-foreground text-xs">{t("damaged")}: {line.damaged_quantity} · {t("restock")}: {line.restock_quantity}</div>
+                                <div className="md:col-span-2 text-end text-muted-foreground text-xs">
+                                    {t("damaged")}: {line.damaged_quantity} · {t("restock")}: {line.restock_quantity}
+                                </div>
                             )}
                         </div>
                     );
@@ -337,12 +476,18 @@ function ReturnPanel({ orderId, item, lines }: { orderId: number; item: OrderRet
                             receive.mutate({
                                 expected_version: item.version,
                                 items: item.items.map((line) => {
-                                    const state = inspection[line.order_line_item_id] ?? { damaged: 0, restock: line.approved_quantity };
+                                    const state = inspection[line.order_line_item_id] ?? {
+                                        damaged: 0,
+                                        restock: line.approved_quantity,
+                                    };
                                     return {
                                         order_line_item_id: line.order_line_item_id,
                                         received_quantity: line.approved_quantity,
                                         damaged_quantity: state.damaged,
-                                        restock_quantity: Math.min(state.restock, Math.max(0, line.approved_quantity - state.damaged)),
+                                        restock_quantity: Math.min(
+                                            state.restock,
+                                            Math.max(0, line.approved_quantity - state.damaged),
+                                        ),
                                     };
                                 }),
                             })
@@ -378,10 +523,15 @@ function ReturnCreator({ orderId, lines }: { orderId: number; lines: OrderOperat
             <div className="font-medium text-sm">{t("createReturn")}</div>
             <div className="grid gap-2 sm:grid-cols-2">
                 {returnableLines.map((line) => (
-                    <label key={line.id} className="grid grid-cols-[minmax(0,1fr)_90px] items-center gap-3 rounded-md border bg-background px-3 py-2 text-sm">
+                    <label
+                        key={line.id}
+                        className="grid grid-cols-[minmax(0,1fr)_90px] items-center gap-3 rounded-md border bg-background px-3 py-2 text-sm"
+                    >
                         <span className="min-w-0">
                             <span className="block truncate">{line.name}</span>
-                            <span className="text-muted-foreground text-xs">{t("returnable")}: {line.returnable_quantity}</span>
+                            <span className="text-muted-foreground text-xs">
+                                {t("returnable")}: {line.returnable_quantity}
+                            </span>
                         </span>
                         <Input
                             inputMode="numeric"
@@ -440,7 +590,9 @@ export function FulfillmentOperationsCard({ orderId }: { orderId: number }) {
         return (
             <div className="flex items-center justify-between gap-3 rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm">
                 <span>{t("loadError")}</span>
-                <Button type="button" size="sm" variant="outline" onClick={() => void operations.refetch()}>{t("retry")}</Button>
+                <Button type="button" size="sm" variant="outline" onClick={() => void operations.refetch()}>
+                    {t("retry")}
+                </Button>
             </div>
         );
     }
@@ -452,11 +604,21 @@ export function FulfillmentOperationsCard({ orderId }: { orderId: number }) {
                     <div key={line.id} className="rounded-lg border bg-background p-3">
                         <div className="truncate font-medium text-sm">{line.name}</div>
                         <div className="mt-1 flex flex-wrap gap-3 text-muted-foreground text-xs">
-                            <span>{t("ordered")}: {line.quantity}</span>
-                            <span>{t("fulfilled")}: {line.fulfilled_quantity}</span>
-                            <span>{t("deliveredQuantity")}: {line.delivered_quantity}</span>
-                            <span>{t("returnable")}: {line.returnable_quantity}</span>
-                            <span className={line.remaining_quantity > 0 ? "font-medium text-foreground" : ""}>{t("remaining")}: {line.remaining_quantity}</span>
+                            <span>
+                                {t("ordered")}: {line.quantity}
+                            </span>
+                            <span>
+                                {t("fulfilled")}: {line.fulfilled_quantity}
+                            </span>
+                            <span>
+                                {t("deliveredQuantity")}: {line.delivered_quantity}
+                            </span>
+                            <span>
+                                {t("returnable")}: {line.returnable_quantity}
+                            </span>
+                            <span className={line.remaining_quantity > 0 ? "font-medium text-foreground" : ""}>
+                                {t("remaining")}: {line.remaining_quantity}
+                            </span>
                         </div>
                     </div>
                 ))}
@@ -465,12 +627,18 @@ export function FulfillmentOperationsCard({ orderId }: { orderId: number }) {
                 <div className="grid gap-2 rounded-xl border border-dashed p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
                     <label className="grid gap-1 text-xs font-medium">
                         <span>{t("createFulfillment")}</span>
-                        <Input value={note} onChange={(event) => setNote(event.target.value)} placeholder={t("notePlaceholder")} />
+                        <Input
+                            value={note}
+                            onChange={(event) => setNote(event.target.value)}
+                            placeholder={t("notePlaceholder")}
+                        />
                     </label>
                     <Button
                         type="button"
                         disabled={create.isPending || remainingItems.length === 0}
-                        onClick={() => create.mutate({ items: remainingItems, note: note.trim() || null }, { onSuccess: () => setNote("") })}
+                        onClick={() =>
+                            create.mutate({ items: remainingItems, note: note.trim() || null }, { onSuccess: () => setNote("") })
+                        }
                     >
                         {create.isPending ? t("saving") : remainingItems.length === 0 ? t("noRemaining") : t("createRemaining")}
                     </Button>
@@ -479,15 +647,24 @@ export function FulfillmentOperationsCard({ orderId }: { orderId: number }) {
             ) : null}
             <div className="grid gap-3">
                 <h3 className="font-semibold text-sm">{t("fulfillments")}</h3>
-                {operations.data.fulfillments.length === 0 ? <p className="text-muted-foreground text-sm">{t("noFulfillments")}</p> : null}
+                {operations.data.fulfillments.length === 0 ? (
+                    <p className="text-muted-foreground text-sm">{t("noFulfillments")}</p>
+                ) : null}
                 {operations.data.fulfillments.map((fulfillment) => (
-                    <FulfillmentPanel key={fulfillment.id} orderId={orderId} fulfillment={fulfillment} lines={operations.data.lines} />
+                    <FulfillmentPanel
+                        key={fulfillment.id}
+                        orderId={orderId}
+                        fulfillment={fulfillment}
+                        lines={operations.data.lines}
+                    />
                 ))}
             </div>
             <div className="grid gap-3">
                 <h3 className="font-semibold text-sm">{t("returns")}</h3>
                 {operations.data.returns.length === 0 ? <p className="text-muted-foreground text-sm">{t("noReturns")}</p> : null}
-                {operations.data.returns.map((item) => <ReturnPanel key={item.id} orderId={orderId} item={item} lines={operations.data.lines} />)}
+                {operations.data.returns.map((item) => (
+                    <ReturnPanel key={item.id} orderId={orderId} item={item} lines={operations.data.lines} />
+                ))}
                 <ReturnCreator orderId={orderId} lines={operations.data.lines} />
             </div>
         </div>

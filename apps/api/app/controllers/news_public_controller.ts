@@ -13,7 +13,9 @@ export default class NewsPublicController {
     async show(ctx: HttpContext) {
         const locale = String(ctx.request.input("locale", "fa"));
         if (locale !== "fa" && locale !== "en") {
-            return ctx.response.status(422).json({ errors: [{ message: "locale must be fa or en", code: "E_VALIDATION_ERROR" }] });
+            return ctx.response
+                .status(422)
+                .json({ errors: [{ message: "locale must be fa or en", code: "E_VALIDATION_ERROR" }] });
         }
         return newsService.publicDetail(String(ctx.params.slug), locale);
     }

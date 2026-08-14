@@ -47,7 +47,13 @@ export default class extends BaseSchema {
         this.schema.createTable("seo_crawl_observations", (table) => {
             table.bigIncrements("id").notNullable();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("crawl_run_id").unsigned().notNullable().references("id").inTable("seo_crawl_runs").onDelete("CASCADE");
+            table
+                .bigInteger("crawl_run_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("seo_crawl_runs")
+                .onDelete("CASCADE");
             table.string("url", 2048).notNullable();
             table.smallint("status_code").nullable();
             table.string("content_type", 255).nullable();
@@ -78,19 +84,35 @@ export default class extends BaseSchema {
         });
 
         for (const table of ["seo_action_queue", "seo_crawl_runs", "seo_crawl_observations", "seo_export_jobs"]) {
-            this.schema.raw(`ALTER TABLE ${table} ALTER COLUMN tenant_id SET DEFAULT NULLIF(current_setting('app.current_tenant', true), '')::bigint`);
+            this.schema.raw(
+                `ALTER TABLE ${table} ALTER COLUMN tenant_id SET DEFAULT NULLIF(current_setting('app.current_tenant', true), '')::bigint`,
+            );
             this.schema.raw(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`);
             this.schema.raw(`ALTER TABLE ${table} FORCE ROW LEVEL SECURITY`);
             this.schema.raw(`CREATE POLICY tenant_isolation ON ${table} USING (${TENANT}) WITH CHECK (${TENANT})`);
         }
 
-        this.schema.raw("ALTER TABLE seo_action_queue ADD CONSTRAINT seo_action_queue_status_check CHECK (status IN ('proposed','approved','rejected','applied','failed','rolled_back'))");
-        this.schema.raw("ALTER TABLE seo_action_queue ADD CONSTRAINT seo_action_queue_entity_check CHECK (entity_kind IN ('product','category','brand','attribute','content_post','media','page'))");
-        this.schema.raw("ALTER TABLE seo_crawl_runs ADD CONSTRAINT seo_crawl_runs_status_check CHECK (status IN ('queued','running','completed','partial','failed'))");
-        this.schema.raw("ALTER TABLE seo_crawl_runs ADD CONSTRAINT seo_crawl_counts_check CHECK (requested_count >= 0 AND completed_count >= 0 AND failed_count >= 0)");
-        this.schema.raw("ALTER TABLE seo_crawl_observations ADD CONSTRAINT seo_crawl_observations_status_check CHECK (fetch_status IN ('success','http_error','network_error','blocked'))");
-        this.schema.raw("ALTER TABLE seo_export_jobs ADD CONSTRAINT seo_export_jobs_format_check CHECK (format IN ('csv','json'))");
-        this.schema.raw("ALTER TABLE seo_export_jobs ADD CONSTRAINT seo_export_jobs_status_check CHECK (status IN ('queued','running','completed','failed'))");
+        this.schema.raw(
+            "ALTER TABLE seo_action_queue ADD CONSTRAINT seo_action_queue_status_check CHECK (status IN ('proposed','approved','rejected','applied','failed','rolled_back'))",
+        );
+        this.schema.raw(
+            "ALTER TABLE seo_action_queue ADD CONSTRAINT seo_action_queue_entity_check CHECK (entity_kind IN ('product','category','brand','attribute','content_post','media','page'))",
+        );
+        this.schema.raw(
+            "ALTER TABLE seo_crawl_runs ADD CONSTRAINT seo_crawl_runs_status_check CHECK (status IN ('queued','running','completed','partial','failed'))",
+        );
+        this.schema.raw(
+            "ALTER TABLE seo_crawl_runs ADD CONSTRAINT seo_crawl_counts_check CHECK (requested_count >= 0 AND completed_count >= 0 AND failed_count >= 0)",
+        );
+        this.schema.raw(
+            "ALTER TABLE seo_crawl_observations ADD CONSTRAINT seo_crawl_observations_status_check CHECK (fetch_status IN ('success','http_error','network_error','blocked'))",
+        );
+        this.schema.raw(
+            "ALTER TABLE seo_export_jobs ADD CONSTRAINT seo_export_jobs_format_check CHECK (format IN ('csv','json'))",
+        );
+        this.schema.raw(
+            "ALTER TABLE seo_export_jobs ADD CONSTRAINT seo_export_jobs_status_check CHECK (status IN ('queued','running','completed','failed'))",
+        );
     }
 
     async down() {

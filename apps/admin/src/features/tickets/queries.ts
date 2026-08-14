@@ -40,9 +40,7 @@ export function useTickets(params: TicketListParams = {}) {
     const locale = useLocale();
     const filters = [
         params.status && params.status !== "all" ? { field: "status", op: "eq" as const, value: params.status } : null,
-        params.priority && params.priority !== "all"
-            ? { field: "priority", op: "eq" as const, value: params.priority }
-            : null,
+        params.priority && params.priority !== "all" ? { field: "priority", op: "eq" as const, value: params.priority } : null,
         params.channel && params.channel !== "all" ? { field: "channel", op: "eq" as const, value: params.channel } : null,
     ].filter((value): value is NonNullable<typeof value> => value !== null);
     const tableQuery = {

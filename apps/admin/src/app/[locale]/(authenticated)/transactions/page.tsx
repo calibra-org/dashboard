@@ -3,7 +3,9 @@ import { setRequestLocale } from "next-intl/server";
 
 import { TransactionsCenter } from "#/views/transactions/transactions-center";
 
-interface PageProps { params: Promise<{ locale: string }> }
+interface PageProps {
+    params: Promise<{ locale: string }>;
+}
 
 export const metadata: Metadata = { title: "Transactions | Calibra" };
 

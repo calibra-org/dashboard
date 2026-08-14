@@ -25,7 +25,9 @@ export default class ContentPublishDue extends BaseCommand {
                 if (count > 0) this.logger.info(`tenant ${tenantId}: published ${count} scheduled content item(s)`);
             } catch (error) {
                 await contentSchedulerObservabilityService.fail(runId, error);
-                this.logger.error(`tenant ${tenantId}: publish scheduler failed: ${error instanceof Error ? error.message : String(error)}`);
+                this.logger.error(
+                    `tenant ${tenantId}: publish scheduler failed: ${error instanceof Error ? error.message : String(error)}`,
+                );
             }
         });
         this.logger.info(`Published ${total} content item(s) across ${tenants.length} tenant(s).`);

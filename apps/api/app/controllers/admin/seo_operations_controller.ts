@@ -13,7 +13,8 @@ import {
 
 function id(ctx: HttpContext): number {
     const value = Number(ctx.params.id);
-    if (!Number.isSafeInteger(value) || value < 1) throw new Exception("Invalid SEO operation identifier", { status: 422, code: "E_SEO_OPERATION_ID" });
+    if (!Number.isSafeInteger(value) || value < 1)
+        throw new Exception("Invalid SEO operation identifier", { status: 422, code: "E_SEO_OPERATION_ID" });
     return value;
 }
 
@@ -36,14 +37,26 @@ export default class SeoOperationsController {
         const payload = await ctx.request.validateUsing(seoActionCreateValidator);
         const result = await seoOperationsService.createAction(payload, await actorId(ctx));
         ctx.response.status(201);
-        await recordAudit({ ctx, action: "seo.action.propose", entityKind: "seo_action", entityId: Number(result.data.id), payload: { action_type: payload.action_type, entity_kind: payload.entity_kind, entity_id: payload.entity_id ?? null } });
+        await recordAudit({
+            ctx,
+            action: "seo.action.propose",
+            entityKind: "seo_action",
+            entityId: Number(result.data.id),
+            payload: { action_type: payload.action_type, entity_kind: payload.entity_kind, entity_id: payload.entity_id ?? null },
+        });
         return result;
     }
 
     async actionReview(ctx: HttpContext) {
         const payload = await ctx.request.validateUsing(seoActionReviewValidator);
         const result = await seoOperationsService.reviewAction(id(ctx), payload.decision, payload.note, await actorId(ctx));
-        await recordAudit({ ctx, action: `seo.action.${payload.decision}`, entityKind: "seo_action", entityId: id(ctx), payload: { note: payload.note ?? null } });
+        await recordAudit({
+            ctx,
+            action: `seo.action.${payload.decision}`,
+            entityKind: "seo_action",
+            entityId: id(ctx),
+            payload: { note: payload.note ?? null },
+        });
         return result;
     }
 
@@ -63,7 +76,13 @@ export default class SeoOperationsController {
         const payload = await ctx.request.validateUsing(seoMediaBulkAltValidator);
         const result = await seoOperationsService.createMediaAltActions(payload.items, await actorId(ctx));
         ctx.response.status(201);
-        await recordAudit({ ctx, action: "seo.media.alt.bulk_propose", entityKind: "media", entityId: null, payload: { count: payload.items.length } });
+        await recordAudit({
+            ctx,
+            action: "seo.media.alt.bulk_propose",
+            entityKind: "media",
+            entityId: null,
+            payload: { count: payload.items.length },
+        });
         return result;
     }
 
@@ -79,7 +98,13 @@ export default class SeoOperationsController {
         const payload = await ctx.request.validateUsing(seoCrawlCreateValidator);
         const result = await seoOperationsService.createCrawl(payload.urls, await actorId(ctx));
         ctx.response.status(202);
-        await recordAudit({ ctx, action: "seo.crawl.queue", entityKind: "seo_crawl_run", entityId: Number(result.data.id), payload: { count: payload.urls.length } });
+        await recordAudit({
+            ctx,
+            action: "seo.crawl.queue",
+            entityKind: "seo_crawl_run",
+            entityId: Number(result.data.id),
+            payload: { count: payload.urls.length },
+        });
         return result;
     }
 
@@ -87,7 +112,13 @@ export default class SeoOperationsController {
         const payload = await ctx.request.validateUsing(seoExportCreateValidator);
         const result = await seoOperationsService.createExport(payload, await actorId(ctx));
         ctx.response.status(201);
-        await recordAudit({ ctx, action: "seo.export.create", entityKind: "seo_export", entityId: Number(result.data.id), payload: { report_kind: payload.report_kind, format: payload.format } });
+        await recordAudit({
+            ctx,
+            action: "seo.export.create",
+            entityKind: "seo_export",
+            entityId: Number(result.data.id),
+            payload: { report_kind: payload.report_kind, format: payload.format },
+        });
         return result;
     }
 

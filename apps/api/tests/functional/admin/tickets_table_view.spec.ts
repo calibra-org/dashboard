@@ -74,11 +74,7 @@ test.group("GET /api/v1/admin/tickets (TableView grammar)", (group) => {
         await client.post(URL).withGuard("api").loginAs(admin).json(payload("Payment review"));
         await client.post(URL).withGuard("api").loginAs(admin).json(payload("Shipping review"));
 
-        const response = await client
-            .get(URL)
-            .qs({ q: "Payment", sla: "healthy" })
-            .withGuard("api")
-            .loginAs(admin);
+        const response = await client.get(URL).qs({ q: "Payment", sla: "healthy" }).withGuard("api").loginAs(admin);
         response.assertStatus(200);
         assert.equal(response.body().meta.total, 1);
         assert.equal(response.body().data[0].subject, "Payment review");

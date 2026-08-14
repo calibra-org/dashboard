@@ -24,23 +24,29 @@ export class ContentSchedulerObservabilityService {
     }
 
     async complete(id: number, processedCount: number) {
-        await currentTrx().from("content_scheduler_runs").where("id", id).update({
-            status: "completed",
-            processed_count: Math.max(0, Math.trunc(processedCount)),
-            last_error: null,
-            finished_at: new Date(),
-            updated_at: new Date(),
-        });
+        await currentTrx()
+            .from("content_scheduler_runs")
+            .where("id", id)
+            .update({
+                status: "completed",
+                processed_count: Math.max(0, Math.trunc(processedCount)),
+                last_error: null,
+                finished_at: new Date(),
+                updated_at: new Date(),
+            });
     }
 
     async fail(id: number, error: unknown, processedCount = 0) {
-        await currentTrx().from("content_scheduler_runs").where("id", id).update({
-            status: "failed",
-            processed_count: Math.max(0, Math.trunc(processedCount)),
-            last_error: error instanceof Error ? error.message.slice(0, 4000) : String(error).slice(0, 4000),
-            finished_at: new Date(),
-            updated_at: new Date(),
-        });
+        await currentTrx()
+            .from("content_scheduler_runs")
+            .where("id", id)
+            .update({
+                status: "failed",
+                processed_count: Math.max(0, Math.trunc(processedCount)),
+                last_error: error instanceof Error ? error.message.slice(0, 4000) : String(error).slice(0, 4000),
+                finished_at: new Date(),
+                updated_at: new Date(),
+            });
     }
 
     async list(kind?: SchedulerKind, limit = 100) {

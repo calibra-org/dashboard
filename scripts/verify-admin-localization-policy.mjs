@@ -66,7 +66,10 @@ for (const file of localizedSurfaces) {
 const factorFiles = localizedSurfaces.filter((file) => file.includes("/features/factor/"));
 for (const file of factorFiles) {
     const source = read(file);
-    check(!/type=["']date["']/.test(source), `${file} must use the Admin date-picker primitive instead of native input[type=date]`);
+    check(
+        !/type=["']date["']/.test(source),
+        `${file} must use the Admin date-picker primitive instead of native input[type=date]`,
+    );
 }
 
 const fa = messages("fa");
