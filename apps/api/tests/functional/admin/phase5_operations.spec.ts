@@ -153,7 +153,11 @@ test.group("Phase 5 order operations", (group) => {
         const { product, order } = await processingOrder(1);
         await moveToProcessing(client, admin, Number(order.id));
 
-        const reserved = await db.from("inventory_items").where("product_id", product.id).whereNull("variation_id").first();
+        const reserved = await db
+            .from("inventory_items")
+            .where("product_id", Number(product.id))
+            .whereNull("variation_id")
+            .first();
         assert.equal(Number(reserved?.stock_quantity), 99);
 
         const shipped = await client
@@ -169,7 +173,7 @@ test.group("Phase 5 order operations", (group) => {
         assert.equal(operations.body().data.fulfillments[0].status, "shipped");
         assert.equal(operations.body().data.fulfillments[0].shipments[0].status, "in_transit");
 
-        const after = await db.from("inventory_items").where("product_id", product.id).whereNull("variation_id").first();
+        const after = await db.from("inventory_items").where("product_id", Number(product.id)).whereNull("variation_id").first();
         assert.equal(Number(after?.stock_quantity), 99);
     });
 
@@ -244,7 +248,11 @@ test.group("Phase 5 order operations", (group) => {
             });
         received.assertStatus(200);
 
-        const inventory = await db.from("inventory_items").where("product_id", product.id).whereNull("variation_id").first();
+        const inventory = await db
+            .from("inventory_items")
+            .where("product_id", Number(product.id))
+            .whereNull("variation_id")
+            .first();
         assert.equal(Number(inventory?.stock_quantity), 100);
 
         const refunded = await client
@@ -300,7 +308,11 @@ test.group("Phase 5 order operations", (group) => {
     }) => {
         const admin = await adminUser();
         const product = await createTaxableProduct({ regularPrice: 1_000_000 });
-        const inventory = await db.from("inventory_items").where("product_id", product.id).whereNull("variation_id").first();
+        const inventory = await db
+            .from("inventory_items")
+            .where("product_id", Number(product.id))
+            .whereNull("variation_id")
+            .first();
         const inventoryId = Number(inventory?.id);
 
         const adjustment = await client

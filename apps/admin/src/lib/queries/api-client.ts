@@ -100,7 +100,11 @@ function createIdempotencyKey(): string {
     return `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
 }
 
-function automaticIdempotencyKey(method: MutationMethod, path: string, body: unknown): { fingerprint: string; key: string } | null {
+function automaticIdempotencyKey(
+    method: MutationMethod,
+    path: string,
+    body: unknown,
+): { fingerprint: string; key: string } | null {
     if (!isAutomaticIdempotencyMutation(method, path)) return null;
     const fingerprint = `${method}:${path.replace(/^\/+/, "")}:${canonicalJson(body ?? null)}`;
     const existing = automaticIdempotencyKeys.get(fingerprint);
