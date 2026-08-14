@@ -113,30 +113,8 @@ jobs:
           )
           source = source.replace('            let adapter;\n', '            let adapter: PaymentAdapter;\n', 1)
           reconciliation.write_text(source)
-
-          legacy = Path("apps/api/app/services/legacy_mark_shipped_service.ts")
-          source = legacy.read_text()
-          old = '''            shipment = current.shipments.find((item) => item.id === shipmentId);
-            if (!shipment) {
-                throw new Exception("Compatibility shipment could not be projected after update", {
-                    status: 409,
-                    code: "E_SHIPMENT_PROJECTION_MISSING",
-                });
-            }
-'''
-          new = '''            const updatedShipment = current.shipments.find((item) => item.id === shipmentId);
-            if (!updatedShipment) {
-                throw new Exception("Compatibility shipment could not be projected after update", {
-                    status: 409,
-                    code: "E_SHIPMENT_PROJECTION_MISSING",
-                });
-            }
-            shipment = updatedShipment;
-'''
-          if old not in source:
-              raise SystemExit("expected legacy shipment narrowing fragment missing")
-          legacy.write_text(source.replace(old, new, 1))
           PY
+          python3 -c 'from pathlib import Path; p=Path("apps/api/app/services/legacy_mark_shipped_service.ts"); s=p.read_text(); old="            shipment = current.shipments.find((item) => item.id === shipmentId);\n            if (!shipment) {\n                throw new Exception(\"Compatibility shipment could not be projected after update\", {\n                    status: 409,\n                    code: \"E_SHIPMENT_PROJECTION_MISSING\",\n                });\n            }\n"; new="            const updatedShipment = current.shipments.find((item) => item.id === shipmentId);\n            if (!updatedShipment) {\n                throw new Exception(\"Compatibility shipment could not be projected after update\", {\n                    status: 409,\n                    code: \"E_SHIPMENT_PROJECTION_MISSING\",\n                });\n            }\n            shipment = updatedShipment;\n"; assert old in s, "expected legacy shipment narrowing fragment missing"; p.write_text(s.replace(old,new,1))'
           rm -rf .finalize-carrier
           rm -f .github/workflows/apply-finalize-carrier.yml
           rm -f .github/workflows/finalize-artifacts.yml
