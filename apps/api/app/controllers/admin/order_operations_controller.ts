@@ -4,6 +4,7 @@ import type { HttpContext } from "@adonisjs/core/http";
 import AdminOrdersController from "#controllers/admin/orders_controller";
 import { recordAudit } from "#services/admin_audit_log_service";
 import { legacyMarkShippedService } from "#services/legacy_mark_shipped_service";
+import { phase5OperationsSummaryService } from "#services/phase5_operations_summary_service";
 import { phase5OrderOperationsQueryService } from "#services/phase5_order_operations_query_service";
 import { phase5OrderOperationsService } from "#services/phase5_order_operations_service";
 import { phase5ReturnPolicyService } from "#services/phase5_return_policy_service";
@@ -32,7 +33,7 @@ async function actor(ctx: HttpContext) {
 
 export default class OrderOperationsController {
     async summary() {
-        return phase5OrderOperationsService.summary();
+        return phase5OperationsSummaryService.summary();
     }
 
     async show(ctx: HttpContext) {
