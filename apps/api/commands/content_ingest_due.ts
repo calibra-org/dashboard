@@ -20,6 +20,7 @@ export default class ContentIngestDue extends BaseCommand {
     async run() {
         const IngestContentSourceJob = (await import("#jobs/ingest_content_source_job")).default;
         const { contentService } = await import("#services/content/content_service");
+        const { contentSchedulerObservabilityService } = await import("#services/content/scheduler_observability_service");
         const { currentTrx } = await import("#services/tenant_context");
         const { forEachTenant } = await import("#services/tenant_runner");
         const perTenantLimit = Number.isSafeInteger(this.limit) && this.limit > 0 ? Math.min(this.limit, 100) : 25;
@@ -27,41 +28,57 @@ export default class ContentIngestDue extends BaseCommand {
 
         await forEachTenant(
             async (tenantId) => {
-                const settings = await contentService.settings();
-                if (!settings.source_fetch_enabled) return;
-                const trx = currentTrx();
-                const due = await trx
-                    .from("content_sources")
-                    .where((query) =>
-                        query
-                            .where("status", "active")
-                            .orWhere((stale) =>
-                                stale
-                                    .where("status", "fetching")
-                                    .where("updated_at", "<", DateTime.utc().minus({ minutes: 5 }).toISO()),
-                            ),
-                    )
-                    .whereIn("source_type", ["rss", "atom"])
-                    .where((query) => query.whereNull("next_fetch_at").orWhere("next_fetch_at", "<=", DateTime.utc().toISO()))
-                    .orderByRaw("next_fetch_at ASC NULLS FIRST")
-                    .limit(perTenantLimit)
-                    .forUpdate()
-                    .skipLocked()
-                    .select("id", "name", "crawl_interval_minutes");
-
-                for (const source of due as Array<{ id: number; name: string; crawl_interval_minutes: number }>) {
-                    this.logger.info(`tenant ${tenantId}: due source ${source.id} (${source.name})`);
-                    if (this.dryRun) continue;
-                    const interval = Math.max(15, Number(source.crawl_interval_minutes || 360));
-                    await trx
+                const runId = await contentSchedulerObservabilityService.begin("ingest_due");
+                if (runId === null) {
+                    this.logger.info(`tenant ${tenantId}: ingest scheduler already claimed this minute`);
+                    return;
+                }
+                let tenantQueued = 0;
+                try {
+                    const settings = await contentService.settings();
+                    if (!settings.source_fetch_enabled) {
+                        await contentSchedulerObservabilityService.complete(runId, 0);
+                        return;
+                    }
+                    const trx = currentTrx();
+                    const due = await trx
                         .from("content_sources")
-                        .where("id", source.id)
-                        .update({
-                            next_fetch_at: DateTime.utc().plus({ minutes: interval }).toISO(),
-                            updated_at: DateTime.utc().toISO(),
-                        });
-                    await IngestContentSourceJob.dispatch({ sourceId: Number(source.id) });
-                    queued += 1;
+                        .where((query) =>
+                            query
+                                .where("status", "active")
+                                .orWhere((stale) =>
+                                    stale
+                                        .where("status", "fetching")
+                                        .where("updated_at", "<", DateTime.utc().minus({ minutes: 5 }).toISO()),
+                                ),
+                        )
+                        .whereIn("source_type", ["rss", "atom"])
+                        .where((query) => query.whereNull("next_fetch_at").orWhere("next_fetch_at", "<=", DateTime.utc().toISO()))
+                        .orderByRaw("next_fetch_at ASC NULLS FIRST")
+                        .limit(perTenantLimit)
+                        .forUpdate()
+                        .skipLocked()
+                        .select("id", "name", "crawl_interval_minutes");
+
+                    for (const source of due as Array<{ id: number; name: string; crawl_interval_minutes: number }>) {
+                        this.logger.info(`tenant ${tenantId}: due source ${source.id} (${source.name})`);
+                        if (this.dryRun) continue;
+                        const interval = Math.max(15, Number(source.crawl_interval_minutes || 360));
+                        await trx
+                            .from("content_sources")
+                            .where("id", source.id)
+                            .update({
+                                next_fetch_at: DateTime.utc().plus({ minutes: interval }).toISO(),
+                                updated_at: DateTime.utc().toISO(),
+                            });
+                        await IngestContentSourceJob.dispatch({ sourceId: Number(source.id) });
+                        tenantQueued += 1;
+                        queued += 1;
+                    }
+                    await contentSchedulerObservabilityService.complete(runId, tenantQueued);
+                } catch (error) {
+                    await contentSchedulerObservabilityService.fail(runId, error, tenantQueued);
+                    this.logger.error(`tenant ${tenantId}: ingest scheduler failed: ${error instanceof Error ? error.message : String(error)}`);
                 }
             },
             Number.isSafeInteger(this.tenant) && this.tenant > 0 ? this.tenant : undefined,
