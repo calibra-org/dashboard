@@ -1,15 +1,12 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
+import { isDeepStrictEqual } from "node:util";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const base = JSON.parse(readFileSync(resolve(root, "dist/admin.base.v1.json"), "utf8"));
 const tickets = JSON.parse(readFileSync(resolve(root, "dist/admin.tickets.v1.json"), "utf8"));
 const completion = JSON.parse(readFileSync(resolve(root, "dist/admin.completion.v1.json"), "utf8"));
-
-function sameJson(left, right) {
-    return JSON.stringify(left) === JSON.stringify(right);
-}
 
 function mergeRecord(baseRecord = {}, overlayRecord = {}, label, allowIdentical = false) {
     const merged = { ...baseRecord };
@@ -18,7 +15,7 @@ function mergeRecord(baseRecord = {}, overlayRecord = {}, label, allowIdentical 
             merged[key] = value;
             continue;
         }
-        if (allowIdentical && sameJson(merged[key], value)) continue;
+        if (allowIdentical && isDeepStrictEqual(merged[key], value)) continue;
         throw new Error(`Admin OpenAPI overlay collides with ${label}: ${key}`);
     }
     return merged;
