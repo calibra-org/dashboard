@@ -99,13 +99,13 @@ test.group("Phase 5 order operations", (group) => {
         const delivered = await client.post(`/api/v1/admin/shipments/${shipmentId}/events`).loginAs(admin).json({ status: "delivered", expected_version: 2, message: "delivered" });
         delivered.assertStatus(201);
 
-        const shipped = await client.post(`/api/v1/admin/fulfillments/${fulfillmentId}/transition`).loginAs(admin).json({ status: "shipped", expected_version: 2 });
-        shipped.assertStatus(200);
-        const final = await client.post(`/api/v1/admin/fulfillments/${fulfillmentId}/transition`).loginAs(admin).json({ status: "delivered", expected_version: 3 });
-        final.assertStatus(200);
-
         const after = await client.get(`/api/v1/admin/orders/${order.id}`).loginAs(admin);
         after.assertStatus(200);
         assert.equal(after.body().data.status, "completed");
+
+        const operations = await client.get(`/api/v1/admin/orders/${order.id}/operations`).loginAs(admin);
+        operations.assertStatus(200);
+        assert.equal(operations.body().data.fulfillments[0].status, "delivered");
+        assert.equal(operations.body().data.fulfillments[0].shipments[0].events.length, 3);
     });
 });
