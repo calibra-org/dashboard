@@ -10,8 +10,7 @@ function numberValue(value: unknown): number {
 export class CampaignTemplateReviewService {
     async review(
         campaignId: number,
-        input: { expected_version: number; decision: "approved" | "rejected"; note?: string | null },
-        actorUserId: number,
+        input: { expected_version: number; decision: "approved" | "rejected" },
     ) {
         const trx = currentTrx();
         const campaign = await trx.from("support_campaigns").where("id", campaignId).forUpdate().first();
@@ -52,28 +51,16 @@ export class CampaignTemplateReviewService {
             });
         }
 
-        await trx.table("admin_audit_log").insert({
-            actor_user_id: actorUserId,
-            action: "support.campaign.template_review",
-            entity_kind: "support_campaign",
-            entity_id: campaignId,
-            before_payload: JSON.stringify({
-                template_status: campaign.template_status,
-                version: numberValue(campaign.version),
-            }),
-            after_payload: JSON.stringify({
-                template_status: input.decision,
-                version: nextVersion,
-                note: input.note ?? null,
-            }),
-        });
-
         return {
             data: {
                 ...updated,
                 id: numberValue(updated.id),
                 version: numberValue(updated.version),
                 estimated_cost_minor: numberValue(updated.estimated_cost_minor),
+            },
+            before: {
+                template_status: campaign.template_status,
+                version: numberValue(campaign.version),
             },
         };
     }
