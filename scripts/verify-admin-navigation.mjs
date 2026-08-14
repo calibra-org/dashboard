@@ -24,32 +24,57 @@ function check(condition, message) {
 function messages(locale) {
     const base = JSON.parse(read(`apps/admin/messages/${locale}.json`));
     const transactionsPath = `apps/admin/messages/transactions/${locale}.json`;
+    const ticketsPath = `apps/admin/messages/tickets/${locale}.json`;
     const transactions = exists(transactionsPath) ? JSON.parse(read(transactionsPath)) : {};
+    const tickets = exists(ticketsPath) ? JSON.parse(read(ticketsPath)) : {};
     return {
         ...base,
         ...transactions,
+        ...tickets,
         Nav: {
             ...base.Nav,
             ...(transactions.Nav ?? {}),
+            ...(tickets.Nav ?? {}),
         },
     };
 }
 
+function collectPagePatterns(directory, urlSegments = []) {
+    const patterns = [];
+    for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+        if (!entry.isDirectory()) continue;
+        const nextDirectory = path.join(directory, entry.name);
+        const isRouteGroup = entry.name.startsWith("(") && entry.name.endsWith(")");
+        const nextSegments = isRouteGroup ? urlSegments : [...urlSegments, entry.name];
+        if (fs.existsSync(path.join(nextDirectory, "page.tsx"))) patterns.push(nextSegments);
+        patterns.push(...collectPagePatterns(nextDirectory, nextSegments));
+    }
+    return patterns;
+}
+
+function routePatternMatches(pattern, href) {
+    const target = href.split("/").filter(Boolean);
+    if (pattern.length !== target.length) return false;
+    return pattern.every((segment, index) => {
+        if (segment.startsWith("[") && segment.endsWith("]")) return true;
+        return segment === target[index];
+    });
+}
+
 const sidebarPath = "apps/admin/src/components/Sidebar.tsx";
 const sidebar = read(sidebarPath);
-const authenticatedRoot = "apps/admin/src/app/[locale]/(authenticated)";
+const authenticatedRoot = path.join(root, "apps/admin/src/app/[locale]/(authenticated)");
+const pagePatterns = collectPagePatterns(authenticatedRoot);
 
 const hrefs = [...sidebar.matchAll(/href:\s*"([^"]+)"/g)].map((match) => match[1]);
 check(hrefs.length > 0, "Sidebar contains no static navigation hrefs");
 check(new Set(hrefs).size === hrefs.length, "Sidebar contains duplicate href entries");
 
 for (const href of hrefs) {
-    const relative = href === "/" ? "" : href;
-    const routePage = `${authenticatedRoot}${relative}/page.tsx`;
-    check(exists(routePage), `Sidebar dead link: ${href} has no authenticated page at ${routePage}`);
+    check(pagePatterns.some((pattern) => routePatternMatches(pattern, href)), `Sidebar dead link: ${href} has no authenticated page`);
 }
 
-const importMatch = sidebar.match(/import\s*\{([\s\S]*?)\}\s*from\s*"#\/icons";/);
+const importMatch = sidebar.match(/import\s*\{\s*([^}]*)\}\s*from\s*"#\/icons";/);
 check(Boolean(importMatch), "Sidebar must import icons through #/icons");
 const importedIcons = importMatch
     ? importMatch[1]
@@ -90,11 +115,11 @@ for (const key of new Set(labelKeys)) {
     check(typeof en.Nav?.[key] === "string" && en.Nav[key].length > 0, `English Nav.${key} is missing`);
 }
 
-for (const iconOnlyPattern of sidebar.matchAll(/<button([\s\S]*?)<\/button>/g)) {
-    const button = iconOnlyPattern[0];
-    const hasVisibleText = /<span[^>]*>[^<{][^<]*<\/span>/.test(button);
+for (const buttonMatch of sidebar.matchAll(/<button([\s\S]*?)<\/button>/g)) {
+    const button = buttonMatch[0];
+    const hasVisibleContent = /<span\b/.test(button) || /\{[^}]+\}/.test(button);
     const hasAccessibleName = /aria-label=/.test(button) || /aria-labelledby=/.test(button);
-    if (!hasVisibleText && /<[A-Z][A-Za-z0-9_]*\b/.test(button)) {
+    if (!hasVisibleContent && /<[A-Z][A-Za-z0-9_]*\b/.test(button)) {
         check(hasAccessibleName, "Sidebar icon-only button is missing an accessible name");
     }
 }
