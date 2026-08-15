@@ -24,3 +24,4 @@ jobs:
           retention-days: 1
 
 # One-shot refresh used to capture the exact PR #17 HEAD for offline release verification.
+# Trigger the checksum-verified release carrier on this branch.
