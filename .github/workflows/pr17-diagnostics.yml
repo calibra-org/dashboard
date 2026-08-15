@@ -6,17 +6,15 @@ on:
       - agent/complete-ticket-seo-content-backends-20260814
 
 permissions:
-  contents: read
+  contents: write
 
 env:
-  FORCE_COLOR: 3
-  TURBO_TELEMETRY_DISABLED: 1
-  DO_NOT_TRACK: 1
   NODE_VERSION: "24.14.0"
   PNPM_VERSION: "10.32.1"
 
 jobs:
-  biome-errors:
+  fix-biome-imports:
+    if: contains(github.event.head_commit.message, '[fix-biome-imports]')
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -31,17 +29,45 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Capture all Biome errors
-        continue-on-error: true
-        shell: bash
+      - name: Apply only the twelve verified safe import-order fixes
+        run: >-
+          pnpm exec biome check --write
+          apps/api/app/controllers/checkout/draft_controller.ts
+          apps/api/app/services/phase5_order_operations_service.ts
+          apps/api/app/services/seo/crawl_service.ts
+          apps/api/app/services/seo/operations_service.ts
+          apps/api/app/services/support/public_support_service.ts
+          apps/api/app/services/support/ticket_service.ts
+          apps/api/commands/seo_run_crawls.ts
+          apps/api/tests/functional/admin/phase5_operations.spec.ts
+          apps/api/tests/functional/admin/phase5_operations_summary.spec.ts
+          docs/api/scripts/merge-admin-spec.js
+          packages/sdk/src/createAdminClient.ts
+          scripts/panel.mjs
+      - name: Confirm scope and remaining Biome errors
         run: |
-          set -o pipefail
-          pnpm exec biome check . --diagnostic-level=error --max-diagnostics=500 2>&1 | tee /tmp/biome-errors.log
-      - name: Upload diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: pr17-biome-errors-${{ github.sha }}
-          path: /tmp/biome-errors.log
-          if-no-files-found: error
-          retention-days: 1
+          git diff --check
+          pnpm exec biome check . --diagnostic-level=error --max-diagnostics=500
+      - name: Commit safe import fixes
+        run: |
+          if git diff --quiet; then
+            echo "No import-order changes required"
+            exit 0
+          fi
+          git config user.name "calibra-dev"
+          git config user.email "keshavarz20.com@gmail.com"
+          git add \
+            apps/api/app/controllers/checkout/draft_controller.ts \
+            apps/api/app/services/phase5_order_operations_service.ts \
+            apps/api/app/services/seo/crawl_service.ts \
+            apps/api/app/services/seo/operations_service.ts \
+            apps/api/app/services/support/public_support_service.ts \
+            apps/api/app/services/support/ticket_service.ts \
+            apps/api/commands/seo_run_crawls.ts \
+            apps/api/tests/functional/admin/phase5_operations.spec.ts \
+            apps/api/tests/functional/admin/phase5_operations_summary.spec.ts \
+            docs/api/scripts/merge-admin-spec.js \
+            packages/sdk/src/createAdminClient.ts \
+            scripts/panel.mjs
+          git commit -m "chore: organize release imports"
+          git push origin HEAD:agent/complete-ticket-seo-content-backends-20260814
