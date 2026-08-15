@@ -1,0 +1,458 @@
+openapi: 3.1.0
+info:
+    title: Calibra Admin Completion API Overlay
+    version: "1.0.0"
+    description: Additive OpenAPI overlay for governed Ticket, SEO, and News operations.
+servers:
+    - url: http://localhost:3333
+security:
+    - BearerAuth: []
+tags:
+    - name: Admin / Ticket Operations
+    - name: Admin / SEO Operations
+    - name: Admin / News
+components:
+    securitySchemes:
+        BearerAuth:
+            type: http
+            scheme: bearer
+            bearerFormat: JWT
+    schemas:
+        Resource:
+            type: object
+            additionalProperties: true
+        ListResource:
+            type: object
+            properties:
+                data:
+                    type: array
+                    items:
+                        type: object
+                        additionalProperties: true
+            required: [data]
+        VersionedTicket:
+            type: object
+            required: [id, expected_version]
+            properties:
+                id:
+                    type: integer
+                    minimum: 1
+                expected_version:
+                    type: integer
+                    minimum: 1
+        SavedViewInput:
+            type: object
+            required: [name, query]
+            properties:
+                name:
+                    type: string
+                    maxLength: 120
+                query:
+                    type: object
+                    additionalProperties: true
+                is_shared:
+                    type: boolean
+        BulkTicketInput:
+            type: object
+            required: [tickets, operation]
+            properties:
+                tickets:
+                    type: array
+                    minItems: 1
+                    maxItems: 100
+                    items:
+                        $ref: "#/components/schemas/VersionedTicket"
+                operation:
+                    type: string
+                    enum: [assign, priority, category, tags, transition]
+                assigned_user_id:
+                    type: [integer, "null"]
+                priority:
+                    type: string
+                    enum: [low, normal, high, urgent]
+                category:
+                    type: [string, "null"]
+                tags:
+                    type: array
+                    maxItems: 20
+                    items:
+                        type: string
+                status:
+                    type: string
+                    enum: [open, pending, waiting_customer, resolved, closed]
+                reason:
+                    type: [string, "null"]
+        SeoActionInput:
+            type: object
+            required: [action_type, entity_kind, after_payload]
+            properties:
+                action_type:
+                    type: string
+                    enum: [media_alt, content_refresh, seo_profile]
+                entity_kind:
+                    type: string
+                    enum: [media, content_post, product, category, brand, attribute, page]
+                entity_id:
+                    type: [integer, "null"]
+                entity_key:
+                    type: [string, "null"]
+                expected_version:
+                    type: [integer, "null"]
+                after_payload:
+                    type: object
+                    additionalProperties: true
+        NewsEnvelope:
+            type: object
+            additionalProperties: true
+paths:
+    /api/v1/admin/tickets/workflow-statuses:
+        get:
+            tags: [Admin / Ticket Operations]
+            operationId: listTicketWorkflowStatuses
+            responses:
+                "200": { description: Ticket workflow catalog, content: { application/json: { schema: { $ref: "#/components/schemas/ListResource" } } } }
+        post:
+            tags: [Admin / Ticket Operations]
+            operationId: createTicketWorkflowStatus
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [code, label_fa, label_en, semantic_group]
+                            properties:
+                                code: { type: string }
+                                label_fa: { type: string }
+                                label_en: { type: string }
+                                semantic_group: { type: string, enum: [active, waiting, resolved, closed] }
+                                is_terminal: { type: boolean }
+                                is_customer_waiting: { type: boolean }
+                                is_enabled: { type: boolean }
+                                sort_order: { type: integer }
+            responses:
+                "201": { description: Workflow status created, content: { application/json: { schema: { $ref: "#/components/schemas/Resource" } } } }
+    /api/v1/admin/tickets/saved-views:
+        get:
+            tags: [Admin / Ticket Operations]
+            operationId: listTicketSavedViews
+            responses:
+                "200": { description: Saved views, content: { application/json: { schema: { $ref: "#/components/schemas/ListResource" } } } }
+        post:
+            tags: [Admin / Ticket Operations]
+            operationId: createTicketSavedView
+            requestBody:
+                required: true
+                content: { application/json: { schema: { $ref: "#/components/schemas/SavedViewInput" } } }
+            responses:
+                "201": { description: Saved view created, content: { application/json: { schema: { $ref: "#/components/schemas/Resource" } } } }
+    /api/v1/admin/tickets/saved-views/{id}:
+        parameters:
+            - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+        patch:
+            tags: [Admin / Ticket Operations]
+            operationId: updateTicketSavedView
+            requestBody:
+                required: true
+                content: { application/json: { schema: { $ref: "#/components/schemas/SavedViewInput" } } }
+            responses:
+                "200": { description: Saved view updated, content: { application/json: { schema: { $ref: "#/components/schemas/Resource" } } } }
+        delete:
+            tags: [Admin / Ticket Operations]
+            operationId: deleteTicketSavedView
+            responses:
+                "204": { description: Saved view deleted }
+    /api/v1/admin/tickets/bulk:
+        post:
+            tags: [Admin / Ticket Operations]
+            operationId: bulkUpdateTickets
+            requestBody:
+                required: true
+                content: { application/json: { schema: { $ref: "#/components/schemas/BulkTicketInput" } } }
+            responses:
+                "200": { description: Per-ticket bulk operation results, content: { application/json: { schema: { $ref: "#/components/schemas/Resource" } } } }
+    /api/v1/admin/tickets/{ticketId}/attachments:
+        parameters:
+            - { name: ticketId, in: path, required: true, schema: { type: integer, minimum: 1 } }
+        get:
+            tags: [Admin / Ticket Operations]
+            operationId: listTicketAttachments
+            responses:
+                "200": { description: Ticket attachment metadata, content: { application/json: { schema: { $ref: "#/components/schemas/ListResource" } } } }
+        post:
+            tags: [Admin / Ticket Operations]
+            operationId: createTicketAttachment
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [media_id]
+                            properties:
+                                media_id: { type: integer, minimum: 1 }
+                                message_id: { type: [integer, "null"] }
+                                sha256: { type: [string, "null"] }
+            responses:
+                "201": { description: Pending attachment metadata created, content: { application/json: { schema: { $ref: "#/components/schemas/Resource" } } } }
+    /api/v1/admin/tickets/attachments/{attachmentId}/scan:
+        parameters:
+            - { name: attachmentId, in: path, required: true, schema: { type: integer, minimum: 1 } }
+        patch:
+            tags: [Admin / Ticket Operations]
+            operationId: recordTicketAttachmentScan
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [status]
+                            properties:
+                                status: { type: string, enum: [clean, infected, error] }
+                                evidence: { type: [string, "null"] }
+            responses:
+                "200": { description: Scan result recorded, content: { application/json: { schema: { $ref: "#/components/schemas/Resource" } } } }
+    /api/v1/admin/tickets/{ticketId}/merge:
+        parameters:
+            - { name: ticketId, in: path, required: true, schema: { type: integer, minimum: 1 } }
+        post:
+            tags: [Admin / Ticket Operations]
+            operationId: mergeTicket
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [target_ticket_id, expected_source_version, expected_target_version]
+                            properties:
+                                target_ticket_id: { type: integer, minimum: 1 }
+                                expected_source_version: { type: integer, minimum: 1 }
+                                expected_target_version: { type: integer, minimum: 1 }
+                                reason: { type: [string, "null"] }
+            responses:
+                "200": { description: Merge recorded, content: { application/json: { schema: { $ref: "#/components/schemas/Resource" } } } }
+    /api/v1/admin/tickets/operations/presence:
+        get:
+            tags: [Admin / Ticket Operations]
+            operationId: listSupportPresence
+            responses:
+                "200": { description: Agent presence snapshots, content: { application/json: { schema: { $ref: "#/components/schemas/ListResource" } } } }
+    /api/v1/admin/tickets/operations/presence/me:
+        put:
+            tags: [Admin / Ticket Operations]
+            operationId: heartbeatSupportPresence
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [state, capacity]
+                            properties:
+                                state: { type: string, enum: [offline, available, busy, away] }
+                                capacity: { type: integer, minimum: 0, maximum: 500 }
+            responses:
+                "200": { description: Presence snapshot updated, content: { application/json: { schema: { $ref: "#/components/schemas/Resource" } } } }
+    /api/v1/admin/tickets/operations/channels:
+        get:
+            tags: [Admin / Ticket Operations]
+            operationId: listSupportChannels
+            responses:
+                "200": { description: Truthful channel registry, content: { application/json: { schema: { $ref: "#/components/schemas/ListResource" } } } }
+        patch:
+            tags: [Admin / Ticket Operations]
+            operationId: configureSupportChannel
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [channel, enabled]
+                            properties:
+                                channel: { type: string }
+                                enabled: { type: boolean }
+                                credential_env_ref: { type: [string, "null"] }
+                                configuration: { type: object, additionalProperties: true }
+            responses:
+                "200": { description: Channel configuration stored without secret material, content: { application/json: { schema: { $ref: "#/components/schemas/Resource" } } } }
+    /api/v1/admin/tickets/operations/routing-rules:
+        get:
+            tags: [Admin / Ticket Operations]
+            operationId: listSupportRoutingRules
+            responses:
+                "200": { description: Routing rules, content: { application/json: { schema: { $ref: "#/components/schemas/ListResource" } } } }
+        post:
+            tags: [Admin / Ticket Operations]
+            operationId: createSupportRoutingRule
+            responses:
+                "201": { description: Routing rule created, content: { application/json: { schema: { $ref: "#/components/schemas/Resource" } } } }
+    /api/v1/admin/tickets/operations/routing-rules/{id}:
+        parameters:
+            - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+        patch:
+            tags: [Admin / Ticket Operations]
+            operationId: updateSupportRoutingRule
+            responses:
+                "200": { description: Routing rule updated, content: { application/json: { schema: { $ref: "#/components/schemas/Resource" } } } }
+    /api/v1/admin/tickets/operations/automation-rules:
+        get:
+            tags: [Admin / Ticket Operations]
+            operationId: listSupportAutomationRules
+            responses:
+                "200": { description: Automation rules, content: { application/json: { schema: { $ref: "#/components/schemas/ListResource" } } } }
+        post:
+            tags: [Admin / Ticket Operations]
+            operationId: createSupportAutomationRule
+            responses:
+                "201": { description: Automation rule created, content: { application/json: { schema: { $ref: "#/components/schemas/Resource" } } } }
+    /api/v1/admin/tickets/operations/automation-rules/{id}:
+        parameters:
+            - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+        patch:
+            tags: [Admin / Ticket Operations]
+            operationId: updateSupportAutomationRule
+            responses:
+                "200": { description: Automation rule updated, content: { application/json: { schema: { $ref: "#/components/schemas/Resource" } } } }
+    /api/v1/admin/tickets/operations/campaigns:
+        get:
+            tags: [Admin / Ticket Operations]
+            operationId: listSupportCampaigns
+            responses:
+                "200": { description: Campaigns, content: { application/json: { schema: { $ref: "#/components/schemas/ListResource" } } } }
+        post:
+            tags: [Admin / Ticket Operations]
+            operationId: createSupportCampaign
+            responses:
+                "201": { description: Campaign created, content: { application/json: { schema: { $ref: "#/components/schemas/Resource" } } } }
+    /api/v1/admin/tickets/operations/campaigns/{id}/recipients:
+        parameters:
+            - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+        post:
+            tags: [Admin / Ticket Operations]
+            operationId: addSupportCampaignRecipients
+            responses:
+                "200": { description: Recipient set updated, content: { application/json: { schema: { $ref: "#/components/schemas/Resource" } } } }
+    /api/v1/admin/tickets/operations/campaigns/{id}/transition:
+        parameters:
+            - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+        post:
+            tags: [Admin / Ticket Operations]
+            operationId: transitionSupportCampaign
+            responses:
+                "200": { description: Campaign transitioned, content: { application/json: { schema: { $ref: "#/components/schemas/Resource" } } } }
+    /api/v1/admin/tickets/operations/campaigns/{id}/template-review:
+        parameters:
+            - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+        post:
+            tags: [Admin / Ticket Operations]
+            operationId: reviewSupportCampaignTemplate
+            responses:
+                "200": { description: Template review recorded, content: { application/json: { schema: { $ref: "#/components/schemas/Resource" } } } }
+    /api/v1/admin/tickets/operations/reports:
+        get:
+            tags: [Admin / Ticket Operations]
+            operationId: getSupportOperationsReport
+            responses:
+                "200": { description: Persisted support KPIs and workload evidence, content: { application/json: { schema: { $ref: "#/components/schemas/Resource" } } } }
+    /api/v1/admin/seo/actions:
+        get:
+            tags: [Admin / SEO Operations]
+            operationId: listSeoActions
+            responses:
+                "200": { description: Governed SEO action queue, content: { application/json: { schema: { $ref: "#/components/schemas/ListResource" } } } }
+        post:
+            tags: [Admin / SEO Operations]
+            operationId: proposeSeoAction
+            requestBody:
+                required: true
+                content: { application/json: { schema: { $ref: "#/components/schemas/SeoActionInput" } } }
+            responses:
+                "201": { description: SEO action proposed, content: { application/json: { schema: { $ref: "#/components/schemas/Resource" } } } }
+    /api/v1/admin/seo/actions/{id}/review:
+        parameters:
+            - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+        post:
+            tags: [Admin / SEO Operations]
+            operationId: reviewSeoAction
+            responses:
+                "200": { description: SEO action reviewed, content: { application/json: { schema: { $ref: "#/components/schemas/Resource" } } } }
+    /api/v1/admin/seo/actions/{id}/apply:
+        parameters:
+            - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+        post:
+            tags: [Admin / SEO Operations]
+            operationId: applySeoAction
+            responses:
+                "200": { description: Approved SEO action applied, content: { application/json: { schema: { $ref: "#/components/schemas/Resource" } } } }
+    /api/v1/admin/seo/actions/{id}/rollback:
+        parameters:
+            - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+        post:
+            tags: [Admin / SEO Operations]
+            operationId: rollbackSeoAction
+            responses:
+                "200": { description: Applied SEO action rolled back when state has not drifted, content: { application/json: { schema: { $ref: "#/components/schemas/Resource" } } } }
+    /api/v1/admin/seo/media/bulk-alt:
+        post:
+            tags: [Admin / SEO Operations]
+            operationId: proposeBulkMediaAlt
+            responses:
+                "201": { description: ALT changes proposed for approval, content: { application/json: { schema: { $ref: "#/components/schemas/ListResource" } } } }
+    /api/v1/admin/seo/crawls:
+        get:
+            tags: [Admin / SEO Operations]
+            operationId: listSeoCrawlRuns
+            responses:
+                "200": { description: Crawl runs, content: { application/json: { schema: { $ref: "#/components/schemas/ListResource" } } } }
+        post:
+            tags: [Admin / SEO Operations]
+            operationId: queueSeoCrawlRun
+            responses:
+                "202": { description: Crawl run queued, content: { application/json: { schema: { $ref: "#/components/schemas/Resource" } } } }
+    /api/v1/admin/seo/crawls/{id}:
+        parameters:
+            - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+        get:
+            tags: [Admin / SEO Operations]
+            operationId: getSeoCrawlRun
+            responses:
+                "200": { description: Crawl targets and evidence, content: { application/json: { schema: { $ref: "#/components/schemas/Resource" } } } }
+    /api/v1/admin/seo/exports:
+        post:
+            tags: [Admin / SEO Operations]
+            operationId: createSeoExport
+            responses:
+                "201": { description: Export metadata created, content: { application/json: { schema: { $ref: "#/components/schemas/Resource" } } } }
+    /api/v1/admin/seo/exports/{id}/data:
+        parameters:
+            - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+        get:
+            tags: [Admin / SEO Operations]
+            operationId: downloadSeoExport
+            responses:
+                "200":
+                    description: CSV or JSON generated from persisted SEO data.
+                    content:
+                        text/csv: { schema: { type: string } }
+                        application/json: { schema: { type: array, items: { type: object, additionalProperties: true } } }
+    /api/v1/admin/news:
+        get:
+            tags: [Admin / News]
+            operationId: listAdminNews
+            responses:
+                "200": { description: News posts from Content OS, content: { application/json: { schema: { $ref: "#/components/schemas/NewsEnvelope" } } } }
+    /api/v1/admin/news/summary:
+        get:
+            tags: [Admin / News]
+            operationId: getAdminNewsSummary
+            responses:
+                "200": { description: News status and commerce summary, content: { application/json: { schema: { $ref: "#/components/schemas/NewsEnvelope" } } } }
+    /api/v1/admin/news/scheduler-runs:
+        get:
+            tags: [Admin / News]
+            operationId: listContentSchedulerRuns
+            responses:
+                "200": { description: Publish and ingestion scheduler run ledger, content: { application/json: { schema: { $ref: "#/components/schemas/ListResource" } } } }

@@ -1,0 +1,48 @@
+openapi: 3.1.0
+info:
+    title: Calibra Admin Runtime Sync Overlay
+    version: "1.0.0"
+    description: Additive contract coverage for runtime admin routes implemented outside the historical base spec.
+security:
+    - BearerAuth: []
+components:
+    securitySchemes:
+        BearerAuth:
+            type: http
+            scheme: bearer
+            bearerFormat: JWT
+paths:
+    /api/v1/admin/payment-attempts/summary:
+        get:
+            $ref: "./admin/paths/payments/payment-attempts-summary.get.yaml"
+    /api/v1/admin/payment-attempts/{id}/reconciliation:
+        get:
+            $ref: "./admin/paths/payments/payment-attempts-id-reconciliation.get.yaml"
+    /api/v1/admin/payment-attempts/{id}/reconcile:
+        post:
+            $ref: "./admin/paths/payments/payment-attempts-id-reconcile.post.yaml"
+    /api/v1/admin/shipping/zones/{id}:
+        get:
+            operationId: adminPhase5ShippingZoneShow
+            summary: Get a shipping zone
+            tags: [Admin / Settings]
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema: { type: integer, format: int64, minimum: 1 }
+            responses:
+                "200":
+                    description: Shipping zone with configured locations and methods.
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                required: [data]
+                                properties:
+                                    data:
+                                        type: object
+                                        additionalProperties: true
+                "401": { description: Authentication required }
+                "403": { description: Admin access required }
+                "404": { description: Shipping zone not found }

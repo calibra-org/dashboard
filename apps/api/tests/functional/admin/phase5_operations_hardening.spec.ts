@@ -33,10 +33,7 @@ async function moveToProcessing(
     admin: Awaited<ReturnType<typeof adminUser>>,
     orderId: number,
 ) {
-    const pending = await client
-        .post(`/api/v1/admin/orders/${orderId}/status`)
-        .loginAs(admin)
-        .json({ to_status: "pending" });
+    const pending = await client.post(`/api/v1/admin/orders/${orderId}/status`).loginAs(admin).json({ to_status: "pending" });
     pending.assertStatus(200);
     const processing = await client
         .post(`/api/v1/admin/orders/${orderId}/status`)
@@ -215,10 +212,7 @@ test.group("Phase 5 hardening", (group) => {
             });
         received.assertStatus(200);
 
-        const refund = await client
-            .post(`/api/v1/admin/returns/${returnId}/refund`)
-            .loginAs(admin)
-            .json({ expected_version: 3 });
+        const refund = await client.post(`/api/v1/admin/returns/${returnId}/refund`).loginAs(admin).json({ expected_version: 3 });
         refund.assertStatus(422);
 
         const refunds = await client.get(`/api/v1/admin/orders/${order.id}/refunds`).loginAs(admin);

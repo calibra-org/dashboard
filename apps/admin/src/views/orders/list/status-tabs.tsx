@@ -52,7 +52,9 @@ export function StatusTabs({ value, onChange, counts, locale }: StatusTabsProps)
                             <TabsTrigger key={key} value={key} className="px-0">
                                 <span>{label}</span>
                                 {count !== undefined && (
-                                    <span className="ms-1 text-muted-foreground/80 tabular-nums">({formatNumber(count, locale)})</span>
+                                    <span className="ms-1 text-muted-foreground/80 tabular-nums">
+                                        ({formatNumber(count, locale)})
+                                    </span>
                                 )}
                             </TabsTrigger>
                         );
@@ -60,11 +62,30 @@ export function StatusTabs({ value, onChange, counts, locale }: StatusTabsProps)
                 </TabsList>
             </Tabs>
             {operations.data ? (
-                <section aria-label={operationsT("title")} className="grid gap-2 rounded-xl border bg-card p-3 sm:grid-cols-2 xl:grid-cols-4">
-                    <ExceptionMetric label={operationsT("unfulfilled")} value={operations.data.paid_unfulfilled_over_24h} locale={locale} />
-                    <ExceptionMetric label={operationsT("shipmentExceptions")} value={operations.data.shipment_exceptions} locale={locale} />
-                    <ExceptionMetric label={operationsT("returnsApproval")} value={operations.data.returns_awaiting_approval} locale={locale} />
-                    <ExceptionMetric label={operationsT("returnsRefund")} value={operations.data.returns_awaiting_refund} locale={locale} />
+                <section
+                    aria-label={operationsT("title")}
+                    className="grid gap-2 rounded-xl border bg-card p-3 sm:grid-cols-2 xl:grid-cols-4"
+                >
+                    <ExceptionMetric
+                        label={operationsT("unfulfilled")}
+                        value={operations.data.paid_unfulfilled_over_24h}
+                        locale={locale}
+                    />
+                    <ExceptionMetric
+                        label={operationsT("shipmentExceptions")}
+                        value={operations.data.shipment_exceptions}
+                        locale={locale}
+                    />
+                    <ExceptionMetric
+                        label={operationsT("returnsApproval")}
+                        value={operations.data.returns_awaiting_approval}
+                        locale={locale}
+                    />
+                    <ExceptionMetric
+                        label={operationsT("returnsRefund")}
+                        value={operations.data.returns_awaiting_refund}
+                        locale={locale}
+                    />
                 </section>
             ) : null}
         </div>
@@ -75,7 +96,9 @@ function ExceptionMetric({ label, value, locale }: { label: string; value: numbe
     return (
         <div className="flex items-center justify-between gap-3 rounded-lg bg-muted/30 px-3 py-2">
             <span className="text-muted-foreground text-xs">{label}</span>
-            <span className={value > 0 ? "font-semibold text-warning tabular-nums" : "font-semibold tabular-nums"}>{formatNumber(value, locale)}</span>
+            <span className={value > 0 ? "font-semibold text-warning tabular-nums" : "font-semibold tabular-nums"}>
+                {formatNumber(value, locale)}
+            </span>
         </div>
     );
 }

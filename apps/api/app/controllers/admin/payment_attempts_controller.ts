@@ -48,9 +48,7 @@ export default class AdminPaymentAttemptsController {
             .count("id as count")
             .groupBy("reconciliation_status");
         const attentionRow = await PaymentAttempt.query()
-            .where((builder) =>
-                builder.whereIn("status", ["failed", "cancelled"]).orWhere("reconciliation_status", "mismatch"),
-            )
+            .where((builder) => builder.whereIn("status", ["failed", "cancelled"]).orWhere("reconciliation_status", "mismatch"))
             .count("id as count")
             .first();
 

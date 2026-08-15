@@ -1,7 +1,7 @@
 "use client";
 
 import type { Locale } from "@calibra/shared/i18n";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useDeferredValue, useState } from "react";
 
 import { StatCard } from "#/components/StatCard";
@@ -32,6 +32,7 @@ import { FactorHeader, FactorQueryMessage } from "./components";
 import { useFactorPaymentAttempts, useFactorSummary } from "./queries";
 
 export function FactorPaymentsPage() {
+    const t = useTranslations("Factor");
     const locale = useLocale() as Locale;
     const [page, setPage] = useState(1);
     const [q, setQ] = useState("");
@@ -55,10 +56,7 @@ export function FactorPaymentsPage() {
 
     return (
         <div className="flex flex-col gap-6">
-            <FactorHeader
-                title="پرداخت‌ها و درگاه‌ها"
-                subtitle="نمای یکپارچه وضعیت وصول اسناد، تراکنش‌های سفارش و درگاه‌های فعال فروشگاه"
-            />
+            <FactorHeader title={t("payments.title")} subtitle={t("payments.subtitle")} />
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <StatCard
                     label="وصول‌شده"

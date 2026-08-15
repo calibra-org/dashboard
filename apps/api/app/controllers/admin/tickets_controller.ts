@@ -3,6 +3,7 @@ import type { HttpContext } from "@adonisjs/core/http";
 
 import { recordAudit } from "#services/admin_audit_log_service";
 import { ticketQueueService } from "#services/support/ticket_queue_service";
+import { scheduleTicketRealtime } from "#services/support/ticket_realtime";
 import { supportTicketService } from "#services/support/ticket_service";
 import {
     adminTicketCreateValidator,
@@ -58,6 +59,7 @@ export default class TicketsController {
             entityId: Number(result.data.id),
             payload: { reference: result.data.reference, priority: result.data.priority, channel: result.data.channel },
         });
+        await scheduleTicketRealtime(ctx, { type: "created", ticketId: Number(result.data.id) });
         return result;
     }
 
@@ -74,6 +76,7 @@ export default class TicketsController {
                 entityId: ticketId,
                 payload: { expected_version: payload.expected_version },
             });
+            await scheduleTicketRealtime(ctx, { type: "updated", ticketId });
         }
         return result;
     }
@@ -101,6 +104,7 @@ export default class TicketsController {
                     expected_version: payload.expected_version,
                 },
             });
+            await scheduleTicketRealtime(ctx, { type: "transitioned", ticketId });
         }
         return result;
     }
@@ -123,6 +127,7 @@ export default class TicketsController {
             entityId: ticketId,
             payload: { message_id: result.data.id },
         });
+        await scheduleTicketRealtime(ctx, { type: "message", ticketId });
         return result;
     }
 

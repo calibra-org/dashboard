@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import type { ComponentType, SVGProps } from "react";
 import { useEffect, useState } from "react";
 
+import { useTicketRealtime } from "#/features/tickets/realtime";
 import {
     BadgePercent,
     BarChart3,
@@ -148,7 +149,13 @@ const seoItems: NavItem[] = [
 ];
 
 const ticketItems: NavItem[] = [
-    { href: "/tickets", labelKey: "ticketQueue", icon: MessageSquare },
+    { href: "/tickets/overview", labelKey: "ticketOverview", icon: LayoutDashboard },
+    { href: "/tickets/create", labelKey: "ticketCreate", icon: PenLine },
+    { href: "/tickets/inbox", labelKey: "ticketInbox", icon: MessageSquare },
+    { href: "/tickets/internal", labelKey: "ticketInternal", icon: Users },
+    { href: "/tickets/channels", labelKey: "ticketChannels", icon: Settings2 },
+    { href: "/tickets/campaigns", labelKey: "ticketCampaigns", icon: Sparkles },
+    { href: "/tickets/reports", labelKey: "ticketReports", icon: ChartNoAxesCombined },
     { href: "/tickets/settings", labelKey: "ticketSettings", icon: SlidersHorizontal },
 ];
 
@@ -159,18 +166,21 @@ function isActive(pathname: string, href: string): boolean {
     }
     if (href === "/settings/general") return pathname === "/settings" || pathname.startsWith("/settings/");
     if (href === "/analytics") return pathname === "/analytics";
-    if (href === "/tickets") return pathname === href || /^\/tickets\/\d+(?:\/|$)/.test(pathname);
+    if (href === "/tickets/inbox")
+        return pathname === href || pathname.startsWith(`${href}/`) || /^\/tickets\/\d+(?:\/|$)/.test(pathname);
     return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function Sidebar() {
+export function Sidebar({ userId }: { userId: number }) {
     const navT = useTranslations("Nav");
+    const ticketsT = useTranslations("Tickets");
     const siteT = useTranslations("Site");
     const pathname = usePathname();
     const factorActive = pathname === "/factor" || pathname.startsWith("/factor/");
     const contentActive = pathname === "/content" || pathname.startsWith("/content/");
     const seoActive = pathname === "/seo" || pathname.startsWith("/seo/");
     const ticketActive = pathname === "/tickets" || pathname.startsWith("/tickets/");
+    const ticketUnread = useTicketRealtime(userId);
     const [factorOpen, setFactorOpen] = useState(factorActive);
     const [contentOpen, setContentOpen] = useState(contentActive);
     const [seoOpen, setSeoOpen] = useState(seoActive);
@@ -222,6 +232,7 @@ export function Sidebar() {
         title: string,
         items: NavItem[],
         sections?: Record<number, string>,
+        badge = 0,
     ) => {
         const Icon = icon;
         return (
@@ -240,6 +251,12 @@ export function Sidebar() {
                 >
                     <Icon className="size-4 shrink-0" aria-hidden="true" />
                     <span className="flex-1">{title}</span>
+                    {badge > 0 ? (
+                        <span className="min-w-5 rounded-full bg-primary px-1.5 py-0.5 text-center font-semibold text-[10px] text-primary-foreground tabular-nums">
+                            <span className="sr-only">{ticketsT("unread", { count: badge })}</span>
+                            <span aria-hidden="true">{badge > 99 ? "99+" : badge}</span>
+                        </span>
+                    ) : null}
                     <ChevronDown className={cn("size-3.5 transition-transform", open && "rotate-180")} aria-hidden="true" />
                 </button>
                 {open ? (
@@ -295,22 +312,13 @@ export function Sidebar() {
                                     navT("content"),
                                     contentItems,
                                 )}
-                                {collapsible(
-                                    "seo-sidebar-items",
-                                    seoActive,
-                                    seoOpen,
-                                    setSeoOpen,
-                                    Search,
-                                    navT("seo"),
-                                    seoItems,
-                                    {
-                                        0: navT("seoSectionControl"),
-                                        2: navT("seoSectionCatalog"),
-                                        6: navT("seoSectionContent"),
-                                        10: navT("seoSectionMonitoring"),
-                                        14: navT("seoSectionSystem"),
-                                    },
-                                )}
+                                {collapsible("seo-sidebar-items", seoActive, seoOpen, setSeoOpen, Search, navT("seo"), seoItems, {
+                                    0: navT("seoSectionControl"),
+                                    2: navT("seoSectionCatalog"),
+                                    6: navT("seoSectionContent"),
+                                    10: navT("seoSectionMonitoring"),
+                                    14: navT("seoSectionSystem"),
+                                })}
                                 {collapsible(
                                     "ticket-sidebar-items",
                                     ticketActive,
@@ -319,6 +327,8 @@ export function Sidebar() {
                                     MessageSquare,
                                     navT("tickets"),
                                     ticketItems,
+                                    undefined,
+                                    ticketUnread,
                                 )}
                             </div>
                         ) : null}

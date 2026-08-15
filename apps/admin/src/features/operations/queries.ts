@@ -32,7 +32,8 @@ function stableMutationKey(scope: string, payload: unknown): string {
     const fingerprint = `${scope}:${JSON.stringify(payload)}`;
     const existing = idempotencyKeys.get(fingerprint);
     if (existing) return existing;
-    const value = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
+    const value =
+        typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
     idempotencyKeys.set(fingerprint, value);
     while (idempotencyKeys.size > 64) {
         const oldest = idempotencyKeys.keys().next().value as string | undefined;
@@ -113,8 +114,12 @@ export function useCreateShipment(orderId: number, fulfillmentId: number) {
     const locale = useLocale();
     const invalidate = useOrderOperationsInvalidation(orderId);
     return useMutation({
-        mutationFn: (body: { carrier?: string | null; service?: string | null; tracking_number?: string | null; tracking_url?: string | null }) =>
-            apiMutate<Envelope<unknown>>("POST", `fulfillments/${fulfillmentId}/shipments`, { locale, body }),
+        mutationFn: (body: {
+            carrier?: string | null;
+            service?: string | null;
+            tracking_number?: string | null;
+            tracking_url?: string | null;
+        }) => apiMutate<Envelope<unknown>>("POST", `fulfillments/${fulfillmentId}/shipments`, { locale, body }),
         onSuccess: invalidate,
     });
 }
@@ -141,7 +146,12 @@ export function useCreateReturn(orderId: number) {
     const scope = `return:${orderId}`;
     return useMutation({
         mutationFn: (body: {
-            items: Array<{ order_line_item_id: number; quantity: number; reason?: string | null; refund_amount_minor?: number | null }>;
+            items: Array<{
+                order_line_item_id: number;
+                quantity: number;
+                reason?: string | null;
+                refund_amount_minor?: number | null;
+            }>;
             reason?: string | null;
             customer_note?: string | null;
             internal_note?: string | null;
@@ -164,8 +174,10 @@ export function useApproveReturn(orderId: number, returnId: number) {
     const locale = useLocale();
     const invalidate = useOrderOperationsInvalidation(orderId);
     return useMutation({
-        mutationFn: (body: { expected_version: number; items: Array<{ order_line_item_id: number; approved_quantity: number }> }) =>
-            apiMutate<Envelope<OrderReturn>>("POST", `returns/${returnId}/approve`, { locale, body }),
+        mutationFn: (body: {
+            expected_version: number;
+            items: Array<{ order_line_item_id: number; approved_quantity: number }>;
+        }) => apiMutate<Envelope<OrderReturn>>("POST", `returns/${returnId}/approve`, { locale, body }),
         onSuccess: invalidate,
     });
 }
@@ -239,8 +251,11 @@ export function useCreateShippingZone() {
     const locale = useLocale();
     const invalidate = useShippingInvalidation();
     return useMutation({
-        mutationFn: (body: { name: string; is_fallback?: boolean; locations?: Array<{ type: "continent" | "country" | "state" | "postcode"; code: string }> }) =>
-            apiMutate<Envelope<ShippingZone>>("POST", "shipping/zones", { locale, body }),
+        mutationFn: (body: {
+            name: string;
+            is_fallback?: boolean;
+            locations?: Array<{ type: "continent" | "country" | "state" | "postcode"; code: string }>;
+        }) => apiMutate<Envelope<ShippingZone>>("POST", "shipping/zones", { locale, body }),
         onSuccess: invalidate,
     });
 }
@@ -278,8 +293,13 @@ export function useAddShippingZoneMethod(zoneId: number) {
     const locale = useLocale();
     const invalidate = useShippingInvalidation();
     return useMutation({
-        mutationFn: (body: { method_id: number; title_override?: string | null; enabled?: boolean; ordering?: number; settings?: Record<string, unknown> }) =>
-            apiMutate<Envelope<ShippingZoneMethod>>("POST", `shipping/zones/${zoneId}/methods`, { locale, body }),
+        mutationFn: (body: {
+            method_id: number;
+            title_override?: string | null;
+            enabled?: boolean;
+            ordering?: number;
+            settings?: Record<string, unknown>;
+        }) => apiMutate<Envelope<ShippingZoneMethod>>("POST", `shipping/zones/${zoneId}/methods`, { locale, body }),
         onSuccess: invalidate,
     });
 }
@@ -288,8 +308,12 @@ export function useUpdateShippingZoneMethod(zoneId: number, id: number) {
     const locale = useLocale();
     const invalidate = useShippingInvalidation();
     return useMutation({
-        mutationFn: (body: { title_override?: string | null; enabled?: boolean; ordering?: number; settings?: Record<string, unknown> }) =>
-            apiMutate<Envelope<ShippingZoneMethod>>("PATCH", `shipping/zones/${zoneId}/methods/${id}`, { locale, body }),
+        mutationFn: (body: {
+            title_override?: string | null;
+            enabled?: boolean;
+            ordering?: number;
+            settings?: Record<string, unknown>;
+        }) => apiMutate<Envelope<ShippingZoneMethod>>("PATCH", `shipping/zones/${zoneId}/methods/${id}`, { locale, body }),
         onSuccess: invalidate,
     });
 }
@@ -336,7 +360,8 @@ export function useCreateTaxClass() {
     const locale = useLocale();
     const invalidate = useTaxInvalidation();
     return useMutation({
-        mutationFn: (body: { name: string; slug: string }) => apiMutate<Envelope<TaxClass>>("POST", "tax-classes", { locale, body }),
+        mutationFn: (body: { name: string; slug: string }) =>
+            apiMutate<Envelope<TaxClass>>("POST", "tax-classes", { locale, body }),
         onSuccess: invalidate,
     });
 }

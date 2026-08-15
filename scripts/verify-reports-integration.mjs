@@ -92,12 +92,7 @@ for (const invariant of [
 }
 
 const validator = read("apps/api/app/validators/admin/report_validator.ts");
-for (const invariant of [
-    'reportDate("start")',
-    'reportDate("end")',
-    "T00:00:00.000Z",
-    "T23:59:59.999Z",
-]) {
+for (const invariant of ['reportDate("start")', 'reportDate("end")', "T00:00:00.000Z", "T23:59:59.999Z"]) {
     check(validator.includes(invariant), `Report date-boundary invariant missing: ${invariant}`);
 }
 const dateTests = read("apps/api/tests/unit/validators/report_validator.spec.ts");

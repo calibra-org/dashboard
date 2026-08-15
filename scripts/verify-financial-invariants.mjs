@@ -33,7 +33,7 @@ check(audit.includes("if (strict) throw error"), "Strict audit mode must fail cl
 
 const reconciliation = read("apps/api/app/services/payment_reconciliation_service.ts");
 for (const invariant of [
-    'createLock(`order:${Number(attempt.orderId)}`',
+    "createLock(`order:${Number(attempt.orderId)}`",
     "withTenantTransaction",
     ".forUpdate()",
     "strict: true",
@@ -48,7 +48,7 @@ check(
 
 const refund = read("apps/api/app/services/refund_service.ts");
 for (const invariant of [
-    'createLock(`order:${numericOrderId}`',
+    "createLock(`order:${numericOrderId}`",
     ".forUpdate()",
     'where("idempotency_key", opts.idempotencyKey)',
     "E_REFUND_EXCEEDS_OUTSTANDING",

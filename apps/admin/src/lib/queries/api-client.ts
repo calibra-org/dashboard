@@ -66,13 +66,58 @@ export interface ApiMutationOptions extends ApiFetchOptions {
     /** Optional `If-Match` header value — forwarded to the api for optimistic concurrency checks. */
     ifMatch?: string;
     /**
-     * Stable idempotency token for retry-safe financial/create operations. Callers must keep this
-     * value stable while retrying the same logical request and rotate it when the payload changes.
+     * Stable idempotency token for retry-safe financial/create operations. Callers may provide an
+     * explicit token. Refunds receive an automatic payload-scoped token when one is omitted.
      */
     idempotencyKey?: string;
 }
 
 export type MutationMethod = "POST" | "PUT" | "PATCH" | "DELETE";
+
+const automaticIdempotencyKeys = new Map<string, string>();
+
+function canonicalJson(value: unknown): string {
+    if (value === null || typeof value !== "object") return JSON.stringify(value);
+    if (Array.isArray(value)) return `[${value.map((item) => canonicalJson(item)).join(",")}]`;
+    const record = value as Record<string, unknown>;
+    return `{${Object.keys(record)
+        .sort()
+        .map((key) => `${JSON.stringify(key)}:${canonicalJson(record[key])}`)
+        .join(",")}}`;
+}
+
+function isAutomaticIdempotencyMutation(method: MutationMethod, path: string): boolean {
+    return method === "POST" && /^orders\/\d+\/refunds\/?$/.test(path.replace(/^\/+/, ""));
+}
+
+function createIdempotencyKey(): string {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+    const bytes = new Uint8Array(16);
+    if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+        crypto.getRandomValues(bytes);
+        return Array.from(bytes, (value) => value.toString(16).padStart(2, "0")).join("");
+    }
+    return `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+}
+
+function automaticIdempotencyKey(
+    method: MutationMethod,
+    path: string,
+    body: unknown,
+): { fingerprint: string; key: string } | null {
+    if (!isAutomaticIdempotencyMutation(method, path)) return null;
+    const fingerprint = `${method}:${path.replace(/^\/+/, "")}:${canonicalJson(body ?? null)}`;
+    const existing = automaticIdempotencyKeys.get(fingerprint);
+    if (existing) return { fingerprint, key: existing };
+    const key = createIdempotencyKey();
+    automaticIdempotencyKeys.set(fingerprint, key);
+    while (automaticIdempotencyKeys.size > 64) {
+        const oldest = automaticIdempotencyKeys.keys().next().value as string | undefined;
+        if (oldest === undefined) break;
+        automaticIdempotencyKeys.delete(oldest);
+    }
+    return { fingerprint, key };
+}
 
 /**
  * Sends a mutation through the proxy. Stamps `X-CSRF-Token` from `document.cookie` and
@@ -91,21 +136,33 @@ export async function apiMutate<T>(method: MutationMethod, path: string, options
     if (typeof options.ifMatch === "string" && options.ifMatch.length > 0) {
         headers["if-match"] = options.ifMatch;
     }
-    if (typeof options.idempotencyKey === "string" && options.idempotencyKey.length > 0) {
-        headers["idempotency-key"] = options.idempotencyKey;
-    }
+    const automatic = automaticIdempotencyKey(method, path, options.body);
+    const idempotencyKey = options.idempotencyKey?.trim() || automatic?.key;
+    if (idempotencyKey) headers["idempotency-key"] = idempotencyKey;
+
     let body: BodyInit | undefined;
     if (options.body !== undefined && options.body !== null) {
         headers["content-type"] = "application/json";
         body = JSON.stringify(options.body);
     }
-    const res = await fetch(buildUrl(path, options.query), {
-        method,
-        headers,
-        body,
-        signal: options.signal,
-    });
-    return readResponse<T>(res);
+
+    let res: Response;
+    try {
+        res = await fetch(buildUrl(path, options.query), {
+            method,
+            headers,
+            body,
+            signal: options.signal,
+        });
+    } catch (error) {
+        // A transport failure is ambiguous: the API might have committed the mutation. Keep the
+        // automatic key cached so an explicit user retry is safe and reaches the same server result.
+        throw error;
+    }
+
+    const result = await readResponse<T>(res);
+    if (automatic?.fingerprint) automaticIdempotencyKeys.delete(automatic.fingerprint);
+    return result;
 }
 
 async function readResponse<T>(res: Response): Promise<T> {

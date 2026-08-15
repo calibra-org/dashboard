@@ -158,7 +158,14 @@ for (const token of ["factorDocuments", "factorPayments", "factorReports", "fact
     pass(currentIndex > previousIndex, `Factor sidebar order is incorrect around ${token}`);
     previousIndex = currentIndex;
 }
-pass(sidebar.includes("aria-expanded={factorOpen}"), "Factor sidebar submenu is not accessible/collapsible");
+pass(
+    sidebar.includes("aria-expanded={open}") &&
+        sidebar.includes("aria-controls={id}") &&
+        sidebar.includes('"factor-sidebar-items"') &&
+        sidebar.includes("factorOpen,") &&
+        sidebar.includes("setFactorOpen,"),
+    "Factor sidebar submenu is not accessible/collapsible",
+);
 pass(sidebar.includes('group.titleKey === "sales"'), "Factor submenu is not placed under Sales");
 
 const visibleFiles = [

@@ -48,7 +48,9 @@ router
             .as("admin.orderOperations.returns.refund")
             .use(adminWriteLimiter);
 
-        router.get("/inventory/movements", [InventoryOperationsController, "movements"]).as("admin.inventoryOperations.movements");
+        router
+            .get("/inventory/movements", [InventoryOperationsController, "movements"])
+            .as("admin.inventoryOperations.movements");
         router
             .post("/inventory/adjustments", [InventoryOperationsController, "adjust"])
             .as("admin.inventoryOperations.adjust")

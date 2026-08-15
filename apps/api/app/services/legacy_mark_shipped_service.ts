@@ -29,7 +29,10 @@ export class LegacyMarkShippedService {
             return;
         }
         if (order.status !== OrderStatus.Processing) {
-            throw new Exception("Only processing orders can be marked shipped", { status: 422, code: "E_FULFILLMENT_ORDER_STATE" });
+            throw new Exception("Only processing orders can be marked shipped", {
+                status: 422,
+                code: "E_FULFILLMENT_ORDER_STATE",
+            });
         }
 
         const key = `legacy-mark-shipped:${orderId}`;
@@ -59,9 +62,24 @@ export class LegacyMarkShippedService {
             fulfillment = created.data;
         }
 
-        let current = (await phase5OrderOperationsService.fulfillment(Number(fulfillment.id))).data;
+        let operations = (await phase5OrderOperationsQueryService.orderOperations(orderId)).data;
+        let current = operations.fulfillments.find((item) => item.id === Number(fulfillment.id));
+        if (!current) {
+            throw new Exception("Compatibility fulfillment could not be projected", {
+                status: 409,
+                code: "E_FULFILLMENT_PROJECTION_MISSING",
+            });
+        }
         if (current.status === "pending") {
-            current = (await phase5OrderOperationsService.transitionFulfillment(current.id, "packed", current.version, actor)).data;
+            await phase5OrderOperationsService.transitionFulfillment(current.id, "packed", current.version, actor);
+            operations = (await phase5OrderOperationsQueryService.orderOperations(orderId)).data;
+            current = operations.fulfillments.find((item) => item.id === Number(fulfillment.id));
+            if (!current) {
+                throw new Exception("Compatibility fulfillment could not be projected after transition", {
+                    status: 409,
+                    code: "E_FULFILLMENT_PROJECTION_MISSING",
+                });
+            }
         }
         if (current.status === "cancelled") {
             throw new Exception("Compatibility fulfillment was cancelled", { status: 409, code: "E_FULFILLMENT_CANCELLED" });
@@ -69,25 +87,60 @@ export class LegacyMarkShippedService {
 
         let shipment = current.shipments[0];
         if (!shipment) {
-            shipment = (
-                await phase5OrderOperationsService.createShipment(
-                    current.id,
-                    {
-                        carrier: input.carrier ?? null,
-                        tracking_number: input.tracking_number ?? null,
-                        tracking_url: input.tracking_url ?? null,
-                    },
-                    actor,
-                )
-            ).data as typeof current.shipments[number];
+            await phase5OrderOperationsService.createShipment(
+                current.id,
+                {
+                    carrier: input.carrier ?? null,
+                    tracking_number: input.tracking_number ?? null,
+                    tracking_url: input.tracking_url ?? null,
+                },
+                actor,
+            );
+            operations = (await phase5OrderOperationsQueryService.orderOperations(orderId)).data;
+            const refreshedFulfillment = operations.fulfillments.find((item) => item.id === Number(fulfillment.id));
+            if (!refreshedFulfillment) {
+                throw new Exception("Compatibility fulfillment could not be projected after shipment creation", {
+                    status: 409,
+                    code: "E_FULFILLMENT_PROJECTION_MISSING",
+                });
+            }
+            current = refreshedFulfillment;
+            const createdShipment = current.shipments[0];
+            if (!createdShipment) {
+                throw new Exception("Compatibility shipment could not be projected", {
+                    status: 409,
+                    code: "E_SHIPMENT_PROJECTION_MISSING",
+                });
+            }
+            shipment = createdShipment;
         } else {
-            await trx.from("order_shipments").where("id", shipment.id).update({
-                carrier: input.carrier ?? shipment.carrier,
-                tracking_number: input.tracking_number ?? shipment.tracking_number,
-                tracking_url: input.tracking_url ?? shipment.tracking_url,
-                updated_at: new Date(),
-            });
-            shipment = (await phase5OrderOperationsService.fulfillment(current.id)).data.shipments.find((item) => item.id === shipment.id)!;
+            await trx
+                .from("order_shipments")
+                .where("id", shipment.id)
+                .update({
+                    carrier: input.carrier ?? shipment.carrier,
+                    tracking_number: input.tracking_number ?? shipment.tracking_number,
+                    tracking_url: input.tracking_url ?? shipment.tracking_url,
+                    updated_at: new Date(),
+                });
+            const shipmentId = shipment.id;
+            operations = (await phase5OrderOperationsQueryService.orderOperations(orderId)).data;
+            const refreshedFulfillment = operations.fulfillments.find((item) => item.id === Number(fulfillment.id));
+            if (!refreshedFulfillment) {
+                throw new Exception("Compatibility fulfillment could not be projected after shipment update", {
+                    status: 409,
+                    code: "E_FULFILLMENT_PROJECTION_MISSING",
+                });
+            }
+            current = refreshedFulfillment;
+            const updatedShipment = current.shipments.find((item) => item.id === shipmentId);
+            if (!updatedShipment) {
+                throw new Exception("Compatibility shipment could not be projected after update", {
+                    status: 409,
+                    code: "E_SHIPMENT_PROJECTION_MISSING",
+                });
+            }
+            shipment = updatedShipment;
         }
 
         if (shipment.status === "label_created") {
@@ -118,7 +171,10 @@ export class LegacyMarkShippedService {
             carrier: input.carrier ?? previous.carrier ?? null,
             shipped_at: preserveTimestamp && previous.shipped_at ? previous.shipped_at : DateTime.utc().toISO(),
         };
-        await trx.from("orders").where("id", orderId).update({ attributes: JSON.stringify({ ...attributes, shipping }), updated_at: new Date() });
+        await trx
+            .from("orders")
+            .where("id", orderId)
+            .update({ attributes: JSON.stringify({ ...attributes, shipping }), updated_at: new Date() });
     }
 }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import type { Locale } from "@calibra/shared/i18n";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
 import { PageHeader } from "#/components/PageHeader";
@@ -47,6 +47,7 @@ const agentDescriptions: Record<ContentAgentKind, string> = {
 };
 
 export function ContentAgentsPage() {
+    const t = useTranslations("Content");
     const locale = useLocale() as Locale;
     const [kind, setKind] = useState<ContentAgentKind>("strategist");
     const [instruction, setInstruction] = useState("");
@@ -95,10 +96,7 @@ export function ContentAgentsPage() {
 
     return (
         <div className="flex flex-col gap-6">
-            <PageHeader
-                title="مرکز فرمان Agent"
-                subtitle="اجرای کنترل‌شده Agentهای محتوا با شواهد، ثبت تاریخچه و بازبینی انسانی اجباری."
-            />
+            <PageHeader title={t("agents.title")} subtitle={t("agents.subtitle")} />
 
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <ContentStatCard icon={Play} label="در حال اجرا" value={formatNumber(metrics.active, locale)} />

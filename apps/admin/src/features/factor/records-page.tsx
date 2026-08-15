@@ -1,7 +1,7 @@
 "use client";
 
 import type { Locale } from "@calibra/shared/i18n";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useDeferredValue, useState } from "react";
 
 import { Button } from "#/components/ui/button";
@@ -17,6 +17,7 @@ import { FactorHeader } from "./components";
 import { useFactorCustomers, useFactorProducts } from "./queries";
 
 export function FactorRecordsPage() {
+    const t = useTranslations("Factor");
     const locale = useLocale() as Locale;
     const [customerQuery, setCustomerQuery] = useState("");
     const [productQuery, setProductQuery] = useState("");
@@ -25,10 +26,7 @@ export function FactorRecordsPage() {
 
     return (
         <div className="flex flex-col gap-6">
-            <FactorHeader
-                title="مشتریان و کاتالوگ"
-                subtitle="انتخاب مشتری و کالا از داده‌های زنده کالیبرا؛ اسناد قبلی با Snapshot مستقل و بدون تغییر باقی می‌مانند."
-            />
+            <FactorHeader title={t("records.title")} subtitle={t("records.subtitle")} />
 
             <Tabs defaultValue="customers" variant="line">
                 <TabsList className="h-10 gap-6 px-0">

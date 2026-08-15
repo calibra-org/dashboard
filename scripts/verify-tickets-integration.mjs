@@ -26,11 +26,27 @@ const requiredFiles = [
     "apps/admin/messages/tickets/en.json",
     "apps/admin/src/app/[locale]/(authenticated)/tickets/page.tsx",
     "apps/admin/src/app/[locale]/(authenticated)/tickets/[id]/page.tsx",
+    "apps/admin/src/app/[locale]/(authenticated)/tickets/overview/page.tsx",
+    "apps/admin/src/app/[locale]/(authenticated)/tickets/create/page.tsx",
+    "apps/admin/src/app/[locale]/(authenticated)/tickets/inbox/page.tsx",
+    "apps/admin/src/app/[locale]/(authenticated)/tickets/inbox/[id]/page.tsx",
+    "apps/admin/src/app/[locale]/(authenticated)/tickets/internal/page.tsx",
+    "apps/admin/src/app/[locale]/(authenticated)/tickets/channels/page.tsx",
+    "apps/admin/src/app/[locale]/(authenticated)/tickets/campaigns/page.tsx",
+    "apps/admin/src/app/[locale]/(authenticated)/tickets/reports/page.tsx",
     "apps/admin/src/app/[locale]/(authenticated)/tickets/settings/page.tsx",
     "apps/admin/src/components/Sidebar.tsx",
     "apps/admin/src/features/tickets/workspace.tsx",
+    "apps/admin/src/features/tickets/overview.tsx",
+    "apps/admin/src/features/tickets/create.tsx",
+    "apps/admin/src/features/tickets/inbox.tsx",
+    "apps/admin/src/features/tickets/internal.tsx",
+    "apps/admin/src/features/tickets/channels.tsx",
+    "apps/admin/src/features/tickets/campaigns.tsx",
+    "apps/admin/src/features/tickets/reports.tsx",
     "apps/admin/src/features/tickets/detail.tsx",
     "apps/admin/src/features/tickets/settings.tsx",
+    "apps/admin/src/features/tickets/ui.tsx",
     "apps/admin/src/features/tickets/queries.ts",
     "apps/admin/src/lib/i18n/request.ts",
     "apps/admin/src/lib/queries/use-settle-mutation.ts",
@@ -41,11 +57,14 @@ const requiredFiles = [
     "apps/api/app/table_views/admin/tickets.ts",
     "apps/api/app/validators/admin/ticket_request_validator.ts",
     "apps/api/database/migrations/1750007100000_create_support_ticket_tables.ts",
+    "apps/api/database/migrations/1760001000000_expand_support_operations.ts",
+    "apps/api/database/migrations/1760001300000_expand_support_ticket_channels.ts",
     "apps/api/start/routes/admin_tickets.ts",
     "apps/api/tests/functional/admin/tickets.spec.ts",
     "apps/api/tests/functional/admin/tickets_concurrency.spec.ts",
     "apps/api/tests/functional/admin/tickets_table_view.spec.ts",
     "apps/api/tests/functional/admin/tickets_workflow.spec.ts",
+    "apps/api/tests/functional/admin/ticket_support_os.spec.ts",
     "docs/api/reference/openapi/admin.tickets.v1.yaml",
     "packages/sdk/src/generated/admin.tickets.d.ts",
     "packages/sdk/src/generated/admin.composed.d.ts",
@@ -84,7 +103,7 @@ for (const invariant of [
 
 const service = read("apps/api/app/services/support/ticket_service.ts");
 for (const invariant of [
-    "nextNumber(\"ticket\")",
+    'nextNumber("ticket")',
     "ensureAssignee",
     "ensureCustomer",
     "expected_version",
@@ -105,8 +124,16 @@ for (const invariant of ["adminTicketsView.run", 'input.sla === "healthy"', 'inp
 
 const migration = read("apps/api/database/migrations/1750007100000_create_support_ticket_tables.ts");
 for (const table of ["support_ticket_settings", "support_tickets", "support_ticket_messages", "support_ticket_events"]) {
-    check(migration.includes(`CREATE POLICY tenant_isolation ON ${table}`), `${table} must have tenant RLS policy`);
+    check(migration.includes(`"${table}"`), `${table} must be included in the tenant RLS table set`);
 }
+check(
+    migration.includes("for (const table of tenantTables)"),
+    "Ticket RLS must be applied to every tenant table in the declared set",
+);
+check(
+    migration.includes("CREATE POLICY tenant_isolation ON " + "$" + "{table}"),
+    "Ticket tables must create the tenant RLS policy",
+);
 check(migration.includes("FORCE ROW LEVEL SECURITY"), "Ticket tables must force row-level security");
 check(migration.includes("support_tickets_number_unique"), "Ticket numbering must be unique per tenant");
 check(migration.includes("support_tickets_reference_unique"), "Ticket references must be unique per tenant");
@@ -121,6 +148,17 @@ for (const hook of [
     "useTransitionTicket",
     "useAddTicketMessage",
     "useTicketSettings",
+    "useTicketWorkflowStatuses",
+    "useTicketSavedViews",
+    "useTicketBulkOperation",
+    "useTicketAttachments",
+    "useMergeTicket",
+    "useAgentPresence",
+    "useSupportChannels",
+    "useSupportRoutingRules",
+    "useSupportAutomationRules",
+    "useSupportCampaigns",
+    "useSupportReports",
 ]) {
     check(queries.includes(`function ${hook}`), `Ticket admin query hook missing: ${hook}`);
 }
@@ -146,26 +184,76 @@ check(detail.includes("ArrowStart"), "Ticket back navigation must use the RTL-aw
 
 const settle = read("apps/admin/src/lib/queries/use-settle-mutation.ts");
 check(settle.includes("setPendingState(rollback)"), "Failed settled mutations must roll optimistic state back");
-check(
-    settle.includes("void flush().catch"),
-    "Timer-triggered settled mutations must not leak unhandled promise rejections",
-);
+check(settle.includes("void flush().catch"), "Timer-triggered settled mutations must not leak unhandled promise rejections");
 
 const sidebar = read("apps/admin/src/components/Sidebar.tsx");
-check(sidebar.includes('labelKey: "ticketQueue"'), "Ticket queue navigation must use a translation key");
-check(sidebar.includes('labelKey: "ticketSettings"'), "Ticket settings navigation must use a translation key");
+const ticketNavEntries = [
+    ["/tickets/overview", "ticketOverview"],
+    ["/tickets/create", "ticketCreate"],
+    ["/tickets/inbox", "ticketInbox"],
+    ["/tickets/internal", "ticketInternal"],
+    ["/tickets/channels", "ticketChannels"],
+    ["/tickets/campaigns", "ticketCampaigns"],
+    ["/tickets/reports", "ticketReports"],
+    ["/tickets/settings", "ticketSettings"],
+];
+for (const [href, labelKey] of ticketNavEntries) {
+    check(sidebar.includes(`{ href: "${href}", labelKey: "${labelKey}"`), `Ticket submenu missing ${href}`);
+}
+const ticketItemsBlock = sidebar.match(/const ticketItems: NavItem\[\] = \[([\s\S]*?)\n\];/)?.[1] ?? "";
+check((ticketItemsBlock.match(/href:/g) ?? []).length === 8, "Ticket submenu must expose exactly eight first-class pages");
 check(sidebar.includes('navT("tickets")'), "Ticket navigation group title must come from the Nav catalog");
 check(!sidebar.includes("labelFa"), "Sidebar must not keep local Persian ticket labels");
 check(!sidebar.includes("labelEn"), "Sidebar must not keep local English ticket labels");
 
 for (const locale of ["fa", "en"]) {
     const catalog = JSON.parse(read(`apps/admin/messages/tickets/${locale}.json`));
-    for (const key of ["tickets", "ticketQueue", "ticketSettings"]) {
+    for (const key of [
+        "tickets",
+        "ticketOverview",
+        "ticketCreate",
+        "ticketInbox",
+        "ticketInternal",
+        "ticketChannels",
+        "ticketCampaigns",
+        "ticketReports",
+        "ticketSettings",
+    ]) {
         check(typeof catalog.Nav?.[key] === "string" && catalog.Nav[key].length > 0, `${locale} Nav.${key} is missing`);
     }
 }
+const realtimeServer = read("apps/api/app/services/support/ticket_realtime.ts");
+for (const invariant of ["ctx.response.onFinish", "transmit.broadcast", "ticket-inbox/users/", "currentTrx"]) {
+    check(realtimeServer.includes(invariant), `Ticket realtime server missing invariant: ${invariant}`);
+}
+const transmitConfig = read("apps/api/start/transmit.ts");
+for (const invariant of ['"ticket-inbox/users/:userId"', "Number(user.id) === Number(userId)", '"ticket-inbox"']) {
+    check(transmitConfig.includes(invariant), `Ticket Transmit authorization missing invariant: ${invariant}`);
+}
+const realtimeClient = read("apps/admin/src/features/tickets/realtime.ts");
+for (const invariant of ["getTransmit().subscription", "invalidateQueries", "localStorage", "eventKey", "subscription.delete"]) {
+    check(realtimeClient.includes(invariant), `Ticket realtime client missing invariant: ${invariant}`);
+}
+const sidebarRealtime = read("apps/admin/src/components/Sidebar.tsx");
+for (const invariant of ["useTicketRealtime(userId)", "ticketUnread", 'ticketsT("unread"', 'badge > 99 ? "99+"']) {
+    check(sidebarRealtime.includes(invariant), `Ticket unread badge missing invariant: ${invariant}`);
+}
+const authLayout = read("apps/admin/src/app/[locale]/(authenticated)/layout.tsx");
+check(
+    authLayout.includes("<Sidebar userId={session.userId} />"),
+    "Authenticated shell must pass the operator id to ticket realtime",
+);
+const adminTicketsController = read("apps/api/app/controllers/admin/tickets_controller.ts");
+for (const event of ['type: "created"', 'type: "updated"', 'type: "transitioned"', 'type: "message"']) {
+    check(adminTicketsController.includes(event), `Admin ticket controller missing realtime event ${event}`);
+}
+const publicTicketsController = read("apps/api/app/controllers/support_public_controller.ts");
+for (const event of ['type: "created"', 'type: "public_message"', 'type: "csat"']) {
+    check(publicTicketsController.includes(event), `Public ticket controller missing realtime event ${event}`);
+}
+
 const requestConfig = read("apps/admin/src/lib/i18n/request.ts");
-check(requestConfig.includes("messages/tickets/${locale}.json"), "Admin i18n loader must compose the ticket catalog");
+check(requestConfig.includes("messages/tickets/" + "$" + "{locale}.json"), "Admin i18n loader must compose the ticket catalog");
 check(requestConfig.includes("...tickets.Nav"), "Admin i18n loader must merge ticket Nav keys with the base catalog");
 
 const workflowTests = read("apps/api/tests/functional/admin/tickets_workflow.spec.ts");
@@ -192,6 +280,42 @@ for (const scenario of [
     "returns operational summary, trends, and resources",
 ]) {
     check(operationsTests.includes(scenario), `Ticket functional coverage missing scenario: ${scenario}`);
+}
+
+const supportOsTests = read("apps/api/tests/functional/admin/ticket_support_os.spec.ts");
+for (const scenario of [
+    "accepts the extended omnichannel ticket sources",
+    "keeps scheduled campaign drafts gated and aggregates recipient delivery evidence",
+    "reports status, channel and first-contact-resolution evidence from persisted ticket history",
+]) {
+    check(supportOsTests.includes(scenario), `Ticket Support OS functional coverage missing scenario: ${scenario}`);
+}
+const ticketOperationsRoutes = read("apps/api/start/routes/admin_ticket_operations.ts");
+for (const endpoint of [
+    '"/workflow-statuses"',
+    '"/saved-views"',
+    '"/bulk"',
+    '"/:ticketId/attachments"',
+    '"/:ticketId/merge"',
+    '"/operations/presence"',
+    '"/operations/channels"',
+    '"/operations/routing-rules"',
+    '"/operations/automation-rules"',
+    '"/operations/campaigns"',
+    '"/operations/reports"',
+]) {
+    check(ticketOperationsRoutes.includes(endpoint), `Ticket Support OS route missing: ${endpoint}`);
+}
+const supportOperationsService = read("apps/api/app/services/support/ticket_operations_service.ts");
+for (const invariant of [
+    'status: "draft"',
+    "recipient_summary",
+    "support_ticket_events",
+    "rate_percent",
+    "statuses: byStatus.map",
+    "channels: byChannel.map",
+]) {
+    check(supportOperationsService.includes(invariant), `Ticket Support OS service invariant missing: ${invariant}`);
 }
 
 const openapi = read("docs/api/reference/openapi/admin.tickets.v1.yaml");

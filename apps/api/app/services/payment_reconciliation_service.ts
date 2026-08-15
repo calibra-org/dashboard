@@ -8,7 +8,7 @@ import { PaymentAttemptStatus } from "#enums/payment_attempt_status";
 import { ResourceConflictException } from "#exceptions/domain_exceptions";
 import PaymentAttempt, { type PaymentReconciliationStatus } from "#models/payment_attempt";
 import PaymentGateway from "#models/payment_gateway";
-import type { ProviderPaymentStatus, ReconcileResult } from "#services/adapters/base_redirect_gateway";
+import type { PaymentAdapter, ProviderPaymentStatus, ReconcileResult } from "#services/adapters/base_redirect_gateway";
 import { recordAudit } from "#services/admin_audit_log_service";
 import { paymentAdapterRegistry } from "#services/payment_adapter_registry";
 import { paymentGatewayCredentialsService } from "#services/payment_gateway_credentials_service";
@@ -49,7 +49,7 @@ export class PaymentReconciliationService {
                 });
             }
 
-            let adapter;
+            let adapter: PaymentAdapter;
             try {
                 adapter = paymentAdapterRegistry.get(gateway.code);
             } catch {
@@ -132,7 +132,8 @@ export class PaymentReconciliationService {
             ) {
                 return "mismatch";
             }
-            if (result.amount_minor !== undefined && Number(result.amount_minor) !== Number(attempt.amountMinor)) return "mismatch";
+            if (result.amount_minor !== undefined && Number(result.amount_minor) !== Number(attempt.amountMinor))
+                return "mismatch";
             return "matched";
         }
         if (result.provider_status === "pending") {
@@ -144,7 +145,8 @@ export class PaymentReconciliationService {
         if (result.provider_status === "cancelled") {
             return attempt.status === PaymentAttemptStatus.Cancelled ? "matched" : "mismatch";
         }
-        if (result.provider_status === "refunded") return attempt.status === PaymentAttemptStatus.Refunded ? "matched" : "mismatch";
+        if (result.provider_status === "refunded")
+            return attempt.status === PaymentAttemptStatus.Refunded ? "matched" : "mismatch";
         return "error";
     }
 

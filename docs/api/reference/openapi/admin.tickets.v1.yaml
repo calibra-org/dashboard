@@ -241,7 +241,7 @@ components:
 
         TicketChannel:
             type: string
-            enum: [admin, web, email, phone, api]
+            enum: [admin, web, email, phone, api, whatsapp, telegram, instagram, rubika, bale, eitaa, sms]
 
         TicketQueueItem:
             type: object

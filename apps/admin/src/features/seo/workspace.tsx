@@ -1,6 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 
 import { Badge } from "#/components/ui/badge";
@@ -241,6 +242,7 @@ function scoreTone(value: number) {
 }
 
 function PageHeader({ mode, onRefresh, refreshing }: { mode: SeoWorkspaceMode; onRefresh: () => void; refreshing: boolean }) {
+    const t = useTranslations("Seo");
     const config = modeConfig[mode];
     const Icon = config.icon;
     return (
@@ -250,8 +252,8 @@ function PageHeader({ mode, onRefresh, refreshing }: { mode: SeoWorkspaceMode; o
                     <Icon className="size-5" aria-hidden="true" />
                 </span>
                 <div>
-                    <h1 className="font-semibold text-2xl tracking-tight">{config.title}</h1>
-                    <p className="mt-1 max-w-3xl text-muted-foreground text-sm leading-6">{config.description}</p>
+                    <h1 className="font-semibold text-2xl tracking-tight">{t(`modes.${mode}.title`)}</h1>
+                    <p className="mt-1 max-w-3xl text-muted-foreground text-sm leading-6">{t(`modes.${mode}.description`)}</p>
                 </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">

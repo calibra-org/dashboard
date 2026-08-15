@@ -1,7 +1,7 @@
 "use client";
 
 import type { Locale } from "@calibra/shared/i18n";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import { StatCard } from "#/components/StatCard";
@@ -30,6 +30,7 @@ const CHANNEL_LABELS: Record<string, string> = {
 };
 
 export function FactorReportsPage() {
+    const t = useTranslations("Factor");
     const locale = useLocale() as Locale;
     const reports = useFactorReports();
     const summary = useFactorSummary();
@@ -50,10 +51,7 @@ export function FactorReportsPage() {
     if (reports.isError || summary.isError) {
         return (
             <div className="flex flex-col gap-6">
-                <FactorHeader
-                    title="گزارش‌های فاکتور"
-                    subtitle="تحلیل وصول، مانده مطالبات، سن بدهی و عملکرد روش‌های تحویل و درگاه‌ها"
-                />
+                <FactorHeader title={t("reports.title")} subtitle={t("reports.subtitle")} />
                 <Card>
                     <CardContent className="pt-6">
                         <FactorQueryMessage
@@ -78,7 +76,7 @@ export function FactorReportsPage() {
 
     return (
         <div className="flex flex-col gap-6">
-            <FactorHeader title="گزارش‌های فاکتور" subtitle="تحلیل وصول، مانده مطالبات، سن بدهی و عملکرد روش‌های تحویل و درگاه‌ها" />
+            <FactorHeader title={t("reports.title")} subtitle={t("reports.subtitle")} />
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <StatCard label="نرخ وصول" value={`${collectionRate.toFixed(1)}%`} icon={ChartNoAxesCombined} tone="success" />
                 <StatCard

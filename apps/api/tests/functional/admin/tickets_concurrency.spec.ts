@@ -26,7 +26,9 @@ async function createAdmin() {
 }
 
 async function resetTickets() {
-    await db.rawQuery("TRUNCATE TABLE support_ticket_events, support_ticket_messages, support_tickets, support_ticket_settings RESTART IDENTITY CASCADE");
+    await db.rawQuery(
+        "TRUNCATE TABLE support_ticket_events, support_ticket_messages, support_tickets, support_ticket_settings RESTART IDENTITY CASCADE",
+    );
     await db.from("tenant_number_counters").where("kind", "ticket").delete();
 }
 
@@ -46,9 +48,17 @@ test.group("ticket optimistic concurrency", (group) => {
         const admin = await createAdmin();
         const created = await client.post(URL).withGuard("api").loginAs(admin).json(payload);
         const id = Number(created.body().data.id);
-        const changed = await client.patch(`${URL}/${id}`).withGuard("api").loginAs(admin).json({ expected_version: 1, priority: "high" });
+        const changed = await client
+            .patch(`${URL}/${id}`)
+            .withGuard("api")
+            .loginAs(admin)
+            .json({ expected_version: 1, priority: "high" });
         changed.assertStatus(200);
-        const stale = await client.patch(`${URL}/${id}`).withGuard("api").loginAs(admin).json({ expected_version: 1, priority: "high" });
+        const stale = await client
+            .patch(`${URL}/${id}`)
+            .withGuard("api")
+            .loginAs(admin)
+            .json({ expected_version: 1, priority: "high" });
         stale.assertStatus(409);
     });
 
@@ -56,9 +66,17 @@ test.group("ticket optimistic concurrency", (group) => {
         const admin = await createAdmin();
         const created = await client.post(URL).withGuard("api").loginAs(admin).json(payload);
         const id = Number(created.body().data.id);
-        const changed = await client.post(`${URL}/${id}/transition`).withGuard("api").loginAs(admin).json({ status: "pending", expected_version: 1 });
+        const changed = await client
+            .post(`${URL}/${id}/transition`)
+            .withGuard("api")
+            .loginAs(admin)
+            .json({ status: "pending", expected_version: 1 });
         changed.assertStatus(200);
-        const stale = await client.post(`${URL}/${id}/transition`).withGuard("api").loginAs(admin).json({ status: "pending", expected_version: 1 });
+        const stale = await client
+            .post(`${URL}/${id}/transition`)
+            .withGuard("api")
+            .loginAs(admin)
+            .json({ status: "pending", expected_version: 1 });
         stale.assertStatus(409);
     });
 });

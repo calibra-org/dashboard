@@ -4111,5 +4111,132 @@
         "searchProducts": "Search products",
         "stockUnknown": "Unknown",
         "totalsLabel": "Totals"
+    },
+    "Factor": {
+        "documents": {
+            "title": "Invoices and Proformas",
+            "subtitle": "Create, send, collect, and track financial documents connected to orders, customers, and the catalog.",
+            "fromDate": "From date",
+            "toDate": "To date"
+        },
+        "payments": {
+            "title": "Payments and Gateways",
+            "subtitle": "A unified view of document collections, order transactions, and active store payment gateways."
+        },
+        "reports": {
+            "title": "Invoice Reports",
+            "subtitle": "Analyze collections, outstanding receivables, aging, delivery methods, and gateway performance."
+        },
+        "records": {
+            "title": "Customers and Catalog",
+            "subtitle": "Select customers and products from live Calibra data while existing documents retain immutable snapshots."
+        },
+        "settings": {
+            "title": "Invoice Settings",
+            "subtitle": "Manage K20 numbering, tax, expiration, rounding, delivery preferences, and offline payment details."
+        }
+    },
+    "Content": {
+        "posts": {
+            "title": "Content Management",
+            "subtitle": "Manage articles, news, guides, and content connected to products and orders."
+        },
+        "market": {
+            "title": "News and Market Monitoring",
+            "subtitle": "Curate sources, score opportunities, and turn verified news into reviewable drafts."
+        },
+        "agents": {
+            "title": "Agent Command Center",
+            "subtitle": "Run content agents with evidence, traceable history, and mandatory human review."
+        },
+        "studio": {
+            "title": "Content and AI Studio",
+            "editTitle": "Edit: {title}",
+            "subtitle": "Writing, SEO, product linking, review, and publishing in one controlled workflow."
+        },
+        "calendar": {
+            "title": "Calendar and Publishing",
+            "subtitle": "Plan, review, and control the publishing queue for the current tenant."
+        },
+        "reports": {
+            "title": "Analytics and Reports",
+            "subtitle": "Measure content impact on visibility, engagement, products, and attributed orders without mixing it with booked revenue."
+        },
+        "settings": {
+            "title": "Content Settings",
+            "subtitle": "Manage publishing policy, sources, agents, and quality controls for the current tenant."
+        },
+        "taxonomy": {
+            "title": "Categories and Tags",
+            "subtitle": "Build an organized content architecture for search, filtering, linking, and reporting."
+        }
+    },
+    "Seo": {
+        "modes": {
+            "overview": {
+                "title": "SEO Overview",
+                "description": "Technical, content, product-data, schema, and operational SEO health across the store."
+            },
+            "categories-links": {
+                "title": "Categories and Internal Links",
+                "description": "Category, brand, and attribute structure, orphan pages, and internal-link opportunities."
+            },
+            "keywords-content": {
+                "title": "Keywords and Content",
+                "description": "Query targeting, links to content and products, and content-coverage control."
+            },
+            "technical-health": {
+                "title": "Technical Health and Crawling",
+                "description": "Indexability, canonical, URL, bot-access, and technical-quality issues."
+            },
+            "schema-preview": {
+                "title": "Schema and Preview",
+                "description": "Review real structured data for products, content, categories, brands, and media."
+            },
+            "competitors-serp": {
+                "title": "Competitors and SERP",
+                "description": "Tracked competitors, target keywords, and data imported from official services."
+            },
+            "images-alt": {
+                "title": "Images and ALT",
+                "description": "Alternative-text quality, dimensions, formats, and image-search readiness."
+            },
+            "products": {
+                "title": "Product SEO",
+                "description": "Product score, title, meta, URL, brand, category, images, offers, and feed readiness."
+            },
+            "rank-tracking": {
+                "title": "Rank Tracking",
+                "description": "Track and compare keyword positions by engine, country, city, and device without fabricated data."
+            },
+            "content-refresh": {
+                "title": "Content Refresh",
+                "description": "Identify stale or low-scoring content that needs review and renewed product linking."
+            },
+            "control-tower": {
+                "title": "SEO Control Tower",
+                "description": "Prioritize actions and issues, then run governed audits with transparent reporting."
+            },
+            "crawl-monitoring": {
+                "title": "Crawl Monitoring",
+                "description": "Audit entity structure plus access, index, sitemap, and robots status."
+            },
+            "live-editor": {
+                "title": "Live SEO Editor",
+                "description": "Edit SEO profiles with version control without changing primary product or content data."
+            },
+            "market-radar": {
+                "title": "Market and Content Radar",
+                "description": "Combine competitors, keywords, and content signals into a real action queue."
+            },
+            "reports": {
+                "title": "SEO Reports",
+                "description": "Entity scores, recurring issues, action history, and freshness status."
+            },
+            "settings": {
+                "title": "Settings and Technical Tools",
+                "description": "K20/K21, robots.txt, Sitemap, Schema, IndexNow, and official service integrations."
+            }
+        }
     }
 }

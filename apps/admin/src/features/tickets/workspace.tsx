@@ -19,7 +19,7 @@ import { Link } from "#/lib/i18n/navigation";
 import { cn } from "#/lib/utils";
 
 import { ticketCopy } from "./copy";
-import { useCreateTicket, useTicketResources, useTickets, useTicketSummary, useTicketTrends } from "./queries";
+import { useCreateTicket, useTicketResources, useTicketSummary, useTickets, useTicketTrends } from "./queries";
 import type { TicketPriority, TicketStatus } from "./types";
 
 function statusTone(status: TicketStatus): string {
@@ -35,13 +35,7 @@ function priorityTone(priority: TicketPriority): string {
     return "border-border bg-muted text-muted-foreground";
 }
 
-function TrendChart({
-    points,
-    locale,
-}: {
-    points: Array<{ day: string; opened: number; resolved: number }>;
-    locale: Locale;
-}) {
+function TrendChart({ points, locale }: { points: Array<{ day: string; opened: number; resolved: number }>; locale: Locale }) {
     const max = Math.max(1, ...points.flatMap((point) => [point.opened, point.resolved]));
     const width = 600;
     const height = 150;
@@ -110,11 +104,7 @@ export function TicketsWorkspace() {
             .filter(Boolean)
             .slice(0, 20);
         const assignedUserId =
-            assigneeChoice === "default"
-                ? undefined
-                : assigneeChoice === "unassigned"
-                  ? null
-                  : Number(assigneeChoice);
+            assigneeChoice === "default" ? undefined : assigneeChoice === "unassigned" ? null : Number(assigneeChoice);
 
         await createTicket.mutateAsync({
             customer_id: customerId,
@@ -191,7 +181,10 @@ export function TicketsWorkspace() {
                                 <label htmlFor="new-ticket-assignee" className="font-medium text-xs">
                                     {t.assignee}
                                 </label>
-                                <Select value={assigneeChoice} onValueChange={setAssigneeChoice}>
+                                <Select
+                                    value={assigneeChoice}
+                                    onValueChange={(value) => setAssigneeChoice(typeof value === "string" ? value : "default")}
+                                >
                                     <SelectTrigger id="new-ticket-assignee">
                                         <SelectValue />
                                     </SelectTrigger>
@@ -231,13 +224,7 @@ export function TicketsWorkspace() {
                                 placeholder={locale === "en" ? "Tags, comma separated" : "برچسب‌ها، با ویرگول جدا کنید"}
                                 maxLength={820}
                             />
-                            <Input
-                                name="subject"
-                                required
-                                placeholder={t.subject}
-                                maxLength={255}
-                                className="lg:col-span-2"
-                            />
+                            <Input name="subject" required placeholder={t.subject} maxLength={255} className="lg:col-span-2" />
                             <Textarea
                                 className="min-h-28 lg:col-span-2"
                                 name="message"
@@ -256,9 +243,7 @@ export function TicketsWorkspace() {
                             {customers.isError || assignees.isError ? (
                                 <p className="text-warning text-xs lg:col-span-2">{t.resourceWarning}</p>
                             ) : null}
-                            {createTicket.isError ? (
-                                <p className="text-danger text-xs lg:col-span-2">{t.createFailed}</p>
-                            ) : null}
+                            {createTicket.isError ? <p className="text-danger text-xs lg:col-span-2">{t.createFailed}</p> : null}
                         </form>
                     </CardContent>
                 </Card>
@@ -312,7 +297,11 @@ export function TicketsWorkspace() {
                         </div>
                     </CardHeader>
                     <CardContent>
-                        {trends.isLoading ? <Skeleton className="h-44" /> : <TrendChart points={trends.data ?? []} locale={locale} />}
+                        {trends.isLoading ? (
+                            <Skeleton className="h-44" />
+                        ) : (
+                            <TrendChart points={trends.data ?? []} locale={locale} />
+                        )}
                     </CardContent>
                 </Card>
                 <Card>

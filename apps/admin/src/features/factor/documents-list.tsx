@@ -1,12 +1,13 @@
 "use client";
 
 import type { Locale } from "@calibra/shared/i18n";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useDeferredValue, useState } from "react";
 
 import { StatCard } from "#/components/StatCard";
 import { Button } from "#/components/ui/button";
 import { Card, CardContent } from "#/components/ui/card";
+import { DatePickerField } from "#/components/ui/date-picker-field";
 import { Input } from "#/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "#/components/ui/select";
 import { Skeleton } from "#/components/ui/skeleton";
@@ -21,6 +22,7 @@ import { FACTOR_TYPE_LABELS } from "./utils";
 import type { FactorStatus, FactorType } from "./types";
 
 export function FactorDocumentsList() {
+    const t = useTranslations("Factor");
     const locale = useLocale() as Locale;
     const [q, setQ] = useState("");
     const [type, setType] = useState<FactorType | "all">("all");
@@ -40,11 +42,7 @@ export function FactorDocumentsList() {
 
     return (
         <div className="flex flex-col gap-6">
-            <FactorHeader
-                title="فاکتورها و پیش‌فاکتورها"
-                subtitle="ساخت، ارسال، وصول و پیگیری اسناد مالی متصل به سفارش‌ها، مشتریان و کاتالوگ"
-                actions={<FactorCreateButton />}
-            />
+            <FactorHeader title={t("documents.title")} subtitle={t("documents.subtitle")} actions={<FactorCreateButton />} />
 
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 {summary.isLoading ? (
@@ -141,24 +139,23 @@ export function FactorDocumentsList() {
                         </Button>
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_14rem_auto]">
-                        <Input
-                            type="date"
-                            value={fromDate}
-                            onChange={(event) => {
-                                setFromDate(event.target.value);
+                        <DatePickerField
+                            value={fromDate || null}
+                            onChange={(value) => {
+                                setFromDate(value ?? "");
                                 setPage(1);
                             }}
-                            aria-label="از تاریخ"
+                            locale={locale}
+                            placeholder={t("documents.fromDate")}
                         />
-                        <Input
-                            type="date"
-                            value={toDate}
-                            min={fromDate || undefined}
-                            onChange={(event) => {
-                                setToDate(event.target.value);
+                        <DatePickerField
+                            value={toDate || null}
+                            onChange={(value) => {
+                                setToDate(value ?? "");
                                 setPage(1);
                             }}
-                            aria-label="تا تاریخ"
+                            locale={locale}
+                            placeholder={t("documents.toDate")}
                         />
                         <Select
                             value={sort}

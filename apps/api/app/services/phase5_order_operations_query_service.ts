@@ -5,6 +5,97 @@ import { currentTrx } from "#services/tenant_context";
 
 type DbRow = Record<string, unknown>;
 
+type FulfillmentStatus = "pending" | "packed" | "shipped" | "delivered" | "cancelled";
+type ShipmentStatus = "label_created" | "in_transit" | "out_for_delivery" | "delivered" | "exception" | "returned";
+
+interface FulfillmentRow extends DbRow {
+    id: number;
+    order_id: number;
+    created_by_user_id: number | null;
+    version: number;
+    status: FulfillmentStatus;
+}
+
+interface FulfillmentItemRow extends DbRow {
+    id: number;
+    fulfillment_id: number;
+    order_line_item_id: number;
+    quantity: number;
+}
+
+interface ShipmentRow extends DbRow {
+    id: number;
+    fulfillment_id: number;
+    version: number;
+    status: ShipmentStatus;
+    carrier: string | null;
+    tracking_number: string | null;
+    tracking_url: string | null;
+}
+
+interface ShipmentEventRow extends DbRow {
+    id: number;
+    shipment_id: number;
+    created_by_user_id: number | null;
+    evidence: object;
+}
+
+interface ShipmentProjection extends ShipmentRow {
+    events: ShipmentEventRow[];
+}
+
+interface FulfillmentProjection extends FulfillmentRow {
+    items: FulfillmentItemRow[];
+    shipments: ShipmentProjection[];
+}
+
+interface ReturnRow extends DbRow {
+    id: number;
+    order_id: number;
+    refund_id: number | null;
+    created_by_user_id: number | null;
+    approved_by_user_id: number | null;
+    version: number;
+}
+
+interface ReturnItemRow extends DbRow {
+    id: number;
+    return_id: number;
+    order_line_item_id: number;
+    requested_quantity: number;
+    approved_quantity: number;
+    received_quantity: number;
+    damaged_quantity: number;
+    restock_quantity: number;
+    refund_amount_minor: number | null;
+}
+
+interface ReturnProjection extends ReturnRow {
+    items: ReturnItemRow[];
+}
+
+interface OrderOperationsLine {
+    id: number;
+    product_id: number | null;
+    variation_id: number | null;
+    name: string;
+    sku: string | null;
+    quantity: number;
+    fulfilled_quantity: number;
+    remaining_quantity: number;
+    delivered_quantity: number;
+    returned_quantity: number;
+    returnable_quantity: number;
+}
+
+interface OrderOperationsProjection {
+    order_id: number;
+    order_status: string;
+    lines: OrderOperationsLine[];
+    fulfillments: FulfillmentProjection[];
+    returns: ReturnProjection[];
+}
+
 function numberOrNull(value: unknown): number | null {
     if (value === null || value === undefined) return null;
     const parsed = Number(value);
@@ -15,17 +106,18 @@ function numberValue(value: unknown): number {
     return numberOrNull(value) ?? 0;
 }
 
-function fulfillmentRow(row: DbRow) {
+function fulfillmentRow(row: DbRow): FulfillmentRow {
     return {
         ...row,
         id: numberValue(row.id),
         order_id: numberValue(row.order_id),
         created_by_user_id: numberOrNull(row.created_by_user_id),
         version: numberValue(row.version),
+        status: String(row.status ?? "pending") as FulfillmentStatus,
     };
 }
 
-function fulfillmentItemRow(row: DbRow) {
+function fulfillmentItemRow(row: DbRow): FulfillmentItemRow {
     return {
         ...row,
         id: numberValue(row.id),
@@ -35,16 +127,20 @@ function fulfillmentItemRow(row: DbRow) {
     };
 }
 
-function shipmentRow(row: DbRow) {
+function shipmentRow(row: DbRow): ShipmentRow {
     return {
         ...row,
         id: numberValue(row.id),
         fulfillment_id: numberValue(row.fulfillment_id),
         version: numberValue(row.version),
+        status: String(row.status ?? "label_created") as ShipmentStatus,
+        carrier: row.carrier === null || row.carrier === undefined ? null : String(row.carrier),
+        tracking_number: row.tracking_number === null || row.tracking_number === undefined ? null : String(row.tracking_number),
+        tracking_url: row.tracking_url === null || row.tracking_url === undefined ? null : String(row.tracking_url),
     };
 }
 
-function shipmentEventRow(row: DbRow) {
+function shipmentEventRow(row: DbRow): ShipmentEventRow {
     return {
         ...row,
         id: numberValue(row.id),
@@ -54,7 +150,7 @@ function shipmentEventRow(row: DbRow) {
     };
 }
 
-function returnRow(row: DbRow) {
+function returnRow(row: DbRow): ReturnRow {
     return {
         ...row,
         id: numberValue(row.id),
@@ -66,7 +162,7 @@ function returnRow(row: DbRow) {
     };
 }
 
-function returnItemRow(row: DbRow) {
+function returnItemRow(row: DbRow): ReturnItemRow {
     return {
         ...row,
         id: numberValue(row.id),
@@ -83,7 +179,7 @@ function returnItemRow(row: DbRow) {
 
 /** Read-only projection for the existing Orders detail surface. */
 export class Phase5OrderOperationsQueryService {
-    async orderOperations(orderId: number) {
+    async orderOperations(orderId: number): Promise<{ data: OrderOperationsProjection }> {
         const trx = currentTrx();
         const order = await trx.from("orders").where("id", orderId).whereNull("deleted_at").first();
         if (!order) throw new Exception("Order not found", { status: 404, code: "E_NOT_FOUND" });
@@ -91,14 +187,7 @@ export class Phase5OrderOperationsQueryService {
         const lines = await trx
             .from("order_line_items")
             .where("order_id", orderId)
-            .select(
-                "id",
-                "product_id",
-                "variation_id",
-                "name_snapshot as name",
-                "sku_snapshot as sku",
-                "quantity",
-            )
+            .select("id", "product_id", "variation_id", "name_snapshot as name", "sku_snapshot as sku", "quantity")
             .orderBy("id", "asc");
         const fulfillments = await trx.from("order_fulfillments").where("order_id", orderId).orderBy("created_at", "asc");
         const fulfillmentIds = fulfillments.map((row) => Number(row.id));
@@ -125,9 +214,7 @@ export class Phase5OrderOperationsQueryService {
             if (!fulfillment || fulfillment.status === "cancelled") continue;
             const lineId = Number(item.order_line_item_id);
             allocated.set(lineId, (allocated.get(lineId) ?? 0) + Number(item.quantity));
-            if (fulfillment.status === "delivered") {
-                delivered.set(lineId, (delivered.get(lineId) ?? 0) + Number(item.quantity));
-            }
+            if (fulfillment.status === "delivered") delivered.set(lineId, (delivered.get(lineId) ?? 0) + Number(item.quantity));
         }
 
         const returned = new Map<number, number>();
@@ -139,8 +226,39 @@ export class Phase5OrderOperationsQueryService {
         }
 
         const legacyDelivered =
-            fulfillments.length === 0 &&
-            (order.status === OrderStatus.Completed || order.status === OrderStatus.Refunded);
+            fulfillments.length === 0 && (order.status === OrderStatus.Completed || order.status === OrderStatus.Refunded);
+
+        const fulfillmentProjections: FulfillmentProjection[] = fulfillments.map((row) => {
+            const fulfillment = fulfillmentRow(row as DbRow);
+            const shipmentProjections: ShipmentProjection[] = shipments
+                .filter((shipment) => Number(shipment.fulfillment_id) === fulfillment.id)
+                .map((shipment) => {
+                    const projected = shipmentRow(shipment as DbRow);
+                    return {
+                        ...projected,
+                        events: events
+                            .filter((event) => Number(event.shipment_id) === projected.id)
+                            .map((event) => shipmentEventRow(event as DbRow)),
+                    };
+                });
+            return {
+                ...fulfillment,
+                items: fulfillmentItems
+                    .filter((item) => Number(item.fulfillment_id) === fulfillment.id)
+                    .map((item) => fulfillmentItemRow(item as DbRow)),
+                shipments: shipmentProjections,
+            };
+        });
+
+        const returnProjections: ReturnProjection[] = returns.map((row) => {
+            const projected = returnRow(row as DbRow);
+            return {
+                ...projected,
+                items: returnItems
+                    .filter((item) => Number(item.return_id) === projected.id)
+                    .map((item) => returnItemRow(item as DbRow)),
+            };
+        });
 
         return {
             data: {
@@ -150,7 +268,7 @@ export class Phase5OrderOperationsQueryService {
                     const lineId = Number(line.id);
                     const orderedQuantity = numberValue(line.quantity);
                     const fulfilledQuantity = allocated.get(lineId) ?? 0;
-                    const deliveredQuantity = legacyDelivered ? orderedQuantity : delivered.get(lineId) ?? 0;
+                    const deliveredQuantity = legacyDelivered ? orderedQuantity : (delivered.get(lineId) ?? 0);
                     const returnedQuantity = returned.get(lineId) ?? 0;
                     return {
                         id: numberValue(line.id),
@@ -166,24 +284,8 @@ export class Phase5OrderOperationsQueryService {
                         returnable_quantity: Math.max(0, deliveredQuantity - returnedQuantity),
                     };
                 }),
-                fulfillments: fulfillments.map((row) => ({
-                    ...fulfillmentRow(row),
-                    items: fulfillmentItems
-                        .filter((item) => Number(item.fulfillment_id) === Number(row.id))
-                        .map(fulfillmentItemRow),
-                    shipments: shipments
-                        .filter((shipment) => Number(shipment.fulfillment_id) === Number(row.id))
-                        .map((shipment) => ({
-                            ...shipmentRow(shipment),
-                            events: events
-                                .filter((event) => Number(event.shipment_id) === Number(shipment.id))
-                                .map(shipmentEventRow),
-                        })),
-                })),
-                returns: returns.map((row) => ({
-                    ...returnRow(row),
-                    items: returnItems.filter((item) => Number(item.return_id) === Number(row.id)).map(returnItemRow),
-                })),
+                fulfillments: fulfillmentProjections,
+                returns: returnProjections,
             },
         };
     }

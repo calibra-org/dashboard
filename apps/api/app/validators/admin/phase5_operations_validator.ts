@@ -1,7 +1,14 @@
 import vine from "@vinejs/vine";
 
 export const FULFILLMENT_STATUSES = ["pending", "packed", "shipped", "delivered", "cancelled"] as const;
-export const SHIPMENT_STATUSES = ["label_created", "in_transit", "out_for_delivery", "delivered", "exception", "returned"] as const;
+export const SHIPMENT_STATUSES = [
+    "label_created",
+    "in_transit",
+    "out_for_delivery",
+    "delivered",
+    "exception",
+    "returned",
+] as const;
 export const RETURN_STATUSES = ["requested", "approved", "in_transit", "received", "completed", "cancelled"] as const;
 export const SHIPPING_LOCATION_TYPES = ["continent", "country", "state", "postcode"] as const;
 

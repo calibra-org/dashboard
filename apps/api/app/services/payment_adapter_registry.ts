@@ -10,8 +10,7 @@ import { UnimplementedPspGateway } from "#services/adapters/unimplemented_psp_ga
 import { zarinpalGateway } from "#services/adapters/zarinpal_gateway";
 import { readImplementationStatus } from "#transformers/payment_gateway_transformer";
 
-type CallbackPaymentAdapter = PaymentAdapter &
-    Required<Pick<PaymentAdapter, "parseCallback" | "verify">>;
+type CallbackPaymentAdapter = PaymentAdapter & Required<Pick<PaymentAdapter, "parseCallback" | "verify">>;
 
 /**
  * Singleton registry of payment adapters. Concrete adapters are registered only when Calibra has

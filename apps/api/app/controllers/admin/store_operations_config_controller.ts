@@ -44,7 +44,7 @@ export default class StoreOperationsConfigController {
             action: "shipping.zone.create",
             entityKind: "shipping_zone",
             entityId: Number(result.data.id),
-            payload: { name: result.data.name, is_fallback: result.data.is_fallback },
+            payload: { name: payload.name, is_fallback: result.data.is_fallback },
         });
         return result;
     }

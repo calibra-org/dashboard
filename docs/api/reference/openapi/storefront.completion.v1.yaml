@@ -1,0 +1,176 @@
+openapi: 3.1.0
+info:
+    title: Calibra Storefront Completion API Overlay
+    version: "1.0.0"
+    description: Public News and token-scoped Support endpoints.
+servers:
+    - url: http://localhost:3333
+tags:
+    - name: News
+    - name: Support
+components:
+    schemas:
+        PublicEnvelope:
+            type: object
+            additionalProperties: true
+paths:
+    /api/v1/content/news:
+        get:
+            tags: [News]
+            operationId: listPublicNews
+            security: []
+            responses:
+                "200":
+                    description: Published news from the Content OS.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/PublicEnvelope"
+    /api/v1/content/news/{slug}:
+        parameters:
+            - name: slug
+              in: path
+              required: true
+              schema: { type: string }
+        get:
+            tags: [News]
+            operationId: getPublicNewsBySlug
+            security: []
+            responses:
+                "200":
+                    description: Published news detail.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/PublicEnvelope"
+                "404": { description: News item not found }
+    /api/v1/news:
+        get:
+            tags: [News]
+            operationId: listPublicNewsAlias
+            security: []
+            responses:
+                "200":
+                    description: Public News alias.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/PublicEnvelope"
+    /api/v1/news/{slug}:
+        parameters:
+            - name: slug
+              in: path
+              required: true
+              schema: { type: string }
+        get:
+            tags: [News]
+            operationId: getPublicNewsAliasBySlug
+            security: []
+            responses:
+                "200":
+                    description: Public News detail alias.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/PublicEnvelope"
+                "404": { description: News item not found }
+    /api/v1/support/tickets:
+        post:
+            tags: [Support]
+            operationId: createPublicSupportTicket
+            security: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [requester_name, subject, message]
+                            properties:
+                                requester_name: { type: string, maxLength: 180 }
+                                requester_email: { type: [string, "null"], format: email }
+                                requester_phone: { type: [string, "null"], maxLength: 32 }
+                                subject: { type: string, maxLength: 255 }
+                                message: { type: string, maxLength: 20000 }
+                                category: { type: [string, "null"], maxLength: 80 }
+            responses:
+                "201":
+                    description: Ticket created. The opaque tracking token is returned only to the requester and only its hash is persisted.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/PublicEnvelope"
+    /api/v1/support/tickets/{token}:
+        parameters:
+            - name: token
+              in: path
+              required: true
+              schema: { type: string, minLength: 20 }
+        get:
+            tags: [Support]
+            operationId: trackPublicSupportTicket
+            security: []
+            responses:
+                "200":
+                    description: Token-scoped ticket view excluding internal notes and unsafe attachments.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/PublicEnvelope"
+                "404": { description: Tracking token invalid, expired, revoked, or outside the current tenant }
+    /api/v1/support/tickets/{token}/replies:
+        parameters:
+            - name: token
+              in: path
+              required: true
+              schema: { type: string, minLength: 20 }
+        post:
+            tags: [Support]
+            operationId: replyToPublicSupportTicket
+            security: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [expected_version, body]
+                            properties:
+                                expected_version: { type: integer, minimum: 1 }
+                                body: { type: string, maxLength: 20000 }
+            responses:
+                "200":
+                    description: Requester reply appended with optimistic concurrency control.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/PublicEnvelope"
+                "409": { description: Ticket version changed or ticket is closed }
+    /api/v1/support/tickets/{token}/csat:
+        parameters:
+            - name: token
+              in: path
+              required: true
+              schema: { type: string, minLength: 20 }
+        post:
+            tags: [Support]
+            operationId: submitPublicSupportCsat
+            security: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [score]
+                            properties:
+                                score: { type: integer, minimum: 1, maximum: 5 }
+                                comment: { type: [string, "null"], maxLength: 2000 }
+            responses:
+                "201":
+                    description: One persisted CSAT response for a resolved or closed ticket.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/PublicEnvelope"
+                "409": { description: Ticket not resolved or CSAT already submitted }

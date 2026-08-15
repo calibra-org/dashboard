@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { PageHeader } from "#/components/PageHeader";
@@ -34,6 +35,7 @@ const defaults: ContentSettings = {
 };
 
 export function ContentSettingsPage() {
+    const t = useTranslations("Content");
     const settings = useContentSettings();
     const update = useUpdateContentSettings();
     const users = useContentResources<ContentUser>("users", "", true);
@@ -91,8 +93,8 @@ export function ContentSettingsPage() {
     return (
         <div className="flex flex-col gap-6">
             <PageHeader
-                title="تنظیمات نوشته‌ها"
-                subtitle="سیاست انتشار، منابع، Agentها و کنترل کیفیت در Tenant جاری."
+                title={t("settings.title")}
+                subtitle={t("settings.subtitle")}
                 actions={
                     <Button disabled={update.isPending} onClick={save}>
                         <Save className="size-4" />

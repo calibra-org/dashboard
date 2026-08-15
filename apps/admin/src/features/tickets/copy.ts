@@ -200,8 +200,20 @@ const EN: Record<keyof typeof FA, string> = {
     settingsFailed: "Could not save settings.",
 };
 
-const STATUS_FA: Record<TicketStatus, string> = { open: "باز", pending: "در حال پیگیری", waiting_customer: "در انتظار مشتری", resolved: "حل‌شده", closed: "بسته" };
-const STATUS_EN: Record<TicketStatus, string> = { open: "Open", pending: "In progress", waiting_customer: "Waiting for customer", resolved: "Resolved", closed: "Closed" };
+const STATUS_FA: Record<TicketStatus, string> = {
+    open: "باز",
+    pending: "در حال پیگیری",
+    waiting_customer: "در انتظار مشتری",
+    resolved: "حل‌شده",
+    closed: "بسته",
+};
+const STATUS_EN: Record<TicketStatus, string> = {
+    open: "Open",
+    pending: "In progress",
+    waiting_customer: "Waiting for customer",
+    resolved: "Resolved",
+    closed: "Closed",
+};
 const PRIORITY_FA: Record<TicketPriority, string> = { low: "کم", normal: "عادی", high: "بالا", urgent: "فوری" };
 const PRIORITY_EN: Record<TicketPriority, string> = { low: "Low", normal: "Normal", high: "High", urgent: "Urgent" };
 

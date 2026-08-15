@@ -1,5 +1,5 @@
-import { test } from "@japa/runner";
 import db from "@adonisjs/lucid/services/db";
+import { test } from "@japa/runner";
 
 import { UserFactory } from "#factories/user_factory";
 import Customer from "#models/customer";
@@ -8,7 +8,13 @@ import { makeDraftOrder, resetPhase05 } from "#tests/helpers/orders";
 
 async function adminUser() {
     const admin = await UserFactory.apply("admin").create();
-    await Customer.create({ userId: admin.id, firstName: "Phase", lastName: "Five", countryDefault: "IR", isPayingCustomer: false });
+    await Customer.create({
+        userId: admin.id,
+        firstName: "Phase",
+        lastName: "Five",
+        countryDefault: "IR",
+        isPayingCustomer: false,
+    });
     return admin;
 }
 
@@ -116,7 +122,10 @@ test.group("Phase 5 order operations", (group) => {
         over.assertStatus(409);
     });
 
-    test("records shipment events and completes only after delivered fulfillment quantities cover the order", async ({ client, assert }) => {
+    test("records shipment events and completes only after delivered fulfillment quantities cover the order", async ({
+        client,
+        assert,
+    }) => {
         const admin = await adminUser();
         const { order } = await processingOrder(1);
         await moveToProcessing(client, admin, Number(order.id));
@@ -136,12 +145,19 @@ test.group("Phase 5 order operations", (group) => {
         assert.equal(operations.body().data.lines[0].returnable_quantity, 1);
     });
 
-    test("routes legacy mark-shipped through fulfillment without double-decrementing reserved stock", async ({ client, assert }) => {
+    test("routes legacy mark-shipped through fulfillment without double-decrementing reserved stock", async ({
+        client,
+        assert,
+    }) => {
         const admin = await adminUser();
         const { product, order } = await processingOrder(1);
         await moveToProcessing(client, admin, Number(order.id));
 
-        const reserved = await db.from("inventory_items").where("product_id", product.id).whereNull("variation_id").first();
+        const reserved = await db
+            .from("inventory_items")
+            .where("product_id", Number(product.id))
+            .whereNull("variation_id")
+            .first();
         assert.equal(Number(reserved?.stock_quantity), 99);
 
         const shipped = await client
@@ -157,7 +173,7 @@ test.group("Phase 5 order operations", (group) => {
         assert.equal(operations.body().data.fulfillments[0].status, "shipped");
         assert.equal(operations.body().data.fulfillments[0].shipments[0].status, "in_transit");
 
-        const after = await db.from("inventory_items").where("product_id", product.id).whereNull("variation_id").first();
+        const after = await db.from("inventory_items").where("product_id", Number(product.id)).whereNull("variation_id").first();
         assert.equal(Number(after?.stock_quantity), 99);
     });
 
@@ -232,7 +248,11 @@ test.group("Phase 5 order operations", (group) => {
             });
         received.assertStatus(200);
 
-        const inventory = await db.from("inventory_items").where("product_id", product.id).whereNull("variation_id").first();
+        const inventory = await db
+            .from("inventory_items")
+            .where("product_id", Number(product.id))
+            .whereNull("variation_id")
+            .first();
         assert.equal(Number(inventory?.stock_quantity), 100);
 
         const refunded = await client
@@ -282,10 +302,17 @@ test.group("Phase 5 order operations", (group) => {
         cancelledOrder.assertStatus(200);
     });
 
-    test("persists inventory adjustments and shipping/tax configuration through existing admin categories", async ({ client, assert }) => {
+    test("persists inventory adjustments and shipping/tax configuration through existing admin categories", async ({
+        client,
+        assert,
+    }) => {
         const admin = await adminUser();
         const product = await createTaxableProduct({ regularPrice: 1_000_000 });
-        const inventory = await db.from("inventory_items").where("product_id", product.id).whereNull("variation_id").first();
+        const inventory = await db
+            .from("inventory_items")
+            .where("product_id", Number(product.id))
+            .whereNull("variation_id")
+            .first();
         const inventoryId = Number(inventory?.id);
 
         const adjustment = await client

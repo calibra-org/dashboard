@@ -2,6 +2,16 @@
     "Nav": {
         "tickets": "تیکت‌ها",
         "ticketQueue": "صف و گفت‌وگوها",
-        "ticketSettings": "تنظیمات و SLA"
+        "ticketSettings": "تنظیمات و SLA",
+        "ticketOverview": "داشبورد پشتیبانی",
+        "ticketCreate": "ثبت تیکت",
+        "ticketInbox": "صندوق تیکت‌ها",
+        "ticketInternal": "گفت‌وگوی داخلی",
+        "ticketChannels": "پیام‌رسان‌ها",
+        "ticketCampaigns": "کمپین پیام",
+        "ticketReports": "گزارش‌های پشتیبانی"
+    },
+    "Tickets": {
+        "unread": "{count} پیام خوانده‌نشده"
     }
 }

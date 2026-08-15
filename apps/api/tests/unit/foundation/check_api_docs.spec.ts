@@ -16,6 +16,16 @@ test.group("check:api-docs diff()", () => {
         assert.deepEqual(diff(code, spec), []);
     });
 
+    test("treats framework-generated HEAD as covered by a documented GET", ({ assert }) => {
+        const code: CodeRoute[] = [
+            { method: "GET", path: "/api/v1/products" },
+            { method: "HEAD", path: "/api/v1/products" },
+        ];
+        const spec: SpecOperation[] = [{ method: "GET", path: "/api/v1/products", operationId: "listProducts" }];
+
+        assert.deepEqual(diff(code, spec), []);
+    });
+
     test("flags endpoints registered in code but missing from spec", ({ assert }) => {
         const code: CodeRoute[] = [
             { method: "GET", path: "/api/v1/products" },

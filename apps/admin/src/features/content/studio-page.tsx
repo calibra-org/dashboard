@@ -2,7 +2,7 @@
 
 import type { Locale } from "@calibra/shared/i18n";
 import Image from "next/image";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 
 import { MediaPicker } from "#/components/media-picker";
@@ -153,6 +153,7 @@ function fromPost(post: ContentPost): FormState {
 }
 
 export function ContentStudioPage({ postId = null }: { postId?: number | null }) {
+    const t = useTranslations("Content");
     const locale = useLocale() as Locale;
     const router = useRouter();
     const detail = useContentPost(postId);
@@ -311,8 +312,8 @@ export function ContentStudioPage({ postId = null }: { postId?: number | null })
     return (
         <div className="flex flex-col gap-6 pb-24">
             <PageHeader
-                title={post ? `ویرایش: ${post.title}` : "استودیو محتوا و AI"}
-                subtitle="نگارش، سئو، اتصال به محصول، بازبینی و انتشار در یک گردش‌کار کنترل‌شده."
+                title={post ? t("studio.editTitle", { title: post.title }) : t("studio.title")}
+                subtitle={t("studio.subtitle")}
                 actions={
                     <>
                         <Button variant="outline" asChild>
