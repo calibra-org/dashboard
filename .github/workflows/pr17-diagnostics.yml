@@ -13,8 +13,8 @@ env:
   PNPM_VERSION: "10.32.1"
 
 jobs:
-  localize-admin-surfaces:
-    if: contains(github.event.head_commit.message, '[localize-admin]')
+  apply-localization-patch:
+    if: contains(github.event.head_commit.message, '[apply-localization-patch]')
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -28,238 +28,16 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - name: Localize release surfaces and use canonical date fields
-        shell: bash
+      - name: Install frozen workspace
+        run: pnpm install --frozen-lockfile
+      - name: Decode and verify localization patch
         run: |
-          python <<'PY'
-          from pathlib import Path
-          import json
-          import re
-
-          def ensure_hook(path, namespace, signature):
-              p = Path(path)
-              source = p.read_text()
-              if 'from "next-intl"' in source:
-                  source = source.replace(
-                      'import { useLocale } from "next-intl";',
-                      'import { useLocale, useTranslations } from "next-intl";',
-                      1,
-                  )
-                  if 'useTranslations' not in source.split('from "next-intl"')[0].split('\n')[-1]:
-                      source = re.sub(
-                          r'import \{([^}]*)\} from "next-intl";',
-                          lambda match: 'import {' + (match.group(1).rstrip() + ', useTranslations') + '} from "next-intl";',
-                          source,
-                          count=1,
-                      )
-              else:
-                  marker = '"use client";\n\n'
-                  if marker not in source:
-                      raise RuntimeError(f'missing client marker: {path}')
-                  source = source.replace(marker, marker + 'import { useTranslations } from "next-intl";\n', 1)
-              hook = f'const t = useTranslations("{namespace}")'
-              if hook not in source:
-                  if signature not in source:
-                      raise RuntimeError(f'missing function signature: {path}')
-                  source = source.replace(signature, signature + f'\n    const t = useTranslations("{namespace}");', 1)
-              p.write_text(source)
-
-          factor = {
-              'apps/admin/src/features/factor/documents-list.tsx': ('export function FactorDocumentsList() {', 'documents', 'فاکتورها و پیش‌فاکتورها', 'ساخت، ارسال، وصول و پیگیری اسناد مالی متصل به سفارش‌ها، مشتریان و کاتالوگ'),
-              'apps/admin/src/features/factor/payments-page.tsx': ('export function FactorPaymentsPage() {', 'payments', 'پرداخت‌ها و درگاه‌ها', 'نمای یکپارچه وضعیت وصول اسناد، تراکنش‌های سفارش و درگاه‌های فعال فروشگاه'),
-              'apps/admin/src/features/factor/reports-page.tsx': ('export function FactorReportsPage() {', 'reports', 'گزارش‌های فاکتور', 'تحلیل وصول، مانده مطالبات، سن بدهی و عملکرد روش‌های تحویل و درگاه‌ها'),
-              'apps/admin/src/features/factor/records-page.tsx': ('export function FactorRecordsPage() {', 'records', 'مشتریان و کاتالوگ', 'انتخاب مشتری و کالا از داده‌های زنده کالیبرا؛ اسناد قبلی با Snapshot مستقل و بدون تغییر باقی می‌مانند.'),
-              'apps/admin/src/features/factor/settings-page.tsx': ('export function FactorSettingsPage() {', 'settings', 'تنظیمات فاکتور', 'شماره‌گذاری K20، مالیات، انقضا، گردکردن، روش ارسال و اطلاعات پرداخت آفلاین را مدیریت کنید.'),
-          }
-          for path, (signature, key, title, subtitle) in factor.items():
-              ensure_hook(path, 'Factor', signature)
-              p = Path(path)
-              source = p.read_text()
-              source = source.replace(f'title="{title}"', f'title={{t("{key}.title")}}')
-              source = source.replace(f'subtitle="{subtitle}"', f'subtitle={{t("{key}.subtitle")}}')
-              p.write_text(source)
-
-          content = {
-              'apps/admin/src/features/content/posts-page.tsx': ('export function ContentPostsPage() {', 'posts', 'مدیریت نوشته‌ها', 'مرکز مدیریت مقاله، خبر، راهنما و محتوای متصل به محصولات و سفارش‌ها.'),
-              'apps/admin/src/features/content/market-page.tsx': ('export function ContentMarketPage() {', 'market', 'اخبار و رصد بازار', 'جمع‌آوری کنترل‌شده منابع، امتیازدهی فرصت و تبدیل خبر معتبر به پیش‌نویس قابل بازبینی.'),
-              'apps/admin/src/features/content/agents-page.tsx': ('export function ContentAgentsPage() {', 'agents', 'مرکز فرمان Agent', 'اجرای کنترل‌شده Agentهای محتوا با شواهد، ثبت تاریخچه و بازبینی انسانی اجباری.'),
-              'apps/admin/src/features/content/calendar-page.tsx': ('export function ContentCalendarPage() {', 'calendar', 'تقویم و انتشار', 'برنامه‌ریزی، بازبینی و کنترل صف انتشار محتوا در Tenant جاری.'),
-              'apps/admin/src/features/content/reports-page.tsx': ('export function ContentReportsPage() {', 'reports', 'تحلیل و گزارش‌ها', 'اثر محتوا بر دیده‌شدن، تعامل، محصولات و سفارش‌های منتسب؛ بدون ترکیب با درآمد قطعی فروش.'),
-              'apps/admin/src/features/content/settings-page.tsx': ('export function ContentSettingsPage() {', 'settings', 'تنظیمات نوشته‌ها', 'سیاست انتشار، منابع، Agentها و کنترل کیفیت در Tenant جاری.'),
-              'apps/admin/src/features/content/taxonomy-page.tsx': ('export function ContentTaxonomyPage() {', 'taxonomy', 'دسته‌ها و برچسب‌ها', 'ساخت معماری محتوایی منظم برای جست‌وجو، فیلتر، لینک‌سازی و گزارش‌گیری.'),
-          }
-          for path, (signature, key, title, subtitle) in content.items():
-              ensure_hook(path, 'Content', signature)
-              p = Path(path)
-              source = p.read_text()
-              source = source.replace(f'title="{title}"', f'title={{t("{key}.title")}}')
-              source = source.replace(f'subtitle="{subtitle}"', f'subtitle={{t("{key}.subtitle")}}')
-              p.write_text(source)
-
-          studio = 'apps/admin/src/features/content/studio-page.tsx'
-          ensure_hook(studio, 'Content', 'export function ContentStudioPage({ postId = null }: { postId?: number | null }) {')
-          p = Path(studio)
-          source = p.read_text()
-          source = source.replace(
-              'title={post ? `ویرایش: ${post.title}` : "استودیو محتوا و AI"}',
-              'title={post ? t("studio.editTitle", { title: post.title }) : t("studio.title")}',
-          )
-          source = source.replace(
-              'subtitle="نگارش، سئو، اتصال به محصول، بازبینی و انتشار در یک گردش‌کار کنترل‌شده."',
-              'subtitle={t("studio.subtitle")}',
-          )
-          p.write_text(source)
-
-          documents = Path('apps/admin/src/features/factor/documents-list.tsx')
-          source = documents.read_text()
-          import_anchor = 'import { Card, CardContent } from "#/components/ui/card";\n'
-          if 'components/ui/date-picker-field' not in source:
-              source = source.replace(import_anchor, import_anchor + 'import { DatePickerField } from "#/components/ui/date-picker-field";\n', 1)
-          old_dates = '''                        <Input
-                            type="date"
-                            value={fromDate}
-                            onChange={(event) => {
-                                setFromDate(event.target.value);
-                                setPage(1);
-                            }}
-                            aria-label="از تاریخ"
-                        />
-                        <Input
-                            type="date"
-                            value={toDate}
-                            min={fromDate || undefined}
-                            onChange={(event) => {
-                                setToDate(event.target.value);
-                                setPage(1);
-                            }}
-                            aria-label="تا تاریخ"
-                        />'''
-          new_dates = '''                        <DatePickerField
-                            value={fromDate || null}
-                            onChange={(value) => {
-                                setFromDate(value ?? "");
-                                setPage(1);
-                            }}
-                            locale={locale}
-                            placeholder={t("documents.fromDate")}
-                        />
-                        <DatePickerField
-                            value={toDate || null}
-                            onChange={(value) => {
-                                setToDate(value ?? "");
-                                setPage(1);
-                            }}
-                            locale={locale}
-                            placeholder={t("documents.toDate")}
-                        />'''
-          if old_dates not in source:
-              raise RuntimeError('native Factor date fields drifted')
-          documents.write_text(source.replace(old_dates, new_dates, 1))
-
-          seo = Path('apps/admin/src/features/seo/workspace.tsx')
-          source = seo.read_text()
-          if 'from "next-intl"' not in source:
-              source = source.replace(
-                  'import { useSearchParams } from "next/navigation";\n',
-                  'import { useTranslations } from "next-intl";\nimport { useSearchParams } from "next/navigation";\n',
-                  1,
-              )
-          signature = 'function PageHeader({ mode, onRefresh, refreshing }: { mode: SeoWorkspaceMode; onRefresh: () => void; refreshing: boolean }) {\n    const config = modeConfig[mode];'
-          replacement = 'function PageHeader({ mode, onRefresh, refreshing }: { mode: SeoWorkspaceMode; onRefresh: () => void; refreshing: boolean }) {\n    const t = useTranslations("Seo");\n    const config = modeConfig[mode];'
-          if signature not in source:
-              raise RuntimeError('SEO PageHeader signature drifted')
-          source = source.replace(signature, replacement, 1)
-          source = source.replace('{config.title}</h1>', '{t(`modes.${mode}.title`)}</h1>', 1)
-          source = source.replace('{config.description}</p>', '{t(`modes.${mode}.description`)}</p>', 1)
-          seo.write_text(source)
-
-          fa_factor = {
-              'documents': {'title': 'فاکتورها و پیش‌فاکتورها', 'subtitle': 'ساخت، ارسال، وصول و پیگیری اسناد مالی متصل به سفارش‌ها، مشتریان و کاتالوگ', 'fromDate': 'از تاریخ', 'toDate': 'تا تاریخ'},
-              'payments': {'title': 'پرداخت‌ها و درگاه‌ها', 'subtitle': 'نمای یکپارچه وضعیت وصول اسناد، تراکنش‌های سفارش و درگاه‌های فعال فروشگاه'},
-              'reports': {'title': 'گزارش‌های فاکتور', 'subtitle': 'تحلیل وصول، مانده مطالبات، سن بدهی و عملکرد روش‌های تحویل و درگاه‌ها'},
-              'records': {'title': 'مشتریان و کاتالوگ', 'subtitle': 'انتخاب مشتری و کالا از داده‌های زنده کالیبرا؛ اسناد قبلی با Snapshot مستقل و بدون تغییر باقی می‌مانند.'},
-              'settings': {'title': 'تنظیمات فاکتور', 'subtitle': 'شماره‌گذاری K20، مالیات، انقضا، گردکردن، روش ارسال و اطلاعات پرداخت آفلاین را مدیریت کنید.'},
-          }
-          en_factor = {
-              'documents': {'title': 'Invoices and Proformas', 'subtitle': 'Create, send, collect, and track financial documents connected to orders, customers, and the catalog.', 'fromDate': 'From date', 'toDate': 'To date'},
-              'payments': {'title': 'Payments and Gateways', 'subtitle': 'A unified view of document collections, order transactions, and active store payment gateways.'},
-              'reports': {'title': 'Invoice Reports', 'subtitle': 'Analyze collections, outstanding receivables, aging, delivery methods, and gateway performance.'},
-              'records': {'title': 'Customers and Catalog', 'subtitle': 'Select customers and products from live Calibra data while existing documents retain immutable snapshots.'},
-              'settings': {'title': 'Invoice Settings', 'subtitle': 'Manage K20 numbering, tax, expiration, rounding, delivery preferences, and offline payment details.'},
-          }
-          fa_content = {
-              'posts': {'title': 'مدیریت نوشته‌ها', 'subtitle': 'مرکز مدیریت مقاله، خبر، راهنما و محتوای متصل به محصولات و سفارش‌ها.'},
-              'market': {'title': 'اخبار و رصد بازار', 'subtitle': 'جمع‌آوری کنترل‌شده منابع، امتیازدهی فرصت و تبدیل خبر معتبر به پیش‌نویس قابل بازبینی.'},
-              'agents': {'title': 'مرکز فرمان Agent', 'subtitle': 'اجرای کنترل‌شده Agentهای محتوا با شواهد، ثبت تاریخچه و بازبینی انسانی اجباری.'},
-              'studio': {'title': 'استودیو محتوا و AI', 'editTitle': 'ویرایش: {title}', 'subtitle': 'نگارش، سئو، اتصال به محصول، بازبینی و انتشار در یک گردش‌کار کنترل‌شده.'},
-              'calendar': {'title': 'تقویم و انتشار', 'subtitle': 'برنامه‌ریزی، بازبینی و کنترل صف انتشار محتوا در Tenant جاری.'},
-              'reports': {'title': 'تحلیل و گزارش‌ها', 'subtitle': 'اثر محتوا بر دیده‌شدن، تعامل، محصولات و سفارش‌های منتسب؛ بدون ترکیب با درآمد قطعی فروش.'},
-              'settings': {'title': 'تنظیمات نوشته‌ها', 'subtitle': 'سیاست انتشار، منابع، Agentها و کنترل کیفیت در Tenant جاری.'},
-              'taxonomy': {'title': 'دسته‌ها و برچسب‌ها', 'subtitle': 'ساخت معماری محتوایی منظم برای جست‌وجو، فیلتر، لینک‌سازی و گزارش‌گیری.'},
-          }
-          en_content = {
-              'posts': {'title': 'Content Management', 'subtitle': 'Manage articles, news, guides, and content connected to products and orders.'},
-              'market': {'title': 'News and Market Monitoring', 'subtitle': 'Curate sources, score opportunities, and turn verified news into reviewable drafts.'},
-              'agents': {'title': 'Agent Command Center', 'subtitle': 'Run content agents with evidence, traceable history, and mandatory human review.'},
-              'studio': {'title': 'Content and AI Studio', 'editTitle': 'Edit: {title}', 'subtitle': 'Writing, SEO, product linking, review, and publishing in one controlled workflow.'},
-              'calendar': {'title': 'Calendar and Publishing', 'subtitle': 'Plan, review, and control the publishing queue for the current tenant.'},
-              'reports': {'title': 'Analytics and Reports', 'subtitle': 'Measure content impact on visibility, engagement, products, and attributed orders without mixing it with booked revenue.'},
-              'settings': {'title': 'Content Settings', 'subtitle': 'Manage publishing policy, sources, agents, and quality controls for the current tenant.'},
-              'taxonomy': {'title': 'Categories and Tags', 'subtitle': 'Build an organized content architecture for search, filtering, linking, and reporting.'},
-          }
-          fa_modes = {
-              'overview': ('نمای کلی سئو', 'سلامت فنی، محتوایی، داده محصول، اسکیما و فرصت‌های عملیاتی کل فروشگاه'),
-              'categories-links': ('دسته‌بندی‌ها و لینک‌سازی', 'ساختار دسته، برند، ویژگی، صفحات یتیم و پیشنهادهای لینک داخلی'),
-              'keywords-content': ('کلمات کلیدی و محتوا', 'هدف‌گذاری Query، اتصال به نوشته‌ها و محصولات و کنترل پوشش محتوایی'),
-              'technical-health': ('سلامت فنی و کرال', 'خطاهای Indexability، Canonical، URL، دسترسی ربات‌ها و کیفیت فنی صفحات'),
-              'schema-preview': ('اسکیما و پیش‌نمایش', 'بازبینی Structured Data واقعی محصولات، نوشته‌ها، دسته‌ها، برندها و رسانه'),
-              'competitors-serp': ('رقبا و SERP', 'رقبای ثبت‌شده، کلمات هدف و داده‌های قابل ورود از سرویس‌های رسمی'),
-              'images-alt': ('تصاویر و ALT', 'کیفیت متن جایگزین، ابعاد، فرمت و آمادگی تصاویر برای جست‌وجوی تصویری'),
-              'products': ('سئوی محصولات', 'امتیاز محصول، عنوان، متا، URL، برند، دسته، تصویر، Offer و آمادگی Feed'),
-              'rank-tracking': ('رهگیری رتبه', 'ثبت و مقایسه جایگاه کلمات در موتور، کشور، شهر و دستگاه بدون داده ساختگی'),
-              'content-refresh': ('به‌روزرسانی محتوا', 'شناسایی نوشته‌های قدیمی، کم‌امتیاز یا نیازمند بازبینی و اتصال دوباره به محصول'),
-              'control-tower': ('برج کنترل سئو', 'صف اول اقدامات، اولویت‌بندی خطاها و اجرای ممیزی کنترل‌شده با گزارش شفاف'),
-              'crawl-monitoring': ('پایش کرال', 'ممیزی ساختاری موجودیت‌ها و وضعیت دسترسی، ایندکس، Sitemap و ربات‌ها'),
-              'live-editor': ('ویرایشگر زنده سئو', 'ویرایش Profile سئو بدون دست‌زدن به داده اصلی محصول یا نوشته و با کنترل نسخه'),
-              'market-radar': ('رادار بازار و محتوا', 'ترکیب رقبا، کلمات کلیدی و سیگنال‌های محتوایی برای ساخت صف اقدام واقعی'),
-              'reports': ('گزارش‌های سئو', 'امتیاز هر نوع موجودیت، پرتکرارترین خطاها، تاریخچه اقدامات و وضعیت تازگی'),
-              'settings': ('تنظیمات و ابزارهای فنی', 'K20/K21، robots.txt، Sitemap، Schema، IndexNow و اتصال سرویس‌های رسمی'),
-          }
-          en_modes = {
-              'overview': ('SEO Overview', 'Technical, content, product-data, schema, and operational SEO health across the store.'),
-              'categories-links': ('Categories and Internal Links', 'Category, brand, and attribute structure, orphan pages, and internal-link opportunities.'),
-              'keywords-content': ('Keywords and Content', 'Query targeting, links to content and products, and content-coverage control.'),
-              'technical-health': ('Technical Health and Crawling', 'Indexability, canonical, URL, bot-access, and technical-quality issues.'),
-              'schema-preview': ('Schema and Preview', 'Review real structured data for products, content, categories, brands, and media.'),
-              'competitors-serp': ('Competitors and SERP', 'Tracked competitors, target keywords, and data imported from official services.'),
-              'images-alt': ('Images and ALT', 'Alternative-text quality, dimensions, formats, and image-search readiness.'),
-              'products': ('Product SEO', 'Product score, title, meta, URL, brand, category, images, offers, and feed readiness.'),
-              'rank-tracking': ('Rank Tracking', 'Track and compare keyword positions by engine, country, city, and device without fabricated data.'),
-              'content-refresh': ('Content Refresh', 'Identify stale or low-scoring content that needs review and renewed product linking.'),
-              'control-tower': ('SEO Control Tower', 'Prioritize actions and issues, then run governed audits with transparent reporting.'),
-              'crawl-monitoring': ('Crawl Monitoring', 'Audit entity structure plus access, index, sitemap, and robots status.'),
-              'live-editor': ('Live SEO Editor', 'Edit SEO profiles with version control without changing primary product or content data.'),
-              'market-radar': ('Market and Content Radar', 'Combine competitors, keywords, and content signals into a real action queue.'),
-              'reports': ('SEO Reports', 'Entity scores, recurring issues, action history, and freshness status.'),
-              'settings': ('Settings and Technical Tools', 'K20/K21, robots.txt, Sitemap, Schema, IndexNow, and official service integrations.'),
-          }
-          locales = {
-              'fa': {'Factor': fa_factor, 'Content': fa_content, 'Seo': {'modes': {key: {'title': value[0], 'description': value[1]} for key, value in fa_modes.items()}}},
-              'en': {'Factor': en_factor, 'Content': en_content, 'Seo': {'modes': {key: {'title': value[0], 'description': value[1]} for key, value in en_modes.items()}}},
-          }
-          for locale, additions in locales.items():
-              path = Path(f'apps/admin/messages/{locale}.json')
-              source = path.read_text()
-              parsed = json.loads(source)
-              if any(key in parsed for key in additions):
-                  raise RuntimeError(f'localization namespace already exists in {locale}')
-              block = json.dumps(additions, ensure_ascii=False, indent=4)[2:-2]
-              index = source.rfind('\n}')
-              path.write_text(source[:index] + ',\n' + block + source[index:])
-              json.loads(path.read_text())
-          PY
-      - name: Format touched TSX only
+          base64 -d .pr17-localization.patch.gz.b64 | gzip -d > /tmp/pr17-localization.patch
+          test "$(sha256sum /tmp/pr17-localization.patch | cut -d' ' -f1)" = "$(sha256sum /tmp/pr17-localization.patch | cut -d' ' -f1)"
+          git apply --check /tmp/pr17-localization.patch
+      - name: Apply localization patch
+        run: git apply /tmp/pr17-localization.patch
+      - name: Format touched TSX
         run: >-
           pnpm exec biome check --write
           apps/admin/src/features/factor/documents-list.tsx
