@@ -24,6 +24,7 @@
         "verify:tickets": "node scripts/verify-tickets-integration.mjs && node scripts/verify-ticket-seo-content-completion.mjs",
         "verify:phase5": "node scripts/verify-phase5-operations-integration.mjs",
         "panel": "node scripts/panel.mjs",
+        "panel:setup": "node scripts/panel.mjs --setup",
         "spin": "node scripts/spin.mjs",
         "test": "turbo run test",
         "typecheck": "turbo run typecheck"
