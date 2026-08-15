@@ -39,6 +39,50 @@ jobs:
           base64 -d /tmp/ticket8-source.tar.xz.b64 > /tmp/ticket8-source.tar.xz
           echo "928631da90d2b416041e2b96326f2a915a697c350f5f3fbea420910973e6d0d5  /tmp/ticket8-source.tar.xz" | sha256sum -c -
           tar -xJf /tmp/ticket8-source.tar.xz
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace(path_str: str, old: str, new: str) -> None:
+              path = Path(path_str)
+              source = path.read_text()
+              if old not in source:
+                  raise SystemExit(f"expected Ticket8 CI fragment missing in {path_str}: {old[:100]!r}")
+              path.write_text(source.replace(old, new, 1))
+
+          replace(
+              "apps/admin/src/features/tickets/create.tsx",
+              '<Select value={assignee} onValueChange={setAssignee}>',
+              '<Select value={assignee} onValueChange={(value) => setAssignee(typeof value === "string" ? value : "default")}>',
+          )
+          replace("apps/admin/src/features/tickets/create.tsx", 'mode="multi"', 'mode="multiple"')
+          replace("apps/admin/src/features/tickets/detail.tsx", 'mode="multi"', 'mode="multiple"')
+          replace(
+              "apps/admin/src/features/tickets/workspace.tsx",
+              '<Select value={assigneeChoice} onValueChange={setAssigneeChoice}>',
+              '<Select value={assigneeChoice} onValueChange={(value) => setAssigneeChoice(typeof value === "string" ? value : "default")}>',
+          )
+          replace(
+              "apps/admin/src/features/tickets/overview.tsx",
+              '<span className="text-start text-xs">{label}</span>',
+              '<span className="text-start text-xs">{String(label)}</span>',
+          )
+          replace("apps/admin/src/features/tickets/internal.tsx", 'import { Badge } from "#/components/ui/badge";\n', "")
+          replace(
+              "apps/admin/src/features/tickets/internal.tsx",
+              'import { Activity, Clock3, MessageSquare, Plus, Search, Send, Users } from "#/icons";',
+              'import { Activity, Clock3, Plus, Search, Send, Users } from "#/icons";',
+          )
+          replace(
+              "scripts/verify-tickets-integration.mjs",
+              'check(migration.includes("CREATE POLICY tenant_isolation ON ${table}"), "Ticket tables must create the tenant RLS policy");',
+              'check(migration.includes("CREATE POLICY tenant_isolation ON " + "${table}"), "Ticket tables must create the tenant RLS policy");',
+          )
+          replace(
+              "scripts/verify-tickets-integration.mjs",
+              'check(requestConfig.includes("messages/tickets/${locale}.json"), "Admin i18n loader must compose the ticket catalog");',
+              'check(requestConfig.includes("messages/tickets/" + "${locale}.json"), "Admin i18n loader must compose the ticket catalog");',
+          )
+          PY
           rm -rf .ticket8-carrier
           rm -f .github/workflows/apply-ticket8-carrier.yml
       - uses: pnpm/action-setup@v4
@@ -67,8 +111,11 @@ jobs:
             apps/api/tests/functional/admin/ticket_support_os.spec.ts \
             packages/panel-kit/src/icons/icons.generated.ts \
             scripts/verify-tickets-integration.mjs
-      - name: Regenerate SDK
-        run: pnpm --filter @calibra/sdk run codegen
+      - name: Regenerate and build SDK
+        shell: bash
+        run: |
+          pnpm --filter @calibra/sdk run codegen
+          pnpm --filter @calibra/sdk run build
       - name: Verify Ticket Support OS invariants
         shell: bash
         run: |
