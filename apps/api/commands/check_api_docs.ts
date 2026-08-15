@@ -83,6 +83,7 @@ export function diff(codeRoutes: CodeRoute[], specRoutes: SpecOperation[]): Issu
     for (const route of codeRoutes) {
         const key = routeKey(route.method, route.path);
         if (specByKey.has(key)) continue;
+        if (route.method.toUpperCase() === "HEAD" && specByKey.has(routeKey("GET", route.path))) continue;
         const otherSpecMethods = specPathMethods.get(route.path);
         if (otherSpecMethods && otherSpecMethods.size > 0) {
             const otherCodeMethods = codePathMethods.get(route.path) ?? new Set();
