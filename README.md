@@ -11,9 +11,21 @@ The agency's headless commerce baseline. Each client engagement starts from this
 - [`packages/shared`](./packages/shared) — shared utilities + types only (`cn()`, locale registry). Not UI components — each frontend keeps its own design language.
 - [`toolings/typescript`](./toolings/typescript) — shared `tsconfig` presets.
 
-## Quickstart
+## Workspace panel
 
-Requires Node 24, pnpm 10, and Docker.
+Requires Node 24, pnpm 10, and Docker. From a prepared Workspace checkout, start the current Calibra panel with one command:
+
+```sh
+pnpm panel
+```
+
+`pnpm panel` is a startup command, not a quality gate. It does not run tests, lint, typecheck, or the repository build before starting. On a fresh checkout only, if the local Spin CLI has not been prepared yet, it performs the frozen workspace install required to make the existing Spin runtime available and then starts `spin local`.
+
+The in-place Spin runtime brings up the current checkout without creating a branch or pull request. The admin panel is part of that stack.
+
+## Manual quickstart
+
+If you need to run the individual development services manually instead of Spin:
 
 ```sh
 cp apps/api/.env.example   apps/api/.env
@@ -36,6 +48,7 @@ To stop only the API stack (preserves DB volume): `just down`.
 ## Common tasks
 
 ```sh
+pnpm panel              # start the current Workspace panel; no quality gates
 pnpm build              # turbo build across the workspace
 pnpm typecheck          # tsc --noEmit across the workspace
 pnpm lint               # biome lint + sherif workspace lint
