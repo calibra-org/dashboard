@@ -1,5 +1,5 @@
-import { test } from "@japa/runner";
 import db from "@adonisjs/lucid/services/db";
+import { test } from "@japa/runner";
 
 import { UserFactory } from "#factories/user_factory";
 import Customer from "#models/customer";

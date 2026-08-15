@@ -1,7 +1,7 @@
 import type { Client } from "openapi-fetch";
 
-import type { paths } from "./generated/admin.composed";
 import { createTypedClient, type TypedClientOptions } from "./internal/createTypedClient";
+import type { paths } from "./generated/admin.composed";
 
 /** Typed admin API client. Every operation is inferred from the composed Admin OpenAPI surface. */
 export type AdminClient = Client<paths>;

@@ -1,6 +1,6 @@
 import { Exception } from "@adonisjs/core/exceptions";
 
-import { contentService, type ContentPostInput } from "#services/content/content_service";
+import { type ContentPostInput, contentService } from "#services/content/content_service";
 import { seoService } from "#services/seo/seo_service";
 import { currentTrx } from "#services/tenant_context";
 

@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { isDeepStrictEqual } from "node:util";
 import { fileURLToPath } from "node:url";
+import { isDeepStrictEqual } from "node:util";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const base = JSON.parse(readFileSync(resolve(root, "dist/admin.base.v1.json"), "utf8"));

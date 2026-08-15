@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import { existsSync } from "node:fs";
 import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
 
 const isWindows = process.platform === "win32";
 const pnpm = isWindows ? "pnpm.cmd" : "pnpm";

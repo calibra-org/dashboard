@@ -1,5 +1,4 @@
 import { createHash, randomBytes } from "node:crypto";
-
 import { Exception } from "@adonisjs/core/exceptions";
 
 import { supportTicketService } from "#services/support/ticket_service";

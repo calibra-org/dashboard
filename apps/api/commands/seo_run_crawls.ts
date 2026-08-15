@@ -6,9 +6,9 @@ import { withJobTenantContext } from "#jobs/with_job_tenant_context";
 import {
     completeSeoCrawlTarget,
     failSeoCrawlTarget,
+    type PreparedSeoCrawlTarget,
     prepareSeoCrawlTarget,
     requestSeoCrawlTarget,
-    type PreparedSeoCrawlTarget,
 } from "#services/seo/crawl_service";
 
 export default class SeoRunCrawls extends BaseCommand {

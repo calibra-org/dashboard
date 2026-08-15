@@ -1,8 +1,7 @@
 import { Exception } from "@adonisjs/core/exceptions";
 
-import { nextNumber } from "#services/tenant_numbering_service";
 import { currentTenantId, currentTrx } from "#services/tenant_context";
-
+import { nextNumber } from "#services/tenant_numbering_service";
 import type { TICKET_CHANNELS, TICKET_PRIORITIES, TICKET_STATUSES } from "#validators/admin/ticket_validator";
 
 type TicketStatus = (typeof TICKET_STATUSES)[number];
