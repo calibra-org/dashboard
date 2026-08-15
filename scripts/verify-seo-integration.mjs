@@ -110,14 +110,19 @@ for (const mode of routeModes) {
 const sidebar = read("apps/admin/src/components/Sidebar.tsx");
 for (const mode of routeModes) check(sidebar.includes(`/seo/${mode}`), `Sidebar missing /seo/${mode}`);
 check(sidebar.indexOf("contentItems") < sidebar.indexOf("seoItems"), "Posts menu must be declared before SEO");
+const factorRenderIndex = sidebar.indexOf('"factor-sidebar-items"');
+const contentRenderIndex = sidebar.indexOf('"content-sidebar-items"');
+const seoRenderIndex = sidebar.indexOf('"seo-sidebar-items"');
 check(
-    sidebar.indexOf("aria-expanded={factorOpen}") < sidebar.indexOf("aria-expanded={contentOpen}"),
+    factorRenderIndex !== -1 && contentRenderIndex !== -1 && factorRenderIndex < contentRenderIndex,
     "Factor menu must render before Posts",
 );
 check(
-    sidebar.indexOf("aria-expanded={contentOpen}") < sidebar.indexOf("aria-expanded={seoOpen}"),
+    contentRenderIndex !== -1 && seoRenderIndex !== -1 && contentRenderIndex < seoRenderIndex,
     "Posts menu must render before SEO",
 );
+contains("apps/admin/src/components/Sidebar.tsx", "aria-expanded={open}", "Collapsible menus must expose aria-expanded");
+contains("apps/admin/src/components/Sidebar.tsx", "aria-controls={id}", "Collapsible menus must expose aria-controls");
 contains("apps/admin/src/components/Sidebar.tsx", "setSeoOpen", "SEO menu must be collapsible");
 contains("apps/admin/src/components/Sidebar.tsx", "seoActive", "SEO menu must follow active route");
 
