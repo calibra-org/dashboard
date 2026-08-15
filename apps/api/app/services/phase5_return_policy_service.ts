@@ -59,7 +59,15 @@ export class Phase5ReturnPolicyService {
 
     async prepareCreate(orderId: number, input: ReturnCreateInput, idempotencyKey?: string | null): Promise<ReturnCreateInput> {
         const trx = currentTrx();
-        const order = await trx.from("orders").where("id", orderId).whereNull("deleted_at").first();
+        /**
+         * Serialize the delivered-quantity policy check on the order row for the lifetime of the
+         * request transaction. Without this lock, two different return requests could both observe
+         * the same delivered remainder before either inserted its RMA rows, then pass the later
+         * persistence guard because that guard is intentionally bounded by sold quantity. The
+         * second request now waits, re-reads prior non-cancelled returns, and fails closed when the
+         * delivered quantity has already been consumed.
+         */
+        const order = await trx.from("orders").where("id", orderId).whereNull("deleted_at").forUpdate().first();
         if (!order) throw new Exception("Order not found", { status: 404, code: "E_NOT_FOUND" });
 
         const lineIds = input.items.map((item) => Number(item.order_line_item_id));

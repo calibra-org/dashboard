@@ -47,7 +47,13 @@ function numberValue(value: unknown): number {
 }
 
 function zoneRow(row: DbRow) {
-    return { ...row, id: numberValue(row.id), tenant_id: numberValue(row.tenant_id), is_fallback: Boolean(row.is_fallback) };
+    return {
+        ...row,
+        id: numberValue(row.id),
+        tenant_id: numberValue(row.tenant_id),
+        name: String(row.name ?? ""),
+        is_fallback: Boolean(row.is_fallback),
+    };
 }
 
 function methodDefinitionRow(row: DbRow) {

@@ -66,68 +66,94 @@ export interface ApiMutationOptions extends ApiFetchOptions {
     /** Optional `If-Match` header value — forwarded to the api for optimistic concurrency checks. */
     ifMatch?: string;
     /**
-     * Stable idempotency token for retry-safe financial/create operations. Callers may provide an
-     * explicit token. Refunds receive an automatic payload-scoped token when one is omitted.
+     * Stable idempotency token for retry-safe financial/create operations. Callers must keep this
+     * value stable while retrying the same logical request and rotate it when the payload changes.
      */
     idempotencyKey?: string;
 }
 
 export type MutationMethod = "POST" | "PUT" | "PATCH" | "DELETE";
 
-const automaticIdempotencyKeys = new Map<string, string>();
-
-function canonicalJson(value: unknown): string {
-    if (value === null || typeof value !== "object") return JSON.stringify(value);
-    if (Array.isArray(value)) return `[${value.map((item) => canonicalJson(item)).join(",")}]`;
-    const record = value as Record<string, unknown>;
-    return `{${Object.keys(record)
-        .sort()
-        .map((key) => `${JSON.stringify(key)}:${canonicalJson(record[key])}`)
-        .join(",")}}`;
+interface PendingAutomaticKey {
+    key: string;
+    createdAt: number;
 }
 
-function isAutomaticIdempotencyMutation(method: MutationMethod, path: string): boolean {
-    return method === "POST" && /^orders\/\d+\/refunds\/?$/.test(path.replace(/^\/+/, ""));
-}
+const pendingAutomaticKeys = new Map<string, PendingAutomaticKey>();
+const AUTOMATIC_KEY_TTL_MS = 10 * 60_000;
+const MAX_AUTOMATIC_KEYS = 128;
 
-function createIdempotencyKey(): string {
-    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
-    const bytes = new Uint8Array(16);
-    if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
-        crypto.getRandomValues(bytes);
-        return Array.from(bytes, (value) => value.toString(16).padStart(2, "0")).join("");
+function stableJson(value: unknown): string {
+    if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
+    if (value !== null && typeof value === "object") {
+        return `{${Object.entries(value as Record<string, unknown>)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([key, item]) => `${JSON.stringify(key)}:${stableJson(item)}`)
+            .join(",")}}`;
     }
-    return `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+    return JSON.stringify(value) ?? "null";
 }
 
-function automaticIdempotencyKey(
+function randomOperationKey(): string {
+    if (typeof globalThis.crypto?.randomUUID === "function") return globalThis.crypto.randomUUID();
+    return `admin-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+}
+
+function automaticKeySignature(method: MutationMethod, path: string, body: unknown): string | null {
+    if (method !== "POST" || !/^\/?orders\/\d+\/refunds\/?$/.test(path)) return null;
+    return `${method}:${path.replace(/^\/+|\/+$/g, "")}:${stableJson(body ?? null)}`;
+}
+
+function pruneAutomaticKeys(now: number): void {
+    for (const [signature, entry] of pendingAutomaticKeys) {
+        if (now - entry.createdAt > AUTOMATIC_KEY_TTL_MS) pendingAutomaticKeys.delete(signature);
+    }
+    while (pendingAutomaticKeys.size >= MAX_AUTOMATIC_KEYS) {
+        const oldest = pendingAutomaticKeys.keys().next().value as string | undefined;
+        if (oldest === undefined) break;
+        pendingAutomaticKeys.delete(oldest);
+    }
+}
+
+function resolveAutomaticIdempotencyKey(
     method: MutationMethod,
     path: string,
     body: unknown,
-): { fingerprint: string; key: string } | null {
-    if (!isAutomaticIdempotencyMutation(method, path)) return null;
-    const fingerprint = `${method}:${path.replace(/^\/+/, "")}:${canonicalJson(body ?? null)}`;
-    const existing = automaticIdempotencyKeys.get(fingerprint);
-    if (existing) return { fingerprint, key: existing };
-    const key = createIdempotencyKey();
-    automaticIdempotencyKeys.set(fingerprint, key);
-    while (automaticIdempotencyKeys.size > 64) {
-        const oldest = automaticIdempotencyKeys.keys().next().value as string | undefined;
-        if (oldest === undefined) break;
-        automaticIdempotencyKeys.delete(oldest);
-    }
-    return { fingerprint, key };
+): {
+    signature: string | null;
+    key: string | undefined;
+} {
+    const signature = automaticKeySignature(method, path, body);
+    if (signature === null) return { signature: null, key: undefined };
+    const now = Date.now();
+    pruneAutomaticKeys(now);
+    const existing = pendingAutomaticKeys.get(signature);
+    if (existing) return { signature, key: existing.key };
+    const key = randomOperationKey();
+    pendingAutomaticKeys.set(signature, { key, createdAt: now });
+    return { signature, key };
 }
 
 /**
  * Sends a mutation through the proxy. Stamps `X-CSRF-Token` from `document.cookie` and
  * serializes a JSON body when provided; passes `null`/`undefined` bodies through as empty.
+ *
+ * Refund creation also receives a short-lived automatic idempotency key when a caller did not
+ * provide one. The key is retained across ambiguous transport failures and reused for the exact
+ * same logical payload, then cleared after a successful response. This prevents browser/network
+ * retries from creating duplicate financial operations while still allowing a later identical
+ * operator action to be a new refund.
  */
 export async function apiMutate<T>(method: MutationMethod, path: string, options: ApiMutationOptions): Promise<T> {
     const csrf = getCsrfToken();
     if (csrf === undefined) {
         throw new ProxyError("missing csrf token cookie", 403);
     }
+    const automatic =
+        typeof options.idempotencyKey === "string" && options.idempotencyKey.length > 0
+            ? { signature: null, key: undefined }
+            : resolveAutomaticIdempotencyKey(method, path, options.body);
+    const idempotencyKey = options.idempotencyKey || automatic.key;
     const headers: Record<string, string> = {
         "accept-language": options.locale,
         accept: "application/json",
@@ -136,32 +162,22 @@ export async function apiMutate<T>(method: MutationMethod, path: string, options
     if (typeof options.ifMatch === "string" && options.ifMatch.length > 0) {
         headers["if-match"] = options.ifMatch;
     }
-    const automatic = automaticIdempotencyKey(method, path, options.body);
-    const idempotencyKey = options.idempotencyKey?.trim() || automatic?.key;
-    if (idempotencyKey) headers["idempotency-key"] = idempotencyKey;
-
+    if (typeof idempotencyKey === "string" && idempotencyKey.length > 0) {
+        headers["idempotency-key"] = idempotencyKey;
+    }
     let body: BodyInit | undefined;
     if (options.body !== undefined && options.body !== null) {
         headers["content-type"] = "application/json";
         body = JSON.stringify(options.body);
     }
-
-    let res: Response;
-    try {
-        res = await fetch(buildUrl(path, options.query), {
-            method,
-            headers,
-            body,
-            signal: options.signal,
-        });
-    } catch (error) {
-        // A transport failure is ambiguous: the API might have committed the mutation. Keep the
-        // automatic key cached so an explicit user retry is safe and reaches the same server result.
-        throw error;
-    }
-
+    const res = await fetch(buildUrl(path, options.query), {
+        method,
+        headers,
+        body,
+        signal: options.signal,
+    });
     const result = await readResponse<T>(res);
-    if (automatic?.fingerprint) automaticIdempotencyKeys.delete(automatic.fingerprint);
+    if (res.ok && automatic.signature !== null) pendingAutomaticKeys.delete(automatic.signature);
     return result;
 }
 

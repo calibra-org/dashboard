@@ -1,11 +1,6 @@
 import { BaseSeeder } from "@adonisjs/lucid/seeders";
 import { DateTime } from "luxon";
 
-import Coupon from "#models/coupon";
-import CouponCategoryConstraint from "#models/coupon_category_constraint";
-import CouponEmailRestriction from "#models/coupon_email_restriction";
-import CouponTranslation from "#models/coupon_translation";
-
 interface DemoCoupon {
     code: string;
     discountType: "percent" | "fixed_cart" | "fixed_product" | "free_shipping";
@@ -24,14 +19,13 @@ interface DemoCoupon {
 }
 
 /**
- * Five demo coupons covering each discount type + the most common modifier combinations. The
- * seeder is idempotent: every coupon upserts on `code`, and constraint sets are full-replaced so
- * re-running won't accumulate duplicates.
+ * Five demo coupons covering each discount type and common modifiers. All reads and writes use the
+ * seeder's injected client so multi-tenant demo seeding stays on the transaction that already owns
+ * the active `app.current_tenant` RLS context.
  */
 export default class CouponsDemoSeeder extends BaseSeeder {
     async run() {
         const apparelCategoryId = await this.findCategoryIdByName("پوشاک");
-
         const demo: DemoCoupon[] = [
             {
                 code: "WELCOME10",
@@ -73,56 +67,78 @@ export default class CouponsDemoSeeder extends BaseSeeder {
             },
         ];
 
-        for (const row of demo) {
-            await this.upsertCoupon(row, apparelCategoryId);
-        }
+        for (const row of demo) await this.upsertCoupon(row, apparelCategoryId);
     }
 
     private async upsertCoupon(row: DemoCoupon, apparelCategoryId: number | null): Promise<void> {
-        const expiresAt = row.expiresInDays === undefined ? null : DateTime.utc().plus({ days: row.expiresInDays });
-        const code = row.code.toUpperCase();
-        const coupon = await Coupon.updateOrCreate(
-            { code },
-            {
-                code,
-                discountType: row.discountType,
-                amountMinor: row.amountMinor ?? null,
-                amountPercent: row.amountPercent ?? null,
-                startsAt: null,
-                expiresAt,
-                individualUse: row.individualUse ?? false,
-                excludeSaleItems: row.excludeSaleItems ?? false,
-                minimumAmount: row.minimumAmount ?? null,
-                maximumAmount: null,
-                usageLimitGlobal: row.usageLimitGlobal ?? null,
-                usageLimitPerUser: row.usageLimitPerUser ?? null,
-                limitUsageToXItems: null,
-                freeShipping: row.freeShipping ?? false,
-                status: "active",
-                attributes: {},
-            },
-        );
+        const now = DateTime.utc().toSQL();
+        const code = row.code.trim().toUpperCase();
+        const expiresAt = row.expiresInDays === undefined ? null : DateTime.utc().plus({ days: row.expiresInDays }).toSQL();
+        const values = {
+            code,
+            discount_type: row.discountType,
+            amount_minor: row.amountMinor ?? null,
+            amount_percent: row.amountPercent ?? null,
+            starts_at: null,
+            expires_at: expiresAt,
+            individual_use: row.individualUse ?? false,
+            exclude_sale_items: row.excludeSaleItems ?? false,
+            minimum_amount: row.minimumAmount ?? null,
+            maximum_amount: null,
+            usage_limit_global: row.usageLimitGlobal ?? null,
+            usage_limit_per_user: row.usageLimitPerUser ?? null,
+            limit_usage_to_x_items: null,
+            free_shipping: row.freeShipping ?? false,
+            status: "active",
+            attributes: JSON.stringify({}),
+            updated_at: now,
+        };
 
-        const couponId = Number(coupon.id);
-        await CouponTranslation.query().where("coupon_id", couponId).delete();
-        for (const [locale, description] of Object.entries(row.description)) {
-            await CouponTranslation.create({ couponId: coupon.id, locale, description });
+        const existing = await this.client.from("coupons").where("code", code).select("id").first();
+        let couponId: number;
+        if (existing) {
+            couponId = Number(existing.id);
+            await this.client.from("coupons").where("id", couponId).update(values);
+        } else {
+            const [inserted] = await this.client
+                .table("coupons")
+                .insert({ ...values, created_at: now })
+                .returning("id");
+            couponId = Number(inserted.id);
         }
 
-        await CouponCategoryConstraint.query().where("coupon_id", couponId).delete();
-        if (row.categoryName && apparelCategoryId !== null && row.categoryName === "پوشاک") {
-            await CouponCategoryConstraint.create({
-                couponId: coupon.id,
-                categoryId: apparelCategoryId,
+        await this.client.from("coupon_translations").where("coupon_id", couponId).delete();
+        await this.client.table("coupon_translations").insert(
+            Object.entries(row.description).map(([locale, description]) => ({
+                coupon_id: couponId,
+                locale,
+                description,
+                created_at: now,
+                updated_at: now,
+            })),
+        );
+
+        await this.client.from("coupon_category_constraints").where("coupon_id", couponId).delete();
+        if (row.categoryName === "پوشاک" && apparelCategoryId !== null) {
+            await this.client.table("coupon_category_constraints").insert({
+                coupon_id: couponId,
+                category_id: apparelCategoryId,
                 mode: "include",
+                created_at: now,
+                updated_at: now,
             });
         }
 
-        await CouponEmailRestriction.query().where("coupon_id", couponId).delete();
-        if (row.emailRestrictions && row.emailRestrictions.length > 0) {
-            for (const pattern of row.emailRestrictions) {
-                await CouponEmailRestriction.create({ couponId: coupon.id, emailPattern: pattern });
-            }
+        await this.client.from("coupon_email_restrictions").where("coupon_id", couponId).delete();
+        if (row.emailRestrictions?.length) {
+            await this.client.table("coupon_email_restrictions").insert(
+                row.emailRestrictions.map((emailPattern) => ({
+                    coupon_id: couponId,
+                    email_pattern: emailPattern,
+                    created_at: now,
+                    updated_at: now,
+                })),
+            );
         }
     }
 

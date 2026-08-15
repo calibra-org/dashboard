@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+
 import { Exception } from "@adonisjs/core/exceptions";
 import lock from "@adonisjs/lock/services/main";
 import { DateTime } from "luxon";
@@ -108,6 +109,7 @@ function fulfillmentRow(row: DbRow) {
         id: numberValue(row.id),
         order_id: numberValue(row.order_id),
         created_by_user_id: numberOrNull(row.created_by_user_id),
+        status: String(row.status ?? "pending"),
         version: numberValue(row.version),
     };
 }
@@ -125,6 +127,11 @@ function shipmentRow(row: DbRow) {
         ...row,
         id: numberValue(row.id),
         fulfillment_id: numberValue(row.fulfillment_id),
+        status: String(row.status ?? "label_created"),
+        carrier: row.carrier === null || row.carrier === undefined ? null : String(row.carrier),
+        service: row.service === null || row.service === undefined ? null : String(row.service),
+        tracking_number: row.tracking_number === null || row.tracking_number === undefined ? null : String(row.tracking_number),
+        tracking_url: row.tracking_url === null || row.tracking_url === undefined ? null : String(row.tracking_url),
         version: numberValue(row.version),
     };
 }

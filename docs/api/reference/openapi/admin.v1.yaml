@@ -437,6 +437,19 @@ paths:
     /api/v1/admin/payment-attempts/{id}:
         get:
             $ref: "./admin/paths/payments/payment-attempts-id.get.yaml"
+
+    /api/v1/admin/payment-attempts/summary:
+        get:
+            $ref: "./admin/paths/payments/payment-attempts-summary.get.yaml"
+
+    /api/v1/admin/payment-attempts/{id}/reconciliation:
+        get:
+            $ref: "./admin/paths/payments/payment-attempts-id-reconciliation.get.yaml"
+
+    /api/v1/admin/payment-attempts/{id}/reconcile:
+        post:
+            $ref: "./admin/paths/payments/payment-attempts-id-reconcile.post.yaml"
+
         head:
             $ref: "./common/components/operations/HeadCompanion.yaml"
 

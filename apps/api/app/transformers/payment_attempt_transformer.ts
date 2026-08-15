@@ -3,7 +3,7 @@ import { BaseTransformer } from "@adonisjs/core/transformers";
 import type PaymentAttempt from "#models/payment_attempt";
 
 /**
- * Owns the `/api/v1/admin/payment-attempts/*` response shape. `idempotency_key` is never exposed.
+ * Owns the `/api/v1/admin/payment-attempts/*` response shape. sensitive idempotency material is never exposed.
  * List responses omit raw PSP payloads; detail includes both provider payload and reconciliation
  * evidence for incident response.
  */

@@ -2193,6 +2193,66 @@ export interface paths {
         post?: never;
         delete?: never;
         options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/payment-attempts/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Summarize transaction operations
+         * @description Returns live counts and canonical minor-unit totals for the Transaction Center KPI strip.
+         */
+        get: operations["adminPaymentAttemptsSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/payment-attempts/{id}/reconciliation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List reconciliation audit events for a payment attempt
+         * @description Returns immutable admin audit events produced by provider reconciliation checks, newest first.
+         */
+        get: operations["adminPaymentAttemptReconciliationHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/payment-attempts/{id}/reconcile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reconcile a payment attempt with its provider
+         * @description Performs a provider-safe reconciliation check. Only adapters with an explicit idempotent or read-like reconciliation capability are polled; unsupported providers record `unsupported` rather than replaying capture/settlement. Every check appends an admin audit event.
+         */
+        post: operations["adminPaymentAttemptReconcile"];
+        delete?: never;
+        options?: never;
         /** @description Headers-only companion to the corresponding `GET` operation. AdonisJS auto-registers a `HEAD` handler for every `GET` route — this stub exists so the route inventory matches the spec without duplicating the full `GET` schema. The response body is empty by definition; the headers match those returned by the `GET` operation. */
         head: {
             parameters: {
@@ -6075,66 +6135,6 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["adminPhase5TaxRateUpdate"];
-        trace?: never;
-    };
-    "/api/v1/admin/payment-attempts/summary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Summarize transaction operations
-         * @description Returns live counts and canonical minor-unit totals for the Transaction Center KPI strip.
-         */
-        get: operations["adminPaymentAttemptsSummary"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/payment-attempts/{id}/reconciliation": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List reconciliation audit events for a payment attempt
-         * @description Returns immutable admin audit events produced by provider reconciliation checks, newest first.
-         */
-        get: operations["adminPaymentAttemptReconciliationHistory"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/payment-attempts/{id}/reconcile": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Reconcile a payment attempt with its provider
-         * @description Performs a provider-safe reconciliation check. Only adapters with an explicit idempotent or read-like reconciliation capability are polled; unsupported providers record `unsupported` rather than replaying capture/settlement. Every check appends an admin audit event.
-         */
-        post: operations["adminPaymentAttemptReconcile"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
         trace?: never;
     };
     "/api/v1/admin/tickets/workflow-statuses": {
@@ -12963,7 +12963,17 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
-            422: components["responses"]["ValidationError"];
+            /** @description Gateway is a stub, required merchant credentials are missing, or the provider rejected/timed out during the connection probe. Failed probes persist bounded non-secret health diagnostics. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        errors: components["schemas"]["BasicMessage"][];
+                    };
+                };
+            };
         };
     };
     adminPaymentAttemptsIndex: {
@@ -13030,6 +13040,122 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    adminPaymentAttemptsSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Transaction summary. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            total_count: number;
+                            total_amount_minor: number;
+                            needs_attention_count: number;
+                            by_status: {
+                                [key: string]: {
+                                    count: number;
+                                    amount_minor: number;
+                                };
+                            };
+                            by_reconciliation: {
+                                [key: string]: number;
+                            };
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    adminPaymentAttemptReconciliationHistory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Reconciliation history. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            actor?: {
+                                id: string;
+                                /** Format: email */
+                                email: string;
+                            } | null;
+                            /** @constant */
+                            action: "payment.reconciliation.checked";
+                            /** @constant */
+                            entity_kind: "payment_attempt";
+                            entity_id?: string | null;
+                            payload: {
+                                [key: string]: unknown;
+                            };
+                            ip_address?: string | null;
+                            /** Format: date-time */
+                            occurred_at?: string | null;
+                        }[];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    adminPaymentAttemptReconcile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Updated payment-attempt detail including latest reconciliation evidence. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminPaymentAttempt"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description The order/payment is being processed concurrently. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     adminReportsTopProducts: {
@@ -19093,122 +19219,6 @@ export interface operations {
         responses: {
             /** @description Tax rate updated */
             200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    adminPaymentAttemptsSummary: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Transaction summary. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        data: {
-                            total_count: number;
-                            total_amount_minor: number;
-                            needs_attention_count: number;
-                            by_status: {
-                                [key: string]: {
-                                    count: number;
-                                    amount_minor: number;
-                                };
-                            };
-                            by_reconciliation: {
-                                [key: string]: number;
-                            };
-                        };
-                    };
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-        };
-    };
-    adminPaymentAttemptReconciliationHistory: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Reconciliation history. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        data: {
-                            id: string;
-                            actor?: {
-                                id: string;
-                                /** Format: email */
-                                email: string;
-                            } | null;
-                            /** @constant */
-                            action: "payment.reconciliation.checked";
-                            /** @constant */
-                            entity_kind: "payment_attempt";
-                            entity_id?: string | null;
-                            payload: {
-                                [key: string]: unknown;
-                            };
-                            ip_address?: string | null;
-                            /** Format: date-time */
-                            occurred_at?: string | null;
-                        }[];
-                    };
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-        };
-    };
-    adminPaymentAttemptReconcile: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Updated payment-attempt detail including latest reconciliation evidence. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        data: components["schemas"]["AdminPaymentAttempt"];
-                    };
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-            /** @description The order/payment is being processed concurrently. */
-            409: {
                 headers: {
                     [name: string]: unknown;
                 };

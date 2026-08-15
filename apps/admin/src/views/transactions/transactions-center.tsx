@@ -37,8 +37,8 @@ import {
     useReconcileTransaction,
     useTransaction,
     useTransactionReconciliationHistory,
-    useTransactionSummary,
     useTransactions,
+    useTransactionSummary,
 } from "#/lib/queries/transactions";
 import type { TableViewFilter, TableViewQuery } from "#/lib/table-view";
 import { dateFilterValueToTableViewFilter } from "#/lib/table-view/date-adapter";
@@ -46,16 +46,6 @@ import { cn } from "#/lib/utils";
 
 const STATUSES: PaymentAttemptStatus[] = ["initiated", "awaiting_callback", "verified", "failed", "cancelled", "refunded"];
 const RECONCILIATION: PaymentReconciliationStatus[] = ["unchecked", "matched", "mismatch", "unsupported", "error"];
-const TRANSACTION_SKELETON_KEYS = [
-    "transaction-1",
-    "transaction-2",
-    "transaction-3",
-    "transaction-4",
-    "transaction-5",
-    "transaction-6",
-    "transaction-7",
-    "transaction-8",
-] as const;
 
 interface CopyShape {
     title: string;
@@ -288,7 +278,8 @@ export function TransactionsCenter() {
                         <Select
                             value={status}
                             onValueChange={(value) => {
-                                setStatus(typeof value === "string" ? value : "all");
+                                if (typeof value !== "string") return;
+                                setStatus(value);
                                 setPage(1);
                             }}
                         >
@@ -307,7 +298,8 @@ export function TransactionsCenter() {
                         <Select
                             value={gateway}
                             onValueChange={(value) => {
-                                setGateway(typeof value === "string" ? value : "all");
+                                if (typeof value !== "string") return;
+                                setGateway(value);
                                 setPage(1);
                             }}
                         >
@@ -326,7 +318,8 @@ export function TransactionsCenter() {
                         <Select
                             value={reconciliation}
                             onValueChange={(value) => {
-                                setReconciliation(typeof value === "string" ? value : "all");
+                                if (typeof value !== "string") return;
+                                setReconciliation(value);
                                 setPage(1);
                             }}
                         >
@@ -345,7 +338,8 @@ export function TransactionsCenter() {
                         <Select
                             value={sort}
                             onValueChange={(value) => {
-                                setSort(typeof value === "string" ? value : "newest");
+                                if (typeof value !== "string") return;
+                                setSort(value);
                                 setPage(1);
                             }}
                         >
@@ -398,8 +392,8 @@ export function TransactionsCenter() {
 
                 {list.isPending ? (
                     <div className="space-y-2 p-4">
-                        {TRANSACTION_SKELETON_KEYS.map((key) => (
-                            <Skeleton key={key} className="h-12 w-full" />
+                        {Array.from({ length: 8 }).map((_, index) => (
+                            <Skeleton key={index} className="h-12 w-full" />
                         ))}
                     </div>
                 ) : list.isError ? (
@@ -590,12 +584,11 @@ function TransactionRow({
         }
     };
     return (
-        // biome-ignore lint/a11y/useSemanticElements: A button cannot replace a table row without invalid table markup; keyboard activation is implemented below.
         <tr
             tabIndex={0}
             role="button"
             aria-label={`${detailsLabel} #${row.id}`}
-            className="cursor-pointer border-b outline-none transition-colors last:border-0 hover:bg-muted/35 focus-visible:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+            className="cursor-pointer border-b outline-none transition-colors last:border-0 hover:bg-muted/35 focus-visible:bg-muted/50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
             onClick={onOpen}
             onKeyDown={onKeyDown}
         >
@@ -635,7 +628,7 @@ function TransactionCard({ row, locale, onOpen }: { row: AdminTransaction; local
         <button
             type="button"
             onClick={onOpen}
-            className="w-full space-y-3 p-4 text-start outline-none hover:bg-muted/35 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+            className="w-full space-y-3 p-4 text-start outline-none hover:bg-muted/35 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
         >
             <div className="flex items-start justify-between gap-3">
                 <div>
@@ -1025,7 +1018,7 @@ function Identifier({ label, value, copied }: { label: string; value: string | n
     return (
         <div className="flex items-center justify-between gap-3 px-3 py-2.5">
             <div className="min-w-0">
-                <p className="text-[11px] text-muted-foreground">{label}</p>
+                <p className="text-muted-foreground text-[11px]">{label}</p>
                 <p className="truncate font-mono text-xs" dir="ltr">
                     {value ?? "—"}
                 </p>
