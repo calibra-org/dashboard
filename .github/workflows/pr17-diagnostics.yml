@@ -30,10 +30,11 @@ jobs:
           cache: pnpm
       - name: Install frozen workspace
         run: pnpm install --frozen-lockfile
+      - name: Build SDK prerequisite
+        run: pnpm --filter @calibra/sdk run build
       - name: Decode and verify localization patch
         run: |
           base64 -d .pr17-localization.patch.gz.b64 | gzip -d > /tmp/pr17-localization.patch
-          test "$(sha256sum /tmp/pr17-localization.patch | cut -d' ' -f1)" = "$(sha256sum /tmp/pr17-localization.patch | cut -d' ' -f1)"
           git apply --check /tmp/pr17-localization.patch
       - name: Apply localization patch
         run: git apply /tmp/pr17-localization.patch
