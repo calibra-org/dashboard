@@ -1,0 +1,178 @@
+name: Runtime Ticket Screenshot
+
+on:
+  push:
+    branches:
+      - agent/complete-ticket-seo-content-backends-20260814
+
+permissions:
+  contents: write
+
+jobs:
+  capture:
+    if: contains(github.event.head_commit.message, '[runtime-ticket-shot]')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      NODE_VERSION: 24.14.0
+      PNPM_VERSION: 10.32.1
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:3333
+      NEXT_PUBLIC_SITE_URL: http://aurora.admin.localhost:3001
+      NEXT_PUBLIC_DEFAULT_LOCALE: fa
+      NEXT_PUBLIC_ADMIN_ROOT: admin.localhost
+      NEXT_PUBLIC_DEV_TENANT: aurora
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Prepare runtime env
+        shell: bash
+        run: |
+          node scripts/env-sync.mjs
+          sed -i 's/^APP_KEY=.*/APP_KEY=runtime-shot-key-0123456789abcdef/' apps/api/.env
+          sed -i 's/^QUEUE_DRIVER=.*/QUEUE_DRIVER=sync/' apps/api/.env
+          sed -i 's/^TRANSMIT_TRANSPORT=.*/TRANSMIT_TRANSPORT=none/' apps/api/.env
+          sed -i 's/^LIMITER_STORE=.*/LIMITER_STORE=memory/' apps/api/.env
+          sed -i 's/^CACHE_DRIVER=.*/CACHE_DRIVER=memory/' apps/api/.env
+          sed -i 's/^MAIL_NOTIFICATIONS_ENABLED=.*/MAIL_NOTIFICATIONS_ENABLED=false/' apps/api/.env
+          cat > apps/admin/.env.local <<'EOF'
+          NEXT_PUBLIC_API_BASE_URL=http://localhost:3333
+          NEXT_PUBLIC_SITE_URL=http://aurora.admin.localhost:3001
+          NEXT_PUBLIC_DEFAULT_LOCALE=fa
+          NEXT_PUBLIC_ADMIN_ROOT=admin.localhost
+          NEXT_PUBLIC_DEV_TENANT=aurora
+          EOF
+      - name: Start Postgres
+        working-directory: apps/api
+        run: docker compose up -d --wait db
+      - name: Bootstrap database
+        run: |
+          pnpm --filter @calibra/api exec node ace db:bootstrap-roles
+          pnpm --filter @calibra/api exec node ace migration:run --connection=postgres_admin
+      - name: Seed compact real tenant runtime
+        shell: bash
+        run: |
+          NODE_ENV=test \
+          DB_HOST=localhost DB_PORT=5432 DB_DATABASE=calibra \
+          DB_USER=calibra_app DB_PASSWORD=calibra_app \
+          DB_ADMIN_USER=calibra_admin DB_ADMIN_PASSWORD=calibra_admin \
+          DB_SUPERUSER_USER=calibra DB_SUPERUSER_PASSWORD=calibra \
+          PORT=3333 \
+          ALLOWED_ORIGINS=http://localhost:3001,http://aurora.admin.localhost:3001 \
+          QUEUE_DRIVER=sync TRANSMIT_TRANSPORT=none LIMITER_STORE=memory CACHE_DRIVER=memory \
+          MAIL_NOTIFICATIONS_ENABLED=false \
+          pnpm --filter @calibra/api exec node ace db:seed --connection=postgres_admin
+      - name: Build SDK
+        run: pnpm --filter @calibra/sdk run build
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Start API and Admin
+        shell: bash
+        run: |
+          QUEUE_DRIVER=sync TRANSMIT_TRANSPORT=none LIMITER_STORE=memory CACHE_DRIVER=memory MAIL_NOTIFICATIONS_ENABLED=false \
+            pnpm --filter @calibra/api run dev > /tmp/calibra-api.log 2>&1 &
+          echo $! > /tmp/calibra-api.pid
+          NEXT_PUBLIC_API_BASE_URL=http://localhost:3333 NEXT_PUBLIC_ADMIN_ROOT=admin.localhost NEXT_PUBLIC_DEV_TENANT=aurora \
+            pnpm --filter @calibra/admin run dev > /tmp/calibra-admin.log 2>&1 &
+          echo $! > /tmp/calibra-admin.pid
+          for i in $(seq 1 90); do
+            if curl -fsS http://localhost:3333 >/dev/null 2>&1 || curl -fsS http://localhost:3333/api/v1/health >/dev/null 2>&1; then break; fi
+            sleep 2
+          done
+          for i in $(seq 1 90); do
+            if curl -fsS -H 'Host: aurora.admin.localhost:3001' http://127.0.0.1:3001/login >/dev/null 2>&1; then break; fi
+            sleep 2
+          done
+          curl -sS -o /dev/null -w 'api=%{http_code}\n' http://localhost:3333 || true
+          curl -sS -o /dev/null -w 'admin=%{http_code}\n' -H 'Host: aurora.admin.localhost:3001' http://127.0.0.1:3001/login || true
+      - name: Capture authenticated Ticket runtime
+        shell: bash
+        run: |
+          mkdir -p runtime-artifacts
+          cat > /tmp/capture-ticket.mjs <<'EOF'
+          import { chromium } from '@playwright/test';
+          const browser = await chromium.launch({ headless: true });
+          const context = await browser.newContext({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
+          const page = await context.newPage();
+          const host = 'http://aurora.admin.localhost:3001';
+          await page.goto(`${host}/login`, { waitUntil: 'domcontentloaded', timeout: 120000 });
+          await page.getByLabel(/ایمیل|email/i).fill('admin@bulk.calibra.dev');
+          await page.getByLabel(/رمز|password/i).fill('Passw0rd1!');
+          await page.getByRole('button', { name: /ورود|sign in|login/i }).click();
+          await page.waitForURL(/\/dashboard\/?$/, { timeout: 120000 });
+          const cookies = await context.cookies();
+          const rawSession = cookies.find((cookie) => cookie.name === 'admin_session')?.value;
+          if (!rawSession) throw new Error('admin_session cookie missing after login');
+          let session;
+          try { session = JSON.parse(rawSession); } catch { session = JSON.parse(decodeURIComponent(rawSession)); }
+          const api = 'http://localhost:3333';
+          const headers = {
+            authorization: `Bearer ${session.token}`,
+            'x-calibra-tenant': 'aurora',
+            'accept-language': 'fa',
+          };
+          const samples = [
+            ['پیگیری سفارش مشتری', 'سلام، وضعیت ارسال سفارش من مشخص نشده است.', 'high', 'web', 'ارسال'],
+            ['اختلال در پرداخت', 'پرداخت انجام شده اما سفارش هنوز در انتظار پرداخت است.', 'urgent', 'phone', 'پرداخت'],
+            ['درخواست تغییر آدرس', 'لطفاً آدرس تحویل این سفارش را قبل از ارسال اصلاح کنید.', 'normal', 'email', 'سفارش'],
+            ['راهنمای انتخاب محصول', 'برای انتخاب مدل مناسب قبل از خرید نیاز به راهنمایی دارم.', 'normal', 'whatsapp', 'مشاوره'],
+            ['پیگیری بازگشت وجه', 'زمان واریز مبلغ مرجوعی را لطفاً بررسی کنید.', 'high', 'telegram', 'مرجوعی'],
+          ];
+          for (let index = 0; index < samples.length; index += 1) {
+            const [subject, message, priority, channel, category] = samples[index];
+            const response = await context.request.post(`${api}/api/v1/admin/tickets`, {
+              headers,
+              data: {
+                requester_name: `مشتری آزمایشی ${index + 1}`,
+                requester_email: `runtime-ticket-${index + 1}@example.test`,
+                subject,
+                message,
+                priority,
+                channel,
+                category,
+                tags: index === 1 ? ['VIP', 'پرداخت'] : [],
+              },
+            });
+            if (!response.ok()) console.log('ticket seed skipped', response.status(), await response.text());
+          }
+          await page.goto(`${host}/tickets/overview`, { waitUntil: 'domcontentloaded', timeout: 120000 });
+          await page.waitForTimeout(7000);
+          await page.screenshot({ path: 'runtime-artifacts/tickets-overview-runtime.png', fullPage: true });
+          await page.screenshot({ path: 'runtime-artifacts/tickets-overview-runtime-viewport.png', fullPage: false });
+          console.log('final-url', page.url());
+          console.log('title', await page.title());
+          await browser.close();
+          EOF
+          node /tmp/capture-ticket.mjs
+      - name: Save runtime diagnostics
+        if: always()
+        shell: bash
+        run: |
+          cp /tmp/calibra-api.log runtime-artifacts/api.log 2>/dev/null || true
+          cp /tmp/calibra-admin.log runtime-artifacts/admin.log 2>/dev/null || true
+      - name: Upload runtime screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ticket-runtime-screenshot
+          path: runtime-artifacts/
+          if-no-files-found: error
+          retention-days: 1
+      - name: Remove one-shot workflow
+        if: success()
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/runtime-ticket-screenshot.yml
+          git commit -m 'chore(ci): remove runtime ticket screenshot workflow'
+          git push origin "HEAD:${GITHUB_REF_NAME}"
