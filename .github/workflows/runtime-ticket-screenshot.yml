@@ -58,20 +58,20 @@ jobs:
         run: |
           pnpm --filter @calibra/api exec node ace db:bootstrap-roles
           pnpm --filter @calibra/api exec node ace migration:run --connection=postgres_admin
-      - name: Seed compact real tenant runtime
+      - name: Provision real Aurora tenant and admin
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
           path = Path('apps/api/database/seeders/main_seeder.ts')
           source = path.read_text()
-          old = 'app.inTest ? (TEST_VOLUMES[tenant.slug] ?? tenant.volumes) : tenant.volumes'
-          new = 'app.inTest ? (TEST_VOLUMES[tenant.slug] ?? tenant.volumes) : (TEST_VOLUMES[tenant.slug] ?? tenant.volumes)'
+          old = 'await this.seedTenantDataset(tenantId, app.inTest ? (TEST_VOLUMES[tenant.slug] ?? tenant.volumes) : tenant.volumes);'
+          new = 'if (process.env.CALIBRA_RUNTIME_SCREENSHOT !== "1") await this.seedTenantDataset(tenantId, app.inTest ? (TEST_VOLUMES[tenant.slug] ?? tenant.volumes) : tenant.volumes);'
           if old not in source:
-              raise SystemExit('MainSeeder compact-volume patch target not found')
+              raise SystemExit('MainSeeder dataset guard target not found')
           path.write_text(source.replace(old, new, 1))
           PY
-          pnpm --filter @calibra/api exec node ace db:seed --connection=postgres_admin
+          CALIBRA_RUNTIME_SCREENSHOT=1 pnpm --filter @calibra/api exec node ace db:seed --connection=postgres_admin
           git checkout -- apps/api/database/seeders/main_seeder.ts
       - name: Build SDK
         run: pnpm --filter @calibra/sdk run build
