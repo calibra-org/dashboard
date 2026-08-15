@@ -101,27 +101,33 @@ jobs:
       - name: Capture eight authenticated Ticket runtime pages
         shell: bash
         run: |
+          rm -rf runtime-artifacts
           mkdir -p runtime-artifacts
           cat > .runtime-capture-ticket-8.mjs <<'EOF'
           import { chromium } from '@playwright/test';
-          const browser = await chromium.launch({ headless: true });
-          const context = await browser.newContext({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
-          const page = await context.newPage();
-          const host = 'http://aurora.admin.localhost:3001';
-          await page.goto(`${host}/login`, { waitUntil: 'domcontentloaded', timeout: 120000 });
-          await page.getByLabel(/ایمیل|email/i).fill('admin@bulk.calibra.dev');
-          await page.getByLabel(/رمز|password/i).fill('Passw0rd1!');
-          await page.getByRole('button', { name: /ورود|sign in|login/i }).click();
-          await page.waitForURL(/\/dashboard\/?$/, { timeout: 120000 });
 
-          const cookies = await context.cookies();
+          const browser = await chromium.launch({ headless: true });
+          const host = 'http://aurora.admin.localhost:3001';
+          const api = 'http://localhost:3333';
+
+          async function login(page) {
+            await page.goto(`${host}/login`, { waitUntil: 'domcontentloaded', timeout: 120000 });
+            await page.getByLabel(/ایمیل|email/i).fill('admin@bulk.calibra.dev');
+            await page.getByLabel(/رمز|password/i).fill('Passw0rd1!');
+            await page.getByRole('button', { name: /ورود|sign in|login/i }).click();
+            await page.waitForURL(/\/dashboard\/?$/, { timeout: 120000 });
+          }
+
+          const seedContext = await browser.newContext({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
+          const seedPage = await seedContext.newPage();
+          await login(seedPage);
+          const cookies = await seedContext.cookies();
           const rawSession = cookies.find((cookie) => cookie.name === 'admin_session')?.value;
           if (!rawSession) throw new Error('admin_session cookie missing after login');
           let session;
           try { session = JSON.parse(rawSession); } catch { session = JSON.parse(decodeURIComponent(rawSession)); }
           if (!session?.token) throw new Error('admin_session token missing after login');
 
-          const api = 'http://localhost:3333';
           const headers = {
             authorization: `Bearer ${session.token}`,
             'x-calibra-tenant': 'aurora',
@@ -136,7 +142,7 @@ jobs:
           ];
           for (let index = 0; index < samples.length; index += 1) {
             const [subject, message, priority, channel, category] = samples[index];
-            const response = await context.request.post(`${api}/api/v1/admin/tickets`, {
+            const response = await seedContext.request.post(`${api}/api/v1/admin/tickets`, {
               headers,
               data: {
                 requester_name: `مشتری آزمایشی ${index + 1}`,
@@ -151,6 +157,7 @@ jobs:
             });
             if (!response.ok()) console.log('ticket seed skipped', response.status(), await response.text());
           }
+          await seedContext.close();
 
           const routes = [
             ['01-overview', '/tickets/overview'],
@@ -164,13 +171,17 @@ jobs:
           ];
 
           for (const [name, route] of routes) {
+            const context = await browser.newContext({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
+            const page = await context.newPage();
+            await login(page);
             await page.goto(`${host}${route}`, { waitUntil: 'domcontentloaded', timeout: 120000 });
-            await page.waitForLoadState('networkidle', { timeout: 30000 }).catch(() => {});
-            await page.waitForTimeout(3500);
+            await page.waitForLoadState('networkidle', { timeout: 12000 }).catch(() => {});
+            await page.waitForTimeout(2500);
             if (!page.url().includes(route)) throw new Error(`${name} redirected unexpectedly to ${page.url()}`);
             await page.screenshot({ path: `runtime-artifacts/${name}-viewport.png`, fullPage: false });
             await page.screenshot({ path: `runtime-artifacts/${name}-full.png`, fullPage: true });
             console.log(name, page.url(), await page.title());
+            await context.close();
           }
 
           await browser.close();
