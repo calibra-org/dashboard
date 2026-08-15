@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const base = JSON.parse(readFileSync(resolve(root, "dist/admin.base.v1.json"), "utf8"));
 const tickets = JSON.parse(readFileSync(resolve(root, "dist/admin.tickets.v1.json"), "utf8"));
+const phase5 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase5.v1.json"), "utf8"));
 const completion = JSON.parse(readFileSync(resolve(root, "dist/admin.completion.v1.json"), "utf8"));
 
 function mergeRecord(baseRecord = {}, overlayRecord = {}, label, allowIdentical = false) {
@@ -66,6 +67,7 @@ function namespaceConflictingComponents(overlay, namespace) {
 
 for (const [overlaySource, namespace] of [
     [tickets, "TicketOverlay"],
+    [phase5, "Phase5Overlay"],
     [completion, "CompletionOverlay"],
 ]) {
     const overlay = namespaceConflictingComponents(overlaySource, namespace);
