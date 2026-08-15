@@ -51,10 +51,13 @@ jobs:
           node-version: 24.14.0
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Full Biome error diagnostics
+      - name: Full Biome lint error diagnostics
         shell: bash
         run: pnpm exec biome lint . --diagnostic-level=error --max-diagnostics=500 || true
-      - name: Route registry diagnostics
+      - name: Full Biome format error diagnostics
+        shell: bash
+        run: pnpm exec biome format . --diagnostic-level=error --max-diagnostics=500 || true
+      - name: API docs drift diagnostics
         working-directory: apps/api
         shell: bash
-        run: node ace routes --json || true
+        run: node ace check:api-docs || true
