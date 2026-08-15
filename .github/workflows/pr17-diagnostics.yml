@@ -6,17 +6,20 @@ on:
       - agent/complete-ticket-seo-content-backends-20260814
 
 permissions:
-  contents: write
+  contents: read
 
 env:
+  FORCE_COLOR: 3
+  TURBO_TELEMETRY_DISABLED: 1
+  DO_NOT_TRACK: 1
   NODE_VERSION: "24.14.0"
   PNPM_VERSION: "10.32.1"
 
 jobs:
-  apply-localization-patch:
-    if: contains(github.event.head_commit.message, '[apply-localization-patch]')
+  format-invariants:
+    if: contains(github.event.head_commit.message, '[final-release-gate]')
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
@@ -28,45 +31,190 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
-      - name: Install frozen workspace
-        run: pnpm install --frozen-lockfile
-      - name: Build SDK prerequisite
-        run: pnpm --filter @calibra/sdk run build
-      - name: Decode and verify localization patch
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run format && pnpm run lint
+      - run: pnpm run verify:phase1-4
+      - run: pnpm run verify:phase5
+      - run: pnpm run verify:tickets
+      - run: pnpm run verify:seo-engines
+      - run: pnpm run verify:completion
+      - run: git diff --check
+      - run: node --check scripts/panel.mjs
+
+  typecheck:
+    if: contains(github.event.head_commit.message, '[final-release-gate]')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/complete-ticket-seo-content-backends-20260814
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run typecheck
+
+  test-frontend:
+    if: contains(github.event.head_commit.message, '[final-release-gate]')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/complete-ticket-seo-content-backends-20260814
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @calibra/sdk --filter @calibra/admin --filter @calibra/spin run test
+
+  test-api:
+    if: contains(github.event.head_commit.message, '[final-release-gate]')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6]
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: calibra
+          POSTGRES_PASSWORD: calibra
+          POSTGRES_DB: calibra
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U calibra -d calibra"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/complete-ticket-seo-content-backends-20260814
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Create test database
+        env:
+          PGPASSWORD: calibra
+        run: psql -h localhost -U calibra -d calibra -c "CREATE DATABASE calibra_test OWNER calibra;"
+      - name: Compute spec slice
+        id: slice
+        working-directory: apps/api
         run: |
-          base64 -d .pr17-localization.patch.gz.b64 | gzip -d > /tmp/pr17-localization.patch
-          git apply --check /tmp/pr17-localization.patch
-      - name: Apply localization patch
-        run: git apply /tmp/pr17-localization.patch
-      - name: Format touched TSX
-        run: >-
-          pnpm exec biome check --write
-          apps/admin/src/features/factor/documents-list.tsx
-          apps/admin/src/features/factor/payments-page.tsx
-          apps/admin/src/features/factor/reports-page.tsx
-          apps/admin/src/features/factor/records-page.tsx
-          apps/admin/src/features/factor/settings-page.tsx
-          apps/admin/src/features/content/posts-page.tsx
-          apps/admin/src/features/content/market-page.tsx
-          apps/admin/src/features/content/agents-page.tsx
-          apps/admin/src/features/content/studio-page.tsx
-          apps/admin/src/features/content/calendar-page.tsx
-          apps/admin/src/features/content/reports-page.tsx
-          apps/admin/src/features/content/settings-page.tsx
-          apps/admin/src/features/content/taxonomy-page.tsx
-          apps/admin/src/features/seo/workspace.tsx
-      - name: Verify localization policy
-        run: node scripts/verify-admin-localization-policy.mjs
-      - name: Admin typecheck
-        run: pnpm --filter @calibra/admin run typecheck
-      - name: Admin tests
-        run: pnpm --filter @calibra/admin run test
-      - name: Diff safety
-        run: git diff --check
-      - name: Commit localization hardening
+          paths=$(node scripts/shard-specs.mjs ${{ matrix.shard }} 6)
+          files=$(echo "$paths" | tr ' ' '\n' | sed 's/^/--files=/' | xargs)
+          echo "files=$files" >> "$GITHUB_OUTPUT"
+      - name: Run Japa shard
+        working-directory: apps/api
+        run: pnpm test ${{ steps.slice.outputs.files }}
+
+  build:
+    if: contains(github.event.head_commit.message, '[final-release-gate]')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/complete-ticket-seo-content-backends-20260814
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
+      - name: Assert bundled spin panel
         run: |
-          git config user.name "calibra-dev"
-          git config user.email "keshavarz20.com@gmail.com"
-          git add apps/admin/messages/en.json apps/admin/messages/fa.json apps/admin/src/features/factor apps/admin/src/features/content apps/admin/src/features/seo/workspace.tsx
-          git commit -m "fix(admin): localize release surfaces and standardize date inputs"
-          git push origin HEAD:agent/complete-ticket-seo-content-backends-20260814
+          test -s packages/spin/dist/agent/client.js
+          ! grep -q "esm.sh" packages/spin/dist/agent/client.js
+
+  api-docs-sync:
+    if: contains(github.event.head_commit.message, '[final-release-gate]')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/complete-ticket-seo-content-backends-20260814
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @calibra/api-docs run build:json
+      - name: Check registered routes against OpenAPI
+        working-directory: apps/api
+        env:
+          NODE_ENV: test
+          PORT: "3334"
+          HOST: "0.0.0.0"
+          APP_NAME: calibra-api
+          APP_KEY: ci-only-key-not-used-for-real-secrets
+          LOG_LEVEL: warn
+          DB_HOST: localhost
+          DB_PORT: "5432"
+          DB_USER: calibra
+          DB_PASSWORD: calibra
+          DB_DATABASE: calibra
+          MAIL_FROM_ADDRESS: ops@calibra.local
+          MAIL_FROM_NAME: Calibra
+          MAIL_NOTIFICATIONS_ENABLED: "false"
+          SMTP_HOST: localhost
+          SMTP_PORT: "11025"
+          REDIS_HOST: localhost
+          REDIS_PORT: "6379"
+          TRANSMIT_TRANSPORT: none
+          QUEUE_DRIVER: sync
+          LIMITER_STORE: memory
+          CACHE_DRIVER: memory
+        run: node ace check:api-docs
+
+  sdk-codegen-sync:
+    if: contains(github.event.head_commit.message, '[final-release-gate]')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/complete-ticket-seo-content-backends-20260814
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @calibra/sdk run codegen:check
