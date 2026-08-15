@@ -29,7 +29,7 @@ import { cn } from "#/lib/utils";
 
 import { ticketCopy } from "./copy";
 import { useAttachMediaToTicket, useCreateTicket, useTicketResources } from "./queries";
-import { SupportPageHeader, ticketChannelLabel, TicketPriorityBadge } from "./ui";
+import { SupportPageHeader, TicketPriorityBadge, ticketChannelLabel } from "./ui";
 import type { TicketChannel, TicketPriority, TicketResource } from "./types";
 
 const CHANNELS: TicketChannel[] = [
@@ -186,9 +186,13 @@ export function TicketCreatePage() {
                                     <span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary">
                                         <UserRound className="size-5" aria-hidden="true" />
                                     </span>
-                                    {mode === "customer" ? <CheckCircle2 className="size-4 text-primary" aria-hidden="true" /> : null}
+                                    {mode === "customer" ? (
+                                        <CheckCircle2 className="size-4 text-primary" aria-hidden="true" />
+                                    ) : null}
                                 </div>
-                                <div className="mt-4 font-medium text-sm">{locale === "en" ? "Customer ticket" : "تیکت مشتری"}</div>
+                                <div className="mt-4 font-medium text-sm">
+                                    {locale === "en" ? "Customer ticket" : "تیکت مشتری"}
+                                </div>
                                 <p className="mt-1 text-muted-foreground text-xs leading-5">
                                     {locale === "en"
                                         ? "For a request that should stay linked to a customer and contact channel."
@@ -213,9 +217,13 @@ export function TicketCreatePage() {
                                     <span className="grid size-10 place-items-center rounded-xl bg-muted text-foreground">
                                         <Users className="size-5" aria-hidden="true" />
                                     </span>
-                                    {mode === "internal" ? <CheckCircle2 className="size-4 text-primary" aria-hidden="true" /> : null}
+                                    {mode === "internal" ? (
+                                        <CheckCircle2 className="size-4 text-primary" aria-hidden="true" />
+                                    ) : null}
                                 </div>
-                                <div className="mt-4 font-medium text-sm">{locale === "en" ? "Internal ticket" : "تیکت داخلی"}</div>
+                                <div className="mt-4 font-medium text-sm">
+                                    {locale === "en" ? "Internal ticket" : "تیکت داخلی"}
+                                </div>
                                 <p className="mt-1 text-muted-foreground text-xs leading-5">
                                     {locale === "en"
                                         ? "For back-office coordination. It stays private and is tagged internal."
@@ -234,7 +242,9 @@ export function TicketCreatePage() {
                                 {mode === "customer" ? (
                                     <div className="space-y-3 sm:col-span-2">
                                         <label className="space-y-1.5 text-xs">
-                                            <span className="font-medium">{locale === "en" ? "Find customer" : "جستجوی مشتری"}</span>
+                                            <span className="font-medium">
+                                                {locale === "en" ? "Find customer" : "جستجوی مشتری"}
+                                            </span>
                                             <div className="relative">
                                                 <Search
                                                     className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
@@ -244,7 +254,11 @@ export function TicketCreatePage() {
                                                     value={customerQuery}
                                                     onChange={(event) => setCustomerQuery(event.target.value)}
                                                     className="ps-9"
-                                                    placeholder={locale === "en" ? "Search name, phone, or email" : "نام، موبایل یا ایمیل را جستجو کنید"}
+                                                    placeholder={
+                                                        locale === "en"
+                                                            ? "Search name, phone, or email"
+                                                            : "نام، موبایل یا ایمیل را جستجو کنید"
+                                                    }
                                                 />
                                             </div>
                                         </label>
@@ -252,18 +266,32 @@ export function TicketCreatePage() {
                                             <div className="flex flex-col gap-3 rounded-xl border border-primary/20 bg-primary/5 p-3 sm:flex-row sm:items-center sm:justify-between">
                                                 <div className="min-w-0">
                                                     <div className="truncate font-medium text-xs">{selectedCustomer.label}</div>
-                                                    <div className="mt-1 truncate text-[0.68rem] text-muted-foreground" dir="auto">
-                                                        {selectedCustomer.phone ?? selectedCustomer.email ?? `#${selectedCustomer.id}`}
+                                                    <div
+                                                        className="mt-1 truncate text-[0.68rem] text-muted-foreground"
+                                                        dir="auto"
+                                                    >
+                                                        {selectedCustomer.phone ??
+                                                            selectedCustomer.email ??
+                                                            `#${selectedCustomer.id}`}
                                                     </div>
                                                 </div>
-                                                <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedCustomer(null)}>
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => setSelectedCustomer(null)}
+                                                >
                                                     {locale === "en" ? "Clear selection" : "حذف انتخاب"}
                                                 </Button>
                                             </div>
                                         ) : deferredCustomerQuery.length > 0 && customerSuggestions.length > 0 ? (
                                             <div className="grid gap-2 sm:grid-cols-2">
                                                 {customerSuggestions.map((customer) => (
-                                                    <CustomerSuggestion key={customer.id} customer={customer} onSelect={selectCustomer} />
+                                                    <CustomerSuggestion
+                                                        key={customer.id}
+                                                        customer={customer}
+                                                        onSelect={selectCustomer}
+                                                    />
                                                 ))}
                                             </div>
                                         ) : null}
@@ -286,7 +314,13 @@ export function TicketCreatePage() {
                                         maxLength={180}
                                         value={requesterName}
                                         onChange={(event) => setRequesterName(event.target.value)}
-                                        placeholder={mode === "internal" ? (locale === "en" ? "Support operations" : "مثلاً تیم عملیات") : undefined}
+                                        placeholder={
+                                            mode === "internal"
+                                                ? locale === "en"
+                                                    ? "Support operations"
+                                                    : "مثلاً تیم عملیات"
+                                                : undefined
+                                        }
                                     />
                                 </label>
                                 {mode === "customer" ? (
@@ -302,7 +336,9 @@ export function TicketCreatePage() {
                                     </>
                                 ) : null}
                                 <label className="space-y-1.5 text-xs">
-                                    <span className="font-medium">{locale === "en" ? "Category / department" : "دسته / دپارتمان"}</span>
+                                    <span className="font-medium">
+                                        {locale === "en" ? "Category / department" : "دسته / دپارتمان"}
+                                    </span>
                                     <Input
                                         name="category"
                                         maxLength={80}
@@ -314,7 +350,9 @@ export function TicketCreatePage() {
                                     <div>
                                         <div className="font-medium text-xs">{locale === "en" ? "Priority" : "اولویت"}</div>
                                         <p className="mt-1 text-[0.68rem] text-muted-foreground">
-                                            {locale === "en" ? "Choose the operational urgency explicitly." : "سطح فوریت عملیاتی را مشخص کنید."}
+                                            {locale === "en"
+                                                ? "Choose the operational urgency explicitly."
+                                                : "سطح فوریت عملیاتی را مشخص کنید."}
                                         </p>
                                     </div>
                                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -337,9 +375,13 @@ export function TicketCreatePage() {
 
                                 <div className="space-y-2 sm:col-span-2">
                                     <div>
-                                        <div className="font-medium text-xs">{locale === "en" ? "Source / reply channel" : "کانال ثبت / پاسخ"}</div>
+                                        <div className="font-medium text-xs">
+                                            {locale === "en" ? "Source / reply channel" : "کانال ثبت / پاسخ"}
+                                        </div>
                                         <p className="mt-1 text-[0.68rem] text-muted-foreground">
-                                            {locale === "en" ? "Record the channel the request actually came from." : "کانالی را انتخاب کنید که درخواست واقعاً از آن وارد شده است."}
+                                            {locale === "en"
+                                                ? "Record the channel the request actually came from."
+                                                : "کانالی را انتخاب کنید که درخواست واقعاً از آن وارد شده است."}
                                         </p>
                                     </div>
                                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
@@ -363,13 +405,20 @@ export function TicketCreatePage() {
 
                                 <label className="space-y-1.5 text-xs sm:col-span-2 lg:col-span-1">
                                     <span className="font-medium">{locale === "en" ? "Assignee" : "پشتیبان مسئول"}</span>
-                                    <Select value={assignee} onValueChange={(value) => setAssignee(typeof value === "string" ? value : "default")}>
+                                    <Select
+                                        value={assignee}
+                                        onValueChange={(value) => setAssignee(typeof value === "string" ? value : "default")}
+                                    >
                                         <SelectTrigger>
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="default">{locale === "en" ? "Default routing" : "ارجاع پیش‌فرض"}</SelectItem>
-                                            <SelectItem value="unassigned">{locale === "en" ? "Unassigned" : "بدون مسئول"}</SelectItem>
+                                            <SelectItem value="default">
+                                                {locale === "en" ? "Default routing" : "ارجاع پیش‌فرض"}
+                                            </SelectItem>
+                                            <SelectItem value="unassigned">
+                                                {locale === "en" ? "Unassigned" : "بدون مسئول"}
+                                            </SelectItem>
                                             {(assignees.data ?? []).map((item) => (
                                                 <SelectItem key={item.id} value={String(item.id)}>
                                                     {item.label}
@@ -419,7 +468,9 @@ export function TicketCreatePage() {
                                 <div className="space-y-2 sm:col-span-2">
                                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                         <div>
-                                            <div className="font-medium text-xs">{locale === "en" ? "Attachments" : "پیوست‌ها"}</div>
+                                            <div className="font-medium text-xs">
+                                                {locale === "en" ? "Attachments" : "پیوست‌ها"}
+                                            </div>
                                             <div className="mt-1 text-[0.68rem] text-muted-foreground leading-5">
                                                 {locale === "en"
                                                     ? "Choose or upload files through Media; scan metadata remains enforceable after linking."
@@ -434,14 +485,19 @@ export function TicketCreatePage() {
                                     {media.length > 0 ? (
                                         <div className="grid gap-2 sm:grid-cols-2">
                                             {media.map((item) => (
-                                                <div key={item.id} className="flex min-w-0 items-center justify-between gap-2 rounded-lg border px-3 py-2 text-xs">
+                                                <div
+                                                    key={item.id}
+                                                    className="flex min-w-0 items-center justify-between gap-2 rounded-lg border px-3 py-2 text-xs"
+                                                >
                                                     <span className="min-w-0 truncate" dir="auto">
                                                         {item.filename}
                                                     </span>
                                                     <button
                                                         type="button"
                                                         className="shrink-0 text-muted-foreground hover:text-danger"
-                                                        onClick={() => setMedia((current) => current.filter((row) => row.id !== item.id))}
+                                                        onClick={() =>
+                                                            setMedia((current) => current.filter((row) => row.id !== item.id))
+                                                        }
                                                     >
                                                         {locale === "en" ? "Remove" : "حذف"}
                                                     </button>
@@ -460,7 +516,16 @@ export function TicketCreatePage() {
                                         <RefreshCw className="size-4" aria-hidden="true" />
                                         {locale === "en" ? "Clear form" : "پاک‌کردن فرم"}
                                     </Button>
-                                    <Button type="submit" disabled={createTicket.isPending || attach.isPending || !requesterName.trim() || !subject.trim() || !message.trim()}>
+                                    <Button
+                                        type="submit"
+                                        disabled={
+                                            createTicket.isPending ||
+                                            attach.isPending ||
+                                            !requesterName.trim() ||
+                                            !subject.trim() ||
+                                            !message.trim()
+                                        }
+                                    >
                                         <MessageSquare className="size-4" aria-hidden="true" />
                                         {createTicket.isPending
                                             ? locale === "en"
@@ -521,26 +586,44 @@ export function TicketCreatePage() {
                         </CardHeader>
                         <CardContent className="space-y-4 p-4">
                             <div>
-                                <div className="text-[0.68rem] text-muted-foreground">{locale === "en" ? "Subject" : "موضوع"}</div>
+                                <div className="text-[0.68rem] text-muted-foreground">
+                                    {locale === "en" ? "Subject" : "موضوع"}
+                                </div>
                                 <div className="mt-1 font-medium text-sm leading-6">
-                                    {subject.trim() || (locale === "en" ? "Ticket subject will appear here" : "موضوع تیکت اینجا نمایش داده می‌شود")}
+                                    {subject.trim() ||
+                                        (locale === "en"
+                                            ? "Ticket subject will appear here"
+                                            : "موضوع تیکت اینجا نمایش داده می‌شود")}
                                 </div>
                             </div>
                             <div className="flex flex-wrap items-center gap-2">
                                 <TicketPriorityBadge priority={priority} label={priorities[priority]} />
                                 <Badge variant="outline">{ticketChannelLabel(channel, locale)}</Badge>
                                 <Badge variant="outline">
-                                    {mode === "customer" ? (locale === "en" ? "Customer" : "مشتری") : locale === "en" ? "Internal" : "داخلی"}
+                                    {mode === "customer"
+                                        ? locale === "en"
+                                            ? "Customer"
+                                            : "مشتری"
+                                        : locale === "en"
+                                          ? "Internal"
+                                          : "داخلی"}
                                 </Badge>
                             </div>
                             <div className="rounded-xl border bg-muted/20 p-3">
-                                <div className="text-[0.68rem] text-muted-foreground">{locale === "en" ? "Requester" : "درخواست‌کننده"}</div>
+                                <div className="text-[0.68rem] text-muted-foreground">
+                                    {locale === "en" ? "Requester" : "درخواست‌کننده"}
+                                </div>
                                 <div className="mt-1 truncate text-xs">{requesterName.trim() || "—"}</div>
                             </div>
                             <div className="rounded-xl border bg-muted/20 p-3">
-                                <div className="text-[0.68rem] text-muted-foreground">{locale === "en" ? "Message preview" : "پیش‌نمایش پیام"}</div>
-                                <p className="mt-2 line-clamp-5 whitespace-pre-wrap text-xs leading-6 text-foreground">
-                                    {message.trim() || (locale === "en" ? "Start typing the ticket message…" : "با نوشتن متن تیکت، پیش‌نمایش اینجا به‌روز می‌شود…")}
+                                <div className="text-[0.68rem] text-muted-foreground">
+                                    {locale === "en" ? "Message preview" : "پیش‌نمایش پیام"}
+                                </div>
+                                <p className="mt-2 line-clamp-5 whitespace-pre-wrap text-foreground text-xs leading-6">
+                                    {message.trim() ||
+                                        (locale === "en"
+                                            ? "Start typing the ticket message…"
+                                            : "با نوشتن متن تیکت، پیش‌نمایش اینجا به‌روز می‌شود…")}
                                 </p>
                             </div>
                             <div className="flex items-center justify-between gap-3 text-xs">
@@ -557,7 +640,15 @@ export function TicketCreatePage() {
                         <CardContent className="space-y-3 text-xs">
                             <div className="flex items-center justify-between gap-3">
                                 <span className="text-muted-foreground">{locale === "en" ? "Type" : "نوع"}</span>
-                                <span>{mode === "customer" ? (locale === "en" ? "Customer ticket" : "تیکت مشتری") : locale === "en" ? "Internal ticket" : "تیکت داخلی"}</span>
+                                <span>
+                                    {mode === "customer"
+                                        ? locale === "en"
+                                            ? "Customer ticket"
+                                            : "تیکت مشتری"
+                                        : locale === "en"
+                                          ? "Internal ticket"
+                                          : "تیکت داخلی"}
+                                </span>
                             </div>
                             <div className="flex items-center justify-between gap-3">
                                 <span className="text-muted-foreground">{locale === "en" ? "Priority" : "اولویت"}</span>
@@ -578,12 +669,34 @@ export function TicketCreatePage() {
                         <CardContent className="flex gap-3 p-4">
                             <ShieldCheck className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
                             <div>
-                                <div className="font-medium text-sm">{locale === "en" ? "Professional intake checklist" : "راهنمای ثبت حرفه‌ای"}</div>
+                                <div className="font-medium text-sm">
+                                    {locale === "en" ? "Professional intake checklist" : "راهنمای ثبت حرفه‌ای"}
+                                </div>
                                 <ul className="mt-2 space-y-1.5 text-muted-foreground text-xs leading-5">
-                                    <li>• {locale === "en" ? "Use the actual source channel." : "کانال واقعی ورود درخواست را انتخاب کنید."}</li>
-                                    <li>• {locale === "en" ? "Keep one clear issue per ticket." : "هر تیکت را روی یک مسئله روشن نگه دارید."}</li>
-                                    <li>• {locale === "en" ? "Link the customer whenever possible." : "در صورت امکان مشتری را به تیکت متصل کنید."}</li>
-                                    <li>• {locale === "en" ? "Attach evidence through Media." : "مدارک را از مسیر کتابخانه رسانه پیوست کنید."}</li>
+                                    <li>
+                                        •{" "}
+                                        {locale === "en"
+                                            ? "Use the actual source channel."
+                                            : "کانال واقعی ورود درخواست را انتخاب کنید."}
+                                    </li>
+                                    <li>
+                                        •{" "}
+                                        {locale === "en"
+                                            ? "Keep one clear issue per ticket."
+                                            : "هر تیکت را روی یک مسئله روشن نگه دارید."}
+                                    </li>
+                                    <li>
+                                        •{" "}
+                                        {locale === "en"
+                                            ? "Link the customer whenever possible."
+                                            : "در صورت امکان مشتری را به تیکت متصل کنید."}
+                                    </li>
+                                    <li>
+                                        •{" "}
+                                        {locale === "en"
+                                            ? "Attach evidence through Media."
+                                            : "مدارک را از مسیر کتابخانه رسانه پیوست کنید."}
+                                    </li>
                                 </ul>
                             </div>
                         </CardContent>

@@ -15,12 +15,7 @@ import { AlertCircle, CheckCircle2, Clock3, KeyRound, Radio, Save, ShieldCheck, 
 import { cn } from "#/lib/utils";
 
 import { useSupportChannels, useUpdateSupportChannel } from "./queries";
-import {
-    channelStatusTone,
-    SupportPageHeader,
-    supportChannelLabel,
-    supportChannelStatusLabel,
-} from "./ui";
+import { channelStatusTone, SupportPageHeader, supportChannelLabel, supportChannelStatusLabel } from "./ui";
 import type { SupportChannel, SupportChannelIntegration } from "./types";
 
 const PRIMARY_CHANNELS: SupportChannel[] = ["whatsapp", "telegram", "instagram", "rubika", "bale", "eitaa"];
@@ -92,7 +87,9 @@ function ChannelCard({
                 </div>
                 <div className="mt-3 flex items-center justify-between gap-2 border-t pt-3 text-[0.65rem] text-muted-foreground">
                     <span>{locale === "en" ? "Last verified" : "آخرین تأیید"}</span>
-                    <span className="truncate" dir="ltr">{channel.last_verified_at ?? "—"}</span>
+                    <span className="truncate" dir="ltr">
+                        {channel.last_verified_at ?? "—"}
+                    </span>
                 </div>
                 {channel.last_error ? (
                     <div className="mt-3 flex gap-2 rounded-lg border border-danger/15 bg-danger/5 p-2.5 text-[0.68rem] text-danger">
@@ -172,7 +169,9 @@ function ChannelConfigurationForm({
         <form onSubmit={save} className="space-y-5">
             <div className="grid gap-3 sm:grid-cols-2">
                 <label className="space-y-1.5 text-xs sm:col-span-2">
-                    <span className="font-medium">{locale === "en" ? "Credential environment reference" : "نام متغیر محیطی اعتبارنامه"}</span>
+                    <span className="font-medium">
+                        {locale === "en" ? "Credential environment reference" : "نام متغیر محیطی اعتبارنامه"}
+                    </span>
                     <Input
                         name="credential_env_ref"
                         defaultValue={selected.credential_env_ref ?? ""}
@@ -181,7 +180,9 @@ function ChannelConfigurationForm({
                         pattern="CALIBRA_SUPPORT_[A-Z0-9_]+"
                     />
                     <span className="block text-[0.65rem] text-muted-foreground">
-                        {locale === "en" ? "Only the environment variable name is stored; the secret value is never shown here." : "فقط نام متغیر محیطی ذخیره می‌شود؛ مقدار رمز در پنل نمایش داده نمی‌شود."}
+                        {locale === "en"
+                            ? "Only the environment variable name is stored; the secret value is never shown here."
+                            : "فقط نام متغیر محیطی ذخیره می‌شود؛ مقدار رمز در پنل نمایش داده نمی‌شود."}
                     </span>
                 </label>
                 <label className="space-y-1.5 text-xs">
@@ -206,22 +207,44 @@ function ChannelConfigurationForm({
                 <div className="grid gap-3 sm:grid-cols-2">
                     <label className="space-y-1.5 text-xs">
                         <span className="font-medium">{locale === "en" ? "Start" : "شروع"}</span>
-                        <Input type="time" name="working_hours_start" defaultValue={stringValue(configuration, "working_hours_start")} dir="ltr" />
+                        <Input
+                            type="time"
+                            name="working_hours_start"
+                            defaultValue={stringValue(configuration, "working_hours_start")}
+                            dir="ltr"
+                        />
                     </label>
                     <label className="space-y-1.5 text-xs">
                         <span className="font-medium">{locale === "en" ? "End" : "پایان"}</span>
-                        <Input type="time" name="working_hours_end" defaultValue={stringValue(configuration, "working_hours_end")} dir="ltr" />
+                        <Input
+                            type="time"
+                            name="working_hours_end"
+                            defaultValue={stringValue(configuration, "working_hours_end")}
+                            dir="ltr"
+                        />
                     </label>
                     <div className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5 sm:col-span-2">
                         <div>
-                            <div className="font-medium text-xs">{locale === "en" ? "Enable fallback" : "فعال‌سازی مسیر جایگزین"}</div>
-                            <div className="mt-1 text-[0.65rem] text-muted-foreground">{locale === "en" ? "Store the fallback preference for this channel." : "مسیر جایگزین این کانال را در پیکربندی نگه‌داری می‌کند."}</div>
+                            <div className="font-medium text-xs">
+                                {locale === "en" ? "Enable fallback" : "فعال‌سازی مسیر جایگزین"}
+                            </div>
+                            <div className="mt-1 text-[0.65rem] text-muted-foreground">
+                                {locale === "en"
+                                    ? "Store the fallback preference for this channel."
+                                    : "مسیر جایگزین این کانال را در پیکربندی نگه‌داری می‌کند."}
+                            </div>
                         </div>
                         <Switch checked={fallbackEnabled} onCheckedChange={setFallbackEnabled} />
                     </div>
                     <label className="space-y-1.5 text-xs sm:col-span-2">
                         <span className="font-medium">{locale === "en" ? "Fallback channel key" : "کلید کانال جایگزین"}</span>
-                        <Input name="fallback_channel" defaultValue={stringValue(configuration, "fallback_channel")} placeholder="sms" dir="ltr" disabled={!fallbackEnabled} />
+                        <Input
+                            name="fallback_channel"
+                            defaultValue={stringValue(configuration, "fallback_channel")}
+                            placeholder="sms"
+                            dir="ltr"
+                            disabled={!fallbackEnabled}
+                        />
                     </label>
                 </div>
             </div>
@@ -233,8 +256,14 @@ function ChannelConfigurationForm({
                 </div>
                 <div className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5">
                     <div>
-                        <div className="font-medium text-xs">{locale === "en" ? "Enable auto reply" : "فعال‌سازی پاسخ خودکار"}</div>
-                        <div className="mt-1 text-[0.65rem] text-muted-foreground">{locale === "en" ? "This only stores configuration; actual delivery still requires a verified adapter." : "این گزینه فقط پیکربندی را ذخیره می‌کند؛ ارسال واقعی همچنان به آداپتر تأییدشده نیاز دارد."}</div>
+                        <div className="font-medium text-xs">
+                            {locale === "en" ? "Enable auto reply" : "فعال‌سازی پاسخ خودکار"}
+                        </div>
+                        <div className="mt-1 text-[0.65rem] text-muted-foreground">
+                            {locale === "en"
+                                ? "This only stores configuration; actual delivery still requires a verified adapter."
+                                : "این گزینه فقط پیکربندی را ذخیره می‌کند؛ ارسال واقعی همچنان به آداپتر تأییدشده نیاز دارد."}
+                        </div>
                     </div>
                     <Switch checked={autoReply} onCheckedChange={setAutoReply} />
                 </div>
@@ -257,17 +286,30 @@ function ChannelConfigurationForm({
                     {[
                         [syncIncoming, setSyncIncoming, locale === "en" ? "Sync incoming messages" : "همگام‌سازی پیام‌های ورودی"],
                         [incomingWebhook, setIncomingWebhook, locale === "en" ? "Incoming webhook" : "وب‌هوک پیام ورودی"],
-                        [deliveryNotifications, setDeliveryNotifications, locale === "en" ? "Delivery status updates" : "به‌روزرسانی وضعیت تحویل"],
+                        [
+                            deliveryNotifications,
+                            setDeliveryNotifications,
+                            locale === "en" ? "Delivery status updates" : "به‌روزرسانی وضعیت تحویل",
+                        ],
                         [errorAlerts, setErrorAlerts, locale === "en" ? "Connection/error alerts" : "هشدار اتصال و خطا"],
                     ].map(([checked, setter, label]) => (
-                        <div key={String(label)} className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5">
+                        <div
+                            key={String(label)}
+                            className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5"
+                        >
                             <span className="text-xs">{String(label)}</span>
                             <Switch checked={Boolean(checked)} onCheckedChange={setter as (value: boolean) => void} />
                         </div>
                     ))}
                     <label className="block space-y-1.5 pt-1 text-xs">
                         <span className="font-medium">{locale === "en" ? "Webhook URL" : "آدرس وب‌هوک"}</span>
-                        <Input name="webhook_url" defaultValue={stringValue(configuration, "webhook_url")} placeholder="https://..." dir="ltr" disabled={!incomingWebhook} />
+                        <Input
+                            name="webhook_url"
+                            defaultValue={stringValue(configuration, "webhook_url")}
+                            placeholder="https://..."
+                            dir="ltr"
+                            disabled={!incomingWebhook}
+                        />
                     </label>
                 </div>
             </div>
@@ -284,7 +326,9 @@ function ChannelConfigurationForm({
                         className="min-h-48 font-mono text-xs"
                     />
                     <p className="mt-2 text-[0.65rem] text-muted-foreground">
-                        {locale === "en" ? "Unknown provider-specific keys are preserved. Structured fields above take precedence when saving." : "کلیدهای اختصاصی ناشناخته حفظ می‌شوند و هنگام ذخیره، فیلدهای ساختاریافته بالا اولویت دارند."}
+                        {locale === "en"
+                            ? "Unknown provider-specific keys are preserved. Structured fields above take precedence when saving."
+                            : "کلیدهای اختصاصی ناشناخته حفظ می‌شوند و هنگام ذخیره، فیلدهای ساختاریافته بالا اولویت دارند."}
                     </p>
                 </div>
             </details>
@@ -292,20 +336,50 @@ function ChannelConfigurationForm({
             <div className="rounded-xl border bg-muted/20 p-3 text-xs">
                 <div className="flex items-center justify-between gap-3">
                     <span className="text-muted-foreground">{locale === "en" ? "Stored state" : "وضعیت ثبت‌شده"}</span>
-                    <Badge variant="outline" className={channelStatusTone(selected.status)}>{supportChannelStatusLabel(selected.status, locale)}</Badge>
+                    <Badge variant="outline" className={channelStatusTone(selected.status)}>
+                        {supportChannelStatusLabel(selected.status, locale)}
+                    </Badge>
                 </div>
                 <div className="mt-2 flex items-center justify-between gap-3">
                     <span className="text-muted-foreground">{locale === "en" ? "Runtime credential" : "اعتبارنامه runtime"}</span>
-                    <span>{selected.credential_configured ? (locale === "en" ? "Available" : "موجود") : locale === "en" ? "Not available" : "موجود نیست"}</span>
+                    <span>
+                        {selected.credential_configured
+                            ? locale === "en"
+                                ? "Available"
+                                : "موجود"
+                            : locale === "en"
+                              ? "Not available"
+                              : "موجود نیست"}
+                    </span>
                 </div>
             </div>
 
-            {jsonError ? <p className="text-danger text-xs">{locale === "en" ? "Advanced JSON is not valid." : "JSON پیشرفته معتبر نیست."}</p> : null}
-            {success ? <p className="text-success text-xs">{locale === "en" ? "Configuration saved. Connectivity remains evidence-driven." : "پیکربندی ذخیره شد؛ وضعیت اتصال همچنان فقط بر پایه شواهد واقعی تغییر می‌کند."}</p> : null}
-            {error ? <p className="text-danger text-xs">{locale === "en" ? "Configuration could not be saved." : "ذخیره پیکربندی ناموفق بود."}</p> : null}
+            {jsonError ? (
+                <p className="text-danger text-xs">
+                    {locale === "en" ? "Advanced JSON is not valid." : "JSON پیشرفته معتبر نیست."}
+                </p>
+            ) : null}
+            {success ? (
+                <p className="text-success text-xs">
+                    {locale === "en"
+                        ? "Configuration saved. Connectivity remains evidence-driven."
+                        : "پیکربندی ذخیره شد؛ وضعیت اتصال همچنان فقط بر پایه شواهد واقعی تغییر می‌کند."}
+                </p>
+            ) : null}
+            {error ? (
+                <p className="text-danger text-xs">
+                    {locale === "en" ? "Configuration could not be saved." : "ذخیره پیکربندی ناموفق بود."}
+                </p>
+            ) : null}
             <Button type="submit" className="w-full" disabled={pending}>
                 <Save className="size-4" aria-hidden="true" />
-                {pending ? (locale === "en" ? "Saving…" : "در حال ذخیره…") : locale === "en" ? "Save channel settings" : "ذخیره تنظیمات کانال"}
+                {pending
+                    ? locale === "en"
+                        ? "Saving…"
+                        : "در حال ذخیره…"
+                    : locale === "en"
+                      ? "Save channel settings"
+                      : "ذخیره تنظیمات کانال"}
             </Button>
         </form>
     );
@@ -371,18 +445,62 @@ export function TicketChannelsPage() {
             />
 
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <Card className="shadow-sm"><CardContent className="flex items-center justify-between p-4"><div><p className="text-muted-foreground text-xs">{locale === "en" ? "Enabled" : "فعال‌شده"}</p><div className="mt-1 font-semibold text-2xl tabular-nums">{enabled.toLocaleString(numberLocale)}</div></div><SlidersHorizontal className="size-5 text-primary" aria-hidden="true" /></CardContent></Card>
-                <Card className="shadow-sm"><CardContent className="flex items-center justify-between p-4"><div><p className="text-muted-foreground text-xs">{locale === "en" ? "Verified connected" : "متصلِ تأییدشده"}</p><div className="mt-1 font-semibold text-2xl tabular-nums">{connected.toLocaleString(numberLocale)}</div></div><CheckCircle2 className="size-5 text-success" aria-hidden="true" /></CardContent></Card>
-                <Card className="shadow-sm"><CardContent className="flex items-center justify-between p-4"><div><p className="text-muted-foreground text-xs">{locale === "en" ? "Configured" : "پیکربندی‌شده"}</p><div className="mt-1 font-semibold text-2xl tabular-nums">{configured.toLocaleString(numberLocale)}</div></div><KeyRound className="size-5 text-warning" aria-hidden="true" /></CardContent></Card>
-                <Card className="shadow-sm"><CardContent className="flex items-center justify-between p-4"><div><p className="text-muted-foreground text-xs">{locale === "en" ? "Errors" : "دارای خطا"}</p><div className="mt-1 font-semibold text-2xl tabular-nums">{errors.toLocaleString(numberLocale)}</div></div><AlertCircle className="size-5 text-danger" aria-hidden="true" /></CardContent></Card>
+                <Card className="shadow-sm">
+                    <CardContent className="flex items-center justify-between p-4">
+                        <div>
+                            <p className="text-muted-foreground text-xs">{locale === "en" ? "Enabled" : "فعال‌شده"}</p>
+                            <div className="mt-1 font-semibold text-2xl tabular-nums">{enabled.toLocaleString(numberLocale)}</div>
+                        </div>
+                        <SlidersHorizontal className="size-5 text-primary" aria-hidden="true" />
+                    </CardContent>
+                </Card>
+                <Card className="shadow-sm">
+                    <CardContent className="flex items-center justify-between p-4">
+                        <div>
+                            <p className="text-muted-foreground text-xs">
+                                {locale === "en" ? "Verified connected" : "متصلِ تأییدشده"}
+                            </p>
+                            <div className="mt-1 font-semibold text-2xl tabular-nums">
+                                {connected.toLocaleString(numberLocale)}
+                            </div>
+                        </div>
+                        <CheckCircle2 className="size-5 text-success" aria-hidden="true" />
+                    </CardContent>
+                </Card>
+                <Card className="shadow-sm">
+                    <CardContent className="flex items-center justify-between p-4">
+                        <div>
+                            <p className="text-muted-foreground text-xs">{locale === "en" ? "Configured" : "پیکربندی‌شده"}</p>
+                            <div className="mt-1 font-semibold text-2xl tabular-nums">
+                                {configured.toLocaleString(numberLocale)}
+                            </div>
+                        </div>
+                        <KeyRound className="size-5 text-warning" aria-hidden="true" />
+                    </CardContent>
+                </Card>
+                <Card className="shadow-sm">
+                    <CardContent className="flex items-center justify-between p-4">
+                        <div>
+                            <p className="text-muted-foreground text-xs">{locale === "en" ? "Errors" : "دارای خطا"}</p>
+                            <div className="mt-1 font-semibold text-2xl tabular-nums">{errors.toLocaleString(numberLocale)}</div>
+                        </div>
+                        <AlertCircle className="size-5 text-danger" aria-hidden="true" />
+                    </CardContent>
+                </Card>
             </div>
 
             <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(22rem,0.65fr)]">
                 <div className="min-w-0 space-y-4">
                     <Card className="shadow-sm">
                         <CardHeader>
-                            <CardTitle className="text-base">{locale === "en" ? "Primary messengers" : "پیام‌رسان‌های اصلی"}</CardTitle>
-                            <p className="text-xs text-muted-foreground">{locale === "en" ? "Select a card to edit its operational settings." : "برای ویرایش تنظیمات عملیاتی، کارت کانال را انتخاب کنید."}</p>
+                            <CardTitle className="text-base">
+                                {locale === "en" ? "Primary messengers" : "پیام‌رسان‌های اصلی"}
+                            </CardTitle>
+                            <p className="text-muted-foreground text-xs">
+                                {locale === "en"
+                                    ? "Select a card to edit its operational settings."
+                                    : "برای ویرایش تنظیمات عملیاتی، کارت کانال را انتخاب کنید."}
+                            </p>
                         </CardHeader>
                         <CardContent>
                             <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
@@ -390,19 +508,45 @@ export function TicketChannelsPage() {
                                     ? PRIMARY_CHANNELS.map((name) => <Skeleton key={name} className="h-40 rounded-xl" />)
                                     : PRIMARY_CHANNELS.map((name, index) => {
                                           const channel = byChannel.get(name) ?? fallbackRow(name);
-                                          return <ChannelCard key={name} channel={channel} selected={selectedChannel === name} locale={locale} index={index} onSelect={() => setSelectedChannel(name)} onToggle={(value) => void toggle(channel, value)} busy={update.isPending} />;
+                                          return (
+                                              <ChannelCard
+                                                  key={name}
+                                                  channel={channel}
+                                                  selected={selectedChannel === name}
+                                                  locale={locale}
+                                                  index={index}
+                                                  onSelect={() => setSelectedChannel(name)}
+                                                  onToggle={(value) => void toggle(channel, value)}
+                                                  busy={update.isPending}
+                                              />
+                                          );
                                       })}
                             </div>
                         </CardContent>
                     </Card>
 
                     <Card className="shadow-sm">
-                        <CardHeader><CardTitle className="text-base">{locale === "en" ? "Other support channels" : "سایر کانال‌های پشتیبانی"}</CardTitle></CardHeader>
+                        <CardHeader>
+                            <CardTitle className="text-base">
+                                {locale === "en" ? "Other support channels" : "سایر کانال‌های پشتیبانی"}
+                            </CardTitle>
+                        </CardHeader>
                         <CardContent>
                             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                                 {SECONDARY_CHANNELS.map((name, index) => {
                                     const channel = byChannel.get(name) ?? fallbackRow(name);
-                                    return <ChannelCard key={name} channel={channel} selected={selectedChannel === name} locale={locale} index={PRIMARY_CHANNELS.length + index} onSelect={() => setSelectedChannel(name)} onToggle={(value) => void toggle(channel, value)} busy={update.isPending} />;
+                                    return (
+                                        <ChannelCard
+                                            key={name}
+                                            channel={channel}
+                                            selected={selectedChannel === name}
+                                            locale={locale}
+                                            index={PRIMARY_CHANNELS.length + index}
+                                            onSelect={() => setSelectedChannel(name)}
+                                            onToggle={(value) => void toggle(channel, value)}
+                                            busy={update.isPending}
+                                        />
+                                    );
                                 })}
                             </div>
                         </CardContent>
@@ -412,9 +556,13 @@ export function TicketChannelsPage() {
                         <CardContent className="flex gap-3 p-4">
                             <ShieldCheck className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
                             <div>
-                                <div className="font-medium text-sm">{locale === "en" ? "Truthful connection semantics" : "معنای دقیق وضعیت اتصال"}</div>
+                                <div className="font-medium text-sm">
+                                    {locale === "en" ? "Truthful connection semantics" : "معنای دقیق وضعیت اتصال"}
+                                </div>
                                 <p className="mt-1 text-muted-foreground text-xs leading-5">
-                                    {locale === "en" ? "Enabled does not mean connected. Configured means settings exist, Connected requires backend provider evidence, and Error means a real integration failure is recorded." : "فعال‌بودن به معنی اتصال نیست. «پیکربندی‌شده» یعنی تنظیمات وجود دارد، «متصل» نیازمند شواهد واقعی ارائه‌دهنده است و «خطا» یعنی شکست واقعی یکپارچه‌سازی ثبت شده است."}
+                                    {locale === "en"
+                                        ? "Enabled does not mean connected. Configured means settings exist, Connected requires backend provider evidence, and Error means a real integration failure is recorded."
+                                        : "فعال‌بودن به معنی اتصال نیست. «پیکربندی‌شده» یعنی تنظیمات وجود دارد، «متصل» نیازمند شواهد واقعی ارائه‌دهنده است و «خطا» یعنی شکست واقعی یکپارچه‌سازی ثبت شده است."}
                                 </p>
                             </div>
                         </CardContent>
@@ -427,9 +575,15 @@ export function TicketChannelsPage() {
                             <div className="flex items-start justify-between gap-3">
                                 <div>
                                     <CardTitle className="text-base">{supportChannelLabel(selectedChannel, locale)}</CardTitle>
-                                    <p className="mt-1 text-xs text-muted-foreground">{locale === "en" ? "Channel configuration" : "پیکربندی کانال"}</p>
+                                    <p className="mt-1 text-muted-foreground text-xs">
+                                        {locale === "en" ? "Channel configuration" : "پیکربندی کانال"}
+                                    </p>
                                 </div>
-                                {selected ? <Badge variant="outline" className={channelStatusTone(selected.status)}>{supportChannelStatusLabel(selected.status, locale)}</Badge> : null}
+                                {selected ? (
+                                    <Badge variant="outline" className={channelStatusTone(selected.status)}>
+                                        {supportChannelStatusLabel(selected.status, locale)}
+                                    </Badge>
+                                ) : null}
                             </div>
                         </CardHeader>
                         <CardContent className="p-4">
@@ -445,7 +599,9 @@ export function TicketChannelsPage() {
                                 />
                             ) : (
                                 <div className="rounded-xl border border-dashed p-6 text-center text-muted-foreground text-xs">
-                                    {locale === "en" ? "Enable the channel once to create its configuration row." : "برای ایجاد ردیف پیکربندی، ابتدا کانال را فعال کنید."}
+                                    {locale === "en"
+                                        ? "Enable the channel once to create its configuration row."
+                                        : "برای ایجاد ردیف پیکربندی، ابتدا کانال را فعال کنید."}
                                 </div>
                             )}
                         </CardContent>

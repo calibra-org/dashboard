@@ -43,9 +43,9 @@ import {
     EmptySupportState,
     SupportMetric,
     SupportPageHeader,
-    ticketChannelLabel,
     TicketPriorityBadge,
     TicketStatusBadge,
+    ticketChannelLabel,
 } from "./ui";
 import type { Ticket, TicketChannel, TicketPriority, TicketSavedViewQuery, TicketStatus } from "./types";
 
@@ -114,9 +114,7 @@ export function TicketInboxPage() {
         for (const ticket of rows) {
             for (const tag of ticket.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1);
         }
-        return [...counts.entries()]
-            .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-            .slice(0, 10);
+        return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 10);
     }, [rows]);
 
     const currentViewQuery = useMemo<TicketSavedViewQuery>(() => {
@@ -224,7 +222,11 @@ export function TicketInboxPage() {
                     ))
                 ) : (
                     <>
-                        <SupportMetric label={locale === "en" ? "All tickets" : "همه تیکت‌ها"} value={(summary.data?.total ?? 0).toLocaleString(numberLocale)} icon={Inbox} />
+                        <SupportMetric
+                            label={locale === "en" ? "All tickets" : "همه تیکت‌ها"}
+                            value={(summary.data?.total ?? 0).toLocaleString(numberLocale)}
+                            icon={Inbox}
+                        />
                         <SupportMetric
                             label={locale === "en" ? "Active" : "تیکت‌های فعال"}
                             value={(summary.data?.active ?? 0).toLocaleString(numberLocale)}
@@ -259,7 +261,10 @@ export function TicketInboxPage() {
                     <CardContent className="space-y-4 p-3 sm:p-4">
                         <div className="grid gap-2 lg:grid-cols-[minmax(14rem,1fr)_repeat(4,minmax(8rem,0.34fr))]">
                             <div className="relative">
-                                <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+                                <Search
+                                    className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                                    aria-hidden="true"
+                                />
                                 <Input
                                     value={q}
                                     onChange={(event) => {
@@ -347,12 +352,22 @@ export function TicketInboxPage() {
 
                         {hasFilters ? (
                             <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-muted/15 p-2.5">
-                                <span className="me-1 text-[0.68rem] text-muted-foreground">{locale === "en" ? "Active filters" : "فیلترهای فعال"}:</span>
-                                {deferredQ ? <Badge variant="outline">{locale === "en" ? "Search" : "جستجو"}: {deferredQ}</Badge> : null}
+                                <span className="me-1 text-[0.68rem] text-muted-foreground">
+                                    {locale === "en" ? "Active filters" : "فیلترهای فعال"}:
+                                </span>
+                                {deferredQ ? (
+                                    <Badge variant="outline">
+                                        {locale === "en" ? "Search" : "جستجو"}: {deferredQ}
+                                    </Badge>
+                                ) : null}
                                 {status !== "all" ? <Badge variant="outline">{statuses[status]}</Badge> : null}
                                 {priority !== "all" ? <Badge variant="outline">{priorities[priority]}</Badge> : null}
-                                {channel !== "all" ? <Badge variant="outline">{ticketChannelLabel(channel, locale)}</Badge> : null}
-                                {sla !== "all" ? <Badge variant="outline">SLA: {sla === "healthy" ? t.healthySla : t.breachedSla}</Badge> : null}
+                                {channel !== "all" ? (
+                                    <Badge variant="outline">{ticketChannelLabel(channel, locale)}</Badge>
+                                ) : null}
+                                {sla !== "all" ? (
+                                    <Badge variant="outline">SLA: {sla === "healthy" ? t.healthySla : t.breachedSla}</Badge>
+                                ) : null}
                                 <Button variant="ghost" size="sm" className="ms-auto h-7" onClick={clearFilters}>
                                     {locale === "en" ? "Clear filters" : "پاک‌کردن"}
                                 </Button>
@@ -362,20 +377,31 @@ export function TicketInboxPage() {
                         {selectedRows.length > 0 ? (
                             <div className="flex flex-col gap-3 rounded-xl border border-primary/20 bg-primary/5 p-3 lg:flex-row lg:items-center lg:justify-between">
                                 <div className="font-medium text-xs">
-                                    {selectedRows.length.toLocaleString(numberLocale)} {locale === "en" ? "tickets selected" : "تیکت انتخاب شده"}
+                                    {selectedRows.length.toLocaleString(numberLocale)}{" "}
+                                    {locale === "en" ? "tickets selected" : "تیکت انتخاب شده"}
                                 </div>
                                 <div className="flex flex-wrap items-center gap-2">
-                                    <Select value={bulkAction} onValueChange={(value) => setBulkAction(value as typeof bulkAction)}>
+                                    <Select
+                                        value={bulkAction}
+                                        onValueChange={(value) => setBulkAction(value as typeof bulkAction)}
+                                    >
                                         <SelectTrigger className="w-36">
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="status">{locale === "en" ? "Change status" : "تغییر وضعیت"}</SelectItem>
-                                            <SelectItem value="priority">{locale === "en" ? "Change priority" : "تغییر اولویت"}</SelectItem>
+                                            <SelectItem value="status">
+                                                {locale === "en" ? "Change status" : "تغییر وضعیت"}
+                                            </SelectItem>
+                                            <SelectItem value="priority">
+                                                {locale === "en" ? "Change priority" : "تغییر اولویت"}
+                                            </SelectItem>
                                         </SelectContent>
                                     </Select>
                                     {bulkAction === "status" ? (
-                                        <Select value={bulkStatus} onValueChange={(value) => setBulkStatus(value as TicketStatus)}>
+                                        <Select
+                                            value={bulkStatus}
+                                            onValueChange={(value) => setBulkStatus(value as TicketStatus)}
+                                        >
                                             <SelectTrigger className="w-40">
                                                 <SelectValue />
                                             </SelectTrigger>
@@ -388,7 +414,10 @@ export function TicketInboxPage() {
                                             </SelectContent>
                                         </Select>
                                     ) : (
-                                        <Select value={bulkPriority} onValueChange={(value) => setBulkPriority(value as TicketPriority)}>
+                                        <Select
+                                            value={bulkPriority}
+                                            onValueChange={(value) => setBulkPriority(value as TicketPriority)}
+                                        >
                                             <SelectTrigger className="w-36">
                                                 <SelectValue />
                                             </SelectTrigger>
@@ -402,7 +431,13 @@ export function TicketInboxPage() {
                                         </Select>
                                     )}
                                     <Button size="sm" onClick={() => void runBulk()} disabled={bulk.isPending}>
-                                        {bulk.isPending ? (locale === "en" ? "Applying…" : "در حال اعمال…") : locale === "en" ? "Apply" : "اعمال"}
+                                        {bulk.isPending
+                                            ? locale === "en"
+                                                ? "Applying…"
+                                                : "در حال اعمال…"
+                                            : locale === "en"
+                                              ? "Apply"
+                                              : "اعمال"}
                                     </Button>
                                     <Button size="sm" variant="ghost" onClick={() => setSelected({})}>
                                         {locale === "en" ? "Clear" : "لغو انتخاب"}
@@ -410,7 +445,8 @@ export function TicketInboxPage() {
                                 </div>
                                 {bulk.isSuccess ? (
                                     <div className="text-[0.68rem] text-success">
-                                        {bulk.data.meta.succeeded.toLocaleString(numberLocale)} {locale === "en" ? "updated" : "موفق"}
+                                        {bulk.data.meta.succeeded.toLocaleString(numberLocale)}{" "}
+                                        {locale === "en" ? "updated" : "موفق"}
                                         {bulk.data.meta.failed > 0
                                             ? ` · ${bulk.data.meta.failed.toLocaleString(numberLocale)} ${locale === "en" ? "failed" : "ناموفق"}`
                                             : ""}
@@ -453,16 +489,26 @@ export function TicketInboxPage() {
                                                 <Link href={`/tickets/inbox/${ticket.id}` as never} className="min-w-0 flex-1">
                                                     <div className="flex items-start justify-between gap-2">
                                                         <div className="min-w-0">
-                                                            <div className="line-clamp-2 font-medium text-sm leading-6">{ticket.subject}</div>
+                                                            <div className="line-clamp-2 font-medium text-sm leading-6">
+                                                                {ticket.subject}
+                                                            </div>
                                                             <div className="mt-1 text-[0.68rem] text-muted-foreground" dir="ltr">
                                                                 {ticket.reference}
                                                             </div>
                                                         </div>
-                                                        <TicketPriorityBadge priority={ticket.priority} label={priorities[ticket.priority]} />
+                                                        <TicketPriorityBadge
+                                                            priority={ticket.priority}
+                                                            label={priorities[ticket.priority]}
+                                                        />
                                                     </div>
                                                     <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                                                        <TicketStatusBadge status={ticket.status} label={statuses[ticket.status]} />
-                                                        <Badge variant="outline">{ticketChannelLabel(ticket.channel, locale)}</Badge>
+                                                        <TicketStatusBadge
+                                                            status={ticket.status}
+                                                            label={statuses[ticket.status]}
+                                                        />
+                                                        <Badge variant="outline">
+                                                            {ticketChannelLabel(ticket.channel, locale)}
+                                                        </Badge>
                                                         <Badge
                                                             variant="outline"
                                                             className={
@@ -487,7 +533,9 @@ export function TicketInboxPage() {
                                                         </div>
                                                         <div className="min-w-0">
                                                             <div className="text-muted-foreground">{t.assignee}</div>
-                                                            <div className="mt-1 truncate">{ticket.assignee_email ?? t.unassigned}</div>
+                                                            <div className="mt-1 truncate">
+                                                                {ticket.assignee_email ?? t.unassigned}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                     <div className="mt-2 text-[0.65rem] text-muted-foreground">
@@ -510,7 +558,9 @@ export function TicketInboxPage() {
                                                             if (checked)
                                                                 setSelected((current) => ({
                                                                     ...current,
-                                                                    ...Object.fromEntries(rows.map((row) => [row.id, row.version])),
+                                                                    ...Object.fromEntries(
+                                                                        rows.map((row) => [row.id, row.version]),
+                                                                    ),
                                                                 }));
                                                             else
                                                                 setSelected((current) => {
@@ -534,7 +584,10 @@ export function TicketInboxPage() {
                                         </TableHeader>
                                         <TableBody>
                                             {rows.map((ticket) => (
-                                                <TableRow key={ticket.id} data-state={selected[ticket.id] === ticket.version ? "selected" : undefined}>
+                                                <TableRow
+                                                    key={ticket.id}
+                                                    data-state={selected[ticket.id] === ticket.version ? "selected" : undefined}
+                                                >
                                                     <TableCell>
                                                         <Checkbox
                                                             checked={selected[ticket.id] === ticket.version}
@@ -550,8 +603,13 @@ export function TicketInboxPage() {
                                                         />
                                                     </TableCell>
                                                     <TableCell>
-                                                        <Link href={`/tickets/inbox/${ticket.id}` as never} className="block min-w-60">
-                                                            <div className="font-medium text-sm hover:text-primary">{ticket.subject}</div>
+                                                        <Link
+                                                            href={`/tickets/inbox/${ticket.id}` as never}
+                                                            className="block min-w-60"
+                                                        >
+                                                            <div className="font-medium text-sm hover:text-primary">
+                                                                {ticket.subject}
+                                                            </div>
                                                             <div className="mt-1 text-[0.7rem] text-muted-foreground" dir="ltr">
                                                                 {ticket.reference}
                                                             </div>
@@ -566,15 +624,25 @@ export function TicketInboxPage() {
                                                         </div>
                                                     </TableCell>
                                                     <TableCell>
-                                                        <Badge variant="outline">{ticketChannelLabel(ticket.channel, locale)}</Badge>
+                                                        <Badge variant="outline">
+                                                            {ticketChannelLabel(ticket.channel, locale)}
+                                                        </Badge>
                                                     </TableCell>
                                                     <TableCell>
-                                                        <TicketStatusBadge status={ticket.status} label={statuses[ticket.status]} />
+                                                        <TicketStatusBadge
+                                                            status={ticket.status}
+                                                            label={statuses[ticket.status]}
+                                                        />
                                                     </TableCell>
                                                     <TableCell>
-                                                        <TicketPriorityBadge priority={ticket.priority} label={priorities[ticket.priority]} />
+                                                        <TicketPriorityBadge
+                                                            priority={ticket.priority}
+                                                            label={priorities[ticket.priority]}
+                                                        />
                                                     </TableCell>
-                                                    <TableCell className="text-muted-foreground text-xs">{ticket.assignee_email ?? t.unassigned}</TableCell>
+                                                    <TableCell className="text-muted-foreground text-xs">
+                                                        {ticket.assignee_email ?? t.unassigned}
+                                                    </TableCell>
                                                     <TableCell>
                                                         <Badge
                                                             variant="outline"
@@ -609,13 +677,23 @@ export function TicketInboxPage() {
                                 {total.toLocaleString(numberLocale)} {locale === "en" ? "tickets" : "تیکت"}
                             </span>
                             <div className="flex items-center justify-between gap-2 sm:justify-end">
-                                <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={page <= 1}
+                                    onClick={() => setPage((value) => Math.max(1, value - 1))}
+                                >
                                     {t.previous}
                                 </Button>
                                 <span className="min-w-14 text-center tabular-nums">
                                     {page.toLocaleString(numberLocale)} / {lastPage.toLocaleString(numberLocale)}
                                 </span>
-                                <Button size="sm" variant="outline" disabled={page >= lastPage} onClick={() => setPage((value) => Math.min(lastPage, value + 1))}>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={page >= lastPage}
+                                    onClick={() => setPage((value) => Math.min(lastPage, value + 1))}
+                                >
                                     {t.next}
                                 </Button>
                             </div>
@@ -635,10 +713,15 @@ export function TicketInboxPage() {
                         <CardContent className="space-y-2">
                             {(savedViews.data ?? []).map((view) => (
                                 <div key={view.id} className="group flex items-center gap-1 rounded-lg border p-1.5">
-                                    <button type="button" onClick={() => applyView(view.query)} className="min-w-0 flex-1 rounded-md px-2 py-1.5 text-start hover:bg-muted/50">
+                                    <button
+                                        type="button"
+                                        onClick={() => applyView(view.query)}
+                                        className="min-w-0 flex-1 rounded-md px-2 py-1.5 text-start hover:bg-muted/50"
+                                    >
                                         <div className="truncate font-medium text-xs">{view.name}</div>
                                         <div className="mt-1 text-[0.65rem] text-muted-foreground">
-                                            {Object.keys(view.query).length.toLocaleString(numberLocale)} {locale === "en" ? "filters" : "فیلتر"}
+                                            {Object.keys(view.query).length.toLocaleString(numberLocale)}{" "}
+                                            {locale === "en" ? "filters" : "فیلتر"}
                                             {view.is_shared ? ` · ${locale === "en" ? "shared" : "اشتراکی"}` : ""}
                                         </div>
                                     </button>
@@ -655,11 +738,18 @@ export function TicketInboxPage() {
                                 </div>
                             ))}
                             {(savedViews.data ?? []).length === 0 ? (
-                                <p className="py-4 text-center text-muted-foreground text-xs">{locale === "en" ? "No saved view yet." : "هنوز نمای ذخیره‌شده‌ای ندارید."}</p>
+                                <p className="py-4 text-center text-muted-foreground text-xs">
+                                    {locale === "en" ? "No saved view yet." : "هنوز نمای ذخیره‌شده‌ای ندارید."}
+                                </p>
                             ) : null}
                             <div className="border-t pt-3">
                                 <div className="flex gap-2">
-                                    <Input value={viewName} onChange={(event) => setViewName(event.target.value)} maxLength={120} placeholder={locale === "en" ? "View name" : "نام نما"} />
+                                    <Input
+                                        value={viewName}
+                                        onChange={(event) => setViewName(event.target.value)}
+                                        maxLength={120}
+                                        placeholder={locale === "en" ? "View name" : "نام نما"}
+                                    />
                                     <Button
                                         size="icon"
                                         onClick={() => void saveView()}
@@ -703,7 +793,9 @@ export function TicketInboxPage() {
                                 }}
                             >
                                 <span>{statuses.waiting_customer}</span>
-                                <Badge variant="secondary">{(summary.data?.waiting_customer ?? 0).toLocaleString(numberLocale)}</Badge>
+                                <Badge variant="secondary">
+                                    {(summary.data?.waiting_customer ?? 0).toLocaleString(numberLocale)}
+                                </Badge>
                             </Button>
                             <Button
                                 variant="outline"
@@ -750,7 +842,11 @@ export function TicketInboxPage() {
                         </CardHeader>
                         <CardContent>
                             {pageTags.length === 0 ? (
-                                <p className="py-4 text-center text-muted-foreground text-xs">{locale === "en" ? "No tags in the current result page." : "در نتایج این صفحه برچسبی وجود ندارد."}</p>
+                                <p className="py-4 text-center text-muted-foreground text-xs">
+                                    {locale === "en"
+                                        ? "No tags in the current result page."
+                                        : "در نتایج این صفحه برچسبی وجود ندارد."}
+                                </p>
                             ) : (
                                 <div className="flex flex-wrap gap-2">
                                     {pageTags.map(([tag, count]) => (

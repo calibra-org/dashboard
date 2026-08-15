@@ -288,7 +288,7 @@ export function SupportMetric({
             <CardContent className="flex h-full items-start justify-between gap-3 p-4">
                 <div className="min-w-0">
                     <p className="text-muted-foreground text-xs leading-5">{label}</p>
-                    <div className="mt-1.5 font-semibold text-2xl tracking-tight tabular-nums">{value}</div>
+                    <div className="mt-1.5 font-semibold text-2xl tabular-nums tracking-tight">{value}</div>
                     {hint ? <p className="mt-1 line-clamp-2 text-[0.7rem] text-muted-foreground leading-5">{hint}</p> : null}
                 </div>
                 <div className={cn("grid size-9 shrink-0 place-items-center rounded-lg border", toneClass)}>
@@ -300,11 +300,19 @@ export function SupportMetric({
 }
 
 export function TicketStatusBadge({ status, label }: { status: TicketStatus; label: string }) {
-    return <Badge variant="outline" className={cn("whitespace-nowrap", statusTone(status))}>{label}</Badge>;
+    return (
+        <Badge variant="outline" className={cn("whitespace-nowrap", statusTone(status))}>
+            {label}
+        </Badge>
+    );
 }
 
 export function TicketPriorityBadge({ priority, label }: { priority: TicketPriority; label: string }) {
-    return <Badge variant="outline" className={cn("whitespace-nowrap", priorityTone(priority))}>{label}</Badge>;
+    return (
+        <Badge variant="outline" className={cn("whitespace-nowrap", priorityTone(priority))}>
+            {label}
+        </Badge>
+    );
 }
 
 export function LoadingGrid({ rows = 4 }: { rows?: number }) {
@@ -344,7 +352,13 @@ export function EmptySupportState({ title, description }: { title: string; descr
     );
 }
 
-export function TicketTrendChart({ points, locale }: { points: Array<{ day: string; opened: number; resolved: number }>; locale: Locale }) {
+export function TicketTrendChart({
+    points,
+    locale,
+}: {
+    points: Array<{ day: string; opened: number; resolved: number }>;
+    locale: Locale;
+}) {
     const max = Math.max(1, ...points.flatMap((point) => [point.opened, point.resolved]));
     const width = 760;
     const height = 190;
@@ -356,10 +370,33 @@ export function TicketTrendChart({ points, locale }: { points: Array<{ day: stri
         <div className="h-52 w-full overflow-hidden" aria-label={locale === "en" ? "Ticket trend" : "روند تیکت‌ها"} role="img">
             <svg viewBox={`0 0 ${width} ${height}`} className="h-full w-full" preserveAspectRatio="none">
                 {[0.25, 0.5, 0.75].map((position) => (
-                    <line key={position} x1="0" x2={width} y1={height * position} y2={height * position} className="stroke-border" strokeWidth="1" strokeDasharray="4 7" />
+                    <line
+                        key={position}
+                        x1="0"
+                        x2={width}
+                        y1={height * position}
+                        y2={height * position}
+                        className="stroke-border"
+                        strokeWidth="1"
+                        strokeDasharray="4 7"
+                    />
                 ))}
-                <polyline points={opened} fill="none" stroke="currentColor" strokeWidth="3" className="text-primary" vectorEffect="non-scaling-stroke" />
-                <polyline points={resolved} fill="none" stroke="currentColor" strokeWidth="3" className="text-success" vectorEffect="non-scaling-stroke" />
+                <polyline
+                    points={opened}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    className="text-primary"
+                    vectorEffect="non-scaling-stroke"
+                />
+                <polyline
+                    points={resolved}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    className="text-success"
+                    vectorEffect="non-scaling-stroke"
+                />
             </svg>
         </div>
     );
@@ -367,7 +404,10 @@ export function TicketTrendChart({ points, locale }: { points: Array<{ day: stri
 
 export function BackToInbox({ label }: { label: string }) {
     return (
-        <Link href={"/tickets/inbox" as never} className="inline-flex items-center gap-1 text-muted-foreground text-xs hover:text-foreground">
+        <Link
+            href={"/tickets/inbox" as never}
+            className="inline-flex items-center gap-1 text-muted-foreground text-xs hover:text-foreground"
+        >
             <ArrowStart className="size-3.5" aria-hidden="true" />
             {label}
         </Link>
@@ -375,11 +415,19 @@ export function BackToInbox({ label }: { label: string }) {
 }
 
 export function SlaPill({ dueAt, completedAt, locale }: { dueAt: string | null; completedAt: string | null; locale: Locale }) {
-    if (completedAt) return <Badge variant="outline" className="border-success/20 bg-success/10 text-success">{locale === "en" ? "Completed" : "انجام‌شده"}</Badge>;
+    if (completedAt)
+        return (
+            <Badge variant="outline" className="border-success/20 bg-success/10 text-success">
+                {locale === "en" ? "Completed" : "انجام‌شده"}
+            </Badge>
+        );
     if (!dueAt) return <Badge variant="outline">{locale === "en" ? "No SLA" : "بدون SLA"}</Badge>;
     const breached = new Date(dueAt).getTime() < Date.now();
     return (
-        <Badge variant="outline" className={breached ? "border-danger/20 bg-danger/10 text-danger" : "border-success/20 bg-success/10 text-success"}>
+        <Badge
+            variant="outline"
+            className={breached ? "border-danger/20 bg-danger/10 text-danger" : "border-success/20 bg-success/10 text-success"}
+        >
             <Clock3 className="size-3" aria-hidden="true" />
             {breached ? (locale === "en" ? "Breached" : "نقض‌شده") : locale === "en" ? "On track" : "در محدوده"}
         </Badge>
