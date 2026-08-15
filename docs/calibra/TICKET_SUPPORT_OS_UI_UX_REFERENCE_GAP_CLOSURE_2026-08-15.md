@@ -9,10 +9,11 @@ This pass extends the existing Ticket Support OS rather than rebuilding complete
 - Create ticket has customer/internal modes, visual priority and channel selection, live preview, media attachments, summary and guidance.
 - Inbox has responsive mobile ticket cards, desktop table, active-filter chips, saved views, guarded bulk operations, real SLA indicators, current-page tags and CSV export.
 - Ticket detail adds a responsive operational summary, workflow-state strip, conversation/internal-note/files/activity tabs, attachment scan state, reply composer, SLA controls and duplicate-merge safeguards.
+- Internal conversations now expose category filters, a three-column operational workspace, fresh agent presence, latest private-note emphasis, derived context completeness, related internal threads, recent activity and quick navigation without inventing a separate task or pinned-note domain.
 - Channels replaces JSON-first UX with structured account, hours, fallback, auto-reply, webhook and notification controls while retaining an advanced JSON escape hatch and preserving unknown provider keys.
 - Campaigns adds persisted-ledger delivery evidence, channel distribution, delivery funnel, localized lifecycle/template states, recipient management and fail-closed scheduling guidance.
+- Reports retain persisted backlog, SLA, first-response, resolution, reopen/FCR proxy, workload and CSAT evidence while inheriting the shared responsive support navigation.
 - Settings adds real operational summary cards, localized presence/workflow/automation state, progressive disclosure for JSON rule editors, channel posture and security/governance guidance.
-- Reports and internal conversations inherit the shared responsive section navigation and existing real-data widgets.
 
 ## UI system constraints preserved
 
@@ -21,6 +22,7 @@ This pass extends the existing Ticket Support OS rather than rebuilding complete
 - No new dependency is introduced.
 - No placeholder KPI, fake connection health, fake campaign delivery, fake ticket SLA or sample operational record is introduced.
 - Mobile layouts avoid depending on wide desktop tables for primary ticket work.
+- Wide operational layouts progressively collapse into usable stacked/card layouts on tablet and mobile rather than merely shrinking desktop tables.
 
 ## Data/architecture constraints preserved
 
@@ -28,3 +30,17 @@ This pass extends the existing Ticket Support OS rather than rebuilding complete
 - Provider secrets continue to be represented only by environment references.
 - `connected` remains evidence-driven and is not inferred from a configured toggle.
 - Campaign scheduling remains fail-closed behind template approval and verified channel evidence.
+- Derived UI helpers such as internal-conversation context completeness are explicitly presented as views over persisted ticket data, not as new persisted task state.
+
+## Verification evidence
+
+The Ticket-specific validation workflow completed successfully after the reference-driven UI pass and its internal-workspace extension:
+
+- Biome canonical formatting/lint for the modified Ticket surfaces: PASS.
+- `scripts/verify-tickets-integration.mjs`: PASS with 214 Ticket integration invariants.
+- `@calibra/admin` typecheck after building `@calibra/sdk`: PASS.
+- `@calibra/sdk` + `@calibra/admin` tests: PASS.
+- `@calibra/admin` production build: PASS.
+- `git diff --check`: PASS.
+
+These gates validate the Ticket surface itself. PR-wide checks for the larger Ticket/SEO/Content completion branch remain separate and must not be treated as Ticket UI proof when they are pending, blocked or failing for unrelated modules.
