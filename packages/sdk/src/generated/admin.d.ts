@@ -5740,6 +5740,403 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/orders/operations/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminPhase5OrderOperationsSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/orders/{orderId}/operations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminPhase5OrderOperationsShow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/orders/{orderId}/fulfillments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminPhase5FulfillmentCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/fulfillments/{id}/transition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminPhase5FulfillmentTransition"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/fulfillments/{fulfillmentId}/shipments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminPhase5ShipmentCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/shipments/{shipmentId}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminPhase5ShipmentEventCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/orders/{orderId}/returns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminPhase5ReturnCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/returns/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminPhase5ReturnApprove"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/returns/{id}/receive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminPhase5ReturnReceive"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/returns/{id}/transition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminPhase5ReturnTransition"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/returns/{id}/refund": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminPhase5ReturnRefund"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/inventory/movements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminPhase5InventoryMovements"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/inventory/adjustments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminPhase5InventoryAdjustment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/shipping/zones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminPhase5ShippingZonesList"];
+        put?: never;
+        post: operations["adminPhase5ShippingZoneCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/shipping/zones/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a shipping zone */
+        get: operations["adminPhase5ShippingZoneShow"];
+        put?: never;
+        post?: never;
+        delete: operations["adminPhase5ShippingZoneDelete"];
+        options?: never;
+        head?: never;
+        patch: operations["adminPhase5ShippingZoneUpdate"];
+        trace?: never;
+    };
+    "/api/v1/admin/shipping/zones/{id}/locations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["adminPhase5ShippingZoneLocationsReplace"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/shipping/methods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminPhase5ShippingMethodsList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/shipping/zones/{zoneId}/methods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminPhase5ShippingZoneMethodCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/shipping/zones/{zoneId}/methods/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["adminPhase5ShippingZoneMethodDelete"];
+        options?: never;
+        head?: never;
+        patch: operations["adminPhase5ShippingZoneMethodUpdate"];
+        trace?: never;
+    };
+    "/api/v1/admin/tax/rates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminPhase5TaxRatesList"];
+        put?: never;
+        post: operations["adminPhase5TaxRateCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tax/rates/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["adminPhase5TaxRateDelete"];
+        options?: never;
+        head?: never;
+        patch: operations["adminPhase5TaxRateUpdate"];
+        trace?: never;
+    };
+    "/api/v1/admin/payment-attempts/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Summarize transaction operations
+         * @description Returns live counts and canonical minor-unit totals for the Transaction Center KPI strip.
+         */
+        get: operations["adminPaymentAttemptsSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/payment-attempts/{id}/reconciliation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List reconciliation audit events for a payment attempt
+         * @description Returns immutable admin audit events produced by provider reconciliation checks, newest first.
+         */
+        get: operations["adminPaymentAttemptReconciliationHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/payment-attempts/{id}/reconcile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reconcile a payment attempt with its provider
+         * @description Performs a provider-safe reconciliation check. Only adapters with an explicit idempotent or read-like reconciliation capability are polled; unsupported providers record `unsupported` rather than replaying capture/settlement. Every check appends an admin audit event.
+         */
+        post: operations["adminPaymentAttemptReconcile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/tickets/workflow-statuses": {
         parameters: {
             query?: never;
@@ -8747,6 +9144,183 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
+        /** @enum {string} */
+        FulfillmentStatus: "pending" | "packed" | "shipped" | "delivered" | "cancelled";
+        /** @enum {string} */
+        ShipmentStatus: "label_created" | "in_transit" | "out_for_delivery" | "delivered" | "exception" | "returned";
+        /** @enum {string} */
+        ReturnStatus: "requested" | "approved" | "in_transit" | "received" | "completed" | "cancelled";
+        OrderOperationsSummary: {
+            paid_unfulfilled_over_24h: number;
+            shipment_exceptions: number;
+            returns_awaiting_approval: number;
+            returns_awaiting_refund: number;
+        };
+        OrderOperationsSummaryEnvelope: {
+            data: components["schemas"]["OrderOperationsSummary"];
+        };
+        FulfillmentItemInput: {
+            /** Format: int64 */
+            order_line_item_id: number;
+            quantity: number;
+        };
+        CreateFulfillmentInput: {
+            items: components["schemas"]["FulfillmentItemInput"][];
+            note?: string | null;
+        };
+        FulfillmentTransitionInput: {
+            status: components["schemas"]["FulfillmentStatus"];
+            expected_version: number;
+        };
+        CreateShipmentInput: {
+            carrier?: string | null;
+            service?: string | null;
+            tracking_number?: string | null;
+            /** Format: uri */
+            tracking_url?: string | null;
+        };
+        ShipmentEventInput: {
+            status: components["schemas"]["ShipmentStatus"];
+            expected_version: number;
+            /** Format: date-time */
+            occurred_at?: string;
+            location?: string | null;
+            message?: string | null;
+            evidence?: {
+                [key: string]: unknown;
+            };
+        };
+        ReturnItemInput: {
+            /** Format: int64 */
+            order_line_item_id: number;
+            quantity: number;
+            reason?: string | null;
+            /** Format: int64 */
+            refund_amount_minor?: number | null;
+        };
+        CreateReturnInput: {
+            items: components["schemas"]["ReturnItemInput"][];
+            reason?: string | null;
+            customer_note?: string | null;
+            internal_note?: string | null;
+            carrier?: string | null;
+            tracking_number?: string | null;
+        };
+        ApproveReturnInput: {
+            expected_version: number;
+            items: {
+                /** Format: int64 */
+                order_line_item_id: number;
+                approved_quantity: number;
+            }[];
+        };
+        ReceiveReturnInput: {
+            expected_version: number;
+            items: {
+                /** Format: int64 */
+                order_line_item_id: number;
+                received_quantity: number;
+                damaged_quantity: number;
+                restock_quantity: number;
+            }[];
+        };
+        ReturnTransitionInput: {
+            status: components["schemas"]["ReturnStatus"];
+            expected_version: number;
+        };
+        ReturnRefundInput: {
+            expected_version: number;
+            reason?: string | null;
+        };
+        InventoryAdjustmentInput: {
+            /** Format: int64 */
+            inventory_item_id: number;
+            quantity_delta: number;
+            reason: string;
+        };
+        ShippingZoneWrite: {
+            name?: string;
+            is_fallback?: boolean;
+            locations?: components["schemas"]["ShippingLocationWrite"][];
+        };
+        ShippingLocationWrite: {
+            /** @enum {string} */
+            type: "continent" | "country" | "state" | "postcode";
+            code: string;
+        };
+        ShippingLocationsWrite: {
+            locations: components["schemas"]["ShippingLocationWrite"][];
+        };
+        ShippingZoneMethodWrite: {
+            /** Format: int64 */
+            method_id?: number;
+            title_override?: string | null;
+            enabled?: boolean;
+            ordering?: number;
+            settings?: {
+                [key: string]: unknown;
+            };
+        };
+        TaxRateWrite: {
+            /** Format: int64 */
+            tax_class_id?: number;
+            country?: string | null;
+            /** Format: int64 */
+            region_id?: number | null;
+            postcodes?: string[];
+            cities?: string[];
+            rate?: number;
+            label?: string;
+            priority?: number;
+            compound?: boolean;
+            applies_to_shipping?: boolean;
+            ordering?: number;
+        };
+        OrderOperationsEnvelope: {
+            data: {
+                [key: string]: unknown;
+            };
+        };
+        FulfillmentEnvelope: {
+            data: {
+                [key: string]: unknown;
+            };
+        };
+        ShipmentEnvelope: {
+            data: {
+                [key: string]: unknown;
+            };
+        };
+        ShipmentEventEnvelope: {
+            data: {
+                [key: string]: unknown;
+            };
+        };
+        ReturnEnvelope: {
+            data: {
+                [key: string]: unknown;
+            };
+        };
+        InventoryOperationsEnvelope: {
+            data: {
+                [key: string]: unknown;
+            };
+        };
+        ShippingZonesEnvelope: {
+            data: {
+                [key: string]: unknown;
+            }[];
+        };
+        ShippingMethodsEnvelope: {
+            data: {
+                [key: string]: unknown;
+            }[];
+        };
+        TaxRatesEnvelope: {
+            data: {
+                [key: string]: unknown;
+            }[];
+        };
         Resource: {
             [key: string]: unknown;
         };
@@ -8871,6 +9445,8 @@ export interface components {
         IdempotencyKeyHeader: string;
         /** @description Items per page. Capped at 500 on selector / tree / taxonomy endpoints whose UIs fetch the whole set in one shot (the standard cap on every other list endpoint is 100). Defaults to the endpoint's natural page size. */
         Limit500: number;
+        OrderId: number;
+        ResourceId: number;
     };
     requestBodies: never;
     headers: never;
@@ -17829,6 +18405,810 @@ export interface operations {
             };
             /** @description Invalid message payload. */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPhase5OrderOperationsSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Order operations exception summary */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderOperationsSummaryEnvelope"];
+                };
+            };
+        };
+    };
+    adminPhase5OrderOperationsShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orderId: components["parameters"]["OrderId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Order fulfillment and return aggregate */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderOperationsEnvelope"];
+                };
+            };
+        };
+    };
+    adminPhase5FulfillmentCreate: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                orderId: components["parameters"]["OrderId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateFulfillmentInput"];
+            };
+        };
+        responses: {
+            /** @description Fulfillment created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FulfillmentEnvelope"];
+                };
+            };
+            /** @description Idempotency */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPhase5FulfillmentTransition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FulfillmentTransitionInput"];
+            };
+        };
+        responses: {
+            /** @description Fulfillment transitioned */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FulfillmentEnvelope"];
+                };
+            };
+            /** @description Optimistic version conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPhase5ShipmentCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                fulfillmentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateShipmentInput"];
+            };
+        };
+        responses: {
+            /** @description Shipment created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShipmentEnvelope"];
+                };
+            };
+        };
+    };
+    adminPhase5ShipmentEventCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                shipmentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShipmentEventInput"];
+            };
+        };
+        responses: {
+            /** @description Immutable shipment event appended */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShipmentEventEnvelope"];
+                };
+            };
+            /** @description Optimistic version or terminal-state conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPhase5ReturnCreate: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                orderId: components["parameters"]["OrderId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateReturnInput"];
+            };
+        };
+        responses: {
+            /** @description Return request created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReturnEnvelope"];
+                };
+            };
+            /** @description Idempotency */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPhase5ReturnApprove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApproveReturnInput"];
+            };
+        };
+        responses: {
+            /** @description Return approved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReturnEnvelope"];
+                };
+            };
+        };
+    };
+    adminPhase5ReturnReceive: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReceiveReturnInput"];
+            };
+        };
+        responses: {
+            /** @description Return received and sellable quantity restocked exactly once */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReturnEnvelope"];
+                };
+            };
+        };
+    };
+    adminPhase5ReturnTransition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReturnTransitionInput"];
+            };
+        };
+        responses: {
+            /** @description Return transitioned */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReturnEnvelope"];
+                };
+            };
+        };
+    };
+    adminPhase5ReturnRefund: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReturnRefundInput"];
+            };
+        };
+        responses: {
+            /** @description Canonical RefundService result linked to return */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReturnEnvelope"];
+                };
+            };
+        };
+    };
+    adminPhase5InventoryMovements: {
+        parameters: {
+            query: {
+                inventory_item_id: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Inventory item plus immutable movement ledger */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryOperationsEnvelope"];
+                };
+            };
+        };
+    };
+    adminPhase5InventoryAdjustment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InventoryAdjustmentInput"];
+            };
+        };
+        responses: {
+            /** @description Inventory adjusted through central InventoryService */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryOperationsEnvelope"];
+                };
+            };
+        };
+    };
+    adminPhase5ShippingZonesList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Shipping zones */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShippingZonesEnvelope"];
+                };
+            };
+        };
+    };
+    adminPhase5ShippingZoneCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShippingZoneWrite"];
+            };
+        };
+        responses: {
+            /** @description Shipping zone created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPhase5ShippingZoneShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Shipping zone with configured locations and methods. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Admin access required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Shipping zone not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPhase5ShippingZoneDelete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Shipping zone deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPhase5ShippingZoneUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShippingZoneWrite"];
+            };
+        };
+        responses: {
+            /** @description Shipping zone updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPhase5ShippingZoneLocationsReplace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShippingLocationsWrite"];
+            };
+        };
+        responses: {
+            /** @description Shipping zone locations replaced */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPhase5ShippingMethodsList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Server-owned shipping method definitions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShippingMethodsEnvelope"];
+                };
+            };
+        };
+    };
+    adminPhase5ShippingZoneMethodCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                zoneId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShippingZoneMethodWrite"];
+            };
+        };
+        responses: {
+            /** @description Shipping method assigned */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPhase5ShippingZoneMethodDelete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                zoneId: number;
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Shipping method assignment deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPhase5ShippingZoneMethodUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                zoneId: number;
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShippingZoneMethodWrite"];
+            };
+        };
+        responses: {
+            /** @description Shipping method assignment updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPhase5TaxRatesList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tax rates */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxRatesEnvelope"];
+                };
+            };
+        };
+    };
+    adminPhase5TaxRateCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaxRateWrite"];
+            };
+        };
+        responses: {
+            /** @description Tax rate created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPhase5TaxRateDelete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tax rate deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPhase5TaxRateUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaxRateWrite"];
+            };
+        };
+        responses: {
+            /** @description Tax rate updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPaymentAttemptsSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Transaction summary. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            total_count: number;
+                            total_amount_minor: number;
+                            needs_attention_count: number;
+                            by_status: {
+                                [key: string]: {
+                                    count: number;
+                                    amount_minor: number;
+                                };
+                            };
+                            by_reconciliation: {
+                                [key: string]: number;
+                            };
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    adminPaymentAttemptReconciliationHistory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Reconciliation history. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            actor?: {
+                                id: string;
+                                /** Format: email */
+                                email: string;
+                            } | null;
+                            /** @constant */
+                            action: "payment.reconciliation.checked";
+                            /** @constant */
+                            entity_kind: "payment_attempt";
+                            entity_id?: string | null;
+                            payload: {
+                                [key: string]: unknown;
+                            };
+                            ip_address?: string | null;
+                            /** Format: date-time */
+                            occurred_at?: string | null;
+                        }[];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    adminPaymentAttemptReconcile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Updated payment-attempt detail including latest reconciliation evidence. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminPaymentAttempt"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description The order/payment is being processed concurrently. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
