@@ -51,9 +51,9 @@ jobs:
           NEXT_PUBLIC_ADMIN_ROOT=admin.localhost
           NEXT_PUBLIC_DEV_TENANT=aurora
           EOF
-      - name: Start Postgres
+      - name: Start runtime infrastructure
         working-directory: apps/api
-        run: docker compose up -d --wait db
+        run: docker compose up -d --wait db redis
       - name: Bootstrap database
         run: |
           pnpm --filter @calibra/api exec node ace db:bootstrap-roles
@@ -61,16 +61,18 @@ jobs:
       - name: Seed compact real tenant runtime
         shell: bash
         run: |
-          NODE_ENV=test \
-          DB_HOST=localhost DB_PORT=5432 DB_DATABASE=calibra \
-          DB_USER=calibra_app DB_PASSWORD=calibra_app \
-          DB_ADMIN_USER=calibra_admin DB_ADMIN_PASSWORD=calibra_admin \
-          DB_SUPERUSER_USER=calibra DB_SUPERUSER_PASSWORD=calibra \
-          PORT=3333 \
-          ALLOWED_ORIGINS=http://localhost:3001,http://aurora.admin.localhost:3001 \
-          QUEUE_DRIVER=sync TRANSMIT_TRANSPORT=none LIMITER_STORE=memory CACHE_DRIVER=memory \
-          MAIL_NOTIFICATIONS_ENABLED=false \
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('apps/api/database/seeders/main_seeder.ts')
+          source = path.read_text()
+          old = 'app.inTest ? (TEST_VOLUMES[tenant.slug] ?? tenant.volumes) : tenant.volumes'
+          new = 'app.inTest ? (TEST_VOLUMES[tenant.slug] ?? tenant.volumes) : (TEST_VOLUMES[tenant.slug] ?? tenant.volumes)'
+          if old not in source:
+              raise SystemExit('MainSeeder compact-volume patch target not found')
+          path.write_text(source.replace(old, new, 1))
+          PY
           pnpm --filter @calibra/api exec node ace db:seed --connection=postgres_admin
+          git checkout -- apps/api/database/seeders/main_seeder.ts
       - name: Build SDK
         run: pnpm --filter @calibra/sdk run build
       - name: Install Chromium
@@ -84,21 +86,25 @@ jobs:
           NEXT_PUBLIC_API_BASE_URL=http://localhost:3333 NEXT_PUBLIC_ADMIN_ROOT=admin.localhost NEXT_PUBLIC_DEV_TENANT=aurora \
             pnpm --filter @calibra/admin run dev > /tmp/calibra-admin.log 2>&1 &
           echo $! > /tmp/calibra-admin.pid
+          api_ready=0
           for i in $(seq 1 90); do
-            if curl -fsS http://localhost:3333 >/dev/null 2>&1 || curl -fsS http://localhost:3333/api/v1/health >/dev/null 2>&1; then break; fi
+            if curl -sS -o /dev/null http://localhost:3333; then api_ready=1; break; fi
             sleep 2
           done
+          test "$api_ready" = 1 || { echo 'API did not become reachable'; tail -n 120 /tmp/calibra-api.log; exit 1; }
+          admin_ready=0
           for i in $(seq 1 90); do
-            if curl -fsS -H 'Host: aurora.admin.localhost:3001' http://127.0.0.1:3001/login >/dev/null 2>&1; then break; fi
+            if curl -fsS -H 'Host: aurora.admin.localhost:3001' http://127.0.0.1:3001/login >/dev/null 2>&1; then admin_ready=1; break; fi
             sleep 2
           done
+          test "$admin_ready" = 1 || { echo 'Admin did not become reachable'; tail -n 120 /tmp/calibra-admin.log; exit 1; }
           curl -sS -o /dev/null -w 'api=%{http_code}\n' http://localhost:3333 || true
           curl -sS -o /dev/null -w 'admin=%{http_code}\n' -H 'Host: aurora.admin.localhost:3001' http://127.0.0.1:3001/login || true
       - name: Capture authenticated Ticket runtime
         shell: bash
         run: |
           mkdir -p runtime-artifacts
-          cat > /tmp/capture-ticket.mjs <<'EOF'
+          cat > .runtime-capture-ticket.mjs <<'EOF'
           import { chromium } from '@playwright/test';
           const browser = await chromium.launch({ headless: true });
           const context = await browser.newContext({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
@@ -114,6 +120,7 @@ jobs:
           if (!rawSession) throw new Error('admin_session cookie missing after login');
           let session;
           try { session = JSON.parse(rawSession); } catch { session = JSON.parse(decodeURIComponent(rawSession)); }
+          if (!session?.token) throw new Error('admin_session token missing after login');
           const api = 'http://localhost:3333';
           const headers = {
             authorization: `Bearer ${session.token}`,
@@ -145,18 +152,21 @@ jobs:
             if (!response.ok()) console.log('ticket seed skipped', response.status(), await response.text());
           }
           await page.goto(`${host}/tickets/overview`, { waitUntil: 'domcontentloaded', timeout: 120000 });
-          await page.waitForTimeout(7000);
+          await page.waitForLoadState('networkidle', { timeout: 30000 }).catch(() => {});
+          await page.waitForTimeout(5000);
           await page.screenshot({ path: 'runtime-artifacts/tickets-overview-runtime.png', fullPage: true });
           await page.screenshot({ path: 'runtime-artifacts/tickets-overview-runtime-viewport.png', fullPage: false });
           console.log('final-url', page.url());
           console.log('title', await page.title());
           await browser.close();
           EOF
-          node /tmp/capture-ticket.mjs
+          node .runtime-capture-ticket.mjs
+          rm -f .runtime-capture-ticket.mjs
       - name: Save runtime diagnostics
         if: always()
         shell: bash
         run: |
+          mkdir -p runtime-artifacts
           cp /tmp/calibra-api.log runtime-artifacts/api.log 2>/dev/null || true
           cp /tmp/calibra-admin.log runtime-artifacts/admin.log 2>/dev/null || true
       - name: Upload runtime screenshot
