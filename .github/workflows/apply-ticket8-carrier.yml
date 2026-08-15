@@ -73,14 +73,34 @@ jobs:
               'import { Activity, Clock3, Plus, Search, Send, Users } from "#/icons";',
           )
           replace(
+              "apps/admin/src/views/transactions/transactions-center.tsx",
+              "setStatus(value);",
+              'setStatus(typeof value === "string" ? value : "all");',
+          )
+          replace(
+              "apps/admin/src/views/transactions/transactions-center.tsx",
+              "setGateway(value);",
+              'setGateway(typeof value === "string" ? value : "all");',
+          )
+          replace(
+              "apps/admin/src/views/transactions/transactions-center.tsx",
+              "setReconciliation(value);",
+              'setReconciliation(typeof value === "string" ? value : "all");',
+          )
+          replace(
+              "apps/admin/src/views/transactions/transactions-center.tsx",
+              "setSort(value);",
+              'setSort(typeof value === "string" ? value : "newest");',
+          )
+          replace(
               "scripts/verify-tickets-integration.mjs",
               'check(migration.includes("CREATE POLICY tenant_isolation ON ${table}"), "Ticket tables must create the tenant RLS policy");',
-              'check(migration.includes("CREATE POLICY tenant_isolation ON " + "${table}"), "Ticket tables must create the tenant RLS policy");',
+              'check(migration.includes("CREATE POLICY tenant_isolation ON " + "$" + "{table}"), "Ticket tables must create the tenant RLS policy");',
           )
           replace(
               "scripts/verify-tickets-integration.mjs",
               'check(requestConfig.includes("messages/tickets/${locale}.json"), "Admin i18n loader must compose the ticket catalog");',
-              'check(requestConfig.includes("messages/tickets/" + "${locale}.json"), "Admin i18n loader must compose the ticket catalog");',
+              'check(requestConfig.includes("messages/tickets/" + "$" + "{locale}.json"), "Admin i18n loader must compose the ticket catalog");',
           )
           PY
           rm -rf .ticket8-carrier
@@ -103,6 +123,7 @@ jobs:
             apps/admin/src/components/Sidebar.tsx \
             apps/admin/src/features/tickets \
             'apps/admin/src/app/[locale]/(authenticated)/tickets' \
+            apps/admin/src/views/transactions/transactions-center.tsx \
             apps/api/app/enums/support_ticket.ts \
             apps/api/app/services/legacy_mark_shipped_service.ts \
             apps/api/app/services/support/ticket_operations_service.ts \
