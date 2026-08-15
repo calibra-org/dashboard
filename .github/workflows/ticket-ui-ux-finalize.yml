@@ -31,6 +31,8 @@ jobs:
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      - name: Build SDK dependency
+        run: pnpm --filter @calibra/sdk run build
       - name: Canonical Ticket formatting and safe lint fixes
         shell: bash
         run: |
