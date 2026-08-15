@@ -35,9 +35,9 @@ jobs:
             .ticket8-carrier/p-09-10 \
             .ticket8-carrier/p-11 \
             > /tmp/ticket8-source.tar.xz.b64
-          echo "5a8fb1e893ea39f9b6ddf4cb4a88bc3fa53d9cb483216160fdb873dae656ded6  /tmp/ticket8-source.tar.xz.b64" | sha256sum -c -
+          echo "161751215bebbc060144e0cc8d8b6cafbb4b82e227b8eb079cf2427a616a1303  /tmp/ticket8-source.tar.xz.b64" | sha256sum -c -
           base64 -d /tmp/ticket8-source.tar.xz.b64 > /tmp/ticket8-source.tar.xz
-          echo "83652d6478b5602f6d3df2d5caffe48bd972254cdc140c132b8dd97467963653  /tmp/ticket8-source.tar.xz" | sha256sum -c -
+          echo "928631da90d2b416041e2b96326f2a915a697c350f5f3fbea420910973e6d0d5  /tmp/ticket8-source.tar.xz" | sha256sum -c -
           tar -xJf /tmp/ticket8-source.tar.xz
           rm -rf .ticket8-carrier
           rm -f .github/workflows/apply-ticket8-carrier.yml
