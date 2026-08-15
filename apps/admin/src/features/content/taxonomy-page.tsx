@@ -1,7 +1,7 @@
 "use client";
 
 import type { Locale } from "@calibra/shared/i18n";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { PageHeader } from "#/components/PageHeader";
@@ -30,6 +30,7 @@ type EditableTaxonomy =
 const ROOT_CATEGORY = "__root__";
 
 export function ContentTaxonomyPage() {
+    const t = useTranslations("Content");
     const locale = useLocale() as Locale;
     const taxonomy = useContentTaxonomy();
     const mutations = useTaxonomyMutation();
@@ -127,7 +128,7 @@ export function ContentTaxonomyPage() {
 
     return (
         <div className="flex flex-col gap-6">
-            <PageHeader title="دسته‌ها و برچسب‌ها" subtitle="ساخت معماری محتوایی منظم برای جست‌وجو، فیلتر، لینک‌سازی و گزارش‌گیری." />
+            <PageHeader title={t("taxonomy.title")} subtitle={t("taxonomy.subtitle")} />
             <div className="grid gap-4 xl:grid-cols-2">
                 <Card>
                     <CardHeader>

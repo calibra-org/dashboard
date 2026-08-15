@@ -1,7 +1,7 @@
 "use client";
 
 import type { Locale } from "@calibra/shared/i18n";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 
 import { PageHeader } from "#/components/PageHeader";
@@ -32,6 +32,7 @@ import { useContentPosts, useContentSummary } from "./queries";
 import { ContentStatCard, ContentStatusBadge, ContentTypeBadge, ScoreBar, SectionTitle } from "./ui";
 
 export function ContentPostsPage() {
+    const t = useTranslations("Content");
     const locale = useLocale() as Locale;
     const [search, setSearch] = useState("");
     const [debounced, setDebounced] = useState("");
@@ -61,8 +62,8 @@ export function ContentPostsPage() {
     return (
         <div className="flex flex-col gap-6">
             <PageHeader
-                title="مدیریت نوشته‌ها"
-                subtitle="مرکز مدیریت مقاله، خبر، راهنما و محتوای متصل به محصولات و سفارش‌ها."
+                title={t("posts.title")}
+                subtitle={t("posts.subtitle")}
                 actions={
                     <Button asChild>
                         <Link href={"/content/studio" as never}>

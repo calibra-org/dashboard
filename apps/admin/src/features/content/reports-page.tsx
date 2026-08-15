@@ -1,7 +1,7 @@
 "use client";
 
 import type { Locale } from "@calibra/shared/i18n";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import { PageHeader } from "#/components/PageHeader";
 import { Badge } from "#/components/ui/badge";
@@ -39,6 +39,7 @@ interface ReportData {
 }
 
 export function ContentReportsPage() {
+    const t = useTranslations("Content");
     const locale = useLocale() as Locale;
     const reports = useContentReports();
     const summary = useContentSummary();
@@ -47,10 +48,7 @@ export function ContentReportsPage() {
 
     return (
         <div className="flex flex-col gap-6">
-            <PageHeader
-                title="تحلیل و گزارش‌ها"
-                subtitle="اثر محتوا بر دیده‌شدن، تعامل، محصولات و سفارش‌های منتسب؛ بدون ترکیب با درآمد قطعی فروش."
-            />
+            <PageHeader title={t("reports.title")} subtitle={t("reports.subtitle")} />
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <ContentStatCard icon={Eye} label="بازدید محتوا" value={formatNumber(metrics?.performance.views ?? 0, locale)} />
                 <ContentStatCard

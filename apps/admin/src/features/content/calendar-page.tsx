@@ -1,7 +1,7 @@
 "use client";
 
 import type { Locale } from "@calibra/shared/i18n";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
 import { PageHeader } from "#/components/PageHeader";
@@ -38,6 +38,7 @@ function isoBoundary(date: Date, end = false): string {
 }
 
 export function ContentCalendarPage() {
+    const t = useTranslations("Content");
     const locale = useLocale() as Locale;
     const [cursor, setCursor] = useState(() => new Date());
     const monthStart = useMemo(() => new Date(cursor.getFullYear(), cursor.getMonth(), 1), [cursor]);
@@ -87,8 +88,8 @@ export function ContentCalendarPage() {
     return (
         <div className="flex flex-col gap-6">
             <PageHeader
-                title="تقویم و انتشار"
-                subtitle="برنامه‌ریزی، بازبینی و کنترل صف انتشار محتوا در Tenant جاری."
+                title={t("calendar.title")}
+                subtitle={t("calendar.subtitle")}
                 actions={
                     <Button asChild>
                         <Link href={"/content/studio" as never}>

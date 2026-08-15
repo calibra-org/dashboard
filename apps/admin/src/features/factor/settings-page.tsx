@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { Button } from "#/components/ui/button";
@@ -30,6 +31,7 @@ const FALLBACK: FactorSettings = {
 };
 
 export function FactorSettingsPage() {
+    const t = useTranslations("Factor");
     const settings = useFactorSettings();
     const update = useUpdateFactorSettings();
     const [form, setForm] = useState<FactorSettings>(FALLBACK);
@@ -64,8 +66,8 @@ export function FactorSettingsPage() {
     return (
         <div className="flex flex-col gap-6">
             <FactorHeader
-                title="تنظیمات فاکتور"
-                subtitle="شماره‌گذاری K20، مالیات، انقضا، گردکردن، روش ارسال و اطلاعات پرداخت آفلاین را مدیریت کنید."
+                title={t("settings.title")}
+                subtitle={t("settings.subtitle")}
                 actions={
                     <Button onClick={save} disabled={update.isPending}>
                         <Save className="size-4" aria-hidden="true" />

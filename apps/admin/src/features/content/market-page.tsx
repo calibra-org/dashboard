@@ -1,7 +1,7 @@
 "use client";
 
 import type { Locale } from "@calibra/shared/i18n";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 
 import { PageHeader } from "#/components/PageHeader";
@@ -39,6 +39,7 @@ import { ContentStatCard, SectionTitle } from "./ui";
 const signalStatusLabel = { new: "جدید", reviewed: "بررسی‌شده", converted: "تبدیل‌شده", ignored: "نادیده‌گرفته‌شده" } as const;
 
 export function ContentMarketPage() {
+    const t = useTranslations("Content");
     const locale = useLocale() as Locale;
     const [search, setSearch] = useState("");
     const [debounced, setDebounced] = useState("");
@@ -125,10 +126,7 @@ export function ContentMarketPage() {
 
     return (
         <div className="flex flex-col gap-6">
-            <PageHeader
-                title="اخبار و رصد بازار"
-                subtitle="جمع‌آوری کنترل‌شده منابع، امتیازدهی فرصت و تبدیل خبر معتبر به پیش‌نویس قابل بازبینی."
-            />
+            <PageHeader title={t("market.title")} subtitle={t("market.subtitle")} />
 
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <ContentStatCard icon={Newspaper} label="سیگنال‌های فیلترشده" value={formatNumber(metrics.total, locale)} />
