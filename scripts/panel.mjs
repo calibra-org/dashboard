@@ -5,9 +5,12 @@ import { existsSync } from "node:fs";
 
 const isWindows = process.platform === "win32";
 const pnpm = isWindows ? "pnpm.cmd" : "pnpm";
+const setup = process.argv.includes("--setup");
+const forwardedArgs = process.argv.slice(2).filter((arg) => arg !== "--setup");
+const spinCli = "packages/spin/dist/cli.js";
 
-function run(args) {
-    const result = spawnSync(pnpm, args, {
+function run(command, args) {
+    const result = spawnSync(command, args, {
         cwd: process.cwd(),
         env: process.env,
         stdio: "inherit",
@@ -18,12 +21,19 @@ function run(args) {
 }
 
 /**
- * The panel command is intentionally a startup path, not a quality gate.
- * It installs the frozen workspace only when the spin CLI is unavailable,
- * then starts the existing in-place production-parity stack.
+ * Daily startup must stay deterministic and offline-friendly: no install,
+ * tests, code generation, or quality gates are run from `pnpm panel`.
+ * Use `pnpm panel:setup` once after a fresh checkout/dependency reset.
  */
-if (!existsSync("packages/spin/dist/cli.js")) {
-    run(["install", "--frozen-lockfile"]);
+if (setup) {
+    run(pnpm, ["install", "--frozen-lockfile"]);
+    run(pnpm, ["--filter", "@calibra/spin", "build"]);
+    process.exit(0);
 }
 
-run(["spin", "local", ...process.argv.slice(2)]);
+if (!existsSync(spinCli)) {
+    console.error("Calibra panel is not prepared. Run `pnpm panel:setup` once, then use `pnpm panel` for daily startup.");
+    process.exit(1);
+}
+
+run(process.execPath, [spinCli, "local", ...forwardedArgs]);
