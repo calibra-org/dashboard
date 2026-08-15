@@ -610,8 +610,54 @@ export class TicketOperationsService {
     }
 
     async campaigns() {
-        const rows = await currentTrx().from("support_campaigns").orderBy("created_at", "desc");
-        return { data: rows.map((row) => serialize(row as DbRow)) };
+        const trx = currentTrx();
+        const [rows, recipientRows] = await Promise.all([
+            trx.from("support_campaigns").orderBy("created_at", "desc"),
+            trx
+                .from("support_campaign_recipients")
+                .select("campaign_id", "status", "opted_out")
+                .count("id as total")
+                .groupBy("campaign_id", "status", "opted_out"),
+        ]);
+        const summaries = new Map<number, Record<string, number>>();
+        for (const recipient of recipientRows) {
+            const campaignId = numberValue(recipient.campaign_id);
+            const current = summaries.get(campaignId) ?? {
+                total: 0,
+                pending: 0,
+                queued: 0,
+                sent: 0,
+                delivered: 0,
+                failed: 0,
+                skipped: 0,
+                opted_out: 0,
+            };
+            const count = numberValue(recipient.total);
+            current.total += count;
+            const status = String(recipient.status);
+            if (status in current) current[status] = (current[status] ?? 0) + count;
+            if (recipient.opted_out) current.opted_out += count;
+            summaries.set(campaignId, current);
+        }
+        return {
+            data: rows.map((row) => {
+                const serialized = serialize(row as DbRow);
+                const campaignId = numberValue(serialized.id);
+                return {
+                    ...serialized,
+                    recipient_summary: summaries.get(campaignId) ?? {
+                        total: 0,
+                        pending: 0,
+                        queued: 0,
+                        sent: 0,
+                        delivered: 0,
+                        failed: 0,
+                        skipped: 0,
+                        opted_out: 0,
+                    },
+                };
+            }),
+        };
     }
 
     async createCampaign(input: {
@@ -627,7 +673,7 @@ export class TicketOperationsService {
             .insert({
                 name: input.name,
                 channel: input.channel,
-                status: input.scheduled_at ? "scheduled" : "draft",
+                status: "draft",
                 template_status: "draft",
                 template_body: input.template_body,
                 quiet_hours: JSON.stringify(input.quiet_hours ?? {}),
@@ -703,7 +749,7 @@ export class TicketOperationsService {
 
     async reports() {
         const trx = currentTrx();
-        const [backlog, sla, byAssignee, csat, reopened] = await Promise.all([
+        const [backlog, sla, byAssignee, csat, reopened, completed, byStatus, byChannel] = await Promise.all([
             trx
                 .from("support_tickets")
                 .whereNotIn("status", ["resolved", "closed"])
@@ -728,9 +774,18 @@ export class TicketOperationsService {
             trx.rawQuery(
                 `SELECT COUNT(DISTINCT ticket_id)::bigint AS total FROM support_ticket_events WHERE event_type = 'ticket.status_changed' AND payload->>'from' IN ('resolved','closed') AND payload->>'to' = 'open'`,
             ),
+            trx.rawQuery(
+                `SELECT COUNT(DISTINCT ticket_id)::bigint AS total FROM support_ticket_events WHERE event_type = 'ticket.status_changed' AND payload->>'to' IN ('resolved','closed')`,
+            ),
+            trx.from("support_tickets").select("status").count("id as total").groupBy("status"),
+            trx.from("support_tickets").select("channel").count("id as total").groupBy("channel").orderBy("total", "desc"),
         ]);
         const slaRow = ((sla.rows ?? sla) as DbRow[])[0] ?? {};
         const reopenedRow = ((reopened.rows ?? reopened) as DbRow[])[0] ?? {};
+        const completedRow = ((completed.rows ?? completed) as DbRow[])[0] ?? {};
+        const completedTickets = numberValue(completedRow.total);
+        const reopenedTickets = numberValue(reopenedRow.total);
+        const firstContactResolved = Math.max(0, completedTickets - reopenedTickets);
         return {
             data: {
                 backlog: backlog.map((row) => ({ priority: row.priority, total: numberValue(row.total) })),
@@ -741,8 +796,16 @@ export class TicketOperationsService {
                     avg_resolution_minutes: Number(slaRow.avg_resolution_minutes ?? 0),
                 },
                 csat: { average: Number(csat?.average ?? 0), responses: numberValue(csat?.responses) },
-                reopened_tickets: numberValue(reopenedRow.total),
-                fcr_proxy: { definition: "resolved tickets that were not later reopened", evidence: "support_ticket_events" },
+                reopened_tickets: reopenedTickets,
+                fcr_proxy: {
+                    definition: "resolved tickets that were not later reopened",
+                    evidence: "support_tickets + support_ticket_events",
+                    completed_tickets: completedTickets,
+                    first_contact_resolved: firstContactResolved,
+                    rate_percent: completedTickets > 0 ? (firstContactResolved / completedTickets) * 100 : 0,
+                },
+                statuses: byStatus.map((row) => ({ status: row.status, total: numberValue(row.total) })),
+                channels: byChannel.map((row) => ({ channel: row.channel, total: numberValue(row.total) })),
                 assignees: byAssignee.map((row) => ({
                     assigned_user_id: nullableNumber(row.assigned_user_id),
                     email: row.email ?? null,

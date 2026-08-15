@@ -97,14 +97,22 @@ export class LegacyMarkShippedService {
                 actor,
             );
             operations = (await phase5OrderOperationsQueryService.orderOperations(orderId)).data;
-            current = operations.fulfillments.find((item) => item.id === Number(fulfillment.id));
-            shipment = current?.shipments[0];
-            if (!shipment) {
+            const refreshedFulfillment = operations.fulfillments.find((item) => item.id === Number(fulfillment.id));
+            if (!refreshedFulfillment) {
+                throw new Exception("Compatibility fulfillment could not be projected after shipment creation", {
+                    status: 409,
+                    code: "E_FULFILLMENT_PROJECTION_MISSING",
+                });
+            }
+            current = refreshedFulfillment;
+            const createdShipment = current.shipments[0];
+            if (!createdShipment) {
                 throw new Exception("Compatibility shipment could not be projected", {
                     status: 409,
                     code: "E_SHIPMENT_PROJECTION_MISSING",
                 });
             }
+            shipment = createdShipment;
         } else {
             await trx
                 .from("order_shipments")
@@ -115,15 +123,24 @@ export class LegacyMarkShippedService {
                     tracking_url: input.tracking_url ?? shipment.tracking_url,
                     updated_at: new Date(),
                 });
+            const shipmentId = shipment.id;
             operations = (await phase5OrderOperationsQueryService.orderOperations(orderId)).data;
-            current = operations.fulfillments.find((item) => item.id === Number(fulfillment.id));
-            shipment = current?.shipments.find((item) => item.id === shipment!.id);
-            if (!shipment) {
+            const refreshedFulfillment = operations.fulfillments.find((item) => item.id === Number(fulfillment.id));
+            if (!refreshedFulfillment) {
+                throw new Exception("Compatibility fulfillment could not be projected after shipment update", {
+                    status: 409,
+                    code: "E_FULFILLMENT_PROJECTION_MISSING",
+                });
+            }
+            current = refreshedFulfillment;
+            const updatedShipment = current.shipments.find((item) => item.id === shipmentId);
+            if (!updatedShipment) {
                 throw new Exception("Compatibility shipment could not be projected after update", {
                     status: 409,
                     code: "E_SHIPMENT_PROJECTION_MISSING",
                 });
             }
+            shipment = updatedShipment;
         }
 
         if (shipment.status === "label_created") {

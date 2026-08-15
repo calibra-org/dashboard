@@ -19,7 +19,7 @@ import { Link } from "#/lib/i18n/navigation";
 import { cn } from "#/lib/utils";
 
 import { ticketCopy } from "./copy";
-import { useCreateTicket, useTicketResources, useTickets, useTicketSummary, useTicketTrends } from "./queries";
+import { useCreateTicket, useTicketResources, useTicketSummary, useTickets, useTicketTrends } from "./queries";
 import type { TicketPriority, TicketStatus } from "./types";
 
 function statusTone(status: TicketStatus): string {
@@ -181,7 +181,10 @@ export function TicketsWorkspace() {
                                 <label htmlFor="new-ticket-assignee" className="font-medium text-xs">
                                     {t.assignee}
                                 </label>
-                                <Select value={assigneeChoice} onValueChange={setAssigneeChoice}>
+                                <Select
+                                    value={assigneeChoice}
+                                    onValueChange={(value) => setAssigneeChoice(typeof value === "string" ? value : "default")}
+                                >
                                     <SelectTrigger id="new-ticket-assignee">
                                         <SelectValue />
                                     </SelectTrigger>

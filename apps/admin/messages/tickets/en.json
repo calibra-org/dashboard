@@ -2,6 +2,16 @@
     "Nav": {
         "tickets": "Tickets",
         "ticketQueue": "Queue & conversations",
-        "ticketSettings": "Settings & SLA"
+        "ticketSettings": "Settings & SLA",
+        "ticketOverview": "Support dashboard",
+        "ticketCreate": "Create ticket",
+        "ticketInbox": "Ticket inbox",
+        "ticketInternal": "Internal conversations",
+        "ticketChannels": "Messaging channels",
+        "ticketCampaigns": "Message campaigns",
+        "ticketReports": "Support reports"
+    },
+    "Tickets": {
+        "unread": "{count} unread messages"
     }
 }

@@ -4,6 +4,7 @@ import type { Locale } from "@calibra/shared/i18n";
 import { useLocale } from "next-intl";
 import { type FormEvent, useMemo, useState } from "react";
 
+import { MediaPicker } from "#/components/media-picker";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card";
@@ -11,14 +12,35 @@ import { Input } from "#/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "#/components/ui/select";
 import { Skeleton } from "#/components/ui/skeleton";
 import { Textarea } from "#/components/ui/textarea";
-import { ArrowStart, Clock3, MessageSquare, RefreshCw, Save, ShieldAlert, UserRound } from "#/icons";
+import {
+    ArrowRightLeft,
+    ArrowStart,
+    CheckCircle2,
+    Clock3,
+    MessageSquare,
+    Paperclip,
+    RefreshCw,
+    Save,
+    ShieldAlert,
+    UserRound,
+} from "#/icons";
 import { formatDate } from "#/lib/format";
 import { Link } from "#/lib/i18n/navigation";
 import { useSettleMutation } from "#/lib/queries/use-settle-mutation";
+import type { AdminMedia } from "#/lib/types";
 import { cn } from "#/lib/utils";
 
 import { ticketCopy } from "./copy";
-import { useAddTicketMessage, useTicket, useTicketResources, useTransitionTicket, useUpdateTicket } from "./queries";
+import {
+    useAddTicketAttachment,
+    useAddTicketMessage,
+    useMergeTicket,
+    useTicket,
+    useTicketAttachments,
+    useTicketResources,
+    useTransitionTicket,
+    useUpdateTicket,
+} from "./queries";
 import type { Ticket, TicketPriority, TicketStatus } from "./types";
 
 const ALLOWED_TRANSITIONS: Record<TicketStatus, readonly TicketStatus[]> = {
@@ -186,7 +208,14 @@ function TicketLoaded({
 }) {
     const { text: t } = ticketCopy(locale);
     const addMessage = useAddTicketMessage(data.id);
+    const attachments = useTicketAttachments(data.id);
+    const addAttachment = useAddTicketAttachment(data.id);
+    const mergeTicket = useMergeTicket(data.id);
     const [messageKind, setMessageKind] = useState<"reply" | "internal_note">("reply");
+    const [mediaOpen, setMediaOpen] = useState(false);
+    const [selectedMedia, setSelectedMedia] = useState<AdminMedia[]>([]);
+    const [mergeTargetId, setMergeTargetId] = useState(0);
+    const mergeTarget = useTicket(mergeTargetId);
     const firstResponseSla = slaState(data.first_response_due_at, data.first_response_at, locale);
     const resolutionSla = slaState(data.resolution_due_at, data.resolved_at ?? data.closed_at, locale);
 
@@ -197,6 +226,22 @@ function TicketLoaded({
         if (!body) return;
         await addMessage.mutateAsync({ kind: messageKind, body, expected_version: data.version });
         event.currentTarget.reset();
+    }
+
+    async function attachSelectedMedia() {
+        if (selectedMedia.length === 0) return;
+        await Promise.all(selectedMedia.map((item) => addAttachment.mutateAsync({ media_id: item.id })));
+        setSelectedMedia([]);
+    }
+
+    async function mergeDuplicate() {
+        if (!mergeTarget.data || mergeTarget.data.id === data.id) return;
+        await mergeTicket.mutateAsync({
+            target_ticket_id: mergeTarget.data.id,
+            expected_source_version: data.version,
+            expected_target_version: mergeTarget.data.version,
+            reason: locale === "en" ? "Merged by support operator" : "ادغام توسط کارشناس پشتیبانی",
+        });
     }
 
     function messageLabel(kind: string) {
@@ -211,7 +256,7 @@ function TicketLoaded({
             <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                 <div>
                     <Link
-                        href={"/tickets" as never}
+                        href={"/tickets/inbox" as never}
                         className="mb-2 inline-flex items-center gap-1 text-muted-foreground text-xs hover:text-foreground"
                     >
                         <ArrowStart className="size-3.5" aria-hidden="true" />
@@ -280,6 +325,81 @@ function TicketLoaded({
                             })}
                             {(data.messages ?? []).length === 0 ? (
                                 <p className="py-8 text-center text-muted-foreground text-sm">{t.noMessages}</p>
+                            ) : null}
+                        </CardContent>
+                    </Card>
+
+                    <Card className="shadow-sm">
+                        <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
+                            <div>
+                                <CardTitle className="flex items-center gap-2 text-base">
+                                    <Paperclip className="size-4" aria-hidden="true" />
+                                    {locale === "en" ? "Evidence & attachments" : "مدارک و پیوست‌ها"}
+                                </CardTitle>
+                                <p className="mt-1 text-muted-foreground text-xs">
+                                    {locale === "en"
+                                        ? "Attachment metadata is linked to Media and scan state remains explicit."
+                                        : "پیوست به Media متصل است و وضعیت اسکن امنیتی به‌صورت صریح نگه‌داری می‌شود."}
+                                </p>
+                            </div>
+                            <Button variant="outline" size="sm" onClick={() => setMediaOpen(true)}>
+                                <Paperclip className="size-3.5" aria-hidden="true" />
+                                {locale === "en" ? "Add from Media" : "افزودن از رسانه"}
+                            </Button>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                            {attachments.isLoading ? (
+                                <Skeleton className="h-20 rounded-xl" />
+                            ) : (attachments.data ?? []).length === 0 ? (
+                                <div className="rounded-xl border border-dashed p-5 text-center text-muted-foreground text-xs">
+                                    {locale === "en"
+                                        ? "No attachment metadata is linked yet."
+                                        : "هنوز پیوستی به این تیکت متصل نشده است."}
+                                </div>
+                            ) : (
+                                (attachments.data ?? []).map((attachment) => (
+                                    <div
+                                        key={attachment.id}
+                                        className="flex flex-col gap-2 rounded-xl border p-3 sm:flex-row sm:items-center sm:justify-between"
+                                    >
+                                        <div className="min-w-0">
+                                            <div className="truncate font-medium text-xs">{attachment.filename}</div>
+                                            <div className="mt-1 text-[0.68rem] text-muted-foreground">
+                                                {attachment.mime} · {(attachment.size_bytes / 1024).toFixed(1)} KB · Media #
+                                                {attachment.media_id}
+                                            </div>
+                                        </div>
+                                        <Badge
+                                            variant="outline"
+                                            className={
+                                                attachment.scan_status === "clean"
+                                                    ? "border-success/20 bg-success/10 text-success"
+                                                    : attachment.scan_status === "infected" || attachment.scan_status === "error"
+                                                      ? "border-danger/20 bg-danger/10 text-danger"
+                                                      : "border-warning/20 bg-warning/10 text-warning"
+                                            }
+                                        >
+                                            {attachment.scan_status}
+                                        </Badge>
+                                    </div>
+                                ))
+                            )}
+                            {selectedMedia.length > 0 ? (
+                                <div className="rounded-xl border border-primary/15 bg-primary/[0.03] p-3">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <span className="text-xs">
+                                            {selectedMedia.length.toLocaleString(locale === "fa" ? "fa-IR" : "en-US")}{" "}
+                                            {locale === "en" ? "media item(s) selected" : "رسانه انتخاب شده"}
+                                        </span>
+                                        <Button
+                                            size="sm"
+                                            onClick={() => void attachSelectedMedia()}
+                                            disabled={addAttachment.isPending}
+                                        >
+                                            {locale === "en" ? "Link to ticket" : "اتصال به تیکت"}
+                                        </Button>
+                                    </div>
+                                </div>
                             ) : null}
                         </CardContent>
                     </Card>
@@ -396,6 +516,62 @@ function TicketLoaded({
                             ) : null}
                         </CardContent>
                     </Card>
+                    <Card className="shadow-sm">
+                        <CardHeader className="pb-3">
+                            <CardTitle className="flex items-center gap-2 text-base">
+                                <ArrowRightLeft className="size-4" aria-hidden="true" />
+                                {locale === "en" ? "Duplicate merge" : "ادغام تیکت تکراری"}
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                            <p className="text-muted-foreground text-xs leading-5">
+                                {locale === "en"
+                                    ? "Enter the canonical target ticket ID. Both source and target versions are guarded before merge."
+                                    : "شناسه تیکت مرجع را وارد کنید. نسخه مبدأ و مقصد قبل از ادغام کنترل می‌شود."}
+                            </p>
+                            <Input
+                                type="number"
+                                min={1}
+                                value={mergeTargetId || ""}
+                                onChange={(event) => setMergeTargetId(Number(event.target.value))}
+                                placeholder={locale === "en" ? "Target ticket ID" : "شناسه تیکت مقصد"}
+                                dir="ltr"
+                            />
+                            {mergeTargetId === data.id ? (
+                                <p className="text-danger text-xs">
+                                    {locale === "en"
+                                        ? "A ticket cannot be merged into itself."
+                                        : "تیکت را نمی‌توان در خودش ادغام کرد."}
+                                </p>
+                            ) : null}
+                            {mergeTarget.data && mergeTarget.data.id !== data.id ? (
+                                <div className="rounded-xl border p-3">
+                                    <div className="flex items-center gap-2">
+                                        <CheckCircle2 className="size-4 text-success" aria-hidden="true" />
+                                        <span className="font-medium text-xs">{mergeTarget.data.reference}</span>
+                                    </div>
+                                    <p className="mt-2 truncate text-muted-foreground text-xs">{mergeTarget.data.subject}</p>
+                                </div>
+                            ) : null}
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full"
+                                disabled={!mergeTarget.data || mergeTarget.data.id === data.id || mergeTicket.isPending}
+                                onClick={() => void mergeDuplicate()}
+                            >
+                                <ArrowRightLeft className="size-3.5" aria-hidden="true" />
+                                {locale === "en" ? "Merge source into target" : "ادغام مبدأ در مقصد"}
+                            </Button>
+                            {mergeTicket.isError ? (
+                                <p className="text-danger text-xs">
+                                    {locale === "en"
+                                        ? "Merge was rejected. Refresh both tickets and retry."
+                                        : "ادغام رد شد؛ هر دو تیکت را تازه‌سازی و دوباره تلاش کنید."}
+                                </p>
+                            ) : null}
+                        </CardContent>
+                    </Card>
                     <Card>
                         <CardHeader className="pb-3">
                             <CardTitle className="text-base">{t.history}</CardTitle>
@@ -404,7 +580,7 @@ function TicketLoaded({
                             {(data.events ?? []).slice(0, 20).map((event) => (
                                 <div key={event.id} className="border-s ps-3">
                                     <div className="font-medium text-xs">{event.event_type}</div>
-                                    <div className="mt-1 text-muted-foreground text-[0.7rem]">
+                                    <div className="mt-1 text-[0.7rem] text-muted-foreground">
                                         {event.actor_email ?? t.system} · {formatDate(event.created_at, locale)}
                                     </div>
                                 </div>
@@ -413,6 +589,13 @@ function TicketLoaded({
                     </Card>
                 </div>
             </div>
+            <MediaPicker
+                open={mediaOpen}
+                mode="multiple"
+                value={selectedMedia.map((item) => item.id)}
+                onOpenChange={setMediaOpen}
+                onSelect={(selection) => setSelectedMedia(Array.isArray(selection) ? selection : [selection])}
+            />
         </div>
     );
 }

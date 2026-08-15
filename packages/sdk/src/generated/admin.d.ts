@@ -8565,7 +8565,7 @@ export interface components {
         /** @enum {string} */
         TicketPriority: "low" | "normal" | "high" | "urgent";
         /** @enum {string} */
-        TicketChannel: "admin" | "web" | "email" | "phone" | "api";
+        TicketChannel: "admin" | "web" | "email" | "phone" | "api" | "whatsapp" | "telegram" | "instagram" | "rubika" | "bale" | "eitaa" | "sms";
         TicketQueueItem: {
             id: number;
             ticket_number: number;
