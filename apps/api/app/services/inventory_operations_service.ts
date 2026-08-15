@@ -1,6 +1,7 @@
 import { Exception } from "@adonisjs/core/exceptions";
 
 import InventoryService from "#services/inventory_service";
+import SettingsService from "#services/settings_service";
 import { currentTrx } from "#services/tenant_context";
 
 function numberOrNull(value: unknown): number | null {
@@ -18,12 +19,16 @@ export class InventoryOperationsService {
 
     async movements(inventoryItemId: number, limit = 100) {
         const trx = currentTrx();
+        const generalSettings = await new SettingsService().all("general");
+        const productLocale = generalSettings.primary_locale === "en" ? "en" : "fa";
         const item = await trx
             .from("inventory_items as ii")
-            .leftJoin("products as p", "p.id", "ii.product_id")
+            .leftJoin("product_translations as pt", (join) => {
+                join.on("pt.product_id", "=", "ii.product_id").andOnVal("pt.locale", "=", productLocale);
+            })
             .leftJoin("product_variations as pv", "pv.id", "ii.variation_id")
             .where("ii.id", inventoryItemId)
-            .select("ii.*", "p.slug as product_slug", "pv.sku as variation_sku")
+            .select("ii.*", "pt.slug as product_slug", "pv.sku as variation_sku")
             .first();
         if (!item) throw new Exception("Inventory item not found", { status: 404, code: "E_INVENTORY_ITEM_NOT_FOUND" });
         const rows = await trx
