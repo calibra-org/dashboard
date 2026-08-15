@@ -109,20 +109,18 @@ jobs:
           const browser = await chromium.launch({ headless: true });
           const host = 'http://aurora.admin.localhost:3001';
           const api = 'http://localhost:3333';
+          const viewport = { width: 1920, height: 1080 };
 
-          async function login(page) {
-            await page.goto(`${host}/login`, { waitUntil: 'domcontentloaded', timeout: 120000 });
-            await page.getByLabel(/ایمیل|email/i).fill('admin@bulk.calibra.dev');
-            await page.getByLabel(/رمز|password/i).fill('Passw0rd1!');
-            await page.getByRole('button', { name: /ورود|sign in|login/i }).click();
-            await page.waitForURL(/\/dashboard\/?$/, { timeout: 120000 });
-          }
+          const authContext = await browser.newContext({ viewport, deviceScaleFactor: 1 });
+          const authPage = await authContext.newPage();
+          await authPage.goto(`${host}/login`, { waitUntil: 'domcontentloaded', timeout: 120000 });
+          await authPage.getByLabel(/ایمیل|email/i).fill('admin@bulk.calibra.dev');
+          await authPage.getByLabel(/رمز|password/i).fill('Passw0rd1!');
+          await authPage.getByRole('button', { name: /ورود|sign in|login/i }).click();
+          await authPage.waitForURL(/\/dashboard\/?$/, { timeout: 120000 });
 
-          const seedContext = await browser.newContext({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
-          const seedPage = await seedContext.newPage();
-          await login(seedPage);
-          const cookies = await seedContext.cookies();
-          const rawSession = cookies.find((cookie) => cookie.name === 'admin_session')?.value;
+          const authCookies = await authContext.cookies();
+          const rawSession = authCookies.find((cookie) => cookie.name === 'admin_session')?.value;
           if (!rawSession) throw new Error('admin_session cookie missing after login');
           let session;
           try { session = JSON.parse(rawSession); } catch { session = JSON.parse(decodeURIComponent(rawSession)); }
@@ -142,7 +140,7 @@ jobs:
           ];
           for (let index = 0; index < samples.length; index += 1) {
             const [subject, message, priority, channel, category] = samples[index];
-            const response = await seedContext.request.post(`${api}/api/v1/admin/tickets`, {
+            const response = await authContext.request.post(`${api}/api/v1/admin/tickets`, {
               headers,
               data: {
                 requester_name: `مشتری آزمایشی ${index + 1}`,
@@ -157,7 +155,7 @@ jobs:
             });
             if (!response.ok()) console.log('ticket seed skipped', response.status(), await response.text());
           }
-          await seedContext.close();
+          await authContext.close();
 
           const routes = [
             ['01-overview', '/tickets/overview'],
@@ -171,9 +169,9 @@ jobs:
           ];
 
           for (const [name, route] of routes) {
-            const context = await browser.newContext({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
+            const context = await browser.newContext({ viewport, deviceScaleFactor: 1 });
+            await context.addCookies(authCookies);
             const page = await context.newPage();
-            await login(page);
             await page.goto(`${host}${route}`, { waitUntil: 'domcontentloaded', timeout: 120000 });
             await page.waitForLoadState('networkidle', { timeout: 12000 }).catch(() => {});
             await page.waitForTimeout(2500);
