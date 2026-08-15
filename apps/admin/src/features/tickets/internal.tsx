@@ -12,32 +12,14 @@ import { Input } from "#/components/ui/input";
 import { ScrollArea } from "#/components/ui/scroll-area";
 import { Skeleton } from "#/components/ui/skeleton";
 import { Textarea } from "#/components/ui/textarea";
-import {
-    Activity,
-    BarChart3,
-    CheckCircle2,
-    Clock3,
-    Megaphone,
-    MessageSquare,
-    Plus,
-    Radio,
-    Search,
-    Send,
-    Users,
-} from "#/icons";
+import { Activity, BarChart3, CheckCircle2, Clock3, Megaphone, MessageSquare, Plus, Radio, Search, Send, Users } from "#/icons";
 import { formatDate } from "#/lib/format";
 import { Link } from "#/lib/i18n/navigation";
 import { cn } from "#/lib/utils";
 
 import { ticketCopy } from "./copy";
 import { useAddTicketMessage, useAgentPresence, useTicket, useTickets } from "./queries";
-import {
-    EmptySupportState,
-    presenceStateLabel,
-    SupportPageHeader,
-    TicketPriorityBadge,
-    TicketStatusBadge,
-} from "./ui";
+import { EmptySupportState, presenceStateLabel, SupportPageHeader, TicketPriorityBadge, TicketStatusBadge } from "./ui";
 
 export function TicketInternalPage() {
     const locale = useLocale() as Locale;
@@ -52,16 +34,15 @@ export function TicketInternalPage() {
     );
     const categories = useMemo(
         () =>
-            [...new Set(allInternalTickets.map((ticket) => ticket.category).filter((value): value is string => Boolean(value)))].sort(
-                (left, right) => left.localeCompare(right),
-            ),
+            [
+                ...new Set(
+                    allInternalTickets.map((ticket) => ticket.category).filter((value): value is string => Boolean(value)),
+                ),
+            ].sort((left, right) => left.localeCompare(right)),
         [allInternalTickets],
     );
     const internalTickets = useMemo(
-        () =>
-            category === "all"
-                ? allInternalTickets
-                : allInternalTickets.filter((ticket) => ticket.category === category),
+        () => (category === "all" ? allInternalTickets : allInternalTickets.filter((ticket) => ticket.category === category)),
         [allInternalTickets, category],
     );
     const [selectedId, setSelectedId] = useState(0);
@@ -286,7 +267,7 @@ export function TicketInternalPage() {
                                 {latestNote ? (
                                     <div className="border-b bg-primary/[0.025] p-4">
                                         <div className="flex items-center justify-between gap-3">
-                                            <div className="flex items-center gap-2 text-primary text-xs font-medium">
+                                            <div className="flex items-center gap-2 font-medium text-primary text-xs">
                                                 <MessageSquare className="size-3.5" aria-hidden="true" />
                                                 {locale === "en" ? "Latest private note" : "آخرین یادداشت داخلی"}
                                             </div>
@@ -294,7 +275,9 @@ export function TicketInternalPage() {
                                                 {formatDate(latestNote.created_at, locale)}
                                             </span>
                                         </div>
-                                        <p className="mt-2 line-clamp-3 whitespace-pre-wrap text-xs leading-6">{latestNote.body}</p>
+                                        <p className="mt-2 line-clamp-3 whitespace-pre-wrap text-xs leading-6">
+                                            {latestNote.body}
+                                        </p>
                                     </div>
                                 ) : null}
                                 <ScrollArea className="h-[420px] flex-1 p-5">
@@ -321,7 +304,9 @@ export function TicketInternalPage() {
                                                                 {formatDate(message.created_at, locale)}
                                                             </span>
                                                         </div>
-                                                        <p className="mt-2 whitespace-pre-wrap text-sm leading-6">{message.body}</p>
+                                                        <p className="mt-2 whitespace-pre-wrap text-sm leading-6">
+                                                            {message.body}
+                                                        </p>
                                                     </div>
                                                 </div>
                                             ))
@@ -497,7 +482,9 @@ export function TicketInternalPage() {
                         <CardContent className="space-y-2">
                             {relatedTickets.length === 0 ? (
                                 <p className="py-3 text-center text-muted-foreground text-xs">
-                                    {locale === "en" ? "No related internal thread in the current queue." : "گفت‌وگوی داخلی مرتبطی در صف فعلی نیست."}
+                                    {locale === "en"
+                                        ? "No related internal thread in the current queue."
+                                        : "گفت‌وگوی داخلی مرتبطی در صف فعلی نیست."}
                                 </p>
                             ) : (
                                 relatedTickets.map((ticket) => (
