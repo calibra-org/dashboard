@@ -35,7 +35,9 @@ function ZoneEditor({ zone }: { zone: ShippingZone }) {
     const replaceLocations = useReplaceShippingZoneLocations(zone.id);
     const addMethod = useAddShippingZoneMethod(zone.id);
     const [name, setName] = useState(zone.name);
-    const [locations, setLocations] = useState(zone.locations.map((item) => ({ type: item.type, code: item.code })));
+    const [locations, setLocations] = useState(
+        zone.locations.map((item) => ({ clientKey: String(item.id), type: item.type, code: item.code })),
+    );
     const [methodId, setMethodId] = useState<number | null>(null);
 
     const availableDefinitions = useMemo(
@@ -74,13 +76,15 @@ function ZoneEditor({ zone }: { zone: ShippingZone }) {
                         type="button"
                         size="sm"
                         variant="outline"
-                        onClick={() => setLocations((current) => [...current, { type: "country", code: "" }])}
+                        onClick={() =>
+                            setLocations((current) => [...current, { clientKey: crypto.randomUUID(), type: "country", code: "" }])
+                        }
                     >
                         {t("add")}
                     </Button>
                 </div>
                 {locations.map((location, index) => (
-                    <div key={`${location.type}-${index}`} className="grid gap-2 sm:grid-cols-[150px_minmax(0,1fr)_auto]">
+                    <div key={location.clientKey} className="grid gap-2 sm:grid-cols-[150px_minmax(0,1fr)_auto]">
                         <select
                             className="h-9 rounded-md border border-input bg-background px-2 text-sm"
                             value={location.type}
@@ -127,7 +131,9 @@ function ZoneEditor({ zone }: { zone: ShippingZone }) {
                         type="button"
                         size="sm"
                         disabled={replaceLocations.isPending || locations.some((item) => !item.code.trim())}
-                        onClick={() => replaceLocations.mutate(locations.map((item) => ({ ...item, code: item.code.trim() })))}
+                        onClick={() =>
+                            replaceLocations.mutate(locations.map((item) => ({ type: item.type, code: item.code.trim() })))
+                        }
                     >
                         {replaceLocations.isPending ? t("saving") : t("save")}
                     </Button>
