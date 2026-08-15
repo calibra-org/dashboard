@@ -86,7 +86,15 @@ assertContains("apps/api/app/services/phase5_order_operations_service.ts", [
     "maybeCompleteOrder",
     'shipment.status !== "delivered"',
 ]);
-assertNotContains("apps/api/app/services/phase5_order_operations_service.ts", ["inventory.decrement", "stock_quantity -"]);
+assertNotContains("apps/api/app/services/phase5_order_operations_service.ts", ["inventory.decrement"]);
+{
+    const service = read("apps/api/app/services/phase5_order_operations_service.ts");
+    if (/\bstock_quantity\s*=\s*stock_quantity\s*-/.test(service) || /\.decrement\(\s*["']stock_quantity["']/.test(service)) {
+        throw new Error(
+            "apps/api/app/services/phase5_order_operations_service.ts contains a direct stock decrement outside InventoryService",
+        );
+    }
+}
 assertContains("apps/api/app/services/phase5_order_operations_query_service.ts", [
     '"name_snapshot as name"',
     '"sku_snapshot as sku"',

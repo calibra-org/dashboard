@@ -54,9 +54,23 @@ for (const table of [
     "support_public_tokens",
 ]) {
     contains(supportMigration, `createTable("${table}"`, `support migration must create ${table}`);
-    contains(supportMigration, `ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`, `${table} must enable RLS`);
-    contains(supportMigration, `ALTER TABLE ${table} FORCE ROW LEVEL SECURITY`, `${table} must force RLS`);
+    contains(supportMigration, `"${table}"`, `${table} must participate in the support tenant-table RLS set`);
 }
+contains(
+    supportMigration,
+    "`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`",
+    "support tenant-table loop must enable row-level security",
+);
+contains(
+    supportMigration,
+    "`ALTER TABLE ${table} FORCE ROW LEVEL SECURITY`",
+    "support tenant-table loop must force row-level security",
+);
+contains(
+    supportMigration,
+    "`CREATE POLICY tenant_isolation ON ${table} USING (${TENANT}) WITH CHECK (${TENANT})`",
+    "support tenant-table loop must install tenant isolation policy",
+);
 contains(supportMigration, "support_campaign_recipients_dedupe", "campaign recipients must deduplicate");
 contains(supportMigration, "response_token_hash", "CSAT must not store a plaintext public token");
 contains(
@@ -94,9 +108,19 @@ contains(
 const seoMigration = "apps/api/database/migrations/1760001100000_expand_seo_operations.ts";
 for (const table of ["seo_action_queue", "seo_crawl_runs", "seo_crawl_observations", "seo_export_jobs"]) {
     contains(seoMigration, `createTable("${table}"`, `SEO migration must create ${table}`);
-    contains(seoMigration, `ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`, `${table} must enable RLS`);
-    contains(seoMigration, `ALTER TABLE ${table} FORCE ROW LEVEL SECURITY`, `${table} must force RLS`);
+    contains(seoMigration, `"${table}"`, `${table} must participate in the SEO tenant-table RLS set`);
 }
+contains(
+    seoMigration,
+    "`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`",
+    "SEO tenant-table loop must enable row-level security",
+);
+contains(seoMigration, "`ALTER TABLE ${table} FORCE ROW LEVEL SECURITY`", "SEO tenant-table loop must force row-level security");
+contains(
+    seoMigration,
+    "`CREATE POLICY tenant_isolation ON ${table} USING (${TENANT}) WITH CHECK (${TENANT})`",
+    "SEO tenant-table loop must install tenant isolation policy",
+);
 contains(
     "apps/api/app/services/seo/operations_service.ts",
     'String(action.status) !== "approved"',
