@@ -93,6 +93,21 @@ jobs:
               'setSort(typeof value === "string" ? value : "newest");',
           )
           replace(
+              "apps/admin/src/views/transactions/transactions-center.tsx",
+              'const RECONCILIATION: PaymentReconciliationStatus[] = ["unchecked", "matched", "mismatch", "unsupported", "error"];\n',
+              'const RECONCILIATION: PaymentReconciliationStatus[] = ["unchecked", "matched", "mismatch", "unsupported", "error"];\nconst TRANSACTION_SKELETON_KEYS = ["transaction-1", "transaction-2", "transaction-3", "transaction-4", "transaction-5", "transaction-6", "transaction-7", "transaction-8"] as const;\n',
+          )
+          replace(
+              "apps/admin/src/views/transactions/transactions-center.tsx",
+              '{Array.from({ length: 8 }).map((_, index) => (\n                            <Skeleton key={index} className="h-12 w-full" />\n                        ))}',
+              '{TRANSACTION_SKELETON_KEYS.map((key) => (\n                            <Skeleton key={key} className="h-12 w-full" />\n                        ))}',
+          )
+          replace(
+              "apps/admin/src/views/transactions/transactions-center.tsx",
+              '    return (\n        <tr\n            tabIndex={0}\n            role="button"',
+              '    return (\n        // biome-ignore lint/a11y/useSemanticElements: A button cannot replace a table row without invalid table markup; keyboard activation is implemented below.\n        <tr\n            tabIndex={0}\n            role="button"',
+          )
+          replace(
               "scripts/verify-tickets-integration.mjs",
               'check(migration.includes("CREATE POLICY tenant_isolation ON ${table}"), "Ticket tables must create the tenant RLS policy");',
               'check(migration.includes("CREATE POLICY tenant_isolation ON " + "$" + "{table}"), "Ticket tables must create the tenant RLS policy");',
