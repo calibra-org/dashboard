@@ -23,6 +23,18 @@ function mergeRecord(baseRecord = {}, overlayRecord = {}, label, allowIdentical 
     return merged;
 }
 
+function mergePaths(basePaths = {}, overlayPaths = {}) {
+    const merged = { ...basePaths };
+    for (const [path, pathItem] of Object.entries(overlayPaths)) {
+        if (!Object.hasOwn(merged, path)) {
+            merged[path] = pathItem;
+            continue;
+        }
+        merged[path] = mergeRecord(merged[path], pathItem, `paths.${path}`, true);
+    }
+    return merged;
+}
+
 function rewriteRefs(value, replacements) {
     if (Array.isArray(value)) return value.map((item) => rewriteRefs(item, replacements));
     if (!value || typeof value !== "object") return value;
@@ -73,7 +85,7 @@ for (const [overlaySource, namespace] of [
     [completion, "CompletionOverlay"],
 ]) {
     const overlay = namespaceConflictingComponents(overlaySource, namespace);
-    base.paths = mergeRecord(base.paths, overlay.paths, "paths");
+    base.paths = mergePaths(base.paths, overlay.paths);
     const componentSections = new Set([...Object.keys(base.components ?? {}), ...Object.keys(overlay.components ?? {})]);
     const merged = {};
     for (const section of componentSections) {
