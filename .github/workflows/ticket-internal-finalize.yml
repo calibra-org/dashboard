@@ -1,0 +1,63 @@
+name: Finalize Internal Ticket Workspace
+
+on:
+  push:
+    branches:
+      - agent/complete-ticket-seo-content-backends-20260814
+
+permissions:
+  contents: write
+
+jobs:
+  finalize-internal-ticket:
+    if: contains(github.event.head_commit.message, '[ticket-internal-finalize]')
+    runs-on: ubuntu-24.04
+    env:
+      FORCE_COLOR: 3
+      TURBO_TELEMETRY_DISABLED: 1
+      DO_NOT_TRACK: 1
+      NODE_VERSION: 24.14.0
+      PNPM_VERSION: 10.32.1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build SDK dependency
+        run: pnpm --filter @calibra/sdk run build
+      - name: Canonicalize internal workspace
+        run: |
+          pnpm exec biome format --write apps/admin/src/features/tickets/internal.tsx
+          pnpm exec biome lint --write apps/admin/src/features/tickets/internal.tsx
+          pnpm exec biome check apps/admin/src/features/tickets/internal.tsx
+      - name: Verify Ticket invariants
+        run: node scripts/verify-tickets-integration.mjs
+      - name: Typecheck Admin
+        run: pnpm --filter @calibra/admin run typecheck
+      - name: Test Admin and SDK
+        run: pnpm --filter @calibra/sdk --filter @calibra/admin run test
+      - name: Build Admin
+        run: pnpm --filter @calibra/admin run build
+      - name: Validate diff
+        run: git diff --check
+      - name: Commit canonical workspace
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/ticket-internal-finalize.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/admin/src/features/tickets/internal.tsx .github/workflows/ticket-internal-finalize.yml
+          if git diff --cached --quiet; then
+            echo "No canonicalization changes to commit."
+            exit 0
+          fi
+          git commit -m "style(admin): canonicalize internal ticket workspace"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
