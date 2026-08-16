@@ -17,7 +17,7 @@ jobs:
         timeout-minutes: 5
         steps:
             - uses: actions/checkout@v4
-            - name: Extract exact TypeScript failure context
+            - name: Extract exact API type context
               shell: bash
               run: |
                   set -euo pipefail
@@ -28,14 +28,14 @@ jobs:
                   tar -xzf /tmp/phase9.tgz -C .
                   node .phase9-finalize/apply-phase9.mjs
                   {
-                    echo '=== admin controller 20-65 ==='
-                    nl -ba apps/api/app/controllers/admin/personalization_controller.ts | sed -n '20,65p'
+                    echo '=== admin controller 1-42 ==='
+                    nl -ba apps/api/app/controllers/admin/personalization_controller.ts | sed -n '1,42p'
                     echo
-                    echo '=== service 500-530 ==='
-                    nl -ba apps/api/app/services/phase9_personalization_service.ts | sed -n '500,530p'
+                    echo '=== service query/value candidates ==='
+                    grep -n -C 4 -E 'Object\.entries|\.where\(|whereIn|whereNot|metadata|unknown|rule|value' apps/api/app/services/phase9_personalization_service.ts | head -260 || true
                   } > /tmp/snippets
                   encoded=$(base64 -w0 /tmp/snippets)
                   old=$(gh api "repos/${GITHUB_REPOSITORY}/contents/phase9-source-snippets.txt?ref=${GITHUB_REF_NAME}" --jq .sha 2>/dev/null || true)
-                  args=(--method PUT "repos/${GITHUB_REPOSITORY}/contents/phase9-source-snippets.txt" -f message="chore(ci): capture Phase 9 type context" -f content="$encoded" -f branch="${GITHUB_REF_NAME}")
+                  args=(--method PUT "repos/${GITHUB_REPOSITORY}/contents/phase9-source-snippets.txt" -f message="chore(ci): refine Phase 9 type context" -f content="$encoded" -f branch="${GITHUB_REF_NAME}")
                   if [ -n "$old" ]; then args+=(-f sha="$old"); fi
                   gh api "${args[@]}"
