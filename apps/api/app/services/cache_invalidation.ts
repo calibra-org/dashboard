@@ -1,5 +1,6 @@
 import cache from "@adonisjs/cache/services/main";
 
+import RefreshCustomerIntelligenceJob from "#jobs/refresh_customer_intelligence_job";
 import { CacheTags } from "#services/cache_keys";
 import { recordCacheInvalidate } from "#services/metrics/domain_metrics";
 
@@ -59,7 +60,12 @@ export const CacheInvalidation = {
         recordCacheInvalidate(tags);
     },
 
-    /** Customer write (admin CRUD, order state transitions, refunds). */
+    /**
+     * Customer write (admin CRUD, order state transitions, refunds). Besides invalidating cached
+     * customer aggregates, enqueue the Phase 15 derived-profile refresh. The queue is database-backed
+     * in dev/prod and synchronous in tests, so the canonical write path never depends on a remote ML
+     * service and event-driven segments converge through the same deterministic engine.
+     */
     customerChanged: async (tenantId: TenantId, customerId: bigint | number | null | undefined): Promise<void> => {
         const tags: string[] = [
             CacheTags.adminCustomers(tenantId),
@@ -71,6 +77,12 @@ export const CacheInvalidation = {
         }
         await cache.deleteByTag({ tags });
         recordCacheInvalidate(tags);
+        if (customerId !== null && customerId !== undefined) {
+            await RefreshCustomerIntelligenceJob.dispatch({
+                tenantId: String(tenantId),
+                customerId: Number(customerId),
+            });
+        }
     },
 
     /** Shipping zone / method / rate write. */
