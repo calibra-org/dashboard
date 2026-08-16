@@ -5,9 +5,11 @@ import { existsSync } from "node:fs";
 
 const isWindows = process.platform === "win32";
 const pnpm = isWindows ? "pnpm.cmd" : "pnpm";
-const setup = process.argv.includes("--setup");
+const setupOnly = process.argv.includes("--setup");
 const forwardedArgs = process.argv.slice(2).filter((arg) => arg !== "--setup");
 const spinCli = "packages/spin/dist/cli.js";
+const lockfile = "pnpm-lock.yaml";
+const nodeModules = "node_modules";
 
 function run(command, args) {
     const result = spawnSync(command, args, {
@@ -20,20 +22,28 @@ function run(command, args) {
     if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
-/**
- * Daily startup must stay deterministic and offline-friendly: no install,
- * tests, code generation, or quality gates are run from `pnpm panel`.
- * Use `pnpm panel:setup` once after a fresh checkout/dependency reset.
- */
-if (setup) {
-    run(pnpm, ["install", "--frozen-lockfile"]);
-    run(pnpm, ["--filter", "@calibra/spin", "build"]);
-    process.exit(0);
+function preparePanel() {
+    if (!existsSync(nodeModules)) {
+        if (!existsSync(lockfile)) {
+            console.error("pnpm-lock.yaml is missing; cannot prepare the Calibra workspace safely.");
+            process.exit(1);
+        }
+        run(pnpm, ["install", "--frozen-lockfile"]);
+    }
+
+    if (!existsSync(spinCli)) {
+        run(pnpm, ["--filter", "@calibra/spin", "build"]);
+    }
 }
 
-if (!existsSync(spinCli)) {
-    console.error("Calibra panel is not prepared. Run `pnpm panel:setup` once, then use `pnpm panel` for daily startup.");
-    process.exit(1);
-}
+/**
+ * One-command panel startup. This performs only the minimum preparation needed
+ * to launch the current checkout; it never runs tests, lint, typecheck, codegen,
+ * or other quality gates. `pnpm panel:setup` remains available when preparation
+ * without launching the panel is desired.
+ */
+preparePanel();
+
+if (setupOnly) process.exit(0);
 
 run(process.execPath, [spinCli, "local", ...forwardedArgs]);
