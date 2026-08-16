@@ -57,13 +57,15 @@ const merged = {
 // operation. Enrich only the test-only merged fixture from the matching GET.
 for (const [path, item] of Object.entries(merged.paths ?? {})) {
     if (!item || typeof item !== "object" || !item.head || !item.get) continue;
+    const parameterKey = (parameter) => parameter?.$ref ?? String(parameter?.in ?? "") + ":" + String(parameter?.name ?? "");
     const inherited = Array.isArray(item.parameters) ? item.parameters : [];
+    const inheritedKeys = new Set(inherited.map(parameterKey));
     const getParameters = Array.isArray(item.get.parameters) ? item.get.parameters : [];
     const headParameters = Array.isArray(item.head.parameters) ? item.head.parameters : [];
-    const combined = [...inherited, ...getParameters, ...headParameters];
+    const combined = [...getParameters, ...headParameters].filter((parameter) => !inheritedKeys.has(parameterKey(parameter)));
     const seen = new Set();
     item.head.parameters = combined.filter((parameter) => {
-        const key = parameter?.$ref ?? String(parameter?.in ?? "") + ":" + String(parameter?.name ?? "");
+        const key = parameterKey(parameter);
         if (seen.has(key)) return false;
         seen.add(key);
         return true;
