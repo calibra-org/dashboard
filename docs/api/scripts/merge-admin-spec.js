@@ -10,6 +10,7 @@ const ticketOmnichannel = JSON.parse(readFileSync(resolve(root, "dist/admin.tick
 const phase5 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase5.v1.json"), "utf8"));
 const runtimeSync = JSON.parse(readFileSync(resolve(root, "dist/admin.runtime-sync.v1.json"), "utf8"));
 const completion = JSON.parse(readFileSync(resolve(root, "dist/admin.completion.v1.json"), "utf8"));
+const customerIntelligence = JSON.parse(readFileSync(resolve(root, "dist/admin.customer-intelligence.v1.json"), "utf8"));
 
 function mergeRecord(baseRecord = {}, overlayRecord = {}, label, allowIdentical = false) {
     const merged = { ...baseRecord };
@@ -85,6 +86,7 @@ for (const [overlaySource, namespace] of [
     [phase5, "Phase5Overlay"],
     [runtimeSync, "RuntimeSyncOverlay"],
     [completion, "CompletionOverlay"],
+    [customerIntelligence, "CustomerIntelligenceOverlay"],
 ]) {
     const overlay = namespaceConflictingComponents(overlaySource, namespace);
     base.paths = mergePaths(base.paths, overlay.paths);
