@@ -1,5 +1,5 @@
 stage=typecheck
-run=https://github.com/calibra-org/dashboard/actions/runs/31976204038
+run=https://github.com/calibra-org/dashboard/actions/runs/31976415688
 
 
 > @calibra/monorepo@ typecheck /home/runner/work/dashboard/dashboard
@@ -31,14 +31,14 @@ cache miss, executing b3d948b410c34934
 [34mℹ[39m Build start
 [34mℹ[39m [2mdist/[22m[1mindex.js[22m      [2m 10.42 kB[22m [2m│ gzip:   3.55 kB[22m
 [34mℹ[39m [2mdist/[22mindex.js.map  [2m 22.20 kB[22m [2m│ gzip:   6.63 kB[22m
+[33m[PLUGIN_TIMINGS] Warning:[0m Your build spent significant time in plugins. Here is a breakdown:
 [34mℹ[39m [2mdist/[22m[32m[1mindex.d.ts[22m[39m    [2m905.58 kB[22m [2m│ gzip: 106.86 kB[22m
 [34mℹ[39m 3 files, total: 938.20 kB
-[33m[PLUGIN_TIMINGS] Warning:[0m Your build spent significant time in plugins. Here is a breakdown:
-  - rolldown-plugin-dts:generate (52%)
-  - rolldown-plugin-dts:resolver (27%)
+  - rolldown-plugin-dts:generate (60%)
+  - rolldown-plugin-dts:resolver (21%)
 See https://rolldown.rs/options/checks#plugintimings for more details.
 
-[32m✔[39m Build complete in [32m4490ms[39m
+[32m✔[39m Build complete in [32m4682ms[39m
 ::endgroup::
 ::group::@calibra/sdk:typecheck
 cache miss, executing a0c3430b5fed98ee
@@ -75,33 +75,45 @@ cache miss, executing 59e005aa7c0e2e77
 > tsc --noEmit
 
 ::endgroup::
-[;31m@calibra/api:typecheck[;0m
-cache miss, executing 2c8f9ece18865722
+::group::@calibra/api:typecheck
+cache miss, executing e9157646280429c3
 
 > @calibra/api@0.0.0 typecheck /home/runner/work/dashboard/dashboard/apps/api
 > tsc --noEmit
 
-app/controllers/admin/personalization_controller.ts(35,60): error TS2345: Argument of type 'Record<string, any>' is not assignable to parameter of type 'CampaignInput'.
-  Property 'name' is missing in type 'Record<string, any>' but required in type 'CampaignInput'.
-app/controllers/admin/personalization_controller.ts(53,64): error TS2345: Argument of type 'Record<string, any>' is not assignable to parameter of type 'CampaignInput'.
-  Property 'name' is missing in type 'Record<string, any>' but required in type 'CampaignInput'.
-app/services/phase9_personalization_service.ts(516,35): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'ChainableContract | StrictValues'.
- ELIFECYCLE  Command failed with exit code 2.
-::group::@calibra/admin:typecheck
+::endgroup::
+[;31m@calibra/admin:typecheck[;0m
 cache miss, executing bc7aa3366d55635a
 
 > @calibra/admin@0.0.0 typecheck /home/runner/work/dashboard/dashboard/apps/admin
 > tsc --noEmit
 
- ELIFECYCLE  Command failed.
-::endgroup::
-::error::@calibra/api#typecheck: command (/home/runner/work/dashboard/dashboard/apps/api) /home/runner/setup-pnpm/node_modules/.bin/pnpm run typecheck exited (2)
- ERROR  @calibra/api#typecheck: command (/home/runner/work/dashboard/dashboard/apps/api) /home/runner/setup-pnpm/node_modules/.bin/pnpm run typecheck exited (2)
+src/lib/queries/configuration.ts(9,63): error TS2339: Property 'ConfigurationCapability' does not exist on type '{ Money: number; PaginationMeta: { page: number; limit: number; total: number; lastPage: number; }; BasicMessage: { message?: string | null | undefined; code?: string | undefined; errors?: { [key: string]: unknown; } | undefined; }; ... 160 more ...; NewsEnvelope: { ...; }; } & { ...; } & { ...; } & { ...; }'.
+src/lib/queries/configuration.ts(10,61): error TS2339: Property 'ConfigurationRevision' does not exist on type '{ Money: number; PaginationMeta: { page: number; limit: number; total: number; lastPage: number; }; BasicMessage: { message?: string | null | undefined; code?: string | undefined; errors?: { [key: string]: unknown; } | undefined; }; ... 160 more ...; NewsEnvelope: { ...; }; } & { ...; } & { ...; } & { ...; }'.
+src/lib/queries/configuration.ts(11,58): error TS2339: Property 'ConfigurationScope' does not exist on type '{ Money: number; PaginationMeta: { page: number; limit: number; total: number; lastPage: number; }; BasicMessage: { message?: string | null | undefined; code?: string | undefined; errors?: { [key: string]: unknown; } | undefined; }; ... 160 more ...; NewsEnvelope: { ...; }; } & { ...; } & { ...; } & { ...; }'.
+src/lib/queries/configuration.ts(12,58): error TS2339: Property 'ConfigurationGroup' does not exist on type '{ Money: number; PaginationMeta: { page: number; limit: number; total: number; lastPage: number; }; BasicMessage: { message?: string | null | undefined; code?: string | undefined; errors?: { [key: string]: unknown; } | undefined; }; ... 160 more ...; NewsEnvelope: { ...; }; } & { ...; } & { ...; } & { ...; }'.
+src/lib/queries/configuration.ts(13,64): error TS2339: Property 'ConfigurationGroupDetail' does not exist on type '{ Money: number; PaginationMeta: { page: number; limit: number; total: number; lastPage: number; }; BasicMessage: { message?: string | null | undefined; code?: string | undefined; errors?: { [key: string]: unknown; } | undefined; }; ... 160 more ...; NewsEnvelope: { ...; }; } & { ...; } & { ...; } & { ...; }'.
+src/lib/queries/configuration.ts(14,64): error TS2339: Property 'ConfigurationChangeInput' does not exist on type '{ Money: number; PaginationMeta: { page: number; limit: number; total: number; lastPage: number; }; BasicMessage: { message?: string | null | undefined; code?: string | undefined; errors?: { [key: string]: unknown; } | undefined; }; ... 160 more ...; NewsEnvelope: { ...; }; } & { ...; } & { ...; } & { ...; }'.
+src/lib/queries/configuration.ts(15,60): error TS2339: Property 'ConfigurationPreview' does not exist on type '{ Money: number; PaginationMeta: { page: number; limit: number; total: number; lastPage: number; }; BasicMessage: { message?: string | null | undefined; code?: string | undefined; errors?: { [key: string]: unknown; } | undefined; }; ... 160 more ...; NewsEnvelope: { ...; }; } & { ...; } & { ...; } & { ...; }'.
+src/views/personalization/personalization-workspace.tsx(14,34): error TS2305: Module '"#/icons"' has no exported member 'FlaskConical'.
+src/views/personalization/personalization-workspace.tsx(14,48): error TS2305: Module '"#/icons"' has no exported member 'Home'.
+src/views/personalization/personalization-workspace.tsx(15,10): error TS2305: Module '"#/lib/queries/products"' has no exported member 'useProductsList'.
+src/views/personalization/personalization-workspace.tsx(76,27): error TS2322: Type '{ content: string; }' is not assignable to type 'IntrinsicAttributes & HelperTooltipProps'.
+  Property 'content' does not exist on type 'IntrinsicAttributes & HelperTooltipProps'.
+src/views/personalization/personalization-workspace.tsx(290,55): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/views/personalization/personalization-workspace.tsx(486,51): error TS2322: Type 'Dispatch<SetStateAction<string>>' is not assignable to type '(value: unknown, eventDetails: SelectRootChangeEventDetails) => void'.
+  Types of parameters 'value' and 'value' are incompatible.
+    Type 'unknown' is not assignable to type 'SetStateAction<string>'.
+src/views/store-config/settings/configuration-group-view.tsx(43,46): error TS7006: Parameter 'item' implicitly has an 'any' type.
+ ELIFECYCLE  Command failed with exit code 2.
+::error::@calibra/admin#typecheck: command (/home/runner/work/dashboard/dashboard/apps/admin) /home/runner/setup-pnpm/node_modules/.bin/pnpm run typecheck exited (2)
+ ERROR  @calibra/admin#typecheck: command (/home/runner/work/dashboard/dashboard/apps/admin) /home/runner/setup-pnpm/node_modules/.bin/pnpm run typecheck exited (2)
 
- Tasks:    7 successful, 9 total
+ Tasks:    8 successful, 9 total
 Cached:    0 cached, 9 total
-  Time:    24.795s 
-Failed:    @calibra/api#typecheck
+  Time:    36.656s 
+Failed:    @calibra/admin#typecheck
 
+ WARNING  no output files found for task @calibra/api#typecheck. Please check your `outputs` key in `turbo.json`
  ERROR  run failed: command  exited (2)
  ELIFECYCLE  Command failed with exit code 2.
