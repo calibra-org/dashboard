@@ -3,7 +3,7 @@ import { Job } from "@adonisjs/queue";
 
 import { reconcileCustomerEventDrivenSegments } from "#services/customer_intelligence_segments_service";
 import { refreshCustomerIntelligence } from "#services/customer_intelligence_service";
-import { maybeTenantContext, runWithTenant } from "#services/tenant_context";
+import { currentTrx, maybeTenantContext, runWithTenant } from "#services/tenant_context";
 
 interface RefreshCustomerIntelligencePayload {
     tenantId: string;
@@ -11,6 +11,21 @@ interface RefreshCustomerIntelligencePayload {
 }
 
 async function refreshCustomerAndSegments(customerId: number): Promise<void> {
+    const customer = await currentTrx()
+        .from("customers as c")
+        .leftJoin("users as u", "u.id", "c.user_id")
+        .where("c.id", customerId)
+        .whereNull("c.deleted_at")
+        .where((query) => query.whereNull("c.user_id").orWhere("u.role", "customer"))
+        .select("c.id")
+        .first();
+
+    if (!customer) {
+        await currentTrx().from("customer_segment_memberships").where("customer_id", customerId).delete();
+        await currentTrx().from("customer_intelligence_profiles").where("customer_id", customerId).delete();
+        return;
+    }
+
     await refreshCustomerIntelligence(customerId);
     await reconcileCustomerEventDrivenSegments(customerId);
 }
