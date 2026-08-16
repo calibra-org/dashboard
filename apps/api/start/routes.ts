@@ -58,6 +58,7 @@ await import("./routes/admin_customer_segments.js");
 await import("./routes/admin_customer_actions.js");
 await import("./routes/admin_orders.js");
 await import("./routes/admin_phase5_operations.js");
+await import("./routes/admin_planning.js");
 await import("./routes/admin_coupons.js");
 await import("./routes/admin_refunds.js");
 await import("./routes/admin_notes.js");
