@@ -27,19 +27,52 @@ jobs:
 
           const merge = 'docs/api/scripts/merge-for-tests.js';
           source = fs.readFileSync(merge, 'utf8');
-
           const mergedAnchor = '};\n\ndowngradeTo30(merged, merged);';
-          const normalizeBlock = `};\n\n// AdonisJS auto-registers HEAD companions for GET routes. The generated HEAD\n// stubs are intentionally minimal in the public specs, but the OpenAPI 3.0\n// validator used by Japa requires every path parameter to be declared on the\n// operation. Enrich only the test-only merged fixture from the matching GET.\nfor (const [path, item] of Object.entries(merged.paths ?? {})) {\n    if (!item || typeof item !== "object" || !item.head || !item.get) continue;\n    const inherited = Array.isArray(item.parameters) ? item.parameters : [];\n    const getParameters = Array.isArray(item.get.parameters) ? item.get.parameters : [];\n    const headParameters = Array.isArray(item.head.parameters) ? item.head.parameters : [];\n    const combined = [...inherited, ...getParameters, ...headParameters];\n    const seen = new Set();\n    item.head.parameters = combined.filter((parameter) => {\n        const key = parameter?.$ref ?? \\`${'${parameter?.in ?? ""}:${parameter?.name ?? ""}'}\\`;\n        if (seen.has(key)) return false;\n        seen.add(key);\n        return true;\n    });\n    if (item.head.parameters.length === 0) delete item.head.parameters;\n    item.head.summary ??= \\`HEAD companion for ${'${path}'}\\`;\n}\n\ndowngradeTo30(merged, merged);`;
-          if (!source.includes('HEAD companion for ${path}')) {
+          if (!source.includes('Enrich only the test-only merged fixture')) {
+            const lines = [
+              '};',
+              '',
+              '// AdonisJS auto-registers HEAD companions for GET routes. The generated HEAD',
+              '// stubs are intentionally minimal in the public specs, but the OpenAPI 3.0',
+              '// validator used by Japa requires every path parameter to be declared on the',
+              '// operation. Enrich only the test-only merged fixture from the matching GET.',
+              'for (const [path, item] of Object.entries(merged.paths ?? {})) {',
+              '    if (!item || typeof item !== "object" || !item.head || !item.get) continue;',
+              '    const inherited = Array.isArray(item.parameters) ? item.parameters : [];',
+              '    const getParameters = Array.isArray(item.get.parameters) ? item.get.parameters : [];',
+              '    const headParameters = Array.isArray(item.head.parameters) ? item.head.parameters : [];',
+              '    const combined = [...inherited, ...getParameters, ...headParameters];',
+              '    const seen = new Set();',
+              '    item.head.parameters = combined.filter((parameter) => {',
+              '        const key = parameter?.$ref ?? String(parameter?.in ?? "") + ":" + String(parameter?.name ?? "");',
+              '        if (seen.has(key)) return false;',
+              '        seen.add(key);',
+              '        return true;',
+              '    });',
+              '    if (item.head.parameters.length === 0) delete item.head.parameters;',
+              '    item.head.summary ??= "HEAD companion for " + path;',
+              '}',
+              '',
+              'downgradeTo30(merged, merged);',
+            ].join('\n');
             if (!source.includes(mergedAnchor)) throw new Error('Merged fixture anchor not found');
-            source = source.replace(mergedAnchor, normalizeBlock);
+            source = source.replace(mergedAnchor, lines);
           }
 
           const constAnchor = '    if (Array.isArray(node.type)) {';
-          const constBlock = `    // OpenAPI 3.1 supports const; OpenAPI 3.0 expresses the same constraint\n    // with a single-value enum. This conversion is test-fixture only.\n    if (Object.prototype.hasOwnProperty.call(node, "const")) {\n        node.enum = [node.const];\n        delete node.const;\n    }\n\n    if (Array.isArray(node.type)) {`;
           if (!source.includes('single-value enum')) {
+            const lines = [
+              '    // OpenAPI 3.1 supports const; OpenAPI 3.0 expresses the same constraint',
+              '    // with a single-value enum. This conversion is test-fixture only.',
+              '    if (Object.prototype.hasOwnProperty.call(node, "const")) {',
+              '        node.enum = [node.const];',
+              '        delete node.const;',
+              '    }',
+              '',
+              '    if (Array.isArray(node.type)) {',
+            ].join('\n');
             if (!source.includes(constAnchor)) throw new Error('downgradeTo30 anchor not found');
-            source = source.replace(constAnchor, constBlock);
+            source = source.replace(constAnchor, lines);
           }
           fs.writeFileSync(merge, source);
           NODE
