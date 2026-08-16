@@ -1,0 +1,238 @@
+functional_exit=
+run=https://github.com/calibra-org/dashboard/actions/runs/31977088425
+
+=== functional output ===
+
+> @calibra/api@0.0.0 pretest /home/runner/work/dashboard/dashboard/apps/api
+> pnpm --filter @calibra/api-docs run build:test-spec
+
+
+> @calibra/api-docs@0.0.0 build:test-spec /home/runner/work/dashboard/dashboard/docs/api
+> pnpm build:json && node scripts/merge-for-tests.js
+
+
+> @calibra/api-docs@0.0.0 build:json /home/runner/work/dashboard/dashboard/docs/api
+> pnpm build:json:storefront && pnpm build:json:admin && pnpm build:json:platform
+
+
+> @calibra/api-docs@0.0.0 build:json:storefront /home/runner/work/dashboard/dashboard/docs/api
+> pnpm build:json:storefront-base && pnpm build:json:storefront-completion && pnpm build:json:storefront-phase9 && pnpm build:json:storefront-merge
+
+
+> @calibra/api-docs@0.0.0 build:json:storefront-base /home/runner/work/dashboard/dashboard/docs/api
+> redocly bundle reference/openapi/storefront.v1.yaml -o dist/storefront.base.v1.json --ext json
+
+[90mbundling reference/openapi/storefront.v1.yaml using configuration for api 'storefront'...
+[39m📦 Created a bundle for [34mreference/openapi/storefront.v1.yaml[39m at [34mdist/storefront.base.v1.json[39m [32m103ms[39m.
+npm warn Unknown env config "ignore-workspace-root-check". This will stop working in the next major version of npm.
+npm warn Unknown env config "auto-install-peers". This will stop working in the next major version of npm.
+npm warn Unknown env config "catalogs". This will stop working in the next major version of npm.
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm.
+npm warn Unknown env config "npm-globalconfig". This will stop working in the next major version of npm.
+npm warn Unknown env config "recursive". This will stop working in the next major version of npm.
+npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm.
+
+> @calibra/api-docs@0.0.0 build:json:storefront-completion /home/runner/work/dashboard/dashboard/docs/api
+> redocly bundle reference/openapi/storefront.completion.v1.yaml -o dist/storefront.completion.v1.json --ext json
+
+[90mbundling reference/openapi/storefront.completion.v1.yaml...
+[39m📦 Created a bundle for [34mreference/openapi/storefront.completion.v1.yaml[39m at [34mdist/storefront.completion.v1.json[39m [32m14ms[39m.
+npm warn Unknown env config "ignore-workspace-root-check". This will stop working in the next major version of npm.
+npm warn Unknown env config "auto-install-peers". This will stop working in the next major version of npm.
+npm warn Unknown env config "catalogs". This will stop working in the next major version of npm.
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm.
+npm warn Unknown env config "npm-globalconfig". This will stop working in the next major version of npm.
+npm warn Unknown env config "recursive". This will stop working in the next major version of npm.
+npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm.
+
+> @calibra/api-docs@0.0.0 build:json:storefront-phase9 /home/runner/work/dashboard/dashboard/docs/api
+> redocly bundle reference/openapi/storefront.phase9.v1.yaml -o dist/storefront.phase9.v1.json --ext json
+
+[90mbundling reference/openapi/storefront.phase9.v1.yaml...
+[39m📦 Created a bundle for [34mreference/openapi/storefront.phase9.v1.yaml[39m at [34mdist/storefront.phase9.v1.json[39m [32m11ms[39m.
+npm warn Unknown env config "ignore-workspace-root-check". This will stop working in the next major version of npm.
+npm warn Unknown env config "auto-install-peers". This will stop working in the next major version of npm.
+npm warn Unknown env config "catalogs". This will stop working in the next major version of npm.
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm.
+npm warn Unknown env config "npm-globalconfig". This will stop working in the next major version of npm.
+npm warn Unknown env config "recursive". This will stop working in the next major version of npm.
+npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm.
+
+> @calibra/api-docs@0.0.0 build:json:storefront-merge /home/runner/work/dashboard/dashboard/docs/api
+> node scripts/merge-storefront-spec.js
+
+
+> @calibra/api-docs@0.0.0 build:json:admin /home/runner/work/dashboard/dashboard/docs/api
+> pnpm build:json:admin-base && pnpm build:json:admin-tickets && pnpm build:json:admin-ticket-omnichannel && pnpm build:json:admin-phase5 && pnpm build:json:admin-runtime-sync && pnpm build:json:admin-completion && pnpm build:json:admin-phase9 && pnpm build:json:admin-merge
+
+
+> @calibra/api-docs@0.0.0 build:json:admin-base /home/runner/work/dashboard/dashboard/docs/api
+> redocly bundle reference/openapi/admin.v1.yaml -o dist/admin.base.v1.json --ext json
+
+[90mbundling reference/openapi/admin.v1.yaml using configuration for api 'admin'...
+[39m📦 Created a bundle for [34mreference/openapi/admin.v1.yaml[39m at [34mdist/admin.base.v1.json[39m [32m274ms[39m.
+npm warn Unknown env config "ignore-workspace-root-check". This will stop working in the next major version of npm.
+npm warn Unknown env config "auto-install-peers". This will stop working in the next major version of npm.
+npm warn Unknown env config "catalogs". This will stop working in the next major version of npm.
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm.
+npm warn Unknown env config "npm-globalconfig". This will stop working in the next major version of npm.
+npm warn Unknown env config "recursive". This will stop working in the next major version of npm.
+npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm.
+
+> @calibra/api-docs@0.0.0 build:json:admin-tickets /home/runner/work/dashboard/dashboard/docs/api
+> redocly bundle reference/openapi/admin.tickets.v1.yaml -o dist/admin.tickets.v1.json --ext json
+
+[90mbundling reference/openapi/admin.tickets.v1.yaml...
+[39m📦 Created a bundle for [34mreference/openapi/admin.tickets.v1.yaml[39m at [34mdist/admin.tickets.v1.json[39m [32m49ms[39m.
+npm warn Unknown env config "ignore-workspace-root-check". This will stop working in the next major version of npm.
+npm warn Unknown env config "auto-install-peers". This will stop working in the next major version of npm.
+npm warn Unknown env config "catalogs". This will stop working in the next major version of npm.
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm.
+npm warn Unknown env config "npm-globalconfig". This will stop working in the next major version of npm.
+npm warn Unknown env config "recursive". This will stop working in the next major version of npm.
+npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm.
+
+> @calibra/api-docs@0.0.0 build:json:admin-ticket-omnichannel /home/runner/work/dashboard/dashboard/docs/api
+> redocly bundle reference/openapi/admin.ticket-omnichannel.v1.yaml -o dist/admin.ticket-omnichannel.v1.json --ext json
+
+[90mbundling reference/openapi/admin.ticket-omnichannel.v1.yaml...
+[39m📦 Created a bundle for [34mreference/openapi/admin.ticket-omnichannel.v1.yaml[39m at [34mdist/admin.ticket-omnichannel.v1.json[39m [32m23ms[39m.
+npm warn Unknown env config "ignore-workspace-root-check". This will stop working in the next major version of npm.
+npm warn Unknown env config "auto-install-peers". This will stop working in the next major version of npm.
+npm warn Unknown env config "catalogs". This will stop working in the next major version of npm.
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm.
+npm warn Unknown env config "npm-globalconfig". This will stop working in the next major version of npm.
+npm warn Unknown env config "recursive". This will stop working in the next major version of npm.
+npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm.
+
+> @calibra/api-docs@0.0.0 build:json:admin-phase5 /home/runner/work/dashboard/dashboard/docs/api
+> redocly bundle reference/openapi/admin.phase5.v1.yaml -o dist/admin.phase5.v1.json --ext json
+
+[90mbundling reference/openapi/admin.phase5.v1.yaml...
+[39m📦 Created a bundle for [34mreference/openapi/admin.phase5.v1.yaml[39m at [34mdist/admin.phase5.v1.json[39m [32m28ms[39m.
+npm warn Unknown env config "ignore-workspace-root-check". This will stop working in the next major version of npm.
+npm warn Unknown env config "auto-install-peers". This will stop working in the next major version of npm.
+npm warn Unknown env config "catalogs". This will stop working in the next major version of npm.
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm.
+npm warn Unknown env config "npm-globalconfig". This will stop working in the next major version of npm.
+npm warn Unknown env config "recursive". This will stop working in the next major version of npm.
+npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm.
+
+> @calibra/api-docs@0.0.0 build:json:admin-runtime-sync /home/runner/work/dashboard/dashboard/docs/api
+> redocly bundle reference/openapi/admin.runtime-sync.v1.yaml -o dist/admin.runtime-sync.v1.json --ext json
+
+[90mbundling reference/openapi/admin.runtime-sync.v1.yaml...
+[39m📦 Created a bundle for [34mreference/openapi/admin.runtime-sync.v1.yaml[39m at [34mdist/admin.runtime-sync.v1.json[39m [32m21ms[39m.
+npm warn Unknown env config "ignore-workspace-root-check". This will stop working in the next major version of npm.
+npm warn Unknown env config "auto-install-peers". This will stop working in the next major version of npm.
+npm warn Unknown env config "catalogs". This will stop working in the next major version of npm.
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm.
+npm warn Unknown env config "npm-globalconfig". This will stop working in the next major version of npm.
+npm warn Unknown env config "recursive". This will stop working in the next major version of npm.
+npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm.
+
+> @calibra/api-docs@0.0.0 build:json:admin-completion /home/runner/work/dashboard/dashboard/docs/api
+> redocly bundle reference/openapi/admin.completion.v1.yaml -o dist/admin.completion.v1.json --ext json
+
+[90mbundling reference/openapi/admin.completion.v1.yaml...
+[39m📦 Created a bundle for [34mreference/openapi/admin.completion.v1.yaml[39m at [34mdist/admin.completion.v1.json[39m [32m48ms[39m.
+npm warn Unknown env config "ignore-workspace-root-check". This will stop working in the next major version of npm.
+npm warn Unknown env config "auto-install-peers". This will stop working in the next major version of npm.
+npm warn Unknown env config "catalogs". This will stop working in the next major version of npm.
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm.
+npm warn Unknown env config "npm-globalconfig". This will stop working in the next major version of npm.
+npm warn Unknown env config "recursive". This will stop working in the next major version of npm.
+npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm.
+
+> @calibra/api-docs@0.0.0 build:json:admin-phase9 /home/runner/work/dashboard/dashboard/docs/api
+> redocly bundle reference/openapi/admin.phase9.v1.yaml -o dist/admin.phase9.v1.json --ext json
+
+[90mbundling reference/openapi/admin.phase9.v1.yaml...
+[39m📦 Created a bundle for [34mreference/openapi/admin.phase9.v1.yaml[39m at [34mdist/admin.phase9.v1.json[39m [32m14ms[39m.
+npm warn Unknown env config "ignore-workspace-root-check". This will stop working in the next major version of npm.
+npm warn Unknown env config "auto-install-peers". This will stop working in the next major version of npm.
+npm warn Unknown env config "catalogs". This will stop working in the next major version of npm.
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm.
+npm warn Unknown env config "npm-globalconfig". This will stop working in the next major version of npm.
+npm warn Unknown env config "recursive". This will stop working in the next major version of npm.
+npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm.
+
+> @calibra/api-docs@0.0.0 build:json:admin-merge /home/runner/work/dashboard/dashboard/docs/api
+> node scripts/merge-admin-spec.js
+
+
+> @calibra/api-docs@0.0.0 build:json:platform /home/runner/work/dashboard/dashboard/docs/api
+> redocly bundle reference/openapi/platform.v1.yaml -o dist/platform.v1.json --ext json
+
+[90mbundling reference/openapi/platform.v1.yaml using configuration for api 'platform'...
+[39m📦 Created a bundle for [34mreference/openapi/platform.v1.yaml[39m at [34mdist/platform.v1.json[39m [32m66ms[39m.
+npm warn Unknown env config "ignore-workspace-root-check". This will stop working in the next major version of npm.
+npm warn Unknown env config "auto-install-peers". This will stop working in the next major version of npm.
+npm warn Unknown env config "catalogs". This will stop working in the next major version of npm.
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm.
+npm warn Unknown env config "npm-globalconfig". This will stop working in the next major version of npm.
+npm warn Unknown env config "recursive". This will stop working in the next major version of npm.
+npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm.
+✓ Wrote /home/runner/work/dashboard/dashboard/docs/api/dist/_merged.test.json (352 paths)
+
+> @calibra/api@0.0.0 test /home/runner/work/dashboard/dashboard/apps/api
+> node ace test --files=tests/functional/admin/phase9_personalization.spec.ts
+
+c[ info ] loading hooks...
+[ info ] generating indexes...
+[ info ] codegen: created 4 file(s)
+[ info ] booting application to run tests...
+[ info ] Upgrading migrations version from "1" to "2"
+❯ Executed 143 migrations (2.66 s)
+❯ Reverted 143 migrations (850 ms)
+ ERRORS 
+
+❯ functional: Setup hook
+
+[31mℹ RuntimeException: A route with name ".campaigns" already exists. It may happen when two routes use the same controller, so make sure to give explicit names to these routes[39m
+
+ ⁃ [33m(/home/runner/work/dashboard/dashboard/node_modules/.pnpm/@adonisjs+http-server@8.2.0_@adonisjs+application@9.0.0_@adonisjs+assembler@8.4.0_types_a247d98eeec98770f6bfa1d43fe7667e/node_modules/@adonisjs/http-server/build/define_config-CCHiNpSl.js:3237:56)[39m
+
+   [2m3232[22m [2m┃[22m  		[35mdebug_default[0m([32m"Committing routes to the routes store"[0m);
+   [2m3233[22m [2m┃[22m  		[31mconst[0m routeNamesByDomain [34m=[0m [90m/* @__PURE__ */[0m [31mnew[0m [33mMap[0m();
+   [2m3234[22m [2m┃[22m  		[35mtoRoutesJSON[0m([31mthis[0m[34m.[0m#routesToBeCommitted)[34m.[0m[35mforEach[0m((route) [31m=>[0m {
+   [2m3235[22m [2m┃[22m  			[31mif[0m ([34m![0mrouteNamesByDomain[34m.[0m[35mhas[0m(route[34m.[0mdomain)) routeNamesByDomain[34m.[0m[31mset[0m(route[34m.[0mdomain[34m,[0m [90m/* @__PURE__ */[0m [31mnew[0m [33mSet[0m());
+   [2m3236[22m [2m┃[22m  			[31mconst[0m routeNames [34m=[0m routeNamesByDomain[34m.[0m[31mget[0m(route[34m.[0mdomain);
+ [41m❯ 3237 ┃  			if (route.name && routeNames.has(route.name)) throw new RuntimeException(`A route with name "${route.name}" already exists. It may happen when two routes use the same controller, so make sure to give explicit names to these routes`);[49m
+   [2m3238[22m [2m┃[22m  			[31mif[0m (route[34m.[0mname) routeNames[34m.[0m[35madd[0m(route[34m.[0mname);
+   [2m3239[22m [2m┃[22m  			[90m/**
+   [2m3240[22m [2m┃[22m  			* Register the route with the lookup store
+   [2m3241[22m [2m┃[22m  			*/[0m
+   [2m3242[22m [2m┃[22m  			[31mthis[0m[34m.[0m[35mregister[0m(route);
+
+ ⁃ at Router.commit [33m(/home/runner/work/dashboard/dashboard/node_modules/.pnpm/@adonisjs+http-server@8.2.0_@adonisjs+application@9.0.0_@adonisjs+assembler@8.4.0_types_a247d98eeec98770f6bfa1d43fe7667e/node_modules/@adonisjs/http-server/build/define_config-CCHiNpSl.js:3234:43)[39m
+ ⁃ at Server.boot [33m(/home/runner/work/dashboard/dashboard/node_modules/.pnpm/@adonisjs+http-server@8.2.0_@adonisjs+application@9.0.0_@adonisjs+assembler@8.4.0_types_a247d98eeec98770f6bfa1d43fe7667e/node_modules/@adonisjs/http-server/build/define_config-CCHiNpSl.js:5320:16)[39m
+ ⁃ at HttpServerUtils.start [33m(/home/runner/work/dashboard/dashboard/node_modules/.pnpm/@adonisjs+core@7.3.2_@adonisjs+assembler@8.4.0_typescript@5.9.3__@vinejs+vine@4.4.0_pino-pretty@13.1.3_youch@4.1.1/node_modules/@adonisjs/core/build/main-l3qICfaP.js:65:16)[39m
+[2m ⁃ at [3mprocess.processTicksAndRejections[23m ([3mnode:internal/process/task_queues:104:5[23m)[22m
+ ⁃ at async #exec [33m(/home/runner/work/dashboard/dashboard/node_modules/.pnpm/@poppinss+hooks@7.3.0/node_modules/@poppinss/hooks/build/index.js:114:24)[39m
+ ⁃ at async #runSetupHooks [33m(/home/runner/work/dashboard/dashboard/node_modules/.pnpm/@japa+core@10.4.0/node_modules/@japa/core/build/index.js:1039:4)[39m
+ ⁃ at async SuiteRunner.run [33m(/home/runner/work/dashboard/dashboard/node_modules/.pnpm/@japa+core@10.4.0/node_modules/@japa/core/build/index.js:1091:3)[39m
+ ⁃ at async Suite$1.exec [33m(/home/runner/work/dashboard/dashboard/node_modules/.pnpm/@japa+core@10.4.0/node_modules/@japa/core/build/index.js:1175:3)[39m
+[1/1]─
+
+ FAILED 
+
+Tests   (0)
+ Time  872ms
+ ELIFECYCLE  Test failed. See above for more details.
+
+=== postgres activity ===
+ pid | state  | wait_event_type | wait_event |                                                            query                                                             
+-----+--------+-----------------+------------+------------------------------------------------------------------------------------------------------------------------------
+ 157 | active |                 |            | select pid, state, wait_event_type, wait_event, left(query,180) as query from pg_stat_activity where datname='calibra_test';
+(1 row)
+
+
+=== processes ===
+   2273    2250 Ss         01:06 postgres
+   2416    2273 Ss         01:04 postgres: checkpointer 
+   2417    2273 Ss         01:04 postgres: background writer 
+   2419    2273 Ss         01:04 postgres: walwriter 
+   2420    2273 Ss         01:04 postgres: autovacuum launcher 
+   2421    2273 Ss         01:04 postgres: logical replication launcher 
+   4095    4090 S          00:00 grep -E node|pnpm|postgres
