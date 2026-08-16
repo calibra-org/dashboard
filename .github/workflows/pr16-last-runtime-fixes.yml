@@ -59,6 +59,7 @@ jobs:
         with:
           node-version: 24.14.0
           cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - name: Apply final runtime fixes
         shell: bash
         run: |
@@ -102,7 +103,6 @@ jobs:
             git commit -m 'fix(api): resolve final phase5 runtime regressions'
             git push origin HEAD:agent/runtime-hardening-20260814
           fi
-      - run: pnpm install --frozen-lockfile
       - name: Validate test OpenAPI fixture
         run: |
           pnpm --filter @calibra/api-docs run build:test-spec
