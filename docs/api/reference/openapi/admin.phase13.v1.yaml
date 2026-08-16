@@ -1,0 +1,299 @@
+openapi: 3.1.0
+info:
+  title: Calibra Admin Phase 13 Planning Overlay
+  version: 1.0.0
+  description: Demand forecasting, inventory risk, planning cycles, scenarios, human overrides and data/model health.
+paths:
+  /api/v1/admin/planning/overview:
+    get:
+      operationId: adminPhase13PlanningOverview
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Planning control-center summary, content: { application/json: { schema: { $ref: '#/components/schemas/PlanningOverviewEnvelope' } } } }
+  /api/v1/admin/planning/forecast:
+    get:
+      operationId: adminPhase13ForecastShow
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: run_id
+          schema: { type: integer, format: int64, minimum: 1 }
+      responses:
+        '200': { description: Latest or selected versioned forecast, content: { application/json: { schema: { $ref: '#/components/schemas/PlanningForecastEnvelope' } } } }
+  /api/v1/admin/planning/forecast/run:
+    post:
+      operationId: adminPhase13ForecastRun
+      security: [{ bearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/PlanningForecastRunInput' } } } }
+      responses:
+        '201': { description: Forecast run completed and persisted, content: { application/json: { schema: { $ref: '#/components/schemas/PlanningForecastEnvelope' } } } }
+        '422': { description: Invalid planning window }
+  /api/v1/admin/planning/inventory-risks:
+    get:
+      operationId: adminPhase13InventoryRisks
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Rule-based stock coverage risks derived from canonical inventory and latest forecast, content: { application/json: { schema: { $ref: '#/components/schemas/PlanningRiskEnvelope' } } } }
+  /api/v1/admin/planning/cycles:
+    get:
+      operationId: adminPhase13CyclesList
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Planning cycles, content: { application/json: { schema: { $ref: '#/components/schemas/PlanningCycleListEnvelope' } } } }
+    post:
+      operationId: adminPhase13CycleCreate
+      security: [{ bearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/PlanningCycleCreateInput' } } } }
+      responses:
+        '201': { description: Planning cycle created, content: { application/json: { schema: { $ref: '#/components/schemas/PlanningCycleEnvelope' } } } }
+  /api/v1/admin/planning/cycles/{id}/transition:
+    post:
+      operationId: adminPhase13CycleTransition
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/PlanningResourceId' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/PlanningCycleTransitionInput' } } } }
+      responses:
+        '200': { description: Planning cycle transitioned, content: { application/json: { schema: { $ref: '#/components/schemas/PlanningCycleEnvelope' } } } }
+        '409': { description: Optimistic version conflict }
+        '422': { description: Illegal lifecycle transition }
+  /api/v1/admin/planning/scenarios:
+    get:
+      operationId: adminPhase13ScenariosList
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Stored planning scenarios, content: { application/json: { schema: { $ref: '#/components/schemas/PlanningScenarioListEnvelope' } } } }
+    post:
+      operationId: adminPhase13ScenarioCreate
+      security: [{ bearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/PlanningScenarioCreateInput' } } } }
+      responses:
+        '201': { description: Immutable scenario assumptions created, content: { application/json: { schema: { $ref: '#/components/schemas/PlanningScenarioEnvelope' } } } }
+        '422': { description: Forecast required before scenario creation }
+  /api/v1/admin/planning/scenarios/{id}/result:
+    get:
+      operationId: adminPhase13ScenarioResult
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/PlanningResourceId' }]
+      responses:
+        '200': { description: Simulation-only result, content: { application/json: { schema: { $ref: '#/components/schemas/PlanningScenarioResultEnvelope' } } } }
+  /api/v1/admin/planning/overrides:
+    get:
+      operationId: adminPhase13OverridesList
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Human forecast overrides with review states, content: { application/json: { schema: { $ref: '#/components/schemas/PlanningOverrideListEnvelope' } } } }
+    post:
+      operationId: adminPhase13OverrideCreate
+      security: [{ bearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/PlanningOverrideCreateInput' } } } }
+      responses:
+        '201': { description: Immutable override request created, content: { application/json: { schema: { $ref: '#/components/schemas/PlanningOverrideEnvelope' } } } }
+  /api/v1/admin/planning/overrides/{id}/review:
+    post:
+      operationId: adminPhase13OverrideReview
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/PlanningResourceId' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/PlanningOverrideReviewInput' } } } }
+      responses:
+        '200': { description: Override review recorded, content: { application/json: { schema: { $ref: '#/components/schemas/PlanningOverrideEnvelope' } } } }
+        '409': { description: Override already reviewed }
+  /api/v1/admin/planning/health:
+    get:
+      operationId: adminPhase13PlanningHealth
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Data freshness, model registry and truthful capability coverage, content: { application/json: { schema: { $ref: '#/components/schemas/PlanningHealthEnvelope' } } } }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer }
+  parameters:
+    PlanningResourceId:
+      in: path
+      name: id
+      required: true
+      schema: { type: integer, format: int64, minimum: 1 }
+  schemas:
+    PlanningForecastRunInput:
+      type: object
+      properties:
+        history_days: { type: integer, minimum: 14, maximum: 365, default: 56 }
+        horizon_days: { type: integer, minimum: 1, maximum: 90, default: 14 }
+    PlanningForecastRun:
+      type: object
+      required: [id, model_code, model_version, history_days, horizon_days, data_cutoff_at, series_count, point_count, insufficient_series_count]
+      properties:
+        id: { type: integer, format: int64 }
+        model_code: { type: string }
+        model_version: { type: string }
+        history_days: { type: integer }
+        horizon_days: { type: integer }
+        data_cutoff_at: { type: string, format: date-time }
+        series_count: { type: integer }
+        point_count: { type: integer }
+        insufficient_series_count: { type: integer }
+        created_at: { type: string, format: date-time }
+    PlanningForecastPoint:
+      type: object
+      required: [id, date, point, lower, upper, mae, reason_codes]
+      properties:
+        id: { type: integer, format: int64 }
+        date: { type: string, format: date }
+        point: { type: number, minimum: 0 }
+        lower: { type: number, minimum: 0 }
+        upper: { type: number, minimum: 0 }
+        mae: { type: number, minimum: 0 }
+        reason_codes: { type: array, items: { type: string } }
+    PlanningForecastSeries:
+      type: object
+      required: [name, quality, points]
+      properties:
+        product_id: { type: [integer, 'null'], format: int64 }
+        variation_id: { type: [integer, 'null'], format: int64 }
+        sku: { type: [string, 'null'] }
+        name: { type: string }
+        quality: { type: string, enum: [observed_sales, limited_history, insufficient_data] }
+        points: { type: array, items: { $ref: '#/components/schemas/PlanningForecastPoint' } }
+    PlanningForecastData:
+      type: object
+      required: [status, run, series]
+      properties:
+        status: { type: string, enum: [ready, not_configured] }
+        run: { oneOf: [{ $ref: '#/components/schemas/PlanningForecastRun' }, { type: 'null' }] }
+        series: { type: array, items: { $ref: '#/components/schemas/PlanningForecastSeries' } }
+    PlanningForecastEnvelope: { type: object, required: [data], properties: { data: { $ref: '#/components/schemas/PlanningForecastData' } } }
+    PlanningRiskItem:
+      type: object
+      required: [name, forecast_quantity, stock_status, risk, reason_code]
+      properties:
+        inventory_item_id: { type: [integer, 'null'], format: int64 }
+        product_id: { type: [integer, 'null'], format: int64 }
+        variation_id: { type: [integer, 'null'], format: int64 }
+        sku: { type: [string, 'null'] }
+        name: { type: string }
+        stock: { type: [number, 'null'] }
+        stock_status: { type: string }
+        forecast_quantity: { type: number, minimum: 0 }
+        coverage_days: { type: [number, 'null'], minimum: 0 }
+        risk: { type: string, enum: [high, medium, low, unavailable] }
+        reason_code: { type: string }
+    PlanningRiskEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [status, run_id, items]
+          properties:
+            status: { type: string, enum: [ready, not_configured] }
+            run_id: { type: [integer, 'null'], format: int64 }
+            items: { type: array, items: { $ref: '#/components/schemas/PlanningRiskItem' } }
+    PlanningCycle:
+      type: object
+      required: [id, title, status, version]
+      properties:
+        id: { type: integer, format: int64 }
+        title: { type: string }
+        status: { type: string }
+        forecast_run_id: { type: [integer, 'null'], format: int64 }
+        version: { type: integer, minimum: 1 }
+        approved_at: { type: [string, 'null'], format: date-time }
+        published_at: { type: [string, 'null'], format: date-time }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    PlanningCycleCreateInput: { type: object, required: [title], properties: { title: { type: string, minLength: 3, maxLength: 160 }, forecast_run_id: { type: integer, format: int64, minimum: 1 } } }
+    PlanningCycleTransitionInput: { type: object, required: [status, expected_version], properties: { status: { type: string, enum: [data_ready, forecasted, under_review, approved, published, superseded, cancelled] }, expected_version: { type: integer, minimum: 1 }, note: { type: string, maxLength: 1000 } } }
+    PlanningCycleEnvelope: { type: object, required: [data], properties: { data: { $ref: '#/components/schemas/PlanningCycle' } } }
+    PlanningCycleListEnvelope: { type: object, required: [data], properties: { data: { type: array, items: { $ref: '#/components/schemas/PlanningCycle' } } } }
+    PlanningScenario:
+      type: object
+      required: [id, title, status, demand_multiplier, lead_time_days, version]
+      properties:
+        id: { type: integer, format: int64 }
+        title: { type: string }
+        status: { type: string }
+        base_forecast_run_id: { type: [integer, 'null'], format: int64 }
+        demand_multiplier: { type: number }
+        lead_time_days: { type: integer }
+        capital_limit_minor: { type: [integer, 'null'], format: int64 }
+        notes: { type: [string, 'null'] }
+        version: { type: integer }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    PlanningScenarioCreateInput: { type: object, required: [title, demand_multiplier], properties: { title: { type: string, minLength: 3, maxLength: 160 }, base_forecast_run_id: { type: integer, format: int64, minimum: 1 }, demand_multiplier: { type: number, minimum: 0.1, maximum: 5 }, lead_time_days: { type: integer, minimum: 0, maximum: 365 }, capital_limit_minor: { type: integer, format: int64, minimum: 0 }, notes: { type: string, maxLength: 2000 } } }
+    PlanningScenarioEnvelope: { type: object, required: [data], properties: { data: { $ref: '#/components/schemas/PlanningScenario' } } }
+    PlanningScenarioListEnvelope: { type: object, required: [data], properties: { data: { type: array, items: { $ref: '#/components/schemas/PlanningScenario' } } } }
+    PlanningScenarioResultEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [scenario, simulation_only, baseline_quantity, scenario_quantity, delta_quantity, cash_effect_status]
+          properties:
+            scenario: { $ref: '#/components/schemas/PlanningScenario' }
+            simulation_only: { type: boolean, const: true }
+            baseline_quantity: { type: number }
+            scenario_quantity: { type: number }
+            delta_quantity: { type: number }
+            cash_effect_status: { type: string }
+    PlanningOverride:
+      type: object
+      required: [id, forecast_point_id, product_name, original_quantity, override_quantity, reason, status]
+      properties:
+        id: { type: integer, format: int64 }
+        forecast_point_id: { type: integer, format: int64 }
+        product_name: { type: string }
+        sku: { type: [string, 'null'] }
+        forecast_date: { type: [string, 'null'], format: date }
+        original_quantity: { type: number }
+        override_quantity: { type: number }
+        reason: { type: string }
+        evidence: { type: object, additionalProperties: true }
+        status: { type: string, enum: [pending, approved, rejected] }
+        created_at: { type: string, format: date-time }
+        reviewed_at: { type: [string, 'null'], format: date-time }
+    PlanningOverrideCreateInput: { type: object, required: [forecast_point_id, override_quantity, reason], properties: { forecast_point_id: { type: integer, format: int64, minimum: 1 }, override_quantity: { type: number, minimum: 0 }, reason: { type: string, minLength: 5, maxLength: 320 }, evidence: { type: object, additionalProperties: true } } }
+    PlanningOverrideReviewInput: { type: object, required: [decision], properties: { decision: { type: string, enum: [approved, rejected] } } }
+    PlanningOverrideEnvelope: { type: object, required: [data], properties: { data: { $ref: '#/components/schemas/PlanningOverride' } } }
+    PlanningOverrideListEnvelope: { type: object, required: [data], properties: { data: { type: array, items: { $ref: '#/components/schemas/PlanningOverride' } } } }
+    PlanningOverviewEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [forecast_status, latest_run, active_cycle, risk_counts, next_action]
+          properties:
+            forecast_status: { type: string }
+            latest_run: { oneOf: [{ $ref: '#/components/schemas/PlanningForecastRun' }, { type: 'null' }] }
+            active_cycle:
+              oneOf:
+                - type: object
+                  required: [id, title, status, version, updated_at]
+                  properties:
+                    id: { type: integer, format: int64 }
+                    title: { type: string }
+                    status: { type: string }
+                    version: { type: integer }
+                    updated_at: { type: string, format: date-time }
+                - { type: 'null' }
+            risk_counts: { type: object, required: [high, medium, low, unavailable], properties: { high: { type: integer }, medium: { type: integer }, low: { type: integer }, unavailable: { type: integer } } }
+            next_action: { type: string }
+    PlanningHealthEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [state, source_window_days, observed_rows, observed_series, managed_inventory_items, stockout_censoring, economics, procurement, model_registry]
+          properties:
+            state: { type: string }
+            latest_run: { type: [object, 'null'], additionalProperties: true }
+            source_window_days: { type: integer }
+            observed_rows: { type: integer }
+            observed_series: { type: integer }
+            managed_inventory_items: { type: integer }
+            stockout_censoring: { type: string }
+            economics: { type: string }
+            procurement: { type: string }
+            model_registry: { type: array, items: { type: object, additionalProperties: true } }
