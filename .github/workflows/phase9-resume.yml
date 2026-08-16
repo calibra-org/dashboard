@@ -8,16 +8,42 @@ permissions:
     contents: write
 
 env:
+    NODE_VERSION: "24.14.0"
+    PNPM_VERSION: "10.32.1"
     GH_TOKEN: ${{ github.token }}
 
 jobs:
-    route-diagnostic:
+    functional-verify:
         if: contains(github.event.head_commit.message, '[phase9-resume]')
         runs-on: ubuntu-latest
-        timeout-minutes: 3
+        timeout-minutes: 7
+        services:
+            postgres:
+                image: postgres:17-alpine
+                env:
+                    POSTGRES_USER: calibra
+                    POSTGRES_PASSWORD: calibra
+                    POSTGRES_DB: calibra
+                ports: ["5432:5432"]
+                options: >-
+                    --health-cmd "pg_isready -U calibra -d calibra"
+                    --health-interval 5s --health-timeout 5s --health-retries 10
+            redis:
+                image: redis:7-alpine
+                ports: ["6379:6379"]
+                options: >-
+                    --health-cmd "redis-cli ping"
+                    --health-interval 5s --health-timeout 3s --health-retries 10
         steps:
             - uses: actions/checkout@v4
-            - name: Extract Phase 9 route source
+            - uses: pnpm/action-setup@v4
+              with: { version: "10.32.1" }
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: "24.14.0"
+                  cache: pnpm
+
+            - name: Expand payload and apply API fixes
               shell: bash
               run: |
                   set -euo pipefail
@@ -26,15 +52,70 @@ jobs:
                   base64 -d /tmp/phase9.b64 > /tmp/phase9.tgz
                   echo "f38cffa6fbb1eab253e7879389ae423810adc2316bc4bd636d51e54e4cc6d956  /tmp/phase9.tgz" | sha256sum -c -
                   tar -xzf /tmp/phase9.tgz -C .
-                  {
-                    echo '=== public personalization routes ==='
-                    cat apps/api/start/routes/personalization.ts
-                    echo
-                    echo '=== admin personalization routes ==='
-                    cat apps/api/start/routes/admin_personalization.ts
-                  } > /tmp/routes
-                  encoded=$(base64 -w0 /tmp/routes)
-                  old=$(gh api "repos/${GITHUB_REPOSITORY}/contents/phase9-source-snippets.txt?ref=${GITHUB_REF_NAME}" --jq .sha 2>/dev/null || true)
-                  args=(--method PUT "repos/${GITHUB_REPOSITORY}/contents/phase9-source-snippets.txt" -f message="chore(ci): capture Phase 9 routes" -f content="$encoded" -f branch="${GITHUB_REF_NAME}")
-                  if [ -n "$old" ]; then args+=(-f sha="$old"); fi
-                  gh api "${args[@]}"
+                  node .phase9-finalize/apply-phase9.mjs
+                  python3 - <<'PY'
+                  from pathlib import Path
+
+                  def r(path, old, new, label):
+                      p = Path(path)
+                      s = p.read_text()
+                      if old not in s:
+                          raise SystemExit(f"{label} anchor missing")
+                      p.write_text(s.replace(old, new, 1))
+
+                  r('apps/api/app/controllers/admin/personalization_controller.ts', 'this.service.createCampaign(ctx.request.body(), actorId(ctx))', 'this.service.createCampaign(ctx.request.body() as Parameters<Phase9PersonalizationService["createCampaign"]>[0], actorId(ctx))', 'create campaign type')
+                  r('apps/api/app/controllers/admin/personalization_controller.ts', 'this.service.updateCampaign(id, ctx.request.body())', 'this.service.updateCampaign(id, ctx.request.body() as Parameters<Phase9PersonalizationService["updateCampaign"]>[1])', 'update campaign type')
+                  r('apps/api/app/services/phase9_personalization_service.ts', '.where("campaign_id", campaign.id).orderBy("position", "asc")', '.where("campaign_id", Number(campaign.id)).orderBy("position", "asc")', 'campaign id type')
+
+                  public = Path('apps/api/start/routes/personalization.ts')
+                  s = public.read_text()
+                  replacements = {
+                      'router.get("/amazing-deals", [PersonalizationController, "amazingDeals"]);': 'router.get("/amazing-deals", [PersonalizationController, "amazingDeals"]).as("personalization.amazingDeals");',
+                      'router.get("/recommendations", [PersonalizationController, "recommendations"]);': 'router.get("/recommendations", [PersonalizationController, "recommendations"]).as("personalization.recommendations");',
+                      'router.post("/events", [PersonalizationController, "event"]).use(contentPublicLimiter);': 'router.post("/events", [PersonalizationController, "event"]).as("personalization.events.create").use(contentPublicLimiter);',
+                      'router.get("/consent", [PersonalizationController, "consent"]);': 'router.get("/consent", [PersonalizationController, "consent"]).as("personalization.consent.show");',
+                      'router.put("/consent", [PersonalizationController, "updateConsent"]).use(contentPublicLimiter);': 'router.put("/consent", [PersonalizationController, "updateConsent"]).as("personalization.consent.update").use(contentPublicLimiter);',
+                      'router.post("/reset", [PersonalizationController, "reset"]).use(contentPublicLimiter);': 'router.post("/reset", [PersonalizationController, "reset"]).as("personalization.reset").use(contentPublicLimiter);',
+                  }
+                  for old, new in replacements.items():
+                      if old not in s: raise SystemExit(f"public route anchor missing: {old}")
+                      s = s.replace(old, new, 1)
+                  public.write_text(s)
+
+                  admin = Path('apps/api/start/routes/admin_personalization.ts')
+                  s = admin.read_text()
+                  replacements = {
+                      'router.get("/overview", [Controller, "overview"]);': 'router.get("/overview", [Controller, "overview"]).as("admin.personalization.overview");',
+                      'router.get("/health", [Controller, "health"]);': 'router.get("/health", [Controller, "health"]).as("admin.personalization.health");',
+                      'router.get("/campaigns", [Controller, "campaigns"]);': 'router.get("/campaigns", [Controller, "campaigns"]).as("admin.personalization.campaigns.index");',
+                      'router.post("/campaigns", [Controller, "createCampaign"]).use(adminWriteLimiter);': 'router.post("/campaigns", [Controller, "createCampaign"]).as("admin.personalization.campaigns.create").use(adminWriteLimiter);',
+                      'router.patch("/campaigns/:id", [Controller, "updateCampaign"]).use(adminWriteLimiter);': 'router.patch("/campaigns/:id", [Controller, "updateCampaign"]).as("admin.personalization.campaigns.update").use(adminWriteLimiter);',
+                      'router.post("/campaigns/:id/publish", [Controller, "publishCampaign"]).use(adminWriteLimiter);': 'router.post("/campaigns/:id/publish", [Controller, "publishCampaign"]).as("admin.personalization.campaigns.publish").use(adminWriteLimiter);',
+                      'router.post("/campaigns/:id/pause", [Controller, "pauseCampaign"]).use(adminWriteLimiter);': 'router.post("/campaigns/:id/pause", [Controller, "pauseCampaign"]).as("admin.personalization.campaigns.pause").use(adminWriteLimiter);',
+                      'router.get("/settings", [Controller, "settings"]);': 'router.get("/settings", [Controller, "settings"]).as("admin.personalization.settings.show");',
+                      'router.patch("/settings", [Controller, "updateSettings"]).use(adminWriteLimiter);': 'router.patch("/settings", [Controller, "updateSettings"]).as("admin.personalization.settings.update").use(adminWriteLimiter);',
+                      'router.get("/placements", [Controller, "placements"]);': 'router.get("/placements", [Controller, "placements"]).as("admin.personalization.placements.index");',
+                      'router.patch("/placements/:placement", [Controller, "updatePlacement"]).use(adminWriteLimiter);': 'router.patch("/placements/:placement", [Controller, "updatePlacement"]).as("admin.personalization.placements.update").use(adminWriteLimiter);',
+                      'router.post("/simulate", [Controller, "simulate"]).use(adminWriteLimiter);': 'router.post("/simulate", [Controller, "simulate"]).as("admin.personalization.simulate").use(adminWriteLimiter);',
+                      'router.get("/events", [Controller, "events"]);': 'router.get("/events", [Controller, "events"]).as("admin.personalization.events.index");',
+                      'router.get("/consents", [Controller, "consents"]);': 'router.get("/consents", [Controller, "consents"]).as("admin.personalization.consents.index");',
+                  }
+                  for old, new in replacements.items():
+                      if old not in s: raise SystemExit(f"admin route anchor missing: {old}")
+                      s = s.replace(old, new, 1)
+                  admin.write_text(s)
+                  PY
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Create test database
+              env: { PGPASSWORD: calibra }
+              run: psql -h localhost -U calibra -d calibra -c "CREATE DATABASE calibra_test OWNER calibra;" || true
+
+            - name: Run Phase 9 functional tests
+              shell: bash
+              run: |
+                  set -o pipefail
+                  cd apps/api
+                  timeout --signal=TERM --kill-after=10s 120s pnpm test --files=tests/functional/admin/phase9_personalization.spec.ts 2>&1 | tee /tmp/phase9-functional.log
