@@ -21,7 +21,7 @@
         "verify:seo-engines": "node scripts/verify-seo-search-engines.mjs",
         "verify:completion": "node scripts/verify-ticket-seo-content-completion.mjs",
         "verify:phase1-4": "node scripts/verify-admin-navigation.mjs && node scripts/verify-admin-localization-policy.mjs && node scripts/verify-financial-invariants.mjs && node scripts/verify-factor-integration.mjs && node scripts/verify-content-integration.mjs && node scripts/verify-seo-integration.mjs && node scripts/verify-seo-search-engines.mjs && node scripts/verify-reports-integration.mjs && node scripts/verify-payments-phase4-integration.mjs && node scripts/verify-ticket-seo-content-completion.mjs",
-        "verify:tickets": "node scripts/verify-tickets-integration.mjs && node scripts/verify-ticket-seo-content-completion.mjs",
+        "verify:tickets": "node scripts/verify-tickets-integration.mjs && node scripts/verify-ticket-omnichannel.mjs && node scripts/verify-ticket-seo-content-completion.mjs",
         "verify:phase5": "node scripts/verify-phase5-operations-integration.mjs",
         "panel": "node scripts/panel.mjs",
         "panel:setup": "node scripts/panel.mjs --setup",

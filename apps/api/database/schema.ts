@@ -3812,6 +3812,97 @@ export class SupportAgentPresenceSchema extends BaseModel {
   declare userId: bigint | number
 }
 
+export class SupportApiKeySchema extends BaseModel {
+  static $columns = ['allowedIps', 'createdAt', 'createdByUserId', 'expiresAt', 'id', 'keyHash', 'keyPrefix', 'lastUsedAt', 'name', 'rateLimitPerMinute', 'revokedAt', 'scopes', 'tenantId', 'updatedAt'] as const
+  $columns = SupportApiKeySchema.$columns
+  @column()
+  declare allowedIps: any
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare createdByUserId: bigint | number | null
+  @column.dateTime()
+  declare expiresAt: DateTime | null
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare keyHash: string
+  @column()
+  declare keyPrefix: string
+  @column.dateTime()
+  declare lastUsedAt: DateTime | null
+  @column()
+  declare name: string
+  @column()
+  declare rateLimitPerMinute: number
+  @column.dateTime()
+  declare revokedAt: DateTime | null
+  @column()
+  declare scopes: any
+  @column()
+  declare tenantId: bigint | number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+}
+
+export class SupportApiRequestLogSchema extends BaseModel {
+  static $columns = ['apiKeyId', 'createdAt', 'durationMs', 'errorCode', 'id', 'ip', 'method', 'path', 'requestId', 'statusCode', 'tenantId'] as const
+  $columns = SupportApiRequestLogSchema.$columns
+  @column()
+  declare apiKeyId: bigint | number | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare durationMs: number | null
+  @column()
+  declare errorCode: string | null
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare ip: string | null
+  @column()
+  declare method: string
+  @column()
+  declare path: string
+  @column()
+  declare requestId: string | null
+  @column()
+  declare statusCode: number
+  @column()
+  declare tenantId: bigint | number
+}
+
+export class SupportApiWebhookSubscriptionSchema extends BaseModel {
+  static $columns = ['active', 'createdAt', 'createdByUserId', 'events', 'id', 'lastDeliveryAt', 'lastError', 'name', 'secretPrefix', 'signingSecretCiphertext', 'tenantId', 'updatedAt', 'url'] as const
+  $columns = SupportApiWebhookSubscriptionSchema.$columns
+  @column()
+  declare active: boolean
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare createdByUserId: bigint | number | null
+  @column()
+  declare events: any
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column.dateTime()
+  declare lastDeliveryAt: DateTime | null
+  @column()
+  declare lastError: string | null
+  @column()
+  declare name: string
+  @column()
+  declare secretPrefix: string
+  @column()
+  declare signingSecretCiphertext: string
+  @column()
+  declare tenantId: bigint | number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare url: string
+}
+
 export class SupportAutomationRuleSchema extends BaseModel {
   static $columns = ['actions', 'conditions', 'createdAt', 'enabled', 'id', 'name', 'tenantId', 'trigger', 'updatedAt', 'version'] as const
   $columns = SupportAutomationRuleSchema.$columns
@@ -3869,7 +3960,7 @@ export class SupportCampaignRecipientSchema extends BaseModel {
 }
 
 export class SupportCampaignSchema extends BaseModel {
-  static $columns = ['channel', 'completedAt', 'createdAt', 'estimatedCostMinor', 'id', 'name', 'quietHours', 'scheduledAt', 'startedAt', 'status', 'templateBody', 'templateStatus', 'tenantId', 'updatedAt', 'version'] as const
+  static $columns = ['channel', 'completedAt', 'createdAt', 'estimatedCostMinor', 'id', 'lastDispatchAt', 'name', 'providerTemplateConfig', 'providerTemplateKey', 'providerTemplateStatus', 'quietHours', 'scheduledAt', 'startedAt', 'status', 'templateBody', 'templateStatus', 'tenantId', 'updatedAt', 'version'] as const
   $columns = SupportCampaignSchema.$columns
   @column()
   declare channel: string
@@ -3881,8 +3972,16 @@ export class SupportCampaignSchema extends BaseModel {
   declare estimatedCostMinor: bigint | number
   @column({ isPrimary: true })
   declare id: bigint | number
+  @column.dateTime()
+  declare lastDispatchAt: DateTime | null
   @column()
   declare name: string
+  @column()
+  declare providerTemplateConfig: any
+  @column()
+  declare providerTemplateKey: string | null
+  @column()
+  declare providerTemplateStatus: string
   @column()
   declare quietHours: any
   @column.dateTime()
@@ -3903,9 +4002,40 @@ export class SupportCampaignSchema extends BaseModel {
   declare version: number
 }
 
+export class SupportChannelConnectionEventSchema extends BaseModel {
+  static $columns = ['actorUserId', 'channel', 'createdAt', 'eventType', 'fromState', 'id', 'providerKey', 'reasonCode', 'safeMessage', 'tenantId', 'toState'] as const
+  $columns = SupportChannelConnectionEventSchema.$columns
+  @column()
+  declare actorUserId: bigint | number | null
+  @column()
+  declare channel: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare eventType: string
+  @column()
+  declare fromState: string | null
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare providerKey: string
+  @column()
+  declare reasonCode: string | null
+  @column()
+  declare safeMessage: string | null
+  @column()
+  declare tenantId: bigint | number
+  @column()
+  declare toState: string | null
+}
+
 export class SupportChannelIntegrationSchema extends BaseModel {
-  static $columns = ['channel', 'configuration', 'createdAt', 'credentialEnvRef', 'id', 'lastError', 'lastVerifiedAt', 'status', 'tenantId', 'updatedAt'] as const
+  static $columns = ['accountIdentifier', 'capabilities', 'channel', 'configuration', 'createdAt', 'credentialEnvRef', 'credentialKeys', 'credentialsCiphertext', 'enabled', 'failedVerificationAttempts', 'grantedScopes', 'id', 'lastError', 'lastInboundAt', 'lastOutboundAt', 'lastRotatedAt', 'lastSuccessfulApiAt', 'lastVerifiedAt', 'lastWebhookAt', 'providerKey', 'status', 'tenantId', 'tokenExpiresAt', 'updatedAt', 'updatedByUserId', 'webhookStatus', 'webhookVerifiedAt'] as const
   $columns = SupportChannelIntegrationSchema.$columns
+  @column()
+  declare accountIdentifier: string | null
+  @column()
+  declare capabilities: any
   @column()
   declare channel: string
   @column()
@@ -3914,18 +4044,104 @@ export class SupportChannelIntegrationSchema extends BaseModel {
   declare createdAt: DateTime
   @column()
   declare credentialEnvRef: string | null
+  @column()
+  declare credentialKeys: any
+  @column()
+  declare credentialsCiphertext: string | null
+  @column()
+  declare enabled: boolean
+  @column()
+  declare failedVerificationAttempts: number
+  @column()
+  declare grantedScopes: any
   @column({ isPrimary: true })
   declare id: bigint | number
   @column()
   declare lastError: string | null
   @column.dateTime()
+  declare lastInboundAt: DateTime | null
+  @column.dateTime()
+  declare lastOutboundAt: DateTime | null
+  @column.dateTime()
+  declare lastRotatedAt: DateTime | null
+  @column.dateTime()
+  declare lastSuccessfulApiAt: DateTime | null
+  @column.dateTime()
   declare lastVerifiedAt: DateTime | null
+  @column.dateTime()
+  declare lastWebhookAt: DateTime | null
+  @column()
+  declare providerKey: string | null
   @column()
   declare status: string
   @column()
   declare tenantId: bigint | number
+  @column.dateTime()
+  declare tokenExpiresAt: DateTime | null
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
+  @column()
+  declare updatedByUserId: bigint | number | null
+  @column()
+  declare webhookStatus: string
+  @column.dateTime()
+  declare webhookVerifiedAt: DateTime | null
+}
+
+export class SupportChannelOauthSessionSchema extends BaseModel {
+  static $columns = ['createdAt', 'createdByUserId', 'expiresAt', 'id', 'integrationId', 'pkceVerifierCiphertext', 'providerKey', 'redirectUri', 'returnPath', 'stateHash', 'tenantId', 'usedAt'] as const
+  $columns = SupportChannelOauthSessionSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare createdByUserId: bigint | number | null
+  @column.dateTime()
+  declare expiresAt: DateTime
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare integrationId: bigint | number
+  @column()
+  declare pkceVerifierCiphertext: string
+  @column()
+  declare providerKey: string
+  @column()
+  declare redirectUri: string
+  @column()
+  declare returnPath: string
+  @column()
+  declare stateHash: string
+  @column()
+  declare tenantId: bigint | number
+  @column.dateTime()
+  declare usedAt: DateTime | null
+}
+
+export class SupportChannelWebhookEventSchema extends BaseModel {
+  static $columns = ['errorCode', 'eventType', 'id', 'payloadHash', 'processedAt', 'processingState', 'provider', 'providerAccountId', 'providerEventId', 'receivedAt', 'tenantId'] as const
+  $columns = SupportChannelWebhookEventSchema.$columns
+  @column()
+  declare errorCode: string | null
+  @column()
+  declare eventType: string | null
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare payloadHash: string
+  @column.dateTime()
+  declare processedAt: DateTime | null
+  @column()
+  declare processingState: string
+  @column()
+  declare provider: string
+  @column()
+  declare providerAccountId: string | null
+  @column()
+  declare providerEventId: string | null
+  @column.dateTime()
+  declare receivedAt: DateTime
+  @column()
+  declare tenantId: bigint | number
 }
 
 export class SupportCsatResponseSchema extends BaseModel {
@@ -4065,7 +4281,7 @@ export class SupportTicketMergeSchema extends BaseModel {
 }
 
 export class SupportTicketMessageSchema extends BaseModel {
-  static $columns = ['authorCustomerId', 'authorUserId', 'body', 'createdAt', 'id', 'kind', 'tenantId', 'ticketId'] as const
+  static $columns = ['authorCustomerId', 'authorUserId', 'body', 'createdAt', 'deliveredAt', 'deliveryState', 'direction', 'id', 'kind', 'mediaReference', 'messageType', 'provider', 'providerAccountId', 'providerConversationId', 'providerMessageId', 'providerMetadata', 'providerTimestamp', 'readAt', 'recipientExternalId', 'replyToExternalId', 'senderExternalId', 'sentAt', 'tenantId', 'ticketId'] as const
   $columns = SupportTicketMessageSchema.$columns
   @column()
   declare authorCustomerId: bigint | number | null
@@ -4075,10 +4291,42 @@ export class SupportTicketMessageSchema extends BaseModel {
   declare body: string
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
+  @column.dateTime()
+  declare deliveredAt: DateTime | null
+  @column()
+  declare deliveryState: string | null
+  @column()
+  declare direction: string
   @column({ isPrimary: true })
   declare id: bigint | number
   @column()
   declare kind: string
+  @column()
+  declare mediaReference: any | null
+  @column()
+  declare messageType: string
+  @column()
+  declare provider: string | null
+  @column()
+  declare providerAccountId: string | null
+  @column()
+  declare providerConversationId: string | null
+  @column()
+  declare providerMessageId: string | null
+  @column()
+  declare providerMetadata: any
+  @column.dateTime()
+  declare providerTimestamp: DateTime | null
+  @column.dateTime()
+  declare readAt: DateTime | null
+  @column()
+  declare recipientExternalId: string | null
+  @column()
+  declare replyToExternalId: string | null
+  @column()
+  declare senderExternalId: string | null
+  @column.dateTime()
+  declare sentAt: DateTime | null
   @column()
   declare tenantId: bigint | number
   @column()
@@ -4157,7 +4405,7 @@ export class SupportTicketWorkflowStatusSchema extends BaseModel {
 }
 
 export class SupportTicketSchema extends BaseModel {
-  static $columns = ['assignedUserId', 'category', 'channel', 'closedAt', 'createdAt', 'createdByUserId', 'customerId', 'firstResponseAt', 'firstResponseDueAt', 'id', 'lastMessageAt', 'priority', 'reference', 'requesterEmail', 'requesterName', 'requesterPhone', 'resolutionDueAt', 'resolvedAt', 'status', 'subject', 'tags', 'tenantId', 'ticketNumber', 'updatedAt', 'version'] as const
+  static $columns = ['assignedUserId', 'category', 'channel', 'closedAt', 'createdAt', 'createdByUserId', 'customerId', 'externalIdentityKey', 'firstResponseAt', 'firstResponseDueAt', 'id', 'lastMessageAt', 'lastReadAt', 'priority', 'providerAccountId', 'providerConversationId', 'reference', 'requesterEmail', 'requesterName', 'requesterPhone', 'resolutionDueAt', 'resolvedAt', 'status', 'subject', 'tags', 'tenantId', 'ticketNumber', 'unreadCount', 'updatedAt', 'version'] as const
   $columns = SupportTicketSchema.$columns
   @column()
   declare assignedUserId: bigint | number | null
@@ -4173,6 +4421,8 @@ export class SupportTicketSchema extends BaseModel {
   declare createdByUserId: bigint | number | null
   @column()
   declare customerId: bigint | number | null
+  @column()
+  declare externalIdentityKey: string | null
   @column.dateTime()
   declare firstResponseAt: DateTime | null
   @column.dateTime()
@@ -4181,8 +4431,14 @@ export class SupportTicketSchema extends BaseModel {
   declare id: bigint | number
   @column.dateTime()
   declare lastMessageAt: DateTime
+  @column.dateTime()
+  declare lastReadAt: DateTime | null
   @column()
   declare priority: string
+  @column()
+  declare providerAccountId: string | null
+  @column()
+  declare providerConversationId: string | null
   @column()
   declare reference: string
   @column()
@@ -4205,6 +4461,8 @@ export class SupportTicketSchema extends BaseModel {
   declare tenantId: bigint | number
   @column()
   declare ticketNumber: bigint | number
+  @column()
+  declare unreadCount: number
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
   @column()

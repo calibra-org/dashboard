@@ -16,7 +16,7 @@
         "build:json:admin-runtime-sync": "redocly bundle reference/openapi/admin.runtime-sync.v1.yaml -o dist/admin.runtime-sync.v1.json --ext json",
         "build:json:admin-completion": "redocly bundle reference/openapi/admin.completion.v1.yaml -o dist/admin.completion.v1.json --ext json",
         "build:json:admin-merge": "node scripts/merge-admin-spec.js",
-        "build:json:admin": "pnpm build:json:admin-base && pnpm build:json:admin-tickets && pnpm build:json:admin-phase5 && pnpm build:json:admin-runtime-sync && pnpm build:json:admin-completion && pnpm build:json:admin-merge",
+        "build:json:admin": "pnpm build:json:admin-base && pnpm build:json:admin-tickets && pnpm build:json:admin-ticket-omnichannel && pnpm build:json:admin-phase5 && pnpm build:json:admin-runtime-sync && pnpm build:json:admin-completion && pnpm build:json:admin-merge",
         "build:json:platform": "redocly bundle reference/openapi/platform.v1.yaml -o dist/platform.v1.json --ext json",
         "build:json": "pnpm build:json:storefront && pnpm build:json:admin && pnpm build:json:platform",
         "build:test-spec": "pnpm build:json && node scripts/merge-for-tests.js",
@@ -27,7 +27,8 @@
         "stats:storefront": "pnpm build:json:storefront && redocly stats dist/storefront.v1.json",
         "stats:admin": "pnpm build:json:admin && redocly stats dist/admin.v1.json",
         "stats:platform": "redocly stats reference/openapi/platform.v1.yaml",
-        "preview": "pnpm build && http-server dist -p 5055 -c-1"
+        "preview": "pnpm build && http-server dist -p 5055 -c-1",
+        "build:json:admin-ticket-omnichannel": "redocly bundle reference/openapi/admin.ticket-omnichannel.v1.yaml -o dist/admin.ticket-omnichannel.v1.json --ext json"
     },
     "devDependencies": {
         "@redocly/cli": "^2.14.6",

@@ -5800,6 +5800,532 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/tickets/omnichannel/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read official provider capability and requirement catalog */
+        get: operations["adminTicketOmnichannelCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/omnichannel/integrations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read evidence-backed channel connection states */
+        get: operations["adminTicketOmnichannelIntegrations"];
+        /** Save provider configuration and encrypted credentials */
+        put: operations["adminTicketOmnichannelConfigure"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/omnichannel/{channel}/oauth/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                channel: components["schemas"]["SupportChannel"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Begin a state- and PKCE-protected provider OAuth flow */
+        post: operations["adminTicketOmnichannelOauthStart"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/omnichannel/{channel}/logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                channel: components["schemas"]["SupportChannel"];
+            };
+            cookie?: never;
+        };
+        get: operations["adminTicketOmnichannelConnectionLogs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/omnichannel/{channel}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                channel: components["schemas"]["SupportChannel"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Perform a real provider identity/credential test */
+        post: operations["adminTicketOmnichannelTest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/omnichannel/{channel}/connect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                channel: components["schemas"]["SupportChannel"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Configure provider webhook where supported and establish evidence-backed state */
+        post: operations["adminTicketOmnichannelConnect"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/omnichannel/{channel}/disconnect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                channel: components["schemas"]["SupportChannel"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminTicketOmnichannelDisconnect"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/omnichannel/conversations/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminTicketOmnichannelConversations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/omnichannel/tickets/{ticketId}/reply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ticketId: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send a ticket reply through the connected provider adapter */
+        post: operations["adminTicketOmnichannelReply"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/omnichannel/tickets/{ticketId}/media": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ticketId: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send an existing clean-scanned ticket attachment through a capable provider */
+        post: operations["adminTicketOmnichannelMediaReply"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/omnichannel/tickets/{ticketId}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ticketId: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminTicketOmnichannelMarkRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/omnichannel/api-keys/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminTicketApiKeys"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/omnichannel/api-keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a hash-only API key whose secret is returned once */
+        post: operations["adminTicketApiKeyCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/omnichannel/api-keys/{id}/rotate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminTicketApiKeyRotate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/omnichannel/api-keys/{id}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminTicketApiKeyRevoke"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/omnichannel/api-request-logs/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminTicketApiRequestLogs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/omnichannel/api-webhooks/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminTicketApiWebhooks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/omnichannel/api-webhooks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create HTTPS webhook subscription with encrypted signing secret returned once */
+        post: operations["adminTicketApiWebhookCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/omnichannel/api-webhooks/{id}/rotate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminTicketApiWebhookRotate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/omnichannel/api-webhooks/{id}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminTicketApiWebhookRevoke"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/omnichannel/campaigns/{id}/provider-template/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verify a WhatsApp template directly against Meta provider evidence */
+        post: operations["adminTicketCampaignProviderTemplateVerify"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/omnichannel/campaigns/{id}/dispatch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dispatch due recipients using the connected provider adapter */
+        post: operations["adminTicketCampaignDispatch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/support/oauth/{channel}/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                channel: components["schemas"]["SupportChannel"];
+            };
+            cookie?: never;
+        };
+        /** Complete a provider OAuth flow after state and PKCE validation */
+        get: operations["supportChannelOauthCallback"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/support/channels/{channel}/{integrationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                channel: components["schemas"]["SupportChannel"];
+                integrationId: number;
+            };
+            cookie?: never;
+        };
+        /** Provider webhook verification challenge */
+        get: operations["supportChannelWebhookChallenge"];
+        put?: never;
+        /** Receive, verify, deduplicate and normalize provider events */
+        post: operations["supportChannelWebhookReceive"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/support/channels/{channel}/{integrationId}/{pathSecret}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                channel: components["schemas"]["SupportChannel"];
+                integrationId: number;
+                pathSecret: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Receive provider webhook protected by a stored path secret */
+        post: operations["supportChannelWebhookReceiveWithPathSecret"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/support-api/tickets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List tickets using a scoped Calibra support API key */
+        get: operations["supportApiTickets"];
+        put?: never;
+        /** Create ticket using tickets.write scope */
+        post: operations["supportApiTicketCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/support-api/tickets/{ticketId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ticketId: number;
+            };
+            cookie?: never;
+        };
+        /** Read a ticket using tickets.read scope */
+        get: operations["supportApiTicketShow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/support-api/request-logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read request logs using a support API key */
+        get: operations["supportApiRequestLogs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/support-api/tickets/{ticketId}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ticketId: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send a non-internal ticket reply using messages.send scope */
+        post: operations["supportApiTicketMessageSend"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/orders/operations/summary": {
         parameters: {
             query?: never;
@@ -9143,6 +9669,40 @@ export interface components {
             lastPage: number;
         } & {
             [key: string]: unknown;
+        };
+        /** @enum {string} */
+        SupportChannel: "web" | "email" | "phone" | "api" | "whatsapp" | "telegram" | "instagram" | "rubika" | "bale" | "eitaa" | "sms";
+        /** @enum {string} */
+        ConnectionState: "disabled" | "configured" | "connecting" | "connected" | "degraded" | "error" | "expired";
+        ProviderCatalogEnvelope: {
+            data: {
+                [key: string]: unknown;
+            }[];
+        };
+        ChannelIntegrationsEnvelope: {
+            data: {
+                [key: string]: unknown;
+            }[];
+        };
+        ChannelConfigureInput: {
+            channel: components["schemas"]["SupportChannel"];
+            provider_key: string;
+            enabled?: boolean;
+            configuration?: {
+                [key: string]: unknown;
+            };
+            /** @description Write-only secret values. Stored encrypted and never returned. */
+            credentials?: {
+                [key: string]: unknown;
+            };
+        };
+        ApiKeyCreateInput: {
+            name: string;
+            scopes: ("tickets.read" | "tickets.write" | "messages.read" | "messages.send" | "webhooks.manage")[];
+            allowed_ips?: string[];
+            rate_limit_per_minute?: number;
+            /** Format: date-time */
+            expires_at?: string | null;
         };
         /** @enum {string} */
         FulfillmentStatus: "pending" | "packed" | "shipped" | "delivered" | "cancelled";
@@ -18328,7 +18888,7 @@ export interface operations {
                     "application/json": components["schemas"]["TicketDetailEnvelope"];
                 };
             };
-            /** @description Invalid ticket */
+            /** @description Invalid ticket, customer, or assignee. */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -18538,6 +19098,811 @@ export interface operations {
             };
         };
     };
+    adminTicketOmnichannelCatalog: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Provider catalog */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProviderCatalogEnvelope"];
+                };
+            };
+        };
+    };
+    adminTicketOmnichannelIntegrations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Channel integrations */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChannelIntegrationsEnvelope"];
+                };
+            };
+        };
+    };
+    adminTicketOmnichannelConfigure: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChannelConfigureInput"];
+            };
+        };
+        responses: {
+            /** @description Saved without revealing secrets */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unsupported provider or invalid configuration */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTicketOmnichannelOauthStart: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                channel: components["schemas"]["SupportChannel"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Provider authorization URL */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTicketOmnichannelConnectionLogs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                channel: components["schemas"]["SupportChannel"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tenant-scoped connection history */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTicketOmnichannelTest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                channel: components["schemas"]["SupportChannel"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Verification evidence */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Provider credential rejected */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Provider request failed */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTicketOmnichannelConnect: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                channel: components["schemas"]["SupportChannel"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Connection state */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Provider connection failed */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTicketOmnichannelDisconnect: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                channel: components["schemas"]["SupportChannel"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    revoke?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Provider disconnected or locally revoked */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTicketOmnichannelConversations: {
+        parameters: {
+            query?: {
+                channel?: components["schemas"]["SupportChannel"];
+                q?: string;
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Persisted external conversations mapped to tickets */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTicketOmnichannelReply: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ticketId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    body: string;
+                    expected_version: number;
+                    reply_to_external_id?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Provider accepted the message */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Channel not connected or ticket conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Persisted failed send with safe provider error */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTicketOmnichannelMediaReply: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ticketId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Provider accepted media */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Attachment or capability rejected */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Provider send failed */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTicketOmnichannelMarkRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ticketId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Persisted unread count cleared and provider mark-read called when supported */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTicketApiKeys: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description API keys without secret material */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTicketApiKeyCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApiKeyCreateInput"];
+            };
+        };
+        responses: {
+            /** @description API key including one-time secret */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTicketApiKeyRotate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Replacement key including a one-time secret; prior key revoked */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTicketApiKeyRevoke: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description API key revoked */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTicketApiRequestLogs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tenant-scoped API request/error logs */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTicketApiWebhooks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description API webhook subscriptions without signing secret */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTicketApiWebhookCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description API webhook subscription */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTicketApiWebhookRotate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Rotated one-time signing secret */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTicketApiWebhookRevoke: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Outbound webhook subscription revoked */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTicketCampaignProviderTemplateVerify: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Provider template status recorded */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Provider/channel/template not eligible */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTicketCampaignDispatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Dispatch attempt summary */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Campaign not due */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Provider/template gate rejected */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    supportChannelOauthCallback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                channel: components["schemas"]["SupportChannel"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redirect to the tenant admin channel workspace */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    supportChannelWebhookChallenge: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                channel: components["schemas"]["SupportChannel"];
+                integrationId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Verification token/challenge */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid challenge */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    supportChannelWebhookReceive: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                channel: components["schemas"]["SupportChannel"];
+                integrationId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Event accepted or replay ignored */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid webhook signature or secret */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    supportChannelWebhookReceiveWithPathSecret: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                channel: components["schemas"]["SupportChannel"];
+                integrationId: number;
+                pathSecret: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Event accepted or replay ignored */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Secret invalid */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    supportApiTickets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ticket list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid key */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Scope or IP denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Per-key rate limit */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    supportApiTicketCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ticket created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    supportApiTicketShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ticketId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ticket detail */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid key */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Scope or IP denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    supportApiRequestLogs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request logs */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid key */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Scope denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    supportApiTicketMessageSend: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ticketId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Message recorded/sent */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Provider send failed without fake delivery */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     adminPhase5OrderOperationsSummary: {
         parameters: {
             query?: never;
@@ -18606,7 +19971,7 @@ export interface operations {
                     "application/json": components["schemas"]["FulfillmentEnvelope"];
                 };
             };
-            /** @description Idempotency */
+            /** @description Idempotency, concurrency or over-fulfillment conflict */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -18733,7 +20098,7 @@ export interface operations {
                     "application/json": components["schemas"]["ReturnEnvelope"];
                 };
             };
-            /** @description Idempotency */
+            /** @description Idempotency, concurrency or over-return conflict */
             409: {
                 headers: {
                     [name: string]: unknown;
