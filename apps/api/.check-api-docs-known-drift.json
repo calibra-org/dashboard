@@ -146,5 +146,9 @@
     {
         "severity": "missing-in-spec",
         "codeKey": "POST /api/v1/admin/products/import/upload"
+    },
+    {
+        "severity": "stale-in-spec",
+        "specKey": "HEAD /api/v1/admin/payment-attempts/{id}/reconcile"
     }
 ]

@@ -8,6 +8,7 @@ const base = JSON.parse(readFileSync(resolve(root, "dist/admin.base.v1.json"), "
 const tickets = JSON.parse(readFileSync(resolve(root, "dist/admin.tickets.v1.json"), "utf8"));
 const ticketOmnichannel = JSON.parse(readFileSync(resolve(root, "dist/admin.ticket-omnichannel.v1.json"), "utf8"));
 const phase5 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase5.v1.json"), "utf8"));
+const phase6 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase6.v1.json"), "utf8"));
 const runtimeSync = JSON.parse(readFileSync(resolve(root, "dist/admin.runtime-sync.v1.json"), "utf8"));
 const completion = JSON.parse(readFileSync(resolve(root, "dist/admin.completion.v1.json"), "utf8"));
 
@@ -83,6 +84,7 @@ for (const [overlaySource, namespace] of [
     [tickets, "TicketOverlay"],
     [ticketOmnichannel, "TicketOmnichannelOverlay"],
     [phase5, "Phase5Overlay"],
+    [phase6, "Phase6Overlay"],
     [runtimeSync, "RuntimeSyncOverlay"],
     [completion, "CompletionOverlay"],
 ]) {
@@ -91,7 +93,12 @@ for (const [overlaySource, namespace] of [
     const componentSections = new Set([...Object.keys(base.components ?? {}), ...Object.keys(overlay.components ?? {})]);
     const merged = {};
     for (const section of componentSections) {
-        merged[section] = mergeRecord(base.components?.[section], overlay.components?.[section], `components.${section}`, true);
+        merged[section] = mergeRecord(
+            base.components?.[section],
+            overlay.components?.[section],
+            `components.${section}`,
+            true,
+        );
     }
     base.components = merged;
     const tags = Array.isArray(base.tags) ? base.tags : [];
