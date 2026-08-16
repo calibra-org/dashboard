@@ -58,6 +58,7 @@ export function useTicketRealtime(userId: number): number {
                 client.invalidateQueries({ queryKey: ["admin", "tickets", "summary"] }),
                 client.invalidateQueries({ queryKey: ["admin", "tickets", "trends"] }),
                 client.invalidateQueries({ queryKey: ["admin", "tickets", "detail", event.ticketId] }),
+                client.invalidateQueries({ queryKey: ["ticket-omnichannel"] }),
             ]);
 
             if (!ticketActive && (event.type === "created" || event.type === "message" || event.type === "public_message")) {

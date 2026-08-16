@@ -1,0 +1,268 @@
+openapi: 3.1.0
+info:
+  title: Calibra Ticket Omnichannel API overlay
+  version: "1.0.0"
+tags:
+  - name: Admin / Ticket Omnichannel
+paths:
+  /api/v1/admin/tickets/omnichannel/catalog:
+    get:
+      operationId: adminTicketOmnichannelCatalog
+      tags: [Admin / Ticket Omnichannel]
+      summary: Read official provider capability and requirement catalog
+      responses:
+        "200": { description: Provider catalog, content: { application/json: { schema: { $ref: "#/components/schemas/ProviderCatalogEnvelope" } } } }
+  /api/v1/admin/tickets/omnichannel/integrations:
+    get:
+      operationId: adminTicketOmnichannelIntegrations
+      tags: [Admin / Ticket Omnichannel]
+      summary: Read evidence-backed channel connection states
+      responses:
+        "200": { description: Channel integrations, content: { application/json: { schema: { $ref: "#/components/schemas/ChannelIntegrationsEnvelope" } } } }
+    put:
+      operationId: adminTicketOmnichannelConfigure
+      tags: [Admin / Ticket Omnichannel]
+      summary: Save provider configuration and encrypted credentials
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/ChannelConfigureInput" } } } }
+      responses:
+        "200": { description: Saved without revealing secrets }
+        "422": { description: Unsupported provider or invalid configuration }
+  /api/v1/admin/tickets/omnichannel/{channel}/oauth/start:
+    parameters: [{ name: channel, in: path, required: true, schema: { $ref: "#/components/schemas/SupportChannel" } }]
+    post:
+      operationId: adminTicketOmnichannelOauthStart
+      tags: [Admin / Ticket Omnichannel]
+      summary: Begin a state- and PKCE-protected provider OAuth flow
+      responses: { "200": { description: Provider authorization URL } }
+  /api/v1/admin/tickets/omnichannel/{channel}/logs:
+    parameters: [{ name: channel, in: path, required: true, schema: { $ref: "#/components/schemas/SupportChannel" } }]
+    get:
+      operationId: adminTicketOmnichannelConnectionLogs
+      tags: [Admin / Ticket Omnichannel]
+      responses: { "200": { description: Tenant-scoped connection history } }
+  /api/v1/admin/tickets/omnichannel/{channel}/test:
+    parameters: [{ name: channel, in: path, required: true, schema: { $ref: "#/components/schemas/SupportChannel" } }]
+    post:
+      operationId: adminTicketOmnichannelTest
+      tags: [Admin / Ticket Omnichannel]
+      summary: Perform a real provider identity/credential test
+      responses: { "200": { description: Verification evidence }, "401": { description: Provider credential rejected }, "502": { description: Provider request failed } }
+  /api/v1/admin/tickets/omnichannel/{channel}/connect:
+    parameters: [{ name: channel, in: path, required: true, schema: { $ref: "#/components/schemas/SupportChannel" } }]
+    post:
+      operationId: adminTicketOmnichannelConnect
+      tags: [Admin / Ticket Omnichannel]
+      summary: Configure provider webhook where supported and establish evidence-backed state
+      responses: { "200": { description: Connection state }, "502": { description: Provider connection failed } }
+  /api/v1/admin/tickets/omnichannel/{channel}/disconnect:
+    parameters: [{ name: channel, in: path, required: true, schema: { $ref: "#/components/schemas/SupportChannel" } }]
+    post:
+      operationId: adminTicketOmnichannelDisconnect
+      tags: [Admin / Ticket Omnichannel]
+      requestBody: { content: { application/json: { schema: { type: object, properties: { revoke: { type: boolean } } } } } }
+      responses: { "200": { description: Provider disconnected or locally revoked } }
+  /api/v1/admin/tickets/omnichannel/conversations/list:
+    get:
+      operationId: adminTicketOmnichannelConversations
+      tags: [Admin / Ticket Omnichannel]
+      parameters:
+        - { name: channel, in: query, schema: { $ref: "#/components/schemas/SupportChannel" } }
+        - { name: q, in: query, schema: { type: string } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100 } }
+      responses: { "200": { description: Persisted external conversations mapped to tickets } }
+  /api/v1/admin/tickets/omnichannel/tickets/{ticketId}/reply:
+    parameters: [{ name: ticketId, in: path, required: true, schema: { type: integer, minimum: 1 } }]
+    post:
+      operationId: adminTicketOmnichannelReply
+      tags: [Admin / Ticket Omnichannel]
+      summary: Send a ticket reply through the connected provider adapter
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body, expected_version]
+              properties:
+                body: { type: string, minLength: 1, maxLength: 20000 }
+                expected_version: { type: integer, minimum: 1 }
+                reply_to_external_id: { type: [string, "null"], maxLength: 255 }
+      responses: { "200": { description: Provider accepted the message }, "409": { description: Channel not connected or ticket conflict }, "502": { description: Persisted failed send with safe provider error } }
+  /api/v1/admin/tickets/omnichannel/tickets/{ticketId}/media:
+    parameters: [{ name: ticketId, in: path, required: true, schema: { type: integer, minimum: 1 } }]
+    post:
+      operationId: adminTicketOmnichannelMediaReply
+      tags: [Admin / Ticket Omnichannel]
+      summary: Send an existing clean-scanned ticket attachment through a capable provider
+      responses: { "200": { description: Provider accepted media }, "422": { description: Attachment or capability rejected }, "502": { description: Provider send failed } }
+  /api/v1/admin/tickets/omnichannel/tickets/{ticketId}/read:
+    parameters: [{ name: ticketId, in: path, required: true, schema: { type: integer, minimum: 1 } }]
+    post:
+      operationId: adminTicketOmnichannelMarkRead
+      tags: [Admin / Ticket Omnichannel]
+      responses: { "200": { description: Persisted unread count cleared and provider mark-read called when supported } }
+  /api/v1/admin/tickets/omnichannel/api-keys/list:
+    get:
+      operationId: adminTicketApiKeys
+      tags: [Admin / Ticket Omnichannel]
+      responses: { "200": { description: API keys without secret material } }
+  /api/v1/admin/tickets/omnichannel/api-keys:
+    post:
+      operationId: adminTicketApiKeyCreate
+      tags: [Admin / Ticket Omnichannel]
+      summary: Create a hash-only API key whose secret is returned once
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/ApiKeyCreateInput" } } } }
+      responses: { "201": { description: API key including one-time secret } }
+  /api/v1/admin/tickets/omnichannel/api-keys/{id}/rotate:
+    parameters: [{ name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }]
+    post:
+      operationId: adminTicketApiKeyRotate
+      tags: [Admin / Ticket Omnichannel]
+      responses: { "200": { description: Replacement key including a one-time secret; prior key revoked } }
+  /api/v1/admin/tickets/omnichannel/api-keys/{id}/revoke:
+    parameters: [{ name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }]
+    post:
+      operationId: adminTicketApiKeyRevoke
+      tags: [Admin / Ticket Omnichannel]
+      responses: { "200": { description: API key revoked } }
+  /api/v1/admin/tickets/omnichannel/api-request-logs/list:
+    get:
+      operationId: adminTicketApiRequestLogs
+      tags: [Admin / Ticket Omnichannel]
+      responses: { "200": { description: Tenant-scoped API request/error logs } }
+  /api/v1/admin/tickets/omnichannel/api-webhooks/list:
+    get:
+      operationId: adminTicketApiWebhooks
+      tags: [Admin / Ticket Omnichannel]
+      responses: { "200": { description: API webhook subscriptions without signing secret } }
+  /api/v1/admin/tickets/omnichannel/api-webhooks:
+    post:
+      operationId: adminTicketApiWebhookCreate
+      tags: [Admin / Ticket Omnichannel]
+      summary: Create HTTPS webhook subscription with encrypted signing secret returned once
+      responses: { "201": { description: API webhook subscription } }
+  /api/v1/admin/tickets/omnichannel/api-webhooks/{id}/rotate:
+    parameters: [{ name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }]
+    post:
+      operationId: adminTicketApiWebhookRotate
+      tags: [Admin / Ticket Omnichannel]
+      responses: { "200": { description: Rotated one-time signing secret } }
+  /api/v1/admin/tickets/omnichannel/api-webhooks/{id}/revoke:
+    parameters: [{ name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }]
+    post:
+      operationId: adminTicketApiWebhookRevoke
+      tags: [Admin / Ticket Omnichannel]
+      responses: { "200": { description: Outbound webhook subscription revoked } }
+  /api/v1/admin/tickets/omnichannel/campaigns/{id}/provider-template/verify:
+    parameters: [{ name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }]
+    post:
+      operationId: adminTicketCampaignProviderTemplateVerify
+      tags: [Admin / Ticket Omnichannel]
+      summary: Verify a WhatsApp template directly against Meta provider evidence
+      responses: { "200": { description: Provider template status recorded }, "422": { description: Provider/channel/template not eligible } }
+  /api/v1/admin/tickets/omnichannel/campaigns/{id}/dispatch:
+    parameters: [{ name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }]
+    post:
+      operationId: adminTicketCampaignDispatch
+      tags: [Admin / Ticket Omnichannel]
+      summary: Dispatch due recipients using the connected provider adapter
+      responses: { "200": { description: Dispatch attempt summary }, "409": { description: Campaign not due }, "422": { description: Provider/template gate rejected } }
+  /api/v1/support/oauth/{channel}/callback:
+    parameters: [{ name: channel, in: path, required: true, schema: { $ref: "#/components/schemas/SupportChannel" } }]
+    get:
+      operationId: supportChannelOauthCallback
+      summary: Complete a provider OAuth flow after state and PKCE validation
+      responses: { "302": { description: Redirect to the tenant admin channel workspace } }
+  /api/v1/support/channels/{channel}/{integrationId}:
+    parameters:
+      - { name: channel, in: path, required: true, schema: { $ref: "#/components/schemas/SupportChannel" } }
+      - { name: integrationId, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    get:
+      operationId: supportChannelWebhookChallenge
+      summary: Provider webhook verification challenge
+      responses: { "200": { description: Verification token/challenge }, "401": { description: Invalid challenge } }
+    post:
+      operationId: supportChannelWebhookReceive
+      summary: Receive, verify, deduplicate and normalize provider events
+      responses: { "200": { description: Event accepted or replay ignored }, "401": { description: Invalid webhook signature or secret } }
+  /api/v1/support/channels/{channel}/{integrationId}/{pathSecret}:
+    parameters:
+      - { name: channel, in: path, required: true, schema: { $ref: "#/components/schemas/SupportChannel" } }
+      - { name: integrationId, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      - { name: pathSecret, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: supportChannelWebhookReceiveWithPathSecret
+      summary: Receive provider webhook protected by a stored path secret
+      responses: { "200": { description: Event accepted or replay ignored }, "401": { description: Secret invalid } }
+  /api/v1/support-api/tickets:
+    get:
+      operationId: supportApiTickets
+      summary: List tickets using a scoped Calibra support API key
+      responses: { "200": { description: Ticket list }, "401": { description: Invalid key }, "403": { description: Scope or IP denied }, "429": { description: Per-key rate limit } }
+    post:
+      operationId: supportApiTicketCreate
+      summary: Create ticket using tickets.write scope
+      responses: { "201": { description: Ticket created } }
+  /api/v1/support-api/tickets/{ticketId}:
+    parameters: [{ name: ticketId, in: path, required: true, schema: { type: integer, minimum: 1 } }]
+    get:
+      operationId: supportApiTicketShow
+      summary: Read a ticket using tickets.read scope
+      responses: { "200": { description: Ticket detail }, "401": { description: Invalid key }, "403": { description: Scope or IP denied } }
+  /api/v1/support-api/request-logs:
+    get:
+      operationId: supportApiRequestLogs
+      summary: Read request logs using a support API key
+      responses: { "200": { description: Request logs }, "401": { description: Invalid key }, "403": { description: Scope denied } }
+  /api/v1/support-api/tickets/{ticketId}/messages:
+    parameters: [{ name: ticketId, in: path, required: true, schema: { type: integer, minimum: 1 } }]
+    post:
+      operationId: supportApiTicketMessageSend
+      summary: Send a non-internal ticket reply using messages.send scope
+      responses: { "200": { description: Message recorded/sent }, "502": { description: Provider send failed without fake delivery } }
+components:
+  schemas:
+    SupportChannel:
+      type: string
+      enum: [web, email, phone, api, whatsapp, telegram, instagram, rubika, bale, eitaa, sms]
+    ConnectionState:
+      type: string
+      enum: [disabled, configured, connecting, connected, degraded, error, expired]
+    ProviderCatalogEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { type: array, items: { type: object, additionalProperties: true } }
+    ChannelIntegrationsEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { type: array, items: { type: object, additionalProperties: true } }
+    ChannelConfigureInput:
+      type: object
+      required: [channel, provider_key]
+      additionalProperties: false
+      properties:
+        channel: { $ref: "#/components/schemas/SupportChannel" }
+        provider_key: { type: string, minLength: 1, maxLength: 64 }
+        enabled: { type: boolean }
+        configuration: { type: object, additionalProperties: true }
+        credentials:
+          type: object
+          description: Write-only secret values. Stored encrypted and never returned.
+          additionalProperties: true
+    ApiKeyCreateInput:
+      type: object
+      required: [name, scopes]
+      additionalProperties: false
+      properties:
+        name: { type: string, minLength: 1, maxLength: 120 }
+        scopes:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items: { type: string, enum: [tickets.read, tickets.write, messages.read, messages.send, webhooks.manage] }
+        allowed_ips: { type: array, items: { type: string } }
+        rate_limit_per_minute: { type: integer, minimum: 1, maximum: 10000 }
+        expires_at: { type: [string, "null"], format: date-time }
