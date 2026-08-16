@@ -120,6 +120,16 @@ jobs:
                   if '[phase6, "Phase6Overlay"],' not in s:
                       s = replace_once(s, '[phase5, "Phase5Overlay"],', '[phase5, "Phase5Overlay"],\n    [phase6, "Phase6Overlay"],', 'phase6 overlay')
                   merge.write_text(s)
+
+                  config_view = Path("apps/admin/src/views/store-config/settings/configuration-group-view.tsx")
+                  s = config_view.read_text()
+                  s = replace_once(
+                      s,
+                      '        expected_version: item.origin.scope_type === "tenant" ? item.origin.version : 0,\n',
+                      '        expected_version: item.origin.scope_type === "tenant" ? item.origin.version : 0,\n        unset: false,\n        rollout_percent: 100,\n',
+                      'phase6 change defaults',
+                  )
+                  config_view.write_text(s)
                   PY
 
             - name: Install dependencies
