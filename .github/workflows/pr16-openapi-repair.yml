@@ -1,0 +1,55 @@
+name: PR16 OpenAPI Repair
+on:
+  push:
+    branches: ["agent/runtime-hardening-20260814"]
+permissions:
+  contents: write
+jobs:
+  repair:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Repair merged test OpenAPI compatibility
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('node:fs');
+
+          const completion = 'docs/api/reference/openapi/storefront.completion.v1.yaml';
+          let source = fs.readFileSync(completion, 'utf8');
+          const bad = '"404": { description: Tracking token invalid, expired, revoked, or outside the current tenant }';
+          const good = '"404": { description: "Tracking token invalid, expired, revoked, or outside the current tenant" }';
+          if (!source.includes(bad) && !source.includes(good)) throw new Error('Support 404 anchor not found');
+          source = source.replace(bad, good);
+          fs.writeFileSync(completion, source);
+
+          const merge = 'docs/api/scripts/merge-for-tests.js';
+          source = fs.readFileSync(merge, 'utf8');
+
+          const mergedAnchor = '};\n\ndowngradeTo30(merged, merged);';
+          const normalizeBlock = `};\n\n// AdonisJS auto-registers HEAD companions for GET routes. The generated HEAD\n// stubs are intentionally minimal in the public specs, but the OpenAPI 3.0\n// validator used by Japa requires every path parameter to be declared on the\n// operation. Enrich only the test-only merged fixture from the matching GET.\nfor (const [path, item] of Object.entries(merged.paths ?? {})) {\n    if (!item || typeof item !== "object" || !item.head || !item.get) continue;\n    const inherited = Array.isArray(item.parameters) ? item.parameters : [];\n    const getParameters = Array.isArray(item.get.parameters) ? item.get.parameters : [];\n    const headParameters = Array.isArray(item.head.parameters) ? item.head.parameters : [];\n    const combined = [...inherited, ...getParameters, ...headParameters];\n    const seen = new Set();\n    item.head.parameters = combined.filter((parameter) => {\n        const key = parameter?.$ref ?? \\`${'${parameter?.in ?? ""}:${parameter?.name ?? ""}'}\\`;\n        if (seen.has(key)) return false;\n        seen.add(key);\n        return true;\n    });\n    if (item.head.parameters.length === 0) delete item.head.parameters;\n    item.head.summary ??= \\`HEAD companion for ${'${path}'}\\`;\n}\n\ndowngradeTo30(merged, merged);`;
+          if (!source.includes('HEAD companion for ${path}')) {
+            if (!source.includes(mergedAnchor)) throw new Error('Merged fixture anchor not found');
+            source = source.replace(mergedAnchor, normalizeBlock);
+          }
+
+          const constAnchor = '    if (Array.isArray(node.type)) {';
+          const constBlock = `    // OpenAPI 3.1 supports const; OpenAPI 3.0 expresses the same constraint\n    // with a single-value enum. This conversion is test-fixture only.\n    if (Object.prototype.hasOwnProperty.call(node, "const")) {\n        node.enum = [node.const];\n        delete node.const;\n    }\n\n    if (Array.isArray(node.type)) {`;
+          if (!source.includes('single-value enum')) {
+            if (!source.includes(constAnchor)) throw new Error('downgradeTo30 anchor not found');
+            source = source.replace(constAnchor, constBlock);
+          }
+          fs.writeFileSync(merge, source);
+          NODE
+      - name: Commit repair and remove temporary workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name calibra-dev
+          git config user.email keshavarz20.com@gmail.com
+          git rm .github/workflows/pr16-openapi-repair.yml
+          git add docs/api/reference/openapi/storefront.completion.v1.yaml docs/api/scripts/merge-for-tests.js
+          git commit -m 'fix(test): normalize OpenAPI 3.1 features for Japa'
+          git push origin HEAD:agent/runtime-hardening-20260814
