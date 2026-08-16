@@ -145,7 +145,7 @@ paths:
                     content:
                         application/json:
                             schema: { $ref: "#/components/schemas/TicketDetailEnvelope" }
-                "422": { description: Invalid ticket, customer, or assignee. }
+                "422": { description: "Invalid ticket, customer, or assignee." }
 
     /api/v1/admin/tickets/{id}:
         parameters:

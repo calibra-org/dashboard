@@ -90,9 +90,8 @@ test.group("Payment callback failure handling", (group) => {
             );
 
         assert.isTrue(holderAcquired);
-        if (callbackResponse === null) {
-            throw new Error("callback request did not execute while the lock holder was active");
-        }
+        assert.isNotNull(callbackResponse);
+        if (!callbackResponse) throw new Error("Callback response was not produced while lock contention was held");
         assert.equal(callbackResponse.response.status, 302);
         const redirect = new URL(callbackResponse.header("location") as string);
         assert.equal(redirect.searchParams.get("reason"), "concurrent_processing");

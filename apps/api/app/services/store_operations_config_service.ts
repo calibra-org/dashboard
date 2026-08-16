@@ -47,7 +47,13 @@ function numberValue(value: unknown): number {
 }
 
 function zoneRow(row: DbRow) {
-    return { ...row, id: numberValue(row.id), tenant_id: numberValue(row.tenant_id), is_fallback: Boolean(row.is_fallback) };
+    return {
+        ...row,
+        id: numberValue(row.id),
+        tenant_id: numberValue(row.tenant_id),
+        name: String(row.name ?? ""),
+        is_fallback: Boolean(row.is_fallback),
+    };
 }
 
 function methodDefinitionRow(row: DbRow) {
@@ -249,7 +255,10 @@ export class StoreOperationsConfigService {
         if (Boolean(zone.is_fallback)) {
             throw new Exception("Fallback shipping zone cannot be deleted", { status: 409, code: "E_SHIPPING_FALLBACK_DELETE" });
         }
-        await currentTrx().from("shipping_zones").where("id", id).delete();
+        const trx = currentTrx();
+        await trx.from("shipping_zone_methods").where("zone_id", id).delete();
+        await trx.from("shipping_zone_locations").where("zone_id", id).delete();
+        await trx.from("shipping_zones").where("id", id).delete();
     }
 
     async addShippingZoneMethod(zoneId: number, input: ShippingZoneMethodInput & { method_id: number }) {

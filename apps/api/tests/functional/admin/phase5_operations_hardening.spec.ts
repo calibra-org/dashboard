@@ -179,6 +179,28 @@ test.group("Phase 5 hardening", (group) => {
         assert.equal(finalReceipt.body().data.status, "received");
     });
 
+    test("serializes concurrent RMA creation against delivered quantity", async ({ client, assert }) => {
+        const admin = await adminUser();
+        const { order } = await processingOrder(2);
+        await moveToProcessing(client, admin, Number(order.id));
+        const lineId = await lineIdFor(client, admin, Number(order.id));
+        await deliverLine(client, admin, Number(order.id), lineId, 1);
+
+        const createReturn = (key: string) =>
+            client
+                .post(`/api/v1/admin/orders/${order.id}/returns`)
+                .loginAs(admin)
+                .header("Idempotency-Key", key)
+                .json({ items: [{ order_line_item_id: lineId, quantity: 1 }], reason: "concurrent returnability check" });
+
+        const [first, second] = await Promise.all([
+            createReturn("phase5-concurrent-return-a"),
+            createReturn("phase5-concurrent-return-b"),
+        ]);
+        const statuses = [first.status(), second.status()].sort((a, b) => a - b);
+        assert.deepEqual(statuses, [201, 409]);
+    });
+
     test("does not silently turn an explicit zero RMA refund into a full refund", async ({ client, assert }) => {
         const admin = await adminUser();
         const { order } = await processingOrder(1);
