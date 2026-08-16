@@ -1,4 +1,23 @@
-=== admin controller 20-65 ===
+=== admin controller 1-42 ===
+     1	import type { HttpContext } from "@adonisjs/core/http";
+     2	import Phase9PersonalizationService, { Phase9ConflictError, Phase9ValidationError } from "#services/phase9_personalization_service";
+     3	import { auditPhase9 } from "#services/phase9_audit_service";
+     4	
+     5	export default class AdminPersonalizationController {
+     6	    private service = new Phase9PersonalizationService();
+     7	
+     8	    async overview() { return { data: await this.service.overview() }; }
+     9	    async health() { return { data: await this.service.health() }; }
+    10	    async campaigns() { return { data: await this.service.listCampaigns() }; }
+    11	    async settings() { return { data: await this.service.runtimeSettings() }; }
+    12	    async placements() { return { data: await this.service.listPlacements() }; }
+    13	    async events(ctx: HttpContext) { return { data: await this.service.recentEvents(Number(ctx.request.input("limit", 50))) }; }
+    14	    async consents(ctx: HttpContext) { return { data: await this.service.recentConsents(Number(ctx.request.input("limit", 50))) }; }
+    15	
+    16	    async createCampaign(ctx: HttpContext) {
+    17	        try {
+    18	            const data = await this.service.createCampaign(ctx.request.body(), actorId(ctx));
+    19	            await auditPhase9("phase9.campaign.create", "deal_campaign", Number(data?.id ?? 0), actorId(ctx), { name: data?.name }, ctx.request.ip());
     20	            return ctx.response.status(201).json({ data });
     21	        } catch (error) { return this.handle(error, ctx); }
     22	    }
@@ -22,28 +41,265 @@
     40	            return { data };
     41	        } catch (error) { return this.handle(error, ctx); }
     42	    }
-    43	
-    44	    async pauseCampaign(ctx: HttpContext) {
-    45	        try {
-    46	            const id = positiveId(ctx.params.id);
-    47	            const data = await this.service.pauseCampaign(id, optionalVersion(ctx.request.input("expected_version")));
-    48	            if (!data) return ctx.response.status(404).json({ error: "campaign_not_found" });
-    49	            await auditPhase9("phase9.campaign.pause", "deal_campaign", id, actorId(ctx), { version: data.version }, ctx.request.ip());
-    50	            return { data };
-    51	        } catch (error) { return this.handle(error, ctx); }
-    52	    }
-    53	
-    54	    async updateSettings(ctx: HttpContext) {
-    55	        const before = await this.service.runtimeSettings();
-    56	        const data = await this.service.updateRuntimeSettings(ctx.request.body());
-    57	        await auditPhase9("phase9.settings.update", "personalization", null, actorId(ctx), { before, after: data }, ctx.request.ip());
-    58	        return { data };
-    59	    }
-    60	
-    61	    async updatePlacement(ctx: HttpContext) {
-    62	        try {
-    63	            const placement = String(ctx.params.placement ?? "").slice(0, 64);
-    64	            const data = await this.service.updatePlacement(placement, ctx.request.body());
-    65	            if (!data) return ctx.response.status(404).json({ error: "placement_not_found" });
 
-=== service 500-530 ===
+=== service query/value candidates ===
+16-    max_items?: number;
+17-    rotation_minutes?: number;
+18-    starts_at?: string | null;
+19-    ends_at?: string | null;
+20:    rules?: Record<string, unknown>;
+21-    product_ids?: number[];
+22-    pinned_product_ids?: number[];
+23-    expected_version?: number;
+24-}
+--
+35-    id: number;
+36-    discountPercent: number;
+37-    categories: number[];
+38-    brands: number[];
+39:    transformed: Record<string, unknown>;
+40-}
+41-
+42-const SETTINGS_GROUP = "personalization";
+43-const POLICY_VERSION = "phase9-v1";
+44:const MODEL_VERSION = "rules-v1";
+45-const RECENT_LIMIT = 30;
+46-
+47-export default class Phase9PersonalizationService {
+48-    private settings = new SettingsService();
+--
+56-            default_limit: await this.settings.get(SETTINGS_GROUP, "default_limit", 8),
+57-        };
+58-    }
+59-
+60:    async updateRuntimeSettings(input: Record<string, unknown>) {
+61-        if (typeof input.enabled === "boolean") await this.settings.set(SETTINGS_GROUP, "enabled", input.enabled, "boolean");
+62-        if (typeof input.kill_switch === "boolean") await this.settings.set(SETTINGS_GROUP, "kill_switch", input.kill_switch, "boolean");
+63-        if (typeof input.homepage_enabled === "boolean") await this.settings.set(SETTINGS_GROUP, "homepage_enabled", input.homepage_enabled, "boolean");
+64-        if (input.homepage_campaign_id === null || Number.isInteger(input.homepage_campaign_id)) {
+--
+74-    async listCampaigns() {
+75-        const rows = await currentTrx().from("deal_campaigns").orderBy("created_at", "desc");
+76-        const ids = rows.map((row) => Number(row.id));
+77-        const products = ids.length
+78:            ? await currentTrx().from("deal_campaign_products").whereIn("campaign_id", ids).orderBy("position", "asc")
+79-            : [];
+80-        return rows.map((row) => ({
+81-            ...serializeCampaign(row),
+82-            products: products.filter((p) => Number(p.campaign_id) === Number(row.id)).map((p) => ({
+--
+101-                max_items: clamp(input.max_items ?? 8, 1, 48),
+102-                rotation_minutes: clamp(input.rotation_minutes ?? 60, 5, 10080),
+103-                starts_at: parseDate(input.starts_at),
+104-                ends_at: parseDate(input.ends_at),
+105:                rules: JSON.stringify(input.rules ?? {}),
+106-                created_by_user_id: actorUserId ?? null,
+107-                version: 1,
+108-                created_at: now,
+109-                updated_at: now,
+--
+115-
+116-    async updateCampaign(id: number, input: CampaignInput) {
+117-        validateCampaign(input, true);
+118-        const trx = currentTrx();
+119:        const row = await trx.from("deal_campaigns").where("id", id).forUpdate().first();
+120-        if (!row) return null;
+121-        if (input.expected_version !== undefined && Number(row.version) !== input.expected_version) {
+122-            throw new Phase9ConflictError("campaign_version_conflict");
+123-        }
+124:        const patch: Record<string, unknown> = { updated_at: DateTime.utc().toSQL(), version: Number(row.version) + 1 };
+125-        if (input.name !== undefined) patch.name = input.name.trim();
+126-        if (input.selection_mode !== undefined) patch.selection_mode = input.selection_mode;
+127-        if (input.min_discount_percent !== undefined) patch.min_discount_percent = clamp(input.min_discount_percent, 1, 100);
+128-        if (input.max_items !== undefined) patch.max_items = clamp(input.max_items, 1, 48);
+129-        if (input.rotation_minutes !== undefined) patch.rotation_minutes = clamp(input.rotation_minutes, 5, 10080);
+130-        if (input.starts_at !== undefined) patch.starts_at = parseDate(input.starts_at);
+131-        if (input.ends_at !== undefined) patch.ends_at = parseDate(input.ends_at);
+132:        if (input.rules !== undefined) patch.rules = JSON.stringify(input.rules);
+133:        await trx.from("deal_campaigns").where("id", id).update(patch);
+134-        if (input.product_ids !== undefined || input.pinned_product_ids !== undefined) {
+135:            const existing = await trx.from("deal_campaign_products").where("campaign_id", id);
+136-            const ids = input.product_ids ?? existing.map((p) => Number(p.product_id));
+137-            const pinned = input.pinned_product_ids ?? existing.filter((p) => p.pinned).map((p) => Number(p.product_id));
+138-            await this.replaceCampaignProducts(id, ids, pinned);
+139-        }
+--
+141-    }
+142-
+143-    async publishCampaign(id: number, expectedVersion?: number) {
+144-        const trx = currentTrx();
+145:        const row = await trx.from("deal_campaigns").where("id", id).forUpdate().first();
+146-        if (!row) return null;
+147-        if (expectedVersion !== undefined && Number(row.version) !== expectedVersion) throw new Phase9ConflictError("campaign_version_conflict");
+148-        const preview = await this.resolveCampaignProducts(row, "fa");
+149-        if (preview.length === 0) throw new Phase9ValidationError("campaign_has_no_eligible_products");
+150-        const now = DateTime.utc();
+151-        const starts = row.starts_at ? DateTime.fromJSDate(new Date(row.starts_at)) : null;
+152-        const status = starts && starts > now ? "scheduled" : "active";
+153:        await trx.from("deal_campaigns").where("id", id).update({ status, published_at: now.toSQL(), updated_at: now.toSQL(), version: Number(row.version) + 1 });
+154-        return this.getCampaign(id);
+155-    }
+156-
+157-    async pauseCampaign(id: number, expectedVersion?: number) {
+158-        const trx = currentTrx();
+159:        const row = await trx.from("deal_campaigns").where("id", id).forUpdate().first();
+160-        if (!row) return null;
+161-        if (expectedVersion !== undefined && Number(row.version) !== expectedVersion) throw new Phase9ConflictError("campaign_version_conflict");
+162:        await trx.from("deal_campaigns").where("id", id).update({ status: "paused", updated_at: DateTime.utc().toSQL(), version: Number(row.version) + 1 });
+163-        return this.getCampaign(id);
+164-    }
+165-
+166-    async amazingDeals(locale = "fa", limit?: number) {
+--
+170-        let campaign = null;
+171-        if (settings.homepage_campaign_id) {
+172-            campaign = await currentTrx()
+173-                .from("deal_campaigns")
+174:                .where("id", settings.homepage_campaign_id)
+175:                .whereIn("status", ["active", "scheduled"])
+176:                .where((q) => q.whereNull("starts_at").orWhere("starts_at", "<=", now))
+177:                .where((q) => q.whereNull("ends_at").orWhere("ends_at", ">", now))
+178-                .first();
+179-        }
+180-        if (!campaign) {
+181-            campaign = await currentTrx()
+182-                .from("deal_campaigns")
+183:                .whereIn("status", ["active", "scheduled"])
+184:                .where((q) => q.whereNull("starts_at").orWhere("starts_at", "<=", now))
+185:                .where((q) => q.whereNull("ends_at").orWhere("ends_at", ">", now))
+186-                .orderBy("published_at", "desc")
+187-                .first();
+188-        }
+189-        if (!campaign) return [];
+--
+208-        const consent = context.subject ? await this.getConsent(context.subject) : null;
+209-        const personalized = Boolean(context.subject && consent?.personalization);
+210-        const candidates = await this.loadEligibleProducts(0, locale, 160, false);
+211-        const excluded = new Set(context.exclude_product_ids ?? []);
+212:        let profile: Record<string, unknown> | null = null;
+213-        if (personalized && context.subject) profile = await this.getProfile(context.subject);
+214:        const recent = new Set<number>(Array.isArray(profile?.recent_product_ids) ? (profile?.recent_product_ids as unknown[]).map(Number) : []);
+215-        const categoryAffinity = asNumberRecord(profile?.category_affinity);
+216-        const brandAffinity = asNumberRecord(profile?.brand_affinity);
+217-        const ranked = candidates
+218-            .filter((p) => !excluded.has(p.id))
+--
+248-            items: ranked.map((p) => ({ ...p.transformed, reason_code: p.reasonCode })),
+249-        };
+250-    }
+251-
+252:    async ingestEvent(input: Record<string, unknown>, subject: Subject | null) {
+253-        const eventId = String(input.event_id ?? randomUUID());
+254-        const eventType = String(input.event_type ?? "");
+255-        if (!/^[a-z][a-z0-9_.-]{2,63}$/.test(eventType)) throw new Phase9ValidationError("invalid_event_type");
+256-        const consent = subject ? await this.getConsent(subject) : null;
+--
+276-        return { accepted: true, deduplicated: inserted.length === 0, event_id: eventId };
+277-    }
+278-
+279-    async getConsent(subject: Subject) {
+280:        const row = await currentTrx().from("personalization_consents").where("subject_type", subject.type).where("subject_id", subject.id).first();
+281-        return row ? serializeConsent(row) : { subject_type: subject.type, subject_id: subject.id, analytics: false, personalization: false, source: "default", policy_version: "v1", version: 0 };
+282-    }
+283-
+284:    async updateConsent(subject: Subject, input: Record<string, unknown>) {
+285-        const analytics = input.analytics === true;
+286-        const personalization = input.personalization === true;
+287-        const source = typeof input.source === "string" ? input.source.slice(0, 64) : "preferences";
+288-        const policy = typeof input.policy_version === "string" ? input.policy_version.slice(0, 32) : "v1";
+--
+290-        await currentTrx().table("personalization_consents").insert({
+291-            tenant_id: currentTenantId(), subject_type: subject.type, subject_id: subject.id,
+292-            analytics, personalization, source, policy_version: policy, version: 1, created_at: now, updated_at: now,
+293-        }).onConflict(["tenant_id", "subject_type", "subject_id"]).merge({ analytics, personalization, source, policy_version: policy, updated_at: now, version: currentTrx().raw("personalization_consents.version + 1") });
+294:        if (!personalization) await currentTrx().from("personalization_profiles").where("subject_type", subject.type).where("subject_id", subject.id).delete();
+295-        return this.getConsent(subject);
+296-    }
+297-
+298-    async resetProfile(subject: Subject) {
+299:        await currentTrx().from("personalization_profiles").where("subject_type", subject.type).where("subject_id", subject.id).delete();
+300-        return { reset: true };
+301-    }
+302-
+303-    async listPlacements() {
+304-        await this.ensureDefaultPlacements();
+305-        return currentTrx().from("personalization_placements").orderBy("placement", "asc");
+306-    }
+307-
+308:    async updatePlacement(placement: string, input: Record<string, unknown>) {
+309-        await this.ensureDefaultPlacements();
+310-        const trx = currentTrx();
+311:        const row = await trx.from("personalization_placements").where("placement", placement).forUpdate().first();
+312-        if (!row) return null;
+313-        if (input.expected_version !== undefined && Number(input.expected_version) !== Number(row.version)) throw new Phase9ConflictError("placement_version_conflict");
+314:        await trx.from("personalization_placements").where("id", row.id).update({
+315-            enabled: typeof input.enabled === "boolean" ? input.enabled : row.enabled,
+316-            strategy: typeof input.strategy === "string" ? String(input.strategy).slice(0, 32) : row.strategy,
+317-            max_items: input.max_items !== undefined ? clamp(Number(input.max_items), 1, 48) : row.max_items,
+318-            exploration_percent: input.exploration_percent !== undefined ? clamp(Number(input.exploration_percent), 0, 50) : row.exploration_percent,
+319:            rules: input.rules !== undefined ? JSON.stringify(sanitizePayload(input.rules)) : row.rules,
+320-            version: Number(row.version) + 1, updated_at: DateTime.utc().toSQL(),
+321-        });
+322:        return trx.from("personalization_placements").where("id", row.id).first();
+323-    }
+324-
+325-    async overview() {
+326-        const trx = currentTrx();
+--
+344-    async recentConsents(limit = 50) {
+345-        return currentTrx().from("personalization_consents").orderBy("updated_at", "desc").limit(clamp(limit, 1, 100));
+346-    }
+347-
+348:    async simulate(input: Record<string, unknown>, locale = "fa") {
+349-        const subject = parseSubject(input.subject);
+350-        const result = await this.recommendations({ placement: String(input.placement ?? "home"), limit: clamp(Number(input.limit ?? 8), 1, 24), subject, locale, exclude_product_ids: Array.isArray(input.exclude_product_ids) ? input.exclude_product_ids.map(Number) : [] });
+351:        return { dry_run: true, steps: ["candidate_generation", "hard_eligibility", "rule_ranking", "diversity", "final_eligibility"], result };
+352-    }
+353-
+354-    private async getCampaign(id: number) {
+355:        const row = await currentTrx().from("deal_campaigns").where("id", id).first();
+356-        if (!row) return null;
+357:        const products = await currentTrx().from("deal_campaign_products").where("campaign_id", id).orderBy("position", "asc");
+358-        return { ...serializeCampaign(row), products: products.map((p) => ({ product_id: Number(p.product_id), pinned: Boolean(p.pinned), position: Number(p.position) })) };
+359-    }
+360-
+361-    private async replaceCampaignProducts(campaignId: number, productIds: number[], pinnedIds: number[]) {
+362-        const ids = uniqueIds(productIds);
+363-        const pinned = new Set(uniqueIds(pinnedIds));
+364-        if (ids.length) {
+365:            const valid = await currentTrx().from("products").whereIn("id", ids).whereNull("deleted_at").select("id");
+366-            if (valid.length !== ids.length) throw new Phase9ValidationError("invalid_campaign_product");
+367-        }
+368:        await currentTrx().from("deal_campaign_products").where("campaign_id", campaignId).delete();
+369-        if (ids.length) await currentTrx().table("deal_campaign_products").insert(ids.map((id, index) => ({ tenant_id: currentTenantId(), campaign_id: campaignId, product_id: id, pinned: pinned.has(id), position: index, created_at: DateTime.utc().toSQL(), updated_at: DateTime.utc().toSQL() })));
+370-    }
+371-
+372:    private async resolveCampaignProducts(campaign: Record<string, unknown>, locale: string) {
+373-        const eligible = await this.loadEligibleProducts(Number(campaign.min_discount_percent ?? 10), locale, 240);
+374:        const links = await currentTrx().from("deal_campaign_products").where("campaign_id", campaign.id).orderBy("position", "asc");
+375-        const map = new Map(eligible.map((p) => [p.id, p]));
+376-        const manual = links.map((l) => map.get(Number(l.product_id))).filter((p): p is EligibleProduct => Boolean(p));
+377-        const pinned = links.filter((l) => l.pinned).map((l) => map.get(Number(l.product_id))).filter((p): p is EligibleProduct => Boolean(p));
+378-        const mode = String(campaign.selection_mode) as SelectionMode;
+--
+389-
+390-    private async loadEligibleProducts(minDiscount: number, locale: string, limit: number, saleOnly = true): Promise<EligibleProduct[]> {
+391-        const query = Product.query({ client: currentTrx() })
+392-            .apply((scopes) => scopes.published());
+393:        if (saleOnly) query.whereNotNull("sale_price");
+394-        const products = await query
+395-            .preload("translations")
+396-            .preload("images", (q) => q.preload("media"))
+397-            .preload("inventoryItems")
+--
+400-            .orderBy("id", "desc")
+401-            .limit(limit);
+402-        const out: EligibleProduct[] = [];
+403-        for (const p of products) {
+404:            const object = new ProductTransformer(p, locale).toObject() as Record<string, unknown>;
+405-            const regular = Number(object.regular_price ?? 0);
+406-            const effective = Number(object.effective_price ?? regular);
+407-            if (!Number.isFinite(regular) || regular <= 0 || !Number.isFinite(effective) || effective <= 0) continue;
+408-            if (saleOnly && object.on_sale !== true) continue;
+--
+419-
