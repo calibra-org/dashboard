@@ -6,7 +6,8 @@ import Customer from "#models/customer";
 import CustomerMarketingConsentHistory from "#models/customer_marketing_consent_history";
 import CustomerMarketingPref from "#models/customer_marketing_pref";
 import { recordAudit } from "#services/admin_audit_log_service";
-import { withTenantTransaction } from "#services/tenant_context";
+import { CacheInvalidation } from "#services/cache_invalidation";
+import { currentTenantId, withTenantTransaction } from "#services/tenant_context";
 import CustomerMarketingConsentHistoryTransformer from "#transformers/customer_marketing_consent_history_transformer";
 import CustomerMarketingPrefTransformer from "#transformers/customer_marketing_pref_transformer";
 import { adminCustomerMarketingPatchValidator } from "#validators/admin/customer_validator";
@@ -98,6 +99,7 @@ export default class AdminCustomerMarketingController {
                 entityId: Number(customer.id),
                 payload: { channel: payload.channel, opt_in: payload.opt_in, source: payload.source ?? "admin" },
             });
+            await CacheInvalidation.customerChanged(currentTenantId(), customer.id);
         }
 
         return { data: new CustomerMarketingPrefTransformer(row).toObject() };
