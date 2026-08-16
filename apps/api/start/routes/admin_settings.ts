@@ -1,11 +1,13 @@
 import router from "@adonisjs/core/services/router";
 
 import { middleware } from "#start/kernel";
+import { adminWriteLimiter } from "#start/limiter";
 
 const AdminSettingsGeneralController = () => import("#controllers/admin/settings_general_controller");
 const AdminSettingsDatetimeController = () => import("#controllers/admin/settings_datetime_controller");
 const AdminSettingsMediaController = () => import("#controllers/admin/settings_media_controller");
 const AdminSettingsBrandingController = () => import("#controllers/admin/settings_branding_controller");
+const AdminConfigurationController = () => import("#controllers/admin/configuration_controller");
 
 router
     .group(() => {
@@ -17,6 +19,15 @@ router
         router.patch("/media", [AdminSettingsMediaController, "update"]).as("admin.settings.media.update");
         router.get("/branding", [AdminSettingsBrandingController, "show"]).as("admin.settings.branding.show");
         router.patch("/branding", [AdminSettingsBrandingController, "update"]).as("admin.settings.branding.update");
+        router.get("/configuration/registry", [AdminConfigurationController, "registry"]).as("admin.settings.configuration.registry");
+        router.get("/configuration/history", [AdminConfigurationController, "history"]).as("admin.settings.configuration.history");
+        router
+            .get("/configuration/history/:scope/:revision", [AdminConfigurationController, "show"])
+            .as("admin.settings.configuration.history.show");
+        router
+            .post("/configuration/history/:scope/:revision/rollback", [AdminConfigurationController, "rollback"])
+            .as("admin.settings.configuration.history.rollback")
+            .use(adminWriteLimiter);
     })
     .prefix("/api/v1/admin/settings")
     .use(middleware.auth({ guards: ["api"] }))

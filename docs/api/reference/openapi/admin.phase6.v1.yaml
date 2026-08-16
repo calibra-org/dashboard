@@ -1,0 +1,176 @@
+openapi: 3.1.0
+info:
+  title: Calibra Admin Phase 6 Configuration OS Overlay
+  version: 1.0.0
+  description: Tenant-scoped configuration capability registry, immutable settings revisions, diffs and rollback.
+paths:
+  /api/v1/admin/settings/configuration/registry:
+    get:
+      operationId: adminPhase6ConfigurationRegistry
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Real editable settings surfaces and existing store configuration domains
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ConfigurationCapabilityEnvelope' }
+  /api/v1/admin/settings/configuration/history:
+    get:
+      operationId: adminPhase6ConfigurationHistory
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: scope
+          required: false
+          schema: { $ref: '#/components/schemas/ConfigurationScope' }
+        - in: query
+          name: limit
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+      responses:
+        '200':
+          description: Configuration revision history
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ConfigurationRevisionListEnvelope' }
+        '422': { description: Unknown configuration scope }
+  /api/v1/admin/settings/configuration/history/{scope}/{revision}:
+    get:
+      operationId: adminPhase6ConfigurationRevisionShow
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/ConfigurationScope' }
+        - { $ref: '#/components/parameters/ConfigurationRevision' }
+      responses:
+        '200':
+          description: One immutable revision with its diff from the preceding revision
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ConfigurationRevisionDetailEnvelope' }
+        '404': { description: Revision not found }
+  /api/v1/admin/settings/configuration/history/{scope}/{revision}/rollback:
+    post:
+      operationId: adminPhase6ConfigurationRollback
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/ConfigurationScope' }
+        - { $ref: '#/components/parameters/ConfigurationRevision' }
+      responses:
+        '200':
+          description: Selected snapshot restored and a new rollback revision appended
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ConfigurationRollbackEnvelope' }
+        '404': { description: Revision not found }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  parameters:
+    ConfigurationScope:
+      in: path
+      name: scope
+      required: true
+      schema: { $ref: '#/components/schemas/ConfigurationScope' }
+    ConfigurationRevision:
+      in: path
+      name: revision
+      required: true
+      schema: { type: integer, minimum: 1 }
+  schemas:
+    ConfigurationScope:
+      type: string
+      enum: [general, datetime, media, branding]
+    ConfigurationCapability:
+      type: object
+      required: [key, category, mode, label_fa, label_en, description_fa, description_en, href, api_path, history_enabled]
+      properties:
+        key: { type: string }
+        category: { type: string, enum: [site, store] }
+        mode: { type: string, enum: [settings, domain] }
+        label_fa: { type: string }
+        label_en: { type: string }
+        description_fa: { type: string }
+        description_en: { type: string }
+        href: { type: string }
+        api_path: { type: string }
+        history_enabled: { type: boolean }
+    ConfigurationCapabilityEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/ConfigurationCapability' }
+    ConfigurationRevision:
+      type: object
+      required: [id, scope, revision, source, rollback_of_revision, created_by_user_id, created_at, changed_keys]
+      properties:
+        id: { type: integer, format: int64 }
+        scope: { $ref: '#/components/schemas/ConfigurationScope' }
+        revision: { type: integer, minimum: 1 }
+        source: { type: string, enum: [update, rollback] }
+        rollback_of_revision: { type: [integer, 'null'] }
+        created_by_user_id: { type: [integer, 'null'], format: int64 }
+        created_at: { type: string, format: date-time }
+        changed_keys:
+          type: array
+          items: { type: string }
+    ConfigurationRevisionListEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/ConfigurationRevision' }
+    ConfigurationSnapshotEntry:
+      type: object
+      required: [group, key, type, exists, value]
+      properties:
+        group: { type: string }
+        key: { type: string }
+        type: { type: string, enum: [string, number, boolean, json] }
+        exists: { type: boolean }
+        value: {}
+    ConfigurationSnapshot:
+      type: object
+      required: [entries]
+      properties:
+        entries:
+          type: array
+          items: { $ref: '#/components/schemas/ConfigurationSnapshotEntry' }
+    ConfigurationDiffEntry:
+      type: object
+      required: [key, before, after, before_exists, after_exists]
+      properties:
+        key: { type: string }
+        before: {}
+        after: {}
+        before_exists: { type: boolean }
+        after_exists: { type: boolean }
+    ConfigurationRevisionDetail:
+      allOf:
+        - { $ref: '#/components/schemas/ConfigurationRevision' }
+        - type: object
+          required: [snapshot, diff]
+          properties:
+            snapshot: { $ref: '#/components/schemas/ConfigurationSnapshot' }
+            diff:
+              type: array
+              items: { $ref: '#/components/schemas/ConfigurationDiffEntry' }
+    ConfigurationRevisionDetailEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/ConfigurationRevisionDetail' }
+    ConfigurationRollbackEnvelope:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/ConfigurationRevisionDetail' }
+        meta:
+          type: object
+          required: [changed]
+          properties:
+            changed: { type: boolean }
