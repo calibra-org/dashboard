@@ -40,15 +40,17 @@ export default class AdminPaymentAttemptsController {
     async summary() {
         const statusRows = await PaymentAttempt.query()
             .select("status")
-            .sum("amount_minor as amount_minor")
-            .count("id as count")
+            .sum("amount_minor as total_amount_minor")
+            .count("id as total_count")
             .groupBy("status");
         const reconciliationRows = await PaymentAttempt.query()
             .select("reconciliation_status")
             .count("id as count")
             .groupBy("reconciliation_status");
         const attentionRow = await PaymentAttempt.query()
-            .where((builder) => builder.whereIn("status", ["failed", "cancelled"]).orWhere("reconciliation_status", "mismatch"))
+            .where((builder) =>
+                builder.whereIn("status", ["failed", "cancelled"]).orWhere("reconciliation_status", "mismatch"),
+            )
             .count("id as count")
             .first();
 
@@ -57,8 +59,8 @@ export default class AdminPaymentAttemptsController {
         let totalAmountMinor = 0;
         for (const row of statusRows) {
             const status = String(row.status);
-            const count = Number(row.$extras.count ?? 0);
-            const amountMinor = Number(row.$extras.amount_minor ?? 0);
+            const count = Number(row.$extras.total_count ?? 0);
+            const amountMinor = Number(row.$extras.total_amount_minor ?? 0);
             byStatus[status] = { count, amount_minor: amountMinor };
             totalCount += count;
             totalAmountMinor += amountMinor;

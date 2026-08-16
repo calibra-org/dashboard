@@ -31,8 +31,10 @@ router
         router.post("/configuration/history/:scope/:revision/rollback", [AdminConfigurationController, "rollback"]).as("admin.settings.configuration.history.rollback").use(adminWriteLimiter);
         router.get("/configuration/blueprint", [AdminConfigurationController, "blueprint"]).as("admin.settings.configuration.blueprint");
         router.post("/configuration/blueprint/validate", [AdminConfigurationController, "validateBlueprint"]).as("admin.settings.configuration.blueprint.validate").use(adminWriteLimiter);
+        router.post("/configuration/blueprint/apply", [AdminConfigurationController, "applyBlueprint"]).as("admin.settings.configuration.blueprint.apply").use(adminWriteLimiter);
         router.get("/configuration/drift", [AdminConfigurationController, "drift"]).as("admin.settings.configuration.drift");
         router.get("/configuration/url-redirects", [AdminConfigurationController, "urlRedirectHistory"]).as("admin.settings.configuration.urlRedirects");
+        router.post("/configuration/tax/simulate", [AdminConfigurationController, "taxSimulate"]).as("admin.settings.configuration.taxSimulate").use(adminWriteLimiter);
     })
     .prefix("/api/v1/admin/settings")
     .use(middleware.auth({ guards: ["api"] }))

@@ -23,7 +23,9 @@ export default class extends BaseSchema {
             table.bigInteger("updated_by_user_id").unsigned().nullable().references("id").inTable("users").onDelete("SET NULL");
             table.timestamp("created_at", { useTz: true }).notNullable().defaultTo(this.now());
             table.timestamp("updated_at", { useTz: true }).notNullable().defaultTo(this.now());
-            table.unique(["tenant_id", "definition_key", "scope_type", "scope_key"], { indexName: "configuration_overrides_scope_unique" });
+            table.unique(["tenant_id", "definition_key", "scope_type", "scope_key"], {
+                indexName: "configuration_overrides_scope_unique",
+            });
             table.index(["tenant_id", "group_key"], "configuration_overrides_tenant_group_idx");
         });
 
@@ -44,12 +46,16 @@ export default class extends BaseSchema {
         for (const table of ["configuration_overrides", "configuration_url_redirect_history"]) {
             this.schema.raw(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`);
             this.schema.raw(`ALTER TABLE ${table} FORCE ROW LEVEL SECURITY`);
-            this.schema.raw(`CREATE POLICY ${table}_tenant_isolation ON ${table} USING (${TENANT_PREDICATE}) WITH CHECK (${TENANT_PREDICATE})`);
+            this.schema.raw(
+                `CREATE POLICY ${table}_tenant_isolation ON ${table} USING (${TENANT_PREDICATE}) WITH CHECK (${TENANT_PREDICATE})`,
+            );
         }
     }
 
     async down() {
-        this.schema.raw("DROP POLICY IF EXISTS configuration_url_redirect_history_tenant_isolation ON configuration_url_redirect_history");
+        this.schema.raw(
+            "DROP POLICY IF EXISTS configuration_url_redirect_history_tenant_isolation ON configuration_url_redirect_history",
+        );
         this.schema.raw("DROP POLICY IF EXISTS configuration_overrides_tenant_isolation ON configuration_overrides");
         this.schema.dropTable("configuration_url_redirect_history");
         this.schema.dropTable("configuration_overrides");

@@ -35,7 +35,12 @@ export default class SettingsService {
     async unset(group: string, key: string): Promise<void> {
         const tenantId = currentTenantId();
         const trx = maybeTenantContext()!.trx;
-        await trx.from("settings").where("tenant_id", tenantId).where("group_key", group).where("key", key).delete();
+        await trx
+            .from("settings")
+            .where("tenant_id", String(tenantId))
+            .where("group_key", group)
+            .where("key", key)
+            .delete();
         await this.invalidate(group);
     }
 
