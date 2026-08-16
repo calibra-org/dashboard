@@ -30,8 +30,11 @@ jobs:
                   node-version: ${{ env.NODE_VERSION }}
                   cache: pnpm
             - run: pnpm install --frozen-lockfile
-            - name: Validate admin OpenAPI overlay
-              run: pnpm --filter @calibra/api-docs run lint:admin
+            - name: Validate Phase 15 OpenAPI overlay
+              working-directory: docs/api
+              run: pnpm exec redocly lint reference/openapi/admin.customer-intelligence.v1.yaml --format stylish
+            - name: Build merged Admin OpenAPI contract
+              run: pnpm --filter @calibra/api-docs run build:json:admin
             - name: Regenerate typed Admin SDK
               run: pnpm --filter @calibra/sdk run codegen:admin
             - name: Typecheck Phase 15 workspaces
@@ -45,18 +48,25 @@ jobs:
             - name: Check Phase 15 formatting and lint
               run: >-
                   pnpm exec biome check
+                  apps/api/app/controllers/admin/customer_actions_controller.ts
                   apps/api/app/controllers/admin/customer_intelligence_controller.ts
+                  apps/api/app/controllers/admin/customer_marketing_controller.ts
                   apps/api/app/controllers/admin/customer_segments_controller.ts
+                  apps/api/app/controllers/admin/tickets_controller.ts
                   apps/api/app/jobs/refresh_customer_intelligence_job.ts
+                  apps/api/app/services/cache_invalidation.ts
                   apps/api/app/services/customer_intelligence_eligibility_service.ts
                   apps/api/app/services/customer_intelligence_segments_service.ts
                   apps/api/app/services/customer_intelligence_service.ts
                   apps/api/app/validators/admin/customer_intelligence_validator.ts
                   apps/api/start/routes/admin_customer_intelligence.ts
+                  apps/api/start/routes/admin_customer_segments.ts
                   apps/api/tests/unit/customer_intelligence.spec.ts
+                  apps/admin/src/lib/i18n/request.ts
                   apps/admin/src/lib/queries/customer-intelligence.ts
                   apps/admin/src/views/customers/customer-workspace-nav.tsx
                   apps/admin/src/views/customers/cohorts/cohorts-lifecycle.tsx
+                  apps/admin/src/views/customers/detail/customers-detail.tsx
                   apps/admin/src/views/customers/detail/intelligence-card.tsx
                   apps/admin/src/views/customers/intelligence/intelligence-overview.tsx
                   apps/admin/src/views/customers/segments/segment-studio.tsx
