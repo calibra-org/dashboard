@@ -3,6 +3,10 @@ import type { HttpContext } from "@adonisjs/core/http";
 
 import { recordAudit } from "#services/admin_audit_log_service";
 import {
+    assertCustomerIntelligenceEligible,
+    purgeIneligibleCustomerIntelligence,
+} from "#services/customer_intelligence_eligibility_service";
+import {
     getCustomerIntelligence,
     getCustomerIntelligenceSummary,
     getLifecycleCohorts,
@@ -26,11 +30,14 @@ export default class AdminCustomerIntelligenceController {
     }
 
     async show(ctx: HttpContext) {
-        return { data: await getCustomerIntelligence(numericId(ctx.params.id)) };
+        const customerId = numericId(ctx.params.id);
+        await assertCustomerIntelligenceEligible(customerId);
+        return { data: await getCustomerIntelligence(customerId) };
     }
 
     async refresh(ctx: HttpContext) {
         const customerId = numericId(ctx.params.id);
+        await assertCustomerIntelligenceEligible(customerId);
         const data = await refreshCustomerIntelligence(customerId);
         await recordAudit({
             ctx,
@@ -43,14 +50,15 @@ export default class AdminCustomerIntelligenceController {
     }
 
     async refreshAll(ctx: HttpContext) {
+        const purged = await purgeIneligibleCustomerIntelligence();
         const refreshed = await refreshAllCustomerIntelligence();
         await recordAudit({
             ctx,
             action: "customer.intelligence.refresh_all",
             entityKind: "customer_intelligence",
             entityId: null,
-            payload: { refreshed },
+            payload: { refreshed, purged },
         });
-        return { data: { refreshed } };
+        return { data: { refreshed, purged } };
     }
 }
