@@ -10,7 +10,8 @@ import CustomerMergeHistory from "#models/customer_merge_history";
 import PasswordResetToken from "#models/password_reset_token";
 import User from "#models/user";
 import { recordAudit } from "#services/admin_audit_log_service";
-import { withTenantTransaction } from "#services/tenant_context";
+import { CacheInvalidation } from "#services/cache_invalidation";
+import { currentTenantId, withTenantTransaction } from "#services/tenant_context";
 import CustomerTransformer from "#transformers/customer_transformer";
 import UserTransformer from "#transformers/user_transformer";
 import { adminCustomerConvertToAccountValidator, adminCustomerMergeValidator } from "#validators/admin/customer_validator";
@@ -316,6 +317,12 @@ export default class AdminCustomerActionsController {
                 }
             }
         });
+
+        const tenantId = currentTenantId();
+        await CacheInvalidation.customerChanged(tenantId, payload.primary_id);
+        for (const duplicateId of payload.duplicate_ids) {
+            await CacheInvalidation.customerChanged(tenantId, duplicateId);
+        }
 
         await recordAudit({
             ctx,
