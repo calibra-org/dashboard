@@ -1,0 +1,49 @@
+=== admin controller 20-65 ===
+    20	            return ctx.response.status(201).json({ data });
+    21	        } catch (error) { return this.handle(error, ctx); }
+    22	    }
+    23	
+    24	    async updateCampaign(ctx: HttpContext) {
+    25	        try {
+    26	            const id = positiveId(ctx.params.id);
+    27	            const data = await this.service.updateCampaign(id, ctx.request.body());
+    28	            if (!data) return ctx.response.status(404).json({ error: "campaign_not_found" });
+    29	            await auditPhase9("phase9.campaign.update", "deal_campaign", id, actorId(ctx), { version: data.version }, ctx.request.ip());
+    30	            return { data };
+    31	        } catch (error) { return this.handle(error, ctx); }
+    32	    }
+    33	
+    34	    async publishCampaign(ctx: HttpContext) {
+    35	        try {
+    36	            const id = positiveId(ctx.params.id);
+    37	            const data = await this.service.publishCampaign(id, optionalVersion(ctx.request.input("expected_version")));
+    38	            if (!data) return ctx.response.status(404).json({ error: "campaign_not_found" });
+    39	            await auditPhase9("phase9.campaign.publish", "deal_campaign", id, actorId(ctx), { status: data.status, version: data.version }, ctx.request.ip());
+    40	            return { data };
+    41	        } catch (error) { return this.handle(error, ctx); }
+    42	    }
+    43	
+    44	    async pauseCampaign(ctx: HttpContext) {
+    45	        try {
+    46	            const id = positiveId(ctx.params.id);
+    47	            const data = await this.service.pauseCampaign(id, optionalVersion(ctx.request.input("expected_version")));
+    48	            if (!data) return ctx.response.status(404).json({ error: "campaign_not_found" });
+    49	            await auditPhase9("phase9.campaign.pause", "deal_campaign", id, actorId(ctx), { version: data.version }, ctx.request.ip());
+    50	            return { data };
+    51	        } catch (error) { return this.handle(error, ctx); }
+    52	    }
+    53	
+    54	    async updateSettings(ctx: HttpContext) {
+    55	        const before = await this.service.runtimeSettings();
+    56	        const data = await this.service.updateRuntimeSettings(ctx.request.body());
+    57	        await auditPhase9("phase9.settings.update", "personalization", null, actorId(ctx), { before, after: data }, ctx.request.ip());
+    58	        return { data };
+    59	    }
+    60	
+    61	    async updatePlacement(ctx: HttpContext) {
+    62	        try {
+    63	            const placement = String(ctx.params.placement ?? "").slice(0, 64);
+    64	            const data = await this.service.updatePlacement(placement, ctx.request.body());
+    65	            if (!data) return ctx.response.status(404).json({ error: "placement_not_found" });
+
+=== service 500-530 ===
