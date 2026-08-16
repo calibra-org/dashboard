@@ -19,10 +19,32 @@ async function createCustomer() {
 }
 
 const BASE = "/api/v1/admin/settings/configuration";
+const MASTER_GROUPS = [
+    "general",
+    "publishing",
+    "reading",
+    "community",
+    "media",
+    "urls",
+    "catalog",
+    "inventory",
+    "tax",
+    "shipping",
+    "payments",
+    "checkout",
+    "notifications",
+    "privacy",
+    "visibility",
+    "integrations",
+    "infrastructure",
+    "change_management",
+];
 
 test.group("admin configuration revisions", (group) => {
     group.each.setup(async () => {
-        await db.rawQuery("TRUNCATE TABLE configuration_revisions RESTART IDENTITY CASCADE");
+        await db.rawQuery(
+            "TRUNCATE TABLE configuration_url_redirect_history, configuration_overrides, configuration_revisions RESTART IDENTITY CASCADE",
+        );
         await truncatePhase03Tables();
         const client = db.connection();
         await new FoundationSeeder(client).run();
@@ -30,14 +52,20 @@ test.group("admin configuration revisions", (group) => {
         await new SettingsService().clearCache();
     });
 
-    test("registry exposes only real settings editors and real store domains", async ({ client, assert }) => {
+    test("registry exposes the complete canonical Phase 6 configuration groups", async ({ client, assert }) => {
         const admin = await createAdmin();
         const res = await client.get(`${BASE}/registry`).withGuard("api").loginAs(admin);
         res.assertStatus(200);
-        const body = res.body() as { data: Array<{ key: string; mode: string; history_enabled: boolean }> };
-        assert.deepEqual(body.data.map((item) => item.key), ["general", "datetime", "media", "branding", "catalog", "payments", "shipping", "tax"]);
-        assert.isTrue(body.data.filter((item) => item.mode === "settings").every((item) => item.history_enabled));
-        assert.isFalse(body.data.some((item) => ["account", "email", "advanced"].includes(item.key)));
+        const body = res.body() as {
+            data: Array<{ key: string; mode: string; history_enabled: boolean; definition_count: number }>;
+        };
+        assert.deepEqual(
+            body.data.map((item) => item.key),
+            MASTER_GROUPS,
+        );
+        assert.isTrue(body.data.every((item) => item.history_enabled));
+        assert.isTrue(body.data.every((item) => item.definition_count > 0));
+        assert.isFalse(body.data.some((item) => ["account", "email", "advanced", "datetime", "branding"].includes(item.key)));
     });
 
     test("history endpoints require admin authorization", async ({ client }) => {
@@ -76,7 +104,10 @@ test.group("admin configuration revisions", (group) => {
 
         const rollback = await client.post(`${BASE}/history/datetime/1/rollback`).withGuard("api").loginAs(admin);
         rollback.assertStatus(200);
-        const rollbackBody = rollback.body() as { data: { revision: number; source: string; rollback_of_revision: number }; meta: { changed: boolean } };
+        const rollbackBody = rollback.body() as {
+            data: { revision: number; source: string; rollback_of_revision: number };
+            meta: { changed: boolean };
+        };
         assert.equal(rollbackBody.data.revision, 4);
         assert.equal(rollbackBody.data.source, "rollback");
         assert.equal(rollbackBody.data.rollback_of_revision, 1);
@@ -88,6 +119,9 @@ test.group("admin configuration revisions", (group) => {
 
         const detail = await client.get(`${BASE}/history/datetime/4`).withGuard("api").loginAs(admin);
         detail.assertStatus(200);
-        assert.include((detail.body() as { data: { diff: Array<{ key: string }> } }).data.diff.map((item) => item.key), "datetime.date_format");
+        assert.include(
+            (detail.body() as { data: { diff: Array<{ key: string }> } }).data.diff.map((item) => item.key),
+            "datetime.date_format",
+        );
     });
 });
