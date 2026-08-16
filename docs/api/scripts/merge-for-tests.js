@@ -51,6 +51,27 @@ const merged = {
     },
 };
 
+// AdonisJS auto-registers HEAD companions for GET routes. The generated HEAD
+// stubs are intentionally minimal in the public specs, but the OpenAPI 3.0
+// validator used by Japa requires every path parameter to be declared on the
+// operation. Enrich only the test-only merged fixture from the matching GET.
+for (const [path, item] of Object.entries(merged.paths ?? {})) {
+    if (!item || typeof item !== "object" || !item.head || !item.get) continue;
+    const inherited = Array.isArray(item.parameters) ? item.parameters : [];
+    const getParameters = Array.isArray(item.get.parameters) ? item.get.parameters : [];
+    const headParameters = Array.isArray(item.head.parameters) ? item.head.parameters : [];
+    const combined = [...inherited, ...getParameters, ...headParameters];
+    const seen = new Set();
+    item.head.parameters = combined.filter((parameter) => {
+        const key = parameter?.$ref ?? String(parameter?.in ?? "") + ":" + String(parameter?.name ?? "");
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+    if (item.head.parameters.length === 0) delete item.head.parameters;
+    item.head.summary ??= "HEAD companion for " + path;
+}
+
 downgradeTo30(merged, merged);
 
 const outPath = resolve(ROOT, "dist/_merged.test.json");
@@ -87,6 +108,13 @@ function downgradeTo30(node, root) {
         return;
     }
     if (!node || typeof node !== "object") return;
+
+    // OpenAPI 3.1 supports const; OpenAPI 3.0 expresses the same constraint
+    // with a single-value enum. This conversion is test-fixture only.
+    if (Object.prototype.hasOwnProperty.call(node, "const")) {
+        node.enum = [node.const];
+        delete node.const;
+    }
 
     if (Array.isArray(node.type)) {
         const types = node.type;

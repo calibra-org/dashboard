@@ -117,7 +117,7 @@ paths:
                         application/json:
                             schema:
                                 $ref: "#/components/schemas/PublicEnvelope"
-                "404": { description: Tracking token invalid, expired, revoked, or outside the current tenant }
+                "404": { description: "Tracking token invalid, expired, revoked, or outside the current tenant" }
     /api/v1/support/tickets/{token}/replies:
         parameters:
             - name: token
