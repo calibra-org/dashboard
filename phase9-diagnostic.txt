@@ -1,3 +1,107 @@
-stage=preflight
-run=https://github.com/calibra-org/dashboard/actions/runs/31976178073
+stage=typecheck
+run=https://github.com/calibra-org/dashboard/actions/runs/31976204038
 
+
+> @calibra/monorepo@ typecheck /home/runner/work/dashboard/dashboard
+> turbo run typecheck
+
+
+   • Packages in scope: @calibra/admin, @calibra/api, @calibra/api-docs, @calibra/panel-kit, @calibra/platform, @calibra/sdk, @calibra/shared, @calibra/spin, @calibra/typescript-config, @calibra/web
+   • Running typecheck in 10 packages
+   • Remote caching disabled
+
+::group::@calibra/shared:typecheck
+cache miss, executing b840ad28572e57c4
+
+> @calibra/shared@0.0.0 typecheck /home/runner/work/dashboard/dashboard/packages/shared
+> tsc --noEmit
+
+::endgroup::
+::group::@calibra/sdk:build
+cache miss, executing b3d948b410c34934
+
+> @calibra/sdk@0.0.0 build /home/runner/work/dashboard/dashboard/packages/sdk
+> tsdown
+
+[34mℹ[39m [34mtsdown v0.21.10[39m powered by [38;2;255;126;23mrolldown v1.0.0-rc.17[39m
+[34mℹ[39m config file: [4m/home/runner/work/dashboard/dashboard/packages/sdk/tsdown.config.ts[24m 
+[34mℹ[39m entry: [34msrc/index.ts[39m
+[34mℹ[39m target: [34mes2022[39m
+[34mℹ[39m tsconfig: [34mtsconfig.json[39m
+[34mℹ[39m Build start
+[34mℹ[39m [2mdist/[22m[1mindex.js[22m      [2m 10.42 kB[22m [2m│ gzip:   3.55 kB[22m
+[34mℹ[39m [2mdist/[22mindex.js.map  [2m 22.20 kB[22m [2m│ gzip:   6.63 kB[22m
+[34mℹ[39m [2mdist/[22m[32m[1mindex.d.ts[22m[39m    [2m905.58 kB[22m [2m│ gzip: 106.86 kB[22m
+[34mℹ[39m 3 files, total: 938.20 kB
+[33m[PLUGIN_TIMINGS] Warning:[0m Your build spent significant time in plugins. Here is a breakdown:
+  - rolldown-plugin-dts:generate (52%)
+  - rolldown-plugin-dts:resolver (27%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[32m✔[39m Build complete in [32m4490ms[39m
+::endgroup::
+::group::@calibra/sdk:typecheck
+cache miss, executing a0c3430b5fed98ee
+
+> @calibra/sdk@0.0.0 typecheck /home/runner/work/dashboard/dashboard/packages/sdk
+> tsc --noEmit --emitDeclarationOnly false
+
+::endgroup::
+::group::@calibra/spin:typecheck
+cache miss, executing 243e1917dadcc9af
+
+> @calibra/spin@0.0.0 typecheck /home/runner/work/dashboard/dashboard/packages/spin
+> tsc --noEmit
+
+::endgroup::
+::group::@calibra/panel-kit:typecheck
+cache miss, executing 98010f1fb0d68f93
+
+> @calibra/panel-kit@0.0.0 typecheck /home/runner/work/dashboard/dashboard/packages/panel-kit
+> tsc --noEmit
+
+::endgroup::
+::group::@calibra/web:typecheck
+cache miss, executing f36f0ba94bb5b811
+
+> @calibra/web@0.0.0 typecheck /home/runner/work/dashboard/dashboard/apps/web
+> tsc --noEmit
+
+::endgroup::
+::group::@calibra/platform:typecheck
+cache miss, executing 59e005aa7c0e2e77
+
+> @calibra/platform@0.0.0 typecheck /home/runner/work/dashboard/dashboard/apps/platform
+> tsc --noEmit
+
+::endgroup::
+[;31m@calibra/api:typecheck[;0m
+cache miss, executing 2c8f9ece18865722
+
+> @calibra/api@0.0.0 typecheck /home/runner/work/dashboard/dashboard/apps/api
+> tsc --noEmit
+
+app/controllers/admin/personalization_controller.ts(35,60): error TS2345: Argument of type 'Record<string, any>' is not assignable to parameter of type 'CampaignInput'.
+  Property 'name' is missing in type 'Record<string, any>' but required in type 'CampaignInput'.
+app/controllers/admin/personalization_controller.ts(53,64): error TS2345: Argument of type 'Record<string, any>' is not assignable to parameter of type 'CampaignInput'.
+  Property 'name' is missing in type 'Record<string, any>' but required in type 'CampaignInput'.
+app/services/phase9_personalization_service.ts(516,35): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'ChainableContract | StrictValues'.
+ ELIFECYCLE  Command failed with exit code 2.
+::group::@calibra/admin:typecheck
+cache miss, executing bc7aa3366d55635a
+
+> @calibra/admin@0.0.0 typecheck /home/runner/work/dashboard/dashboard/apps/admin
+> tsc --noEmit
+
+ ELIFECYCLE  Command failed.
+::endgroup::
+::error::@calibra/api#typecheck: command (/home/runner/work/dashboard/dashboard/apps/api) /home/runner/setup-pnpm/node_modules/.bin/pnpm run typecheck exited (2)
+ ERROR  @calibra/api#typecheck: command (/home/runner/work/dashboard/dashboard/apps/api) /home/runner/setup-pnpm/node_modules/.bin/pnpm run typecheck exited (2)
+
+ Tasks:    7 successful, 9 total
+Cached:    0 cached, 9 total
+  Time:    24.795s 
+Failed:    @calibra/api#typecheck
+
+ ERROR  run failed: command  exited (2)
+ ELIFECYCLE  Command failed with exit code 2.
