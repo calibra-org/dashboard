@@ -8,42 +8,16 @@ permissions:
     contents: write
 
 env:
-    NODE_VERSION: "24.14.0"
-    PNPM_VERSION: "10.32.1"
     GH_TOKEN: ${{ github.token }}
 
 jobs:
-    functional-diagnostic:
+    route-diagnostic:
         if: contains(github.event.head_commit.message, '[phase9-resume]')
         runs-on: ubuntu-latest
-        timeout-minutes: 6
-        services:
-            postgres:
-                image: postgres:17-alpine
-                env:
-                    POSTGRES_USER: calibra
-                    POSTGRES_PASSWORD: calibra
-                    POSTGRES_DB: calibra
-                ports: ["5432:5432"]
-                options: >-
-                    --health-cmd "pg_isready -U calibra -d calibra"
-                    --health-interval 5s --health-timeout 5s --health-retries 10
-            redis:
-                image: redis:7-alpine
-                ports: ["6379:6379"]
-                options: >-
-                    --health-cmd "redis-cli ping"
-                    --health-interval 5s --health-timeout 3s --health-retries 10
+        timeout-minutes: 3
         steps:
             - uses: actions/checkout@v4
-            - uses: pnpm/action-setup@v4
-              with: { version: "10.32.1" }
-            - uses: actions/setup-node@v4
-              with:
-                  node-version: "24.14.0"
-                  cache: pnpm
-
-            - name: Expand verified Phase 9 API payload
+            - name: Extract Phase 9 route source
               shell: bash
               run: |
                   set -euo pipefail
@@ -52,64 +26,15 @@ jobs:
                   base64 -d /tmp/phase9.b64 > /tmp/phase9.tgz
                   echo "f38cffa6fbb1eab253e7879389ae423810adc2316bc4bd636d51e54e4cc6d956  /tmp/phase9.tgz" | sha256sum -c -
                   tar -xzf /tmp/phase9.tgz -C .
-                  node .phase9-finalize/apply-phase9.mjs
-                  python3 - <<'PY'
-                  from pathlib import Path
-                  controller = Path("apps/api/app/controllers/admin/personalization_controller.ts")
-                  s = controller.read_text()
-                  s = s.replace('this.service.createCampaign(ctx.request.body(), actorId(ctx))', 'this.service.createCampaign(ctx.request.body() as Parameters<Phase9PersonalizationService["createCampaign"]>[0], actorId(ctx))', 1)
-                  s = s.replace('this.service.updateCampaign(id, ctx.request.body())', 'this.service.updateCampaign(id, ctx.request.body() as Parameters<Phase9PersonalizationService["updateCampaign"]>[1])', 1)
-                  controller.write_text(s)
-                  service = Path("apps/api/app/services/phase9_personalization_service.ts")
-                  s = service.read_text().replace('.where("campaign_id", campaign.id).orderBy("position", "asc")', '.where("campaign_id", Number(campaign.id)).orderBy("position", "asc")', 1)
-                  service.write_text(s)
-                  PY
-
-            - name: Install dependencies
-              run: pnpm install --frozen-lockfile
-
-            - name: Create test database
-              env: { PGPASSWORD: calibra }
-              run: psql -h localhost -U calibra -d calibra -c "CREATE DATABASE calibra_test OWNER calibra;" || true
-
-            - name: Run Phase 9 functional with hard timeout
-              id: functional
-              continue-on-error: true
-              shell: bash
-              run: |
-                  set -o pipefail
-                  cd apps/api
-                  timeout --signal=TERM --kill-after=10s 90s pnpm test --files=tests/functional/admin/phase9_personalization.spec.ts 2>&1 | tee /tmp/phase9-functional.log
-                  status=${PIPESTATUS[0]}
-                  echo "exit_status=$status" >> "$GITHUB_OUTPUT"
-                  exit 0
-
-            - name: Persist functional diagnostic
-              shell: bash
-              env:
-                  PGPASSWORD: calibra
-              run: |
-                  set -euo pipefail
                   {
-                    echo "functional_exit=${{ steps.functional.outputs.exit_status }}"
-                    echo "run=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+                    echo '=== public personalization routes ==='
+                    cat apps/api/start/routes/personalization.ts
                     echo
-                    echo "=== functional output ==="
-                    cat /tmp/phase9-functional.log || true
-                    echo
-                    echo "=== postgres activity ==="
-                    psql -h localhost -U calibra -d calibra_test -c "select pid, state, wait_event_type, wait_event, left(query,180) as query from pg_stat_activity where datname='calibra_test';" || true
-                    echo
-                    echo "=== processes ==="
-                    ps -eo pid,ppid,stat,etime,cmd | grep -E 'node|pnpm|postgres' | tail -80 || true
-                  } > /tmp/diag
-                  encoded=$(base64 -w0 /tmp/diag)
-                  old=$(gh api "repos/${GITHUB_REPOSITORY}/contents/phase9-functional-diagnostic.txt?ref=${GITHUB_REF_NAME}" --jq .sha 2>/dev/null || true)
-                  args=(--method PUT "repos/${GITHUB_REPOSITORY}/contents/phase9-functional-diagnostic.txt" -f message="chore(ci): capture Phase 9 functional diagnostic" -f content="$encoded" -f branch="${GITHUB_REF_NAME}")
+                    echo '=== admin personalization routes ==='
+                    cat apps/api/start/routes/admin_personalization.ts
+                  } > /tmp/routes
+                  encoded=$(base64 -w0 /tmp/routes)
+                  old=$(gh api "repos/${GITHUB_REPOSITORY}/contents/phase9-source-snippets.txt?ref=${GITHUB_REF_NAME}" --jq .sha 2>/dev/null || true)
+                  args=(--method PUT "repos/${GITHUB_REPOSITORY}/contents/phase9-source-snippets.txt" -f message="chore(ci): capture Phase 9 routes" -f content="$encoded" -f branch="${GITHUB_REF_NAME}")
                   if [ -n "$old" ]; then args+=(-f sha="$old"); fi
                   gh api "${args[@]}"
-
-            - name: Fail when functional test did not pass
-              shell: bash
-              run: |
-                  test "${{ steps.functional.outputs.exit_status }}" = "0"
