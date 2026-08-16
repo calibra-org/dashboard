@@ -1,0 +1,68 @@
+name: Phase 15 Verify
+
+on:
+    push:
+        branches:
+            - agent/phase15-customer-intelligence
+
+concurrency:
+    group: phase15-customer-intelligence-${{ github.ref }}
+    cancel-in-progress: true
+
+env:
+    FORCE_COLOR: 3
+    TURBO_TELEMETRY_DISABLED: 1
+    DO_NOT_TRACK: 1
+    NODE_VERSION: "24.14.0"
+    PNPM_VERSION: "10.32.1"
+
+jobs:
+    verify:
+        runs-on: ubuntu-latest
+        timeout-minutes: 12
+        steps:
+            - uses: actions/checkout@v4
+            - uses: pnpm/action-setup@v4
+              with:
+                  version: ${{ env.PNPM_VERSION }}
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: pnpm
+            - run: pnpm install --frozen-lockfile
+            - name: Validate admin OpenAPI overlay
+              run: pnpm --filter @calibra/api-docs run lint:admin
+            - name: Regenerate typed Admin SDK
+              run: pnpm --filter @calibra/sdk run codegen:admin
+            - name: Typecheck Phase 15 workspaces
+              run: |
+                  pnpm --filter @calibra/api run typecheck
+                  pnpm --filter @calibra/admin run typecheck
+                  pnpm --filter @calibra/sdk run typecheck
+            - name: Run Phase 15 unit tests
+              working-directory: apps/api
+              run: pnpm test --files=tests/unit/customer_intelligence.spec.ts
+            - name: Check Phase 15 formatting and lint
+              run: >-
+                  pnpm exec biome check
+                  apps/api/app/controllers/admin/customer_intelligence_controller.ts
+                  apps/api/app/controllers/admin/customer_segments_controller.ts
+                  apps/api/app/jobs/refresh_customer_intelligence_job.ts
+                  apps/api/app/services/customer_intelligence_eligibility_service.ts
+                  apps/api/app/services/customer_intelligence_segments_service.ts
+                  apps/api/app/services/customer_intelligence_service.ts
+                  apps/api/app/validators/admin/customer_intelligence_validator.ts
+                  apps/api/start/routes/admin_customer_intelligence.ts
+                  apps/api/tests/unit/customer_intelligence.spec.ts
+                  apps/admin/src/lib/queries/customer-intelligence.ts
+                  apps/admin/src/views/customers/customer-workspace-nav.tsx
+                  apps/admin/src/views/customers/cohorts/cohorts-lifecycle.tsx
+                  apps/admin/src/views/customers/detail/intelligence-card.tsx
+                  apps/admin/src/views/customers/intelligence/intelligence-overview.tsx
+                  apps/admin/src/views/customers/segments/segment-studio.tsx
+            - name: Upload regenerated Admin SDK declaration
+              uses: actions/upload-artifact@v4
+              with:
+                  name: phase15-admin-sdk
+                  path: packages/sdk/src/generated/admin.d.ts
+                  if-no-files-found: error
