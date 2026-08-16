@@ -13,5 +13,5 @@ router
         router.post("/customers/:id/refresh", [AdminCustomerIntelligenceController, "refresh"]);
     })
     .prefix("/api/v1/admin/customer-intelligence")
-    .use(middleware.auth())
+    .use(middleware.auth({ guards: ["api"] }))
     .use(middleware.admin());
