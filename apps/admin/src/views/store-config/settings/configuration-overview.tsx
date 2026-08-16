@@ -2,11 +2,28 @@
 
 import { useLocale } from "next-intl";
 
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "#/components/ui/alert-dialog";
 import { Badge } from "#/components/ui/badge";
+import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "#/components/ui/card";
-import { ArrowLeft, CheckCircle2, Clock3, Database, History, Settings2, ShieldCheck } from "#/icons";
+import { ArrowLeft, CheckCircle2, Clock3, Database, History, RotateCcw, Settings2, ShieldCheck } from "#/icons";
 import { Link } from "#/lib/i18n/navigation";
-import { useConfigurationHistory, useConfigurationRegistry } from "#/lib/queries/configuration";
+import {
+    useConfigurationHistory,
+    useConfigurationRegistry,
+    useRollbackConfigurationRevision,
+    type ConfigurationRevision,
+} from "#/lib/queries/configuration";
 import { cn } from "#/lib/utils";
 
 function LoadingCard() {
@@ -18,6 +35,7 @@ export function ConfigurationOverview() {
     const fa = locale === "fa";
     const registry = useConfigurationRegistry();
     const history = useConfigurationHistory();
+    const rollback = useRollbackConfigurationRevision();
 
     const settingsCount = registry.data?.filter((item) => item.mode === "settings").length ?? 0;
     const domainCount = registry.data?.filter((item) => item.mode === "domain").length ?? 0;
@@ -92,11 +110,16 @@ export function ConfigurationOverview() {
                     <div>
                         <h2 className="text-base font-semibold">{fa ? "تغییرات اخیر" : "Recent changes"}</h2>
                         <p className="mt-1 text-sm text-muted-foreground">
-                            {fa ? "نسخه‌های واقعی ثبت‌شده پس از تغییر تنظیمات." : "Immutable revisions recorded after real settings changes."}
+                            {fa ? "نسخه‌های واقعی ثبت‌شده پس از تغییر تنظیمات؛ بازگردانی همیشه یک نسخه جدید می‌سازد." : "Immutable revisions recorded after real settings changes; rollback always appends a new revision."}
                         </p>
                     </div>
                     <History className="size-5 text-muted-foreground" />
                 </div>
+                {rollback.isError ? (
+                    <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                        {fa ? "بازگردانی انجام نشد. تنظیمات فعلی بدون تغییر باقی مانده است." : "Rollback failed. Current configuration was left unchanged."}
+                    </div>
+                ) : null}
                 {history.isPending ? <LoadingCard /> : history.isError ? (
                     <StateCard text={fa ? "تاریخچه در دسترس نیست." : "History is unavailable."} />
                 ) : history.data?.length === 0 ? (
@@ -128,9 +151,12 @@ export function ConfigurationOverview() {
                                             </p>
                                         </div>
                                     </div>
-                                    <div className="text-left text-xs text-muted-foreground" dir="ltr">
-                                        <div>r{item.revision}</div>
-                                        <time dateTime={item.created_at}>{new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(item.created_at))}</time>
+                                    <div className="flex items-center gap-3">
+                                        <div className="text-left text-xs text-muted-foreground" dir="ltr">
+                                            <div>r{item.revision}</div>
+                                            <time dateTime={item.created_at}>{new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(item.created_at))}</time>
+                                        </div>
+                                        <RollbackAction item={item} fa={fa} pending={rollback.isPending} onRollback={() => rollback.mutate({ scope: item.scope, revision: item.revision })} />
                                     </div>
                                 </div>
                             ))}
@@ -139,6 +165,33 @@ export function ConfigurationOverview() {
                 )}
             </section>
         </div>
+    );
+}
+
+function RollbackAction({ item, fa, pending, onRollback }: { item: ConfigurationRevision; fa: boolean; pending: boolean; onRollback: () => void }) {
+    return (
+        <AlertDialog>
+            <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="sm" disabled={pending} className="gap-1.5">
+                    <RotateCcw className="size-3.5" />
+                    <span className="hidden sm:inline">{fa ? "بازگردانی" : "Rollback"}</span>
+                </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>{fa ? `بازگردانی ${scopeLabel(item.scope, true)} به نسخه ${item.revision}؟` : `Restore ${scopeLabel(item.scope, false)} to revision ${item.revision}?`}</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        {fa
+                            ? "مقادیر این نسخه دوباره روی تنظیمات فعال نوشته می‌شوند و برای حفظ تاریخچه، یک نسخه بازگردانی جدید ساخته می‌شود."
+                            : "The selected snapshot will be written back to active settings and a new rollback revision will be appended to preserve history."}
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>{fa ? "انصراف" : "Cancel"}</AlertDialogCancel>
+                    <AlertDialogAction onClick={onRollback}>{fa ? "تأیید بازگردانی" : "Confirm rollback"}</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     );
 }
 

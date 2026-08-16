@@ -1,13 +1,14 @@
 "use client";
 
 import type { AdminSchemas } from "@calibra/sdk";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocale } from "next-intl";
 
-import { apiGet } from "#/lib/queries/api-client";
+import { apiGet, apiMutate } from "#/lib/queries/api-client";
 
 export type ConfigurationCapability = AdminSchemas["schemas"]["ConfigurationCapability"];
 export type ConfigurationRevision = AdminSchemas["schemas"]["ConfigurationRevision"];
+export type ConfigurationScope = AdminSchemas["schemas"]["ConfigurationScope"];
 
 const REGISTRY_KEY = (locale: string) => ["admin", "settings", "configuration", "registry", { locale }] as const;
 const HISTORY_KEY = (locale: string) => ["admin", "settings", "configuration", "history", { locale }] as const;
@@ -35,5 +36,21 @@ export function useConfigurationHistory(limit = 8) {
             }),
         select: (response) => response.data,
         staleTime: 30 * 1000,
+    });
+}
+
+export function useRollbackConfigurationRevision() {
+    const locale = useLocale();
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ scope, revision }: { scope: ConfigurationScope; revision: number }) =>
+            apiMutate<{ data: ConfigurationRevision; meta: { changed: boolean } }>(
+                "POST",
+                `settings/configuration/history/${scope}/${revision}/rollback`,
+                { locale },
+            ),
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ["admin", "settings"] });
+        },
     });
 }

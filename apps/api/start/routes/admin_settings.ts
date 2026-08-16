@@ -12,13 +12,25 @@ const AdminConfigurationController = () => import("#controllers/admin/configurat
 router
     .group(() => {
         router.get("/general", [AdminSettingsGeneralController, "show"]).as("admin.settings.general.show");
-        router.patch("/general", [AdminSettingsGeneralController, "update"]).as("admin.settings.general.update");
+        router
+            .patch("/general", [AdminSettingsGeneralController, "update"])
+            .as("admin.settings.general.update")
+            .use(adminWriteLimiter);
         router.get("/datetime", [AdminSettingsDatetimeController, "show"]).as("admin.settings.datetime.show");
-        router.patch("/datetime", [AdminSettingsDatetimeController, "update"]).as("admin.settings.datetime.update");
+        router
+            .patch("/datetime", [AdminSettingsDatetimeController, "update"])
+            .as("admin.settings.datetime.update")
+            .use(adminWriteLimiter);
         router.get("/media", [AdminSettingsMediaController, "show"]).as("admin.settings.media.show");
-        router.patch("/media", [AdminSettingsMediaController, "update"]).as("admin.settings.media.update");
+        router
+            .patch("/media", [AdminSettingsMediaController, "update"])
+            .as("admin.settings.media.update")
+            .use(adminWriteLimiter);
         router.get("/branding", [AdminSettingsBrandingController, "show"]).as("admin.settings.branding.show");
-        router.patch("/branding", [AdminSettingsBrandingController, "update"]).as("admin.settings.branding.update");
+        router
+            .patch("/branding", [AdminSettingsBrandingController, "update"])
+            .as("admin.settings.branding.update")
+            .use(adminWriteLimiter);
         router.get("/configuration/registry", [AdminConfigurationController, "registry"]).as("admin.settings.configuration.registry");
         router.get("/configuration/history", [AdminConfigurationController, "history"]).as("admin.settings.configuration.history");
         router
