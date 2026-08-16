@@ -2,9 +2,11 @@ import { Exception } from "@adonisjs/core/exceptions";
 import type { HttpContext } from "@adonisjs/core/http";
 
 import { recordAudit } from "#services/admin_audit_log_service";
+import { CacheInvalidation } from "#services/cache_invalidation";
 import { ticketQueueService } from "#services/support/ticket_queue_service";
 import { scheduleTicketRealtime } from "#services/support/ticket_realtime";
 import { supportTicketService } from "#services/support/ticket_service";
+import { currentTenantId } from "#services/tenant_context";
 import {
     adminTicketCreateValidator,
     adminTicketListValidator,
@@ -38,6 +40,11 @@ async function assertExpectedVersion(ticketId: number, expectedVersion: number):
     }
 }
 
+async function refreshLinkedCustomers(...customerIds: Array<number | null | undefined>) {
+    const unique = [...new Set(customerIds.filter((value): value is number => Number.isSafeInteger(value) && Number(value) > 0))];
+    for (const customerId of unique) await CacheInvalidation.customerChanged(currentTenantId(), customerId);
+}
+
 export default class TicketsController {
     async index(ctx: HttpContext) {
         const payload = await ctx.request.validateUsing(adminTicketListValidator);
@@ -59,6 +66,7 @@ export default class TicketsController {
             entityId: Number(result.data.id),
             payload: { reference: result.data.reference, priority: result.data.priority, channel: result.data.channel },
         });
+        await refreshLinkedCustomers(result.data.customer_id);
         await scheduleTicketRealtime(ctx, { type: "created", ticketId: Number(result.data.id) });
         return result;
     }
@@ -66,7 +74,13 @@ export default class TicketsController {
     async update(ctx: HttpContext) {
         const ticketId = id(ctx);
         const payload = await ctx.request.validateUsing(adminTicketUpdateValidator);
-        await assertExpectedVersion(ticketId, payload.expected_version);
+        const before = await supportTicketService.find(ticketId);
+        if (Number(before.data.version) !== payload.expected_version) {
+            throw new Exception("Support ticket changed by another operator", {
+                status: 409,
+                code: "E_TICKET_VERSION_CONFLICT",
+            });
+        }
         const result = await supportTicketService.update(ticketId, payload, await actorId(ctx));
         if (result.changed) {
             await recordAudit({
@@ -76,6 +90,7 @@ export default class TicketsController {
                 entityId: ticketId,
                 payload: { expected_version: payload.expected_version },
             });
+            await refreshLinkedCustomers(before.data.customer_id, result.data.customer_id);
             await scheduleTicketRealtime(ctx, { type: "updated", ticketId });
         }
         return result;
@@ -104,6 +119,7 @@ export default class TicketsController {
                     expected_version: payload.expected_version,
                 },
             });
+            await refreshLinkedCustomers(result.data.customer_id);
             await scheduleTicketRealtime(ctx, { type: "transitioned", ticketId });
         }
         return result;
