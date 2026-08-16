@@ -1,0 +1,202 @@
+name: Phase 9 Finalize
+
+on:
+    push:
+        branches: ["agent/phase9-personalization-deals-20260816"]
+
+permissions:
+    contents: write
+
+env:
+    FORCE_COLOR: 3
+    TURBO_TELEMETRY_DISABLED: 1
+    DO_NOT_TRACK: 1
+    NODE_VERSION: "24.14.0"
+    PNPM_VERSION: "10.32.1"
+    GH_TOKEN: ${{ github.token }}
+
+jobs:
+    finalize:
+        if: contains(github.event.head_commit.message, '[phase9-finalize]')
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+        services:
+            postgres:
+                image: postgres:17-alpine
+                env:
+                    POSTGRES_USER: calibra
+                    POSTGRES_PASSWORD: calibra
+                    POSTGRES_DB: calibra
+                ports: ["5432:5432"]
+                options: >-
+                    --health-cmd "pg_isready -U calibra -d calibra"
+                    --health-interval 5s --health-timeout 5s --health-retries 10
+            redis:
+                image: redis:7-alpine
+                ports: ["6379:6379"]
+                options: >-
+                    --health-cmd "redis-cli ping"
+                    --health-interval 5s --health-timeout 3s --health-retries 10
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - uses: pnpm/action-setup@v4
+              with:
+                  version: ${{ env.PNPM_VERSION }}
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: pnpm
+
+            - name: Verify and expand Phase 9 payload
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  cat .phase9-payload/part-00 .phase9-payload/part-01 .phase9-payload/part-02 .phase9-payload/part-03 > /tmp/phase9.b64
+                  test "$(wc -c < /tmp/phase9.b64)" = "37180"
+                  echo "13e9ffcbcbeb7c72f7f68c5f2482acf910c5acd3bbb28e220fa92aed9d4347dc  /tmp/phase9.b64" | sha256sum -c -
+                  base64 -d /tmp/phase9.b64 > /tmp/phase9.tgz
+                  test "$(wc -c < /tmp/phase9.tgz)" = "27884"
+                  echo "f38cffa6fbb1eab253e7879389ae423810adc2316bc4bd636d51e54e4cc6d956  /tmp/phase9.tgz" | sha256sum -c -
+                  tar -xzf /tmp/phase9.tgz -C .
+                  test -s .phase9-finalize/apply-phase9.mjs
+                  test -s apps/api/app/services/phase9_personalization_service.ts
+                  test -s apps/admin/src/views/personalization/personalization-workspace.tsx
+                  test -s apps/web/src/components/amazing-deals-section.tsx
+                  node .phase9-finalize/apply-phase9.mjs
+
+            - name: Install workspace dependencies
+              shell: bash
+              run: |
+                  set -o pipefail
+                  echo install > /tmp/phase9-stage
+                  pnpm install --frozen-lockfile 2>&1 | tee /tmp/phase9-last.log
+
+            - name: Format Phase 9 diff
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  {
+                    git diff --name-only --diff-filter=ACM
+                    git ls-files --others --exclude-standard
+                  } | sort -u | grep -vE '^\.phase9-(payload|finalize)/|^\.github/workflows/phase9-finalize\.yml$' | grep -E '\.(ts|tsx|js|mjs|json)$' > /tmp/phase9-format.txt || true
+                  if [ -s /tmp/phase9-format.txt ]; then
+                    xargs -d '\n' pnpm exec biome format --write < /tmp/phase9-format.txt
+                  fi
+
+            - name: Generate SDK from merged OpenAPI
+              shell: bash
+              run: |
+                  set -o pipefail
+                  echo codegen > /tmp/phase9-stage
+                  pnpm --filter @calibra/sdk run codegen 2>&1 | tee /tmp/phase9-last.log
+
+            - name: Verify Phase 9 invariants
+              shell: bash
+              run: |
+                  set -o pipefail
+                  echo verifier > /tmp/phase9-stage
+                  pnpm run verify:phase9 2>&1 | tee /tmp/phase9-last.log
+
+            - name: Verify admin navigation
+              shell: bash
+              run: |
+                  set -o pipefail
+                  echo navigation > /tmp/phase9-stage
+                  node scripts/verify-admin-navigation.mjs 2>&1 | tee /tmp/phase9-last.log
+
+            - name: Typecheck workspace
+              shell: bash
+              run: |
+                  set -o pipefail
+                  echo typecheck > /tmp/phase9-stage
+                  pnpm run typecheck 2>&1 | tee /tmp/phase9-last.log
+
+            - name: Create test database
+              shell: bash
+              env:
+                  PGPASSWORD: calibra
+              run: psql -h localhost -U calibra -d calibra -c "CREATE DATABASE calibra_test OWNER calibra;" || true
+
+            - name: Run Phase 9 functional tests
+              shell: bash
+              run: |
+                  set -o pipefail
+                  echo functional > /tmp/phase9-stage
+                  (cd apps/api && pnpm test --files=tests/functional/admin/phase9_personalization.spec.ts) 2>&1 | tee /tmp/phase9-last.log
+
+            - name: Check runtime routes against OpenAPI
+              shell: bash
+              working-directory: apps/api
+              env:
+                  NODE_ENV: test
+                  PORT: "3334"
+                  HOST: "0.0.0.0"
+                  APP_NAME: calibra-api
+                  APP_KEY: ci-only-key-not-used-for-real-secrets
+                  LOG_LEVEL: warn
+                  DB_HOST: localhost
+                  DB_PORT: "5432"
+                  DB_USER: calibra
+                  DB_PASSWORD: calibra
+                  DB_DATABASE: calibra
+                  MAIL_FROM_ADDRESS: ops@calibra.local
+                  MAIL_FROM_NAME: Calibra
+                  MAIL_NOTIFICATIONS_ENABLED: "false"
+                  SMTP_HOST: localhost
+                  SMTP_PORT: "11025"
+                  REDIS_HOST: localhost
+                  REDIS_PORT: "6379"
+                  TRANSMIT_TRANSPORT: none
+                  QUEUE_DRIVER: sync
+                  LIMITER_STORE: memory
+                  CACHE_DRIVER: memory
+              run: |
+                  set -o pipefail
+                  echo openapi > /tmp/phase9-stage
+                  node ace check:api-docs 2>&1 | tee /tmp/phase9-last.log
+
+            - name: Build workspace
+              shell: bash
+              run: |
+                  set -o pipefail
+                  echo build > /tmp/phase9-stage
+                  pnpm run build 2>&1 | tee /tmp/phase9-last.log
+
+            - name: Persist exact diagnostic on failure
+              if: failure()
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  stage=$(cat /tmp/phase9-stage 2>/dev/null || echo preflight)
+                  {
+                    echo "stage=$stage"
+                    echo "run=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+                    echo
+                    cat /tmp/phase9-last.log 2>/dev/null || true
+                  } > /tmp/phase9-diagnostic.txt
+                  encoded=$(base64 -w0 /tmp/phase9-diagnostic.txt)
+                  old=$(gh api "repos/${GITHUB_REPOSITORY}/contents/phase9-diagnostic.txt?ref=${GITHUB_REF_NAME}" --jq .sha 2>/dev/null || true)
+                  args=(--method PUT "repos/${GITHUB_REPOSITORY}/contents/phase9-diagnostic.txt" -f message="chore(ci): capture Phase 9 diagnostic" -f content="$encoded" -f branch="${GITHUB_REF_NAME}")
+                  if [ -n "$old" ]; then args+=(-f sha="$old"); fi
+                  gh api "${args[@]}"
+
+            - name: Collapse to one clean Phase 9 commit
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  rm -rf .phase9-payload .phase9-finalize .github/workflows/phase9-finalize.yml phase9-diagnostic.txt
+                  git fetch origin main
+                  git reset --soft origin/main
+                  git add -A
+                  if git diff --cached --name-only | grep -Eq '^\.phase9-|^\.github/workflows/phase9-finalize\.yml$|^phase9-diagnostic\.txt$'; then
+                    echo "temporary artifact leaked into final diff"
+                    exit 1
+                  fi
+                  git config user.name "calibra-dev"
+                  git config user.email "keshavarz20.com@gmail.com"
+                  git commit -m "feat(personalization): implement Phase 9 deals and recommendations"
+                  git push --force-with-lease origin HEAD:agent/phase9-personalization-deals-20260816
