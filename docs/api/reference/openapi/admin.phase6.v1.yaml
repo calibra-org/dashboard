@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
   title: Calibra Admin Phase 6 Configuration OS Overlay
-  version: 1.0.0
-  description: Tenant-scoped configuration capability registry, immutable settings baselines, revisions, diffs and rollback.
+  version: 2.0.0
+  description: Typed tenant-aware configuration with hierarchical overrides, immutable revisions, impact previews, safe blueprints, drift detection and canonical commerce-domain reuse.
 paths:
   /api/v1/admin/settings/configuration/registry:
     get:
@@ -10,10 +10,90 @@ paths:
       security: [{ bearerAuth: [] }]
       responses:
         '200':
-          description: Real editable settings surfaces and existing store configuration domains
+          description: Canonical 18-group configuration registry
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ConfigurationCapabilityEnvelope' }
+  /api/v1/admin/settings/configuration/definitions:
+    get:
+      operationId: adminPhase6ConfigurationDefinitions
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Formal typed setting definition registry
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ConfigurationDefinitionEnvelope' }
+  /api/v1/admin/settings/configuration/groups/{group}:
+    get:
+      operationId: adminPhase6ConfigurationGroup
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/ConfigurationGroup' }
+        - { in: query, name: market, required: false, schema: { type: string } }
+        - { in: query, name: channel, required: false, schema: { type: string } }
+        - { in: query, name: environment, required: false, schema: { type: string } }
+        - { in: query, name: temporary, required: false, schema: { type: string } }
+        - { in: query, name: subject_key, required: false, schema: { type: string } }
+      responses:
+        '200':
+          description: Effective group resolved through the configuration scope chain
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ConfigurationGroupEnvelope' }
+        '403': { description: Configuration read permission required }
+        '404': { description: Unknown configuration group }
+    put:
+      operationId: adminPhase6ConfigurationUpdate
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/ConfigurationGroup' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ConfigurationChangeInput' }
+      responses:
+        '200':
+          description: Versioned configuration update
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ConfigurationUpdateEnvelope' }
+        '403': { description: Fine-grained configuration permission required }
+        '422': { description: Invalid value, stale version, missing preview or missing approval }
+  /api/v1/admin/settings/configuration/groups/{group}/preview:
+    post:
+      operationId: adminPhase6ConfigurationPreview
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/ConfigurationGroup' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ConfigurationChangeInput' }
+      responses:
+        '200':
+          description: Side-effect-free impact preview
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ConfigurationPreviewEnvelope' }
+        '422': { description: Invalid proposed configuration }
+  /api/v1/admin/settings/configuration/groups/{group}/test:
+    post:
+      operationId: adminPhase6ConfigurationTest
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/ConfigurationGroup' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ConfigurationChangeInput' }
+      responses:
+        '200':
+          description: Schema, policy and impact test without persisting the change
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ConfigurationTestEnvelope' }
+        '422': { description: Invalid proposed configuration }
   /api/v1/admin/settings/configuration/history:
     get:
       operationId: adminPhase6ConfigurationHistory
@@ -29,7 +109,7 @@ paths:
           schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
       responses:
         '200':
-          description: Configuration revision history
+          description: Immutable configuration revision history
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ConfigurationRevisionListEnvelope' }
@@ -43,11 +123,11 @@ paths:
         - { $ref: '#/components/parameters/ConfigurationRevision' }
       responses:
         '200':
-          description: One immutable revision with its diff from the preceding revision
+          description: Immutable revision snapshot and diff
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ConfigurationRevisionDetailEnvelope' }
-        '404': { description: Revision not found }
+        '404': { description: Configuration revision not found }
   /api/v1/admin/settings/configuration/history/{scope}/{revision}/rollback:
     post:
       operationId: adminPhase6ConfigurationRollback
@@ -57,15 +137,115 @@ paths:
         - { $ref: '#/components/parameters/ConfigurationRevision' }
       responses:
         '200':
-          description: Selected snapshot restored and a new rollback revision appended
+          description: Forward rollback that appends a new immutable revision
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ConfigurationRollbackEnvelope' }
-        '404': { description: Revision not found }
+        '404': { description: Configuration revision not found }
+  /api/v1/admin/settings/configuration/blueprint:
+    get:
+      operationId: adminPhase6ConfigurationBlueprint
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Safe non-secret declared-state blueprint
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ConfigurationBlueprintEnvelope' }
+  /api/v1/admin/settings/configuration/blueprint/validate:
+    post:
+      operationId: adminPhase6ConfigurationBlueprintValidate
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ConfigurationBlueprint' }
+      responses:
+        '200':
+          description: Blueprint validation result
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ConfigurationBlueprintValidationEnvelope' }
+        '422': { description: Malformed blueprint }
+  /api/v1/admin/settings/configuration/blueprint/apply:
+    post:
+      operationId: adminPhase6ConfigurationBlueprintApply
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - { $ref: '#/components/schemas/ConfigurationBlueprint' }
+                - type: object
+                  properties:
+                    reason: { type: string, minLength: 3, maxLength: 500 }
+                    approval_reference: { type: string }
+      responses:
+        '200':
+          description: Validated blueprint applied with immutable revisions
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ConfigurationBlueprintApplyEnvelope' }
+        '403': { description: Blueprint apply permission required }
+        '422': { description: Invalid blueprint }
+  /api/v1/admin/settings/configuration/drift:
+    get:
+      operationId: adminPhase6ConfigurationDrift
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: expected_fingerprint
+          required: false
+          schema: { type: string }
+      responses:
+        '200':
+          description: Declared-state drift result; external provider drift is never fabricated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ConfigurationDriftEnvelope' }
+  /api/v1/admin/settings/configuration/url-redirects:
+    get:
+      operationId: adminPhase6ConfigurationUrlRedirectHistory
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: limit
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 200, default: 100 }
+      responses:
+        '200':
+          description: Immutable URL-governance evidence
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ConfigurationUrlRedirectEnvelope' }
+  /api/v1/admin/settings/configuration/tax/simulate:
+    post:
+      operationId: adminPhase6TaxSimulate
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TaxSimulationInput' }
+      responses:
+        '200':
+          description: Side-effect-free tax calculation through the canonical Tax domain
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TaxSimulationEnvelope' }
+        '422': { description: Invalid simulation input }
 components:
   securitySchemes:
     bearerAuth: { type: http, scheme: bearer }
   parameters:
+    ConfigurationGroup:
+      in: path
+      name: group
+      required: true
+      schema: { $ref: '#/components/schemas/ConfigurationGroup' }
     ConfigurationScope:
       in: path
       name: scope
@@ -77,14 +257,23 @@ components:
       required: true
       schema: { type: integer, minimum: 1 }
   schemas:
-    ConfigurationScope: { type: string, enum: [general, datetime, media, branding] }
+    ConfigurationGroup:
+      type: string
+      enum: [general, publishing, reading, community, media, urls, catalog, inventory, tax, shipping, payments, checkout, notifications, privacy, visibility, integrations, infrastructure, change_management]
+    ConfigurationScope:
+      type: string
+      enum: [general, publishing, reading, community, media, urls, catalog, inventory, tax, shipping, payments, checkout, notifications, privacy, visibility, integrations, infrastructure, change_management, datetime, branding]
+    ConfigurationScopeType:
+      type: string
+      enum: [tenant, market, channel, environment, temporary]
     ConfigurationCapability:
       type: object
-      required: [key, category, mode, label_fa, label_en, description_fa, description_en, href, api_path, history_enabled]
+      additionalProperties: false
+      required: [key, category, mode, label_fa, label_en, description_fa, description_en, href, api_path, history_enabled, definition_count]
       properties:
-        key: { type: string }
-        category: { type: string, enum: [site, store] }
-        mode: { type: string, enum: [settings, domain] }
+        key: { $ref: '#/components/schemas/ConfigurationGroup' }
+        category: { type: string, enum: [site, commerce, communications, governance, developer, change_management] }
+        mode: { type: string, enum: [settings, domain, hybrid] }
         label_fa: { type: string }
         label_en: { type: string }
         description_fa: { type: string }
@@ -92,13 +281,162 @@ components:
         href: { type: string }
         api_path: { type: string }
         history_enabled: { type: boolean }
+        definition_count: { type: integer, minimum: 0 }
     ConfigurationCapabilityEnvelope:
       type: object
       required: [data]
       properties:
         data: { type: array, items: { $ref: '#/components/schemas/ConfigurationCapability' } }
+    ConfigurationDefinition:
+      type: object
+      additionalProperties: false
+      required: [key, group, type, schema_version, default_value, allowed_scopes, validation, secret_class, risk_level, dependencies, side_effect_policy, preview_capability, test_capability, restart_requirement, approval_policy, deprecation_policy, migration_policy, required_permission, label_fa, label_en, description_fa, description_en, linked_href, storage]
+      properties:
+        key: { type: string }
+        group: { $ref: '#/components/schemas/ConfigurationGroup' }
+        type: { type: string, enum: [string, number, boolean, json] }
+        schema_version: { type: integer, minimum: 1 }
+        default_value: {}
+        allowed_scopes: { type: array, items: { $ref: '#/components/schemas/ConfigurationScopeType' } }
+        validation: { type: object, additionalProperties: true }
+        secret_class: { type: string, enum: [none, reference] }
+        risk_level: { type: string, enum: [low, medium, high, critical] }
+        dependencies: { type: array, items: { type: string } }
+        side_effect_policy: { type: string, enum: [none, cache_invalidate, redirect_evidence, restart_required, domain_owned] }
+        preview_capability: { type: boolean }
+        test_capability: { type: boolean }
+        restart_requirement: { type: string, enum: [none, api, worker, storefront] }
+        approval_policy: { type: string, enum: [none, preview_required, governance_required] }
+        deprecation_policy: { type: string, enum: [active, deprecated] }
+        migration_policy: { type: string }
+        required_permission: { type: string }
+        label_fa: { type: string }
+        label_en: { type: string }
+        description_fa: { type: string }
+        description_en: { type: string }
+        linked_href: { type: [string, 'null'] }
+        storage: { type: string, enum: [settings, override] }
+    ConfigurationDefinitionEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/ConfigurationDefinition' } }
+    ConfigurationOrigin:
+      type: object
+      additionalProperties: false
+      required: [source, scope_type, scope_key, version]
+      properties:
+        source: { type: string, enum: [default, settings, override] }
+        scope_type: { type: string }
+        scope_key: { type: string }
+        version: { type: integer, minimum: 0 }
+    ConfigurationResolutionStep:
+      type: object
+      additionalProperties: false
+      required: [source, scope_type, scope_key, applied, version]
+      properties:
+        source: { type: string }
+        scope_type: { type: string }
+        scope_key: { type: string }
+        applied: { type: boolean }
+        version: { type: integer, minimum: 0 }
+    ConfigurationEffectiveItem:
+      type: object
+      additionalProperties: false
+      required: [definition, value, origin, resolution_chain, mutable]
+      properties:
+        definition: { $ref: '#/components/schemas/ConfigurationDefinition' }
+        value: {}
+        origin: { $ref: '#/components/schemas/ConfigurationOrigin' }
+        resolution_chain: { type: array, items: { $ref: '#/components/schemas/ConfigurationResolutionStep' } }
+        mutable: { type: boolean }
+    ConfigurationGroupDetail:
+      type: object
+      additionalProperties: false
+      required: [group, definitions, fingerprint]
+      properties:
+        group: { $ref: '#/components/schemas/ConfigurationGroup' }
+        definitions: { type: array, items: { $ref: '#/components/schemas/ConfigurationEffectiveItem' } }
+        fingerprint: { type: string }
+    ConfigurationGroupEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/ConfigurationGroupDetail' }
+    ConfigurationChangeInput:
+      type: object
+      additionalProperties: false
+      required: [key, scope_type, reason, expected_version]
+      properties:
+        key: { type: string }
+        scope_type: { $ref: '#/components/schemas/ConfigurationScopeType' }
+        scope_key: { type: string }
+        value: {}
+        unset: { type: boolean, default: false }
+        reason: { type: string, minLength: 3, maxLength: 500 }
+        expected_version: { type: integer, minimum: 0 }
+        preview_hash: { type: string }
+        rollout_percent: { type: integer, minimum: 1, maximum: 100, default: 100 }
+        expires_at: { type: [string, 'null'], format: date-time }
+        approval_reference: { type: [string, 'null'] }
+    ConfigurationImpact:
+      type: object
+      required: [risk_level, dependencies, evidence, side_effect_policy, restart_requirement]
+      properties:
+        risk_level: { type: string, enum: [low, medium, high, critical] }
+        dependencies: { type: array, items: { type: string } }
+        evidence: { type: array, items: { type: object, additionalProperties: true } }
+        side_effect_policy: { type: string }
+        restart_requirement: { type: string }
+    ConfigurationPreview:
+      type: object
+      required: [key, scope_type, scope_key, current_version, before, after, unset, preview_hash, impact, requires_preview, requires_approval, restart_requirement]
+      properties:
+        key: { type: string }
+        scope_type: { $ref: '#/components/schemas/ConfigurationScopeType' }
+        scope_key: { type: string }
+        current_version: { type: integer, minimum: 0 }
+        before: {}
+        after: {}
+        unset: { type: boolean }
+        preview_hash: { type: string }
+        impact: { $ref: '#/components/schemas/ConfigurationImpact' }
+        requires_preview: { type: boolean }
+        requires_approval: { type: boolean }
+        restart_requirement: { type: string }
+    ConfigurationPreviewEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/ConfigurationPreview' }
+    ConfigurationTestResult:
+      type: object
+      required: [passed, mode, provider_probe, note, preview]
+      properties:
+        passed: { type: boolean }
+        mode: { type: string }
+        provider_probe: { type: string }
+        note: { type: string }
+        preview: { $ref: '#/components/schemas/ConfigurationPreview' }
+    ConfigurationTestEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/ConfigurationTestResult' }
+    ConfigurationUpdateEnvelope:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/ConfigurationGroupDetail' }
+        meta:
+          type: object
+          required: [revision, version]
+          properties:
+            revision: { type: integer, minimum: 1 }
+            version: { type: integer, minimum: 1 }
     ConfigurationRevision:
       type: object
+      additionalProperties: false
       required: [id, scope, revision, source, rollback_of_revision, created_by_user_id, created_at, changed_keys]
       properties:
         id: { type: integer, format: int64 }
@@ -123,11 +461,10 @@ components:
         type: { type: string, enum: [string, number, boolean, json] }
         exists: { type: boolean }
         value: {}
-    ConfigurationSnapshot:
-      type: object
-      required: [entries]
-      properties:
-        entries: { type: array, items: { $ref: '#/components/schemas/ConfigurationSnapshotEntry' } }
+        storage: { type: string, enum: [settings, override] }
+        scope_type: { $ref: '#/components/schemas/ConfigurationScopeType' }
+        scope_key: { type: string }
+        version: { type: integer }
     ConfigurationDiffEntry:
       type: object
       required: [key, before, after, before_exists, after_exists]
@@ -143,7 +480,11 @@ components:
         - type: object
           required: [snapshot, diff]
           properties:
-            snapshot: { $ref: '#/components/schemas/ConfigurationSnapshot' }
+            snapshot:
+              type: object
+              required: [entries]
+              properties:
+                entries: { type: array, items: { $ref: '#/components/schemas/ConfigurationSnapshotEntry' } }
             diff: { type: array, items: { $ref: '#/components/schemas/ConfigurationDiffEntry' } }
     ConfigurationRevisionDetailEnvelope:
       type: object
@@ -158,4 +499,106 @@ components:
         meta:
           type: object
           required: [changed]
-          properties: { changed: { type: boolean } }
+          properties:
+            changed: { type: boolean }
+    ConfigurationBlueprintEntry:
+      type: object
+      required: [group, key, schema_version, scope_type, scope_key, version, value, rollout_percent, expires_at]
+      properties:
+        group: { $ref: '#/components/schemas/ConfigurationGroup' }
+        key: { type: string }
+        schema_version: { type: integer, minimum: 1 }
+        scope_type: { $ref: '#/components/schemas/ConfigurationScopeType' }
+        scope_key: { type: string }
+        version: { type: integer, minimum: 1 }
+        value: {}
+        rollout_percent: { type: integer, minimum: 1, maximum: 100 }
+        expires_at: { type: [string, 'null'], format: date-time }
+    ConfigurationBlueprint:
+      type: object
+      required: [schema_version, entries]
+      properties:
+        schema_version: { type: integer, enum: [1] }
+        entries: { type: array, items: { $ref: '#/components/schemas/ConfigurationBlueprintEntry' } }
+        fingerprint: { type: string }
+    ConfigurationBlueprintEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/ConfigurationBlueprint' }
+    ConfigurationBlueprintValidationEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [valid, errors]
+          properties:
+            valid: { type: boolean }
+            errors: { type: array, items: { type: object, additionalProperties: true } }
+    ConfigurationBlueprintApplyEnvelope:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/ConfigurationBlueprint' }
+        meta:
+          type: object
+          required: [revisions]
+          properties:
+            revisions: { type: object, additionalProperties: { type: integer } }
+    ConfigurationDriftEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [fingerprint, expected_fingerprint, drifted, source, provider_drift]
+          properties:
+            fingerprint: { type: string }
+            expected_fingerprint: { type: [string, 'null'] }
+            drifted: { type: [boolean, 'null'] }
+            source: { type: string, enum: [configuration_declared_state] }
+            provider_drift: { type: string, enum: [not_observed] }
+    ConfigurationUrlRedirect:
+      type: object
+      required: [id, definition_key, scope_type, scope_key, before_value, after_value, reason, actor_user_id, created_at]
+      properties:
+        id: { type: integer, format: int64 }
+        definition_key: { type: string }
+        scope_type: { type: string }
+        scope_key: { type: string }
+        before_value: {}
+        after_value: {}
+        reason: { type: string }
+        actor_user_id: { type: [integer, 'null'], format: int64 }
+        created_at: { type: string, format: date-time }
+    ConfigurationUrlRedirectEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/ConfigurationUrlRedirect' } }
+    TaxSimulationInput:
+      type: object
+      additionalProperties: false
+      required: [amount_minor, tax_class_id]
+      properties:
+        amount_minor: { type: integer, minimum: 0 }
+        tax_class_id: { type: integer, minimum: 1 }
+        country: { type: string, minLength: 2, maxLength: 2 }
+        region_id: { type: [integer, 'null'] }
+        prices_include_tax: { type: boolean, default: false }
+    TaxSimulationEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [amount_minor, tax_class_id, address, prices_include_tax, rate_count, calculation, impact]
+          properties:
+            amount_minor: { type: integer }
+            tax_class_id: { type: integer }
+            address: { type: object, additionalProperties: true }
+            prices_include_tax: { type: boolean }
+            rate_count: { type: integer, minimum: 0 }
+            calculation: { type: object, additionalProperties: true }
+            impact: { type: object, additionalProperties: true }
