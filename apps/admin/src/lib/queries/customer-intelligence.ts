@@ -143,7 +143,8 @@ export function useRefreshCustomerIntelligence(customerId: number) {
     const locale = useLocale() as Locale;
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: () => apiMutate<{ data: CustomerIntelligence }>("POST", `customer-intelligence/customers/${customerId}/refresh`, { locale }),
+        mutationFn: () =>
+            apiMutate<{ data: CustomerIntelligence }>("POST", `customer-intelligence/customers/${customerId}/refresh`, { locale }),
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ["admin", "customer-intelligence", "customer", { locale, customerId }] });
             qc.invalidateQueries({ queryKey: ["admin", "customer-intelligence", "summary", { locale }] });
@@ -156,7 +157,8 @@ export function useRefreshAllCustomerIntelligence() {
     const locale = useLocale() as Locale;
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: () => apiMutate<{ data: { refreshed: number } }>("POST", "customer-intelligence/refresh", { locale }),
+        mutationFn: () =>
+            apiMutate<{ data: { refreshed: number; purged: number } }>("POST", "customer-intelligence/refresh", { locale }),
         onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "customer-intelligence"] }),
     });
 }
@@ -188,15 +190,23 @@ export function useSaveSegmentIntelligenceDefinition(segmentId: number) {
             kind: "rule_based" | "rfm" | "cohort" | "lifecycle" | "predictive";
             definition: SegmentDefinition;
             refresh_policy: "manual" | "event_driven";
-        }) => apiMutate<{ data: SegmentIntelligenceDefinition }>("PUT", `customer-segments/${segmentId}/intelligence-definition`, { locale, body: input }),
-        onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "customer-segments", "intelligence-definition", { locale, segmentId }] }),
+        }) =>
+            apiMutate<{ data: SegmentIntelligenceDefinition }>("PUT", `customer-segments/${segmentId}/intelligence-definition`, {
+                locale,
+                body: input,
+            }),
+        onSuccess: () =>
+            qc.invalidateQueries({ queryKey: ["admin", "customer-segments", "intelligence-definition", { locale, segmentId }] }),
     });
 }
 
 export function usePreviewCustomerSegment(segmentId: number) {
     const locale = useLocale() as Locale;
     return useMutation({
-        mutationFn: () => apiMutate<{ data: { count: number; sample_customer_ids: number[] } }>("POST", `customer-segments/${segmentId}/preview`, { locale }),
+        mutationFn: () =>
+            apiMutate<{ data: { count: number; sample_customer_ids: number[] } }>("POST", `customer-segments/${segmentId}/preview`, {
+                locale,
+            }),
     });
 }
 
@@ -204,7 +214,10 @@ export function useEvaluateCustomerSegment(segmentId: number) {
     const locale = useLocale() as Locale;
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: () => apiMutate<{ data: { member_count: number; evaluated_at: string } }>("POST", `customer-segments/${segmentId}/evaluate`, { locale }),
+        mutationFn: () =>
+            apiMutate<{ data: { member_count: number; evaluated_at: string } }>("POST", `customer-segments/${segmentId}/evaluate`, {
+                locale,
+            }),
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ["admin", "customer-segments", "intelligence-definition", { locale, segmentId }] });
             qc.invalidateQueries({ queryKey: ["admin", "customer-segments", "members", { locale, segmentId }] });
