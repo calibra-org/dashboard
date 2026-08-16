@@ -44,7 +44,7 @@ paths:
         '201':
           description: Fulfillment created
           content: { application/json: { schema: { $ref: '#/components/schemas/FulfillmentEnvelope' } } }
-        '409': { description: Idempotency, concurrency or over-fulfillment conflict }
+        '409': { description: 'Idempotency, concurrency or over-fulfillment conflict' }
   /api/v1/admin/fulfillments/{id}/transition:
     post:
       operationId: adminPhase5FulfillmentTransition
@@ -100,7 +100,7 @@ paths:
         content: { application/json: { schema: { $ref: '#/components/schemas/CreateReturnInput' } } }
       responses:
         '201': { description: Return request created, content: { application/json: { schema: { $ref: '#/components/schemas/ReturnEnvelope' } } } }
-        '409': { description: Idempotency, concurrency or over-return conflict }
+        '409': { description: 'Idempotency, concurrency or over-return conflict' }
   /api/v1/admin/returns/{id}/approve:
     post:
       operationId: adminPhase5ReturnApprove
