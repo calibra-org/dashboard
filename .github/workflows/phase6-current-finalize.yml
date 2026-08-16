@@ -34,17 +34,20 @@ jobs:
           node-version: 24.14.0
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Format and safe autofix
-        run: |
-          pnpm exec biome format --write .
-          pnpm exec biome check --write .
+      - name: Format repository
+        run: pnpm exec biome format --write .
       - name: Regenerate composed API specs and SDK
         run: |
           pnpm --filter @calibra/api-docs run build:json
           pnpm --filter @calibra/sdk run codegen
+      - name: Verify lint with complete diagnostics
+        run: |
+          pnpm exec biome lint . --max-diagnostics=500
+          pnpm exec biome check . --max-diagnostics=500
+          pnpm run lint:tokens
+          pnpm run lint:ws
       - name: Verify compile and generated-contract gates
         run: |
-          pnpm run lint
           pnpm run typecheck
           pnpm run build
           pnpm --filter @calibra/sdk run codegen:check
