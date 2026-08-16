@@ -8,8 +8,10 @@ import { Button } from "#/components/ui/button";
 import { Skeleton } from "#/components/ui/skeleton";
 import { useCustomer, useSendPasswordReset } from "#/lib/queries/customers";
 
+import { CustomerWorkspaceNav } from "../customer-workspace-nav";
 import { ActionsCard } from "./actions-card";
 import { DetailHeader } from "./header";
+import { IntelligenceCard } from "./intelligence-card";
 import { LifetimeStatsCard } from "./lifetime-stats-card";
 import { MarketingPrefsCard } from "./marketing-prefs-card";
 import { NotesCard } from "./notes-card";
@@ -28,6 +30,7 @@ const SIDEBAR_GRID_KEY = "customers.detail.sections.sidebar";
 export function CustomersDetailClient({ initialCustomerId, locale }: CustomersDetailProps) {
     const t = useTranslations("Customers");
     const detailT = useTranslations("Customers.detail");
+    const intelligenceT = useTranslations("CustomerIntelligence.detail");
     const statusT = useTranslations("Customers.statusBadge");
     const { data: customer, isPending, isError, refetch } = useCustomer(initialCustomerId);
     const reset = useSendPasswordReset(initialCustomerId);
@@ -63,6 +66,11 @@ export function CustomersDetailClient({ initialCustomerId, locale }: CustomersDe
             id: "lifetime-stats",
             title: detailT("lifetimeStats"),
             body: <LifetimeStatsCard customer={customer} locale={locale} t={(key) => detailT(key as never)} />,
+        },
+        {
+            id: "intelligence",
+            title: intelligenceT("sectionTitle"),
+            body: <IntelligenceCard customerId={customer.id} locale={locale} />,
         },
         {
             id: "timeline",
@@ -106,6 +114,7 @@ export function CustomersDetailClient({ initialCustomerId, locale }: CustomersDe
 
     return (
         <section className="flex flex-col gap-6">
+            <CustomerWorkspaceNav />
             <DetailHeader
                 customer={customer}
                 locale={locale}
@@ -130,6 +139,7 @@ export function CustomersDetailClient({ initialCustomerId, locale }: CustomersDe
 function CustomerDetailSkeleton() {
     return (
         <section className="flex flex-col gap-6">
+            <Skeleton className="h-12 w-full" />
             <header className="flex flex-wrap items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
                     <Skeleton className="size-12 rounded-full" />
@@ -146,7 +156,7 @@ function CustomerDetailSkeleton() {
 
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
                 <div className="flex flex-col gap-4">
-                    {[0, 1, 2].map((key) => (
+                    {[0, 1, 2, 3].map((key) => (
                         <div key={key} className="flex flex-col gap-3 rounded-lg border p-4">
                             <Skeleton className="h-5 w-32" />
                             <Skeleton className="h-4 w-full" />
