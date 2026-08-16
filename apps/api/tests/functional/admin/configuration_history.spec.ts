@@ -35,10 +35,7 @@ test.group("admin configuration revisions", (group) => {
         const res = await client.get(`${BASE}/registry`).withGuard("api").loginAs(admin);
         res.assertStatus(200);
         const body = res.body() as { data: Array<{ key: string; mode: string; history_enabled: boolean }> };
-        assert.deepEqual(
-            body.data.map((item) => item.key),
-            ["general", "datetime", "media", "branding", "catalog", "payments", "shipping", "tax"],
-        );
+        assert.deepEqual(body.data.map((item) => item.key), ["general", "datetime", "media", "branding", "catalog", "payments", "shipping", "tax"]);
         assert.isTrue(body.data.filter((item) => item.mode === "settings").every((item) => item.history_enabled));
         assert.isFalse(body.data.some((item) => ["account", "email", "advanced"].includes(item.key)));
     });
@@ -51,24 +48,27 @@ test.group("admin configuration revisions", (group) => {
         forbidden.assertStatus(403);
     });
 
-    test("changed PATCH appends one revision and same-value PATCH appends none", async ({ client, assert }) => {
+    test("first changed PATCH records baseline plus diff and same-value PATCH appends none", async ({ client, assert }) => {
         const admin = await createAdmin();
         const settingsUrl = "/api/v1/admin/settings/datetime";
         await client.patch(settingsUrl).withGuard("api").loginAs(admin).json({ date_format: "yyyy/MM/dd" });
         const first = await client.get(`${BASE}/history?scope=datetime`).withGuard("api").loginAs(admin);
         first.assertStatus(200);
-        const firstBody = first.body() as { data: Array<{ revision: number; source: string; changed_keys: string[] }> };
-        assert.lengthOf(firstBody.data, 1);
-        assert.equal(firstBody.data[0].revision, 1);
-        assert.equal(firstBody.data[0].source, "update");
-        assert.deepEqual(firstBody.data[0].changed_keys, []);
+        const data = (first.body() as { data: Array<{ revision: number; source: string; changed_keys: string[] }> }).data;
+        assert.lengthOf(data, 2);
+        assert.equal(data[0].revision, 2);
+        assert.equal(data[0].source, "update");
+        assert.include(data[0].changed_keys, "datetime.date_format");
+        assert.equal(data[1].revision, 1);
+        assert.equal(data[1].source, "baseline");
+        assert.deepEqual(data[1].changed_keys, []);
 
         await client.patch(settingsUrl).withGuard("api").loginAs(admin).json({ date_format: "yyyy/MM/dd" });
         const second = await client.get(`${BASE}/history?scope=datetime`).withGuard("api").loginAs(admin);
-        assert.lengthOf((second.body() as { data: unknown[] }).data, 1);
+        assert.lengthOf((second.body() as { data: unknown[] }).data, 2);
     });
 
-    test("rollback restores the selected snapshot and appends a rollback revision", async ({ client, assert }) => {
+    test("rollback can restore the pre-first-change baseline and appends a rollback revision", async ({ client, assert }) => {
         const admin = await createAdmin();
         const settingsUrl = "/api/v1/admin/settings/datetime";
         await client.patch(settingsUrl).withGuard("api").loginAs(admin).json({ date_format: "yyyy/MM/dd" });
@@ -76,24 +76,18 @@ test.group("admin configuration revisions", (group) => {
 
         const rollback = await client.post(`${BASE}/history/datetime/1/rollback`).withGuard("api").loginAs(admin);
         rollback.assertStatus(200);
-        const rollbackBody = rollback.body() as {
-            data: { revision: number; source: string; rollback_of_revision: number };
-            meta: { changed: boolean };
-        };
-        assert.equal(rollbackBody.data.revision, 3);
+        const rollbackBody = rollback.body() as { data: { revision: number; source: string; rollback_of_revision: number }; meta: { changed: boolean } };
+        assert.equal(rollbackBody.data.revision, 4);
         assert.equal(rollbackBody.data.source, "rollback");
         assert.equal(rollbackBody.data.rollback_of_revision, 1);
         assert.isTrue(rollbackBody.meta.changed);
 
         const current = await client.get(settingsUrl).withGuard("api").loginAs(admin);
         current.assertStatus(200);
-        assert.equal((current.body() as { data: { date_format: string } }).data.date_format, "yyyy/MM/dd");
+        assert.equal((current.body() as { data: { date_format: string } }).data.date_format, "d MMMM yyyy");
 
-        const detail = await client.get(`${BASE}/history/datetime/3`).withGuard("api").loginAs(admin);
+        const detail = await client.get(`${BASE}/history/datetime/4`).withGuard("api").loginAs(admin);
         detail.assertStatus(200);
-        assert.include(
-            (detail.body() as { data: { diff: Array<{ key: string }> } }).data.diff.map((item) => item.key),
-            "datetime.date_format",
-        );
+        assert.include((detail.body() as { data: { diff: Array<{ key: string }> } }).data.diff.map((item) => item.key), "datetime.date_format");
     });
 });

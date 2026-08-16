@@ -21,11 +21,13 @@ interface StoredSnapshot {
     entries: SnapshotEntry[];
 }
 
+type RevisionSource = "baseline" | "update" | "rollback";
+
 export interface ConfigurationRevisionView {
     id: number;
     scope: ConfigurationScope;
     revision: number;
-    source: "update" | "rollback";
+    source: RevisionSource;
     rollback_of_revision: number | null;
     created_by_user_id: number | null;
     created_at: string;
@@ -46,7 +48,7 @@ export interface ConfigurationRevisionDetail extends ConfigurationRevisionView {
 }
 
 interface CaptureOptions {
-    source?: "update" | "rollback";
+    source?: Exclude<RevisionSource, "baseline">;
     actorUserId?: bigint | number | null;
     rollbackOfRevision?: number | null;
 }
@@ -55,7 +57,7 @@ interface RevisionRow {
     id: string | number;
     scope_key: ConfigurationScope;
     revision: number;
-    source: "update" | "rollback";
+    source: RevisionSource;
     rollback_of_revision: number | null;
     snapshot: StoredSnapshot | string;
     created_by_user_id: string | number | null;
@@ -79,7 +81,7 @@ function sameValue(left: unknown, right: unknown): boolean {
 
 function snapshotDiff(before: StoredSnapshot | null, after: StoredSnapshot): ConfigurationDiffEntry[] {
     if (before === null) return [];
-    const beforeMap = new Map((before?.entries ?? []).map((entry) => [`${entry.group}.${entry.key}`, entry]));
+    const beforeMap = new Map(before.entries.map((entry) => [`${entry.group}.${entry.key}`, entry]));
     const changes: ConfigurationDiffEntry[] = [];
     for (const entry of after.entries) {
         const key = `${entry.group}.${entry.key}`;
@@ -100,34 +102,28 @@ function snapshotDiff(before: StoredSnapshot | null, after: StoredSnapshot): Con
 export default class ConfigurationRevisionService {
     private settings = new SettingsService();
 
-    async capture(scope: ConfigurationScope, options: CaptureOptions = {}): Promise<ConfigurationRevisionDetail> {
-        const trx = currentTrx();
-        const tenantId = currentTenantId();
-        await trx.rawQuery("SELECT pg_advisory_xact_lock(hashtext(?))", [`configuration:${String(tenantId)}:${scope}`]);
-
-        const latest = (await trx
-            .from("configuration_revisions")
-            .where("tenant_id", String(tenantId))
-            .where("scope_key", scope)
-            .orderBy("revision", "desc")
-            .first()) as RevisionRow | undefined;
+    async ensureBaseline(scope: ConfigurationScope, actorUserId?: bigint | number | null): Promise<void> {
+        await this.lockScope(scope);
+        const latest = await this.latest(scope);
+        if (latest) return;
         const snapshot = await this.snapshot(scope);
-        const revision = (latest?.revision ?? 0) + 1;
-        const now = DateTime.utc().toSQL();
-        const inserted = await trx
-            .table("configuration_revisions")
-            .insert({
-                tenant_id: tenantId,
-                scope_key: scope,
-                revision,
-                source: options.source ?? "update",
-                rollback_of_revision: options.rollbackOfRevision ?? null,
-                snapshot: JSON.stringify(snapshot),
-                created_by_user_id: options.actorUserId ?? null,
-                created_at: now,
-            })
-            .returning(["id", "scope_key", "revision", "source", "rollback_of_revision", "snapshot", "created_by_user_id", "created_at"]);
-        return this.toDetail(inserted[0] as RevisionRow, latest ? parseSnapshot(latest.snapshot) : null);
+        await this.insert(scope, 1, snapshot, "baseline", actorUserId ?? null, null);
+    }
+
+    async capture(scope: ConfigurationScope, options: CaptureOptions = {}): Promise<ConfigurationRevisionDetail> {
+        await this.lockScope(scope);
+        const latest = await this.latest(scope);
+        const snapshot = await this.snapshot(scope);
+        const revision = Number(latest?.revision ?? 0) + 1;
+        const inserted = await this.insert(
+            scope,
+            revision,
+            snapshot,
+            options.source ?? "update",
+            options.actorUserId ?? null,
+            options.rollbackOfRevision ?? null,
+        );
+        return this.toDetail(inserted, latest ? parseSnapshot(latest.snapshot) : null);
     }
 
     async list(scope?: ConfigurationScope, limit = 50): Promise<ConfigurationRevisionView[]> {
@@ -175,6 +171,7 @@ export default class ConfigurationRevisionService {
         revision: number,
         actorUserId?: bigint | number | null,
     ): Promise<{ changed: boolean; revision: ConfigurationRevisionDetail } | null> {
+        await this.lockScope(scope);
         const target = await this.detail(scope, revision);
         if (!target) return null;
 
@@ -204,6 +201,47 @@ export default class ConfigurationRevisionService {
         return { changed, revision: rollbackRevision };
     }
 
+    private async lockScope(scope: ConfigurationScope): Promise<void> {
+        const trx = currentTrx();
+        const tenantId = currentTenantId();
+        await trx.rawQuery("SELECT pg_advisory_xact_lock(hashtext(?))", [`configuration:${String(tenantId)}:${scope}`]);
+    }
+
+    private async latest(scope: ConfigurationScope): Promise<RevisionRow | undefined> {
+        const trx = currentTrx();
+        return (await trx
+            .from("configuration_revisions")
+            .where("tenant_id", String(currentTenantId()))
+            .where("scope_key", scope)
+            .orderBy("revision", "desc")
+            .first()) as RevisionRow | undefined;
+    }
+
+    private async insert(
+        scope: ConfigurationScope,
+        revision: number,
+        snapshot: StoredSnapshot,
+        source: RevisionSource,
+        actorUserId: bigint | number | null,
+        rollbackOfRevision: number | null,
+    ): Promise<RevisionRow> {
+        const trx = currentTrx();
+        const inserted = await trx
+            .table("configuration_revisions")
+            .insert({
+                tenant_id: currentTenantId(),
+                scope_key: scope,
+                revision,
+                source,
+                rollback_of_revision: rollbackOfRevision,
+                snapshot: JSON.stringify(snapshot),
+                created_by_user_id: actorUserId,
+                created_at: DateTime.utc().toSQL(),
+            })
+            .returning(["id", "scope_key", "revision", "source", "rollback_of_revision", "snapshot", "created_by_user_id", "created_at"]);
+        return inserted[0] as RevisionRow;
+    }
+
     private async snapshot(scope: ConfigurationScope): Promise<StoredSnapshot> {
         const trx = currentTrx();
         const tenantId = currentTenantId();
@@ -218,11 +256,7 @@ export default class ConfigurationRevisionService {
         return {
             entries: definitions.map((definition) => {
                 const row = rowMap.get(`${definition.group}.${definition.key}`);
-                return {
-                    ...definition,
-                    exists: row !== undefined,
-                    value: row?.value ?? null,
-                };
+                return { ...definition, exists: row !== undefined, value: row?.value ?? null };
             }),
         };
     }
@@ -243,11 +277,7 @@ export default class ConfigurationRevisionService {
 
     private toDetail(row: RevisionRow, previous: StoredSnapshot | null): ConfigurationRevisionDetail {
         const snapshot = parseSnapshot(row.snapshot);
-        return {
-            ...this.toView(row, previous),
-            snapshot,
-            diff: snapshotDiff(previous, snapshot),
-        };
+        return { ...this.toView(row, previous), snapshot, diff: snapshotDiff(previous, snapshot) };
     }
 }
 

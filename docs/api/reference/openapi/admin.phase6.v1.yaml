@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: Calibra Admin Phase 6 Configuration OS Overlay
   version: 1.0.0
-  description: Tenant-scoped configuration capability registry, immutable settings revisions, diffs and rollback.
+  description: Tenant-scoped configuration capability registry, immutable settings baselines, revisions, diffs and rollback.
 paths:
   /api/v1/admin/settings/configuration/registry:
     get:
@@ -64,9 +64,7 @@ paths:
         '404': { description: Revision not found }
 components:
   securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
+    bearerAuth: { type: http, scheme: bearer }
   parameters:
     ConfigurationScope:
       in: path
@@ -79,9 +77,7 @@ components:
       required: true
       schema: { type: integer, minimum: 1 }
   schemas:
-    ConfigurationScope:
-      type: string
-      enum: [general, datetime, media, branding]
+    ConfigurationScope: { type: string, enum: [general, datetime, media, branding] }
     ConfigurationCapability:
       type: object
       required: [key, category, mode, label_fa, label_en, description_fa, description_en, href, api_path, history_enabled]
@@ -100,9 +96,7 @@ components:
       type: object
       required: [data]
       properties:
-        data:
-          type: array
-          items: { $ref: '#/components/schemas/ConfigurationCapability' }
+        data: { type: array, items: { $ref: '#/components/schemas/ConfigurationCapability' } }
     ConfigurationRevision:
       type: object
       required: [id, scope, revision, source, rollback_of_revision, created_by_user_id, created_at, changed_keys]
@@ -110,20 +104,16 @@ components:
         id: { type: integer, format: int64 }
         scope: { $ref: '#/components/schemas/ConfigurationScope' }
         revision: { type: integer, minimum: 1 }
-        source: { type: string, enum: [update, rollback] }
+        source: { type: string, enum: [baseline, update, rollback] }
         rollback_of_revision: { type: [integer, 'null'] }
         created_by_user_id: { type: [integer, 'null'], format: int64 }
         created_at: { type: string, format: date-time }
-        changed_keys:
-          type: array
-          items: { type: string }
+        changed_keys: { type: array, items: { type: string } }
     ConfigurationRevisionListEnvelope:
       type: object
       required: [data]
       properties:
-        data:
-          type: array
-          items: { $ref: '#/components/schemas/ConfigurationRevision' }
+        data: { type: array, items: { $ref: '#/components/schemas/ConfigurationRevision' } }
     ConfigurationSnapshotEntry:
       type: object
       required: [group, key, type, exists, value]
@@ -137,9 +127,7 @@ components:
       type: object
       required: [entries]
       properties:
-        entries:
-          type: array
-          items: { $ref: '#/components/schemas/ConfigurationSnapshotEntry' }
+        entries: { type: array, items: { $ref: '#/components/schemas/ConfigurationSnapshotEntry' } }
     ConfigurationDiffEntry:
       type: object
       required: [key, before, after, before_exists, after_exists]
@@ -156,9 +144,7 @@ components:
           required: [snapshot, diff]
           properties:
             snapshot: { $ref: '#/components/schemas/ConfigurationSnapshot' }
-            diff:
-              type: array
-              items: { $ref: '#/components/schemas/ConfigurationDiffEntry' }
+            diff: { type: array, items: { $ref: '#/components/schemas/ConfigurationDiffEntry' } }
     ConfigurationRevisionDetailEnvelope:
       type: object
       required: [data]
@@ -172,5 +158,4 @@ components:
         meta:
           type: object
           required: [changed]
-          properties:
-            changed: { type: boolean }
+          properties: { changed: { type: boolean } }
