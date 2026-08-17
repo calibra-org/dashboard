@@ -137,6 +137,10 @@ function numberFrom(value: unknown): number {
     return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function sqlNow(): string {
+    return DateTime.utc().toSQL()!;
+}
+
 async function paymentSignals(now: string): Promise<NormalizedSignal[]> {
     const trx = currentTrx();
     const row = await trx
@@ -242,7 +246,7 @@ async function supportSignals(now: string): Promise<NormalizedSignal[]> {
         .from("support_tickets")
         .whereNull("first_response_at")
         .whereNotNull("first_response_due_at")
-        .where("first_response_due_at", "<", trx.fn.now())
+        .where("first_response_due_at", "<", sqlNow())
         .whereNotIn("status", ["resolved", "closed"])
         .count("id as count")
         .first();
@@ -251,7 +255,7 @@ async function supportSignals(now: string): Promise<NormalizedSignal[]> {
         .whereNull("resolved_at")
         .whereNull("closed_at")
         .whereNotNull("resolution_due_at")
-        .where("resolution_due_at", "<", trx.fn.now())
+        .where("resolution_due_at", "<", sqlNow())
         .whereNotIn("status", ["resolved", "closed"])
         .count("id as count")
         .first();
@@ -485,16 +489,16 @@ export async function refreshDecisionIntelligence(): Promise<void> {
             score_components: scored.components,
             missing_components: scored.missing,
             freshness_at: signal.freshnessAt,
-            last_seen_at: trx.fn.now(),
+            last_seen_at: sqlNow(),
             cleared_at: null,
-            updated_at: trx.fn.now(),
+            updated_at: sqlNow(),
         };
 
         let caseId: string;
         if (!existing) {
             const [created] = await trx
                 .table("intelligence_cases")
-                .insert({ ...payload, first_seen_at: trx.fn.now(), version: 1, created_at: trx.fn.now() })
+                .insert({ ...payload, first_seen_at: sqlNow(), version: 1, created_at: sqlNow() })
                 .returning("id");
             caseId = String(created.id);
         } else {
@@ -524,7 +528,7 @@ export async function refreshDecisionIntelligence(): Promise<void> {
                     metric_name: evidence.metricName ?? null,
                     payload: evidence.payload,
                     freshness_at: evidence.freshnessAt,
-                    created_at: trx.fn.now(),
+                    created_at: sqlNow(),
                 })),
             );
         }
@@ -532,10 +536,10 @@ export async function refreshDecisionIntelligence(): Promise<void> {
 
     const staleQuery = trx.from("intelligence_cases").where("tenant_id", tenantId.toString()).where("signal_state", "open");
     if (activeKeys.length > 0) staleQuery.whereNotIn("stable_key", activeKeys);
-    await staleQuery.update({ signal_state: "cleared", cleared_at: trx.fn.now(), updated_at: trx.fn.now() });
+    await staleQuery.update({ signal_state: "cleared", cleared_at: sqlNow(), updated_at: sqlNow() });
 }
 
-function serializeCase(row: Record<string, any>) {
+function serializeCase(row: Record<string, unknown>) {
     return {
         id: String(row.id),
         stableKey: row.stable_key,
@@ -689,7 +693,7 @@ export async function recordIntelligenceDecision(input: {
     const updated = await trx
         .from("intelligence_cases")
         .where({ id: input.caseId, tenant_id: tenantId, version: input.version })
-        .update({ lifecycle_stage: lifecycleStage, version: input.version + 1, updated_at: trx.fn.now() })
+        .update({ lifecycle_stage: lifecycleStage, version: input.version + 1, updated_at: sqlNow() })
         .returning("*");
     if (updated.length === 0) return { kind: "conflict" as const, currentVersion: input.version + 1 };
     const [decision] = await trx
@@ -703,7 +707,7 @@ export async function recordIntelligenceDecision(input: {
             case_version: input.version,
             context_snapshot: serializeCase(current),
             evidence_snapshot: evidence,
-            created_at: trx.fn.now(),
+            created_at: sqlNow(),
         })
         .returning("*");
     if (input.decision === "accept") {
@@ -715,8 +719,8 @@ export async function recordIntelligenceDecision(input: {
             status: "planned",
             action_route: current.action_route,
             result: { executionBoundary: "human_navigation_only", phase11RequiredForPolicyExecution: true },
-            created_at: trx.fn.now(),
-            updated_at: trx.fn.now(),
+            created_at: sqlNow(),
+            updated_at: sqlNow(),
         });
     }
     return { kind: "ok" as const, case: serializeCase(updated[0]), decision };
@@ -754,12 +758,12 @@ export async function recordIntelligenceOutcome(input: {
             notes: input.notes ?? null,
             observed_at: input.observedAt,
             recorded_by_user_id: input.recordedByUserId,
-            created_at: trx.fn.now(),
+            created_at: sqlNow(),
         })
         .returning("*");
     await trx
         .from("intelligence_cases")
         .where({ id: input.caseId, tenant_id: tenantId })
-        .update({ lifecycle_stage: "measured", updated_at: trx.fn.now() });
+        .update({ lifecycle_stage: "measured", updated_at: sqlNow() });
     return outcome;
 }

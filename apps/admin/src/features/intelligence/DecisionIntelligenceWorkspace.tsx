@@ -463,11 +463,8 @@ export function DecisionIntelligenceWorkspace() {
                                     {detail.data.evidence.length === 0 ? (
                                         <p className="text-muted-foreground text-sm">شاهدی ثبت نشده است.</p>
                                     ) : null}
-                                    {detail.data.evidence.map((row, index) => (
-                                        <div
-                                            key={`${recordText(row, "id")}-${index}`}
-                                            className="rounded-xl border bg-background/65 p-3"
-                                        >
+                                    {detail.data.evidence.map((row) => (
+                                        <div key={recordText(row, "id")} className="rounded-xl border bg-background/65 p-3">
                                             <div className="flex flex-wrap justify-between gap-2">
                                                 <strong className="text-sm">{recordText(row, "label_fa")}</strong>
                                                 <span className="text-muted-foreground text-xs">
@@ -514,8 +511,8 @@ export function DecisionIntelligenceWorkspace() {
                                     ))}
                                 </div>
                                 <div className="mt-4 space-y-2">
-                                    {detail.data.decisions.slice(0, 5).map((row, index) => (
-                                        <div key={`${recordText(row, "id")}-${index}`} className="rounded-xl border p-3 text-sm">
+                                    {detail.data.decisions.slice(0, 5).map((row) => (
+                                        <div key={recordText(row, "id")} className="rounded-xl border p-3 text-sm">
                                             <div className="flex justify-between gap-2">
                                                 <strong>{recordText(row, "decision")}</strong>
                                                 <span className="text-muted-foreground text-xs">
@@ -561,9 +558,9 @@ export function DecisionIntelligenceWorkspace() {
                                     {detail.data.outcomes.length === 0 ? (
                                         <p className="text-muted-foreground text-sm">هنوز outcome ثبت نشده است.</p>
                                     ) : null}
-                                    {detail.data.outcomes.slice(0, 8).map((row, index) => (
+                                    {detail.data.outcomes.slice(0, 8).map((row) => (
                                         <div
-                                            key={`${recordText(row, "id")}-${index}`}
+                                            key={recordText(row, "id")}
                                             className="grid gap-2 rounded-xl border p-3 text-sm sm:grid-cols-[1fr_auto_auto]"
                                         >
                                             <strong>{recordText(row, "metric_name")}</strong>
