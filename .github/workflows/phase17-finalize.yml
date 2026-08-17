@@ -34,6 +34,7 @@ jobs:
         run: |
           python3 scripts/phase17-bootstrap.py
           python3 scripts/phase17-bootstrap-app.py
+          python3 scripts/phase17-bootstrap-fixes.py
       - name: Format changed repository files
         run: pnpm run format:fix
       - name: Regenerate OpenAPI bundles and SDK
@@ -56,6 +57,7 @@ jobs:
         run: |
           rm scripts/phase17-bootstrap.py
           rm scripts/phase17-bootstrap-app.py
+          rm scripts/phase17-bootstrap-fixes.py
           rm .github/workflows/phase17-finalize.yml
       - name: Commit verified Phase 17 tree
         run: |
