@@ -26,26 +26,42 @@ jobs:
           node-version: 24.14.0
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Repair Lucid transaction timestamp usage and unsafe row typing
+      - name: Repair compile and stable React identity
         run: |
           node <<'NODE'
           const fs = require('node:fs');
-          const path = 'apps/api/app/services/decision_intelligence_service.ts';
-          let source = fs.readFileSync(path, 'utf8');
+
+          const servicePath = 'apps/api/app/services/decision_intelligence_service.ts';
+          let service = fs.readFileSync(servicePath, 'utf8');
           const anchor = `function numberFrom(value: unknown): number {\n    const parsed = Number(value ?? 0);\n    return Number.isFinite(parsed) ? parsed : 0;\n}\n`;
-          if (!source.includes(anchor)) throw new Error('numberFrom anchor missing');
-          if (!source.includes('function sqlNow(): string')) {
-            source = source.replace(anchor, `${anchor}\nfunction sqlNow(): string {\n    return DateTime.utc().toSQL()!;\n}\n`);
+          if (!service.includes(anchor)) throw new Error('numberFrom anchor missing');
+          if (!service.includes('function sqlNow(): string')) {
+            service = service.replace(anchor, `${anchor}\nfunction sqlNow(): string {\n    return DateTime.utc().toSQL()!;\n}\n`);
           }
-          source = source.replaceAll('trx.fn.now()', 'sqlNow()');
-          source = source.replace('function serializeCase(row: Record<string, any>)', 'function serializeCase(row: Record<string, unknown>)');
-          fs.writeFileSync(path, source);
+          service = service.replaceAll('trx.fn.now()', 'sqlNow()');
+          service = service.replace('function serializeCase(row: Record<string, any>)', 'function serializeCase(row: Record<string, unknown>)');
+          fs.writeFileSync(servicePath, service);
+
+          const uiPath = 'apps/admin/src/features/intelligence/DecisionIntelligenceWorkspace.tsx';
+          let ui = fs.readFileSync(uiPath, 'utf8');
+          ui = ui
+            .replace('detail.data.evidence.map((row, index) => (', 'detail.data.evidence.map((row) => (')
+            .replace('key={`${recordText(row, "id")}-${index}`}', 'key={recordText(row, "id")}')
+            .replace('detail.data.decisions.slice(0, 5).map((row, index) => (', 'detail.data.decisions.slice(0, 5).map((row) => (')
+            .replace('key={`${recordText(row, "id")}-${index}`}', 'key={recordText(row, "id")}')
+            .replace('detail.data.outcomes.slice(0, 8).map((row, index) => (', 'detail.data.outcomes.slice(0, 8).map((row) => (')
+            .replace('key={`${recordText(row, "id")}-${index}`}', 'key={recordText(row, "id")}');
+          fs.writeFileSync(uiPath, ui);
           NODE
-          pnpm exec biome format --write apps/api/app/services/decision_intelligence_service.ts
-      - name: Probe Biome errors only
+          pnpm exec biome format --write \
+            apps/api/app/services/decision_intelligence_service.ts \
+            apps/admin/src/features/intelligence/DecisionIntelligenceWorkspace.tsx
+      - name: Verify Biome errors only
         run: pnpm exec biome lint . --diagnostic-level=error --max-diagnostics=50
       - name: Verify typecheck after repair
         run: pnpm run typecheck
+      - name: Verify Phase 10 invariants
+        run: pnpm run verify:phase10
       - name: Commit repair and remove probe
         run: |
           rm -f .github/workflows/phase10-repair-probe.yml
