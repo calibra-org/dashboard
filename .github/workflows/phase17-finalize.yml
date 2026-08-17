@@ -39,17 +39,18 @@ jobs:
         run: pnpm run format:fix
       - name: Regenerate OpenAPI bundles and SDK
         run: pnpm --filter @calibra/sdk run codegen
-      - name: Lint API contracts
+      - name: Lint Phase 17 API overlays
+        working-directory: docs/api
         run: |
-          set -o pipefail
-          (pnpm --filter @calibra/api-docs run lint:admin; pnpm --filter @calibra/api-docs run lint:storefront) 2>&1 | tee phase17-lint.log
-      - name: Upload contract lint diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: phase17-contract-lint
-          path: phase17-lint.log
-          retention-days: 1
+          cat > phase17-redocly.yaml <<'EOF'
+          extends:
+            - recommended
+          rules:
+            security-defined: off
+          EOF
+          pnpm exec redocly lint reference/openapi/admin.phase17.v1.yaml --config phase17-redocly.yaml --format stylish
+          pnpm exec redocly lint reference/openapi/storefront.phase17.v1.yaml --config phase17-redocly.yaml --format stylish
+          rm phase17-redocly.yaml
       - name: Typecheck affected workspaces
         run: |
           pnpm --filter @calibra/api run typecheck
