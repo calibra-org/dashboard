@@ -97,6 +97,19 @@ paths:
       responses:
         '200': { description: Blueprint validation result, content: { application/json: { schema: { $ref: '#/components/schemas/ConfigurationBlueprintValidationEnvelope' } } } }
         '422': { description: Malformed blueprint }
+  /api/v1/admin/settings/configuration/blueprint/apply:
+    post:
+      operationId: adminPhase6ConfigurationBlueprintApply
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ConfigurationBlueprintApplyInput' }
+      responses:
+        '200': { description: Blueprint applied and captured as immutable revisions, content: { application/json: { schema: { $ref: '#/components/schemas/ConfigurationBlueprintApplyEnvelope' } } } }
+        '403': { description: Configuration blueprint apply permission denied }
+        '422': { description: Invalid configuration blueprint }
   /api/v1/admin/settings/configuration/drift:
     get:
       operationId: adminPhase6ConfigurationDrift
@@ -111,6 +124,19 @@ paths:
       parameters: [{ in: query, name: limit, required: false, schema: { type: integer, minimum: 1, maximum: 200, default: 100 } }]
       responses:
         '200': { description: Immutable URL-governance change evidence, content: { application/json: { schema: { $ref: '#/components/schemas/ConfigurationUrlRedirectEnvelope' } } } }
+  /api/v1/admin/settings/configuration/tax/simulate:
+    post:
+      operationId: adminPhase6ConfigurationTaxSimulate
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ConfigurationTaxSimulationInput' }
+      responses:
+        '200': { description: Side-effect-free tax calculation and product impact evidence, content: { application/json: { schema: { $ref: '#/components/schemas/ConfigurationTaxSimulationEnvelope' } } } }
+        '403': { description: Configuration tax write permission denied }
+        '422': { description: Invalid tax simulation input }
 components:
   securitySchemes:
     bearerAuth: { type: http, scheme: bearer }
@@ -292,7 +318,60 @@ components:
       type: object
       required: [schema_version, entries]
       properties: { schema_version: { type: integer, enum: [1] }, entries: { type: array, items: { $ref: '#/components/schemas/ConfigurationBlueprintEntry' } }, fingerprint: { type: string } }
+    ConfigurationBlueprintApplyInput:
+      type: object
+      required: [schema_version, entries]
+      properties:
+        schema_version: { type: integer, enum: [1] }
+        entries: { type: array, items: { $ref: '#/components/schemas/ConfigurationBlueprintEntry' } }
+        fingerprint: { type: string }
+        reason: { type: string, minLength: 3, maxLength: 500 }
+        approval_reference: { type: [string, 'null'] }
+    ConfigurationBlueprintApplyEnvelope:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/ConfigurationBlueprint' }
+        meta:
+          type: object
+          required: [revisions]
+          properties:
+            revisions: { type: object, additionalProperties: { type: integer, minimum: 1 } }
     ConfigurationBlueprintEnvelope: { type: object, required: [data], properties: { data: { $ref: '#/components/schemas/ConfigurationBlueprint' } } }
     ConfigurationBlueprintValidationEnvelope: { type: object, required: [data], properties: { data: { type: object, required: [valid, errors], properties: { valid: { type: boolean }, errors: { type: array, items: { type: object, additionalProperties: true } } } } } }
     ConfigurationDriftEnvelope: { type: object, required: [data], properties: { data: { type: object, required: [fingerprint, expected_fingerprint, drifted, source, provider_drift], properties: { fingerprint: { type: string }, expected_fingerprint: { type: [string, 'null'] }, drifted: { type: [boolean, 'null'] }, source: { type: string }, provider_drift: { type: string } } } } }
+    ConfigurationTaxSimulationInput:
+      type: object
+      required: [amount_minor, tax_class_id]
+      properties:
+        amount_minor: { type: integer, minimum: 0 }
+        tax_class_id: { type: integer, minimum: 1 }
+        country: { type: [string, 'null'], minLength: 2, maxLength: 2 }
+        region_id: { type: [integer, 'null'], minimum: 1 }
+        prices_include_tax: { type: boolean, default: false }
+    ConfigurationTaxSimulationEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [amount_minor, tax_class_id, address, prices_include_tax, rate_count, calculation, impact]
+          properties:
+            amount_minor: { type: integer, minimum: 0 }
+            tax_class_id: { type: integer, minimum: 1 }
+            address:
+              type: object
+              required: [country, region_id]
+              properties:
+                country: { type: [string, 'null'] }
+                region_id: { type: [integer, 'null'] }
+            prices_include_tax: { type: boolean }
+            rate_count: { type: integer, minimum: 0 }
+            calculation: { type: object, additionalProperties: true }
+            impact:
+              type: object
+              required: [products_using_tax_class, source]
+              properties:
+                products_using_tax_class: { type: integer, minimum: 0 }
+                source: { type: string, enum: [products.tax_class_id] }
     ConfigurationUrlRedirectEnvelope: { type: object, required: [data], properties: { data: { type: array, items: { type: object, additionalProperties: true } } } }
