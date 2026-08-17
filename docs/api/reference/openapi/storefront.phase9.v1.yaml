@@ -1,10 +1,20 @@
 openapi: 3.1.0
 info:
   title: Calibra Storefront Phase 9 Personalization Overlay
-  version: "1.0.0"
+  version: "1.1.0"
 components:
   schemas:
     Phase9PublicEnvelope: { type: object, additionalProperties: true }
+    Phase9Event:
+      type: object
+      required: [event_id, event_type, schema_version]
+      properties:
+        event_id: { type: string }
+        event_type:
+          type: string
+          enum: [session_started, page_view, view_product, view_category, search, search_result_click, scroll_depth, story_view, video_progress, video_complete, like, save, follow, comment, add_cart, remove_cart, wishlist, checkout_started, purchase, return_requested, refund, recommendation_impression, recommendation_click, not_interested]
+        schema_version: { type: integer, enum: [1] }
+      additionalProperties: true
 paths:
   /api/v1/personalization/amazing-deals:
     get:
@@ -30,6 +40,42 @@ paths:
       security: []
       requestBody: { required: true, content: { application/json: { schema: { type: object, required: [event_type], additionalProperties: true } } } }
       responses: { "202": { description: Event accepted or consent-gated }, "422": { description: Invalid event } }
+  /api/v1/events:
+    post:
+      operationId: recordPhase9Event
+      tags: [Personalization]
+      security: []
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/Phase9Event" } } } }
+      responses: { "202": { description: Versioned behavior event accepted or deduplicated }, "422": { description: Unsupported vocabulary or schema version } }
+  /api/v1/events/batch:
+    post:
+      operationId: recordPhase9EventBatch
+      tags: [Personalization]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [events]
+              properties:
+                events: { type: array, minItems: 1, maxItems: 100, items: { $ref: "#/components/schemas/Phase9Event" } }
+      responses: { "202": { description: Bounded event batch accepted with per-event dedupe result }, "422": { description: Invalid batch } }
+  /api/v1/recommendations/serve:
+    post:
+      operationId: serveRecommendations
+      tags: [Personalization]
+      security: []
+      requestBody: { required: true, content: { application/json: { schema: { type: object, properties: { surface: { type: string }, limit: { type: integer, minimum: 1, maximum: 24 }, exclude_product_ids: { type: array, items: { type: integer, format: int64 } } }, additionalProperties: true } } } }
+      responses: { "200": { description: Explainable recommendation placement with policy/model version }, "422": { description: Unsupported surface } }
+  /api/v1/recommendations/serve-page:
+    post:
+      operationId: serveRecommendationPage
+      tags: [Personalization]
+      security: []
+      requestBody: { required: true, content: { application/json: { schema: { type: object, properties: { surfaces: { type: array, maxItems: 12, items: { type: string } } }, additionalProperties: true } } } }
+      responses: { "200": { description: Multi-surface recommendation response } }
   /api/v1/personalization/consent:
     get: { operationId: getPersonalizationConsent, tags: [Personalization], security: [], responses: { "200": { description: Consent state }, "400": { description: Subject unavailable } } }
     put:
@@ -38,5 +84,17 @@ paths:
       security: []
       requestBody: { required: true, content: { application/json: { schema: { type: object, properties: { analytics: { type: boolean }, personalization: { type: boolean }, source: { type: string }, policy_version: { type: string } } } } } }
       responses: { "200": { description: Updated consent } }
+  /api/v1/personalization/preferences:
+    get: { operationId: getPersonalizationPreferences, tags: [Personalization], security: [], responses: { "200": { description: User personalization controls } } }
+    put:
+      operationId: updatePersonalizationPreferences
+      tags: [Personalization]
+      security: []
+      requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+      responses: { "200": { description: Updated interests and hide/show-less controls } }
+  /api/v1/personalization/not-interested:
+    post: { operationId: markRecommendationNotInterested, tags: [Personalization], security: [], requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: true } } } }, responses: { "200": { description: Preference updated and feedback event emitted } } }
   /api/v1/personalization/reset:
     post: { operationId: resetPersonalizationProfile, tags: [Personalization], security: [], responses: { "200": { description: Profile reset }, "400": { description: Subject unavailable } } }
+  /api/v1/personalization/reset-all:
+    post: { operationId: resetAllPersonalizationData, tags: [Personalization], security: [], responses: { "200": { description: Profile, preferences, event linkage and merge state reset }, "400": { description: Subject unavailable } } }
