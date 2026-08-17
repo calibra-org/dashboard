@@ -214,9 +214,9 @@ jobs:
             timeout --foreground 3m node ace test --files="$suite"
           done
 
-      - name: Verify formatting lint build and SDK drift
+      - name: Normalize and verify formatting lint build and SDK drift
         run: |
-          pnpm run format
+          pnpm run format:fix
           pnpm run lint
           pnpm run build
           pnpm --filter @calibra/sdk run codegen:check
@@ -226,7 +226,7 @@ jobs:
         run: |
           set -euo pipefail
           rm -rf diagnostics
-          rm -f .github/workflows/baseline-gate-repair.yml .github/workflows/phase6-test-schema-diagnostic.yml .github/workflows/phase7-certifier-hotfix.yml .github/workflows/phase7-admin-diagnostic.yml .github/workflows/phase7-finalize-v2.yml
+          rm -f .github/workflows/baseline-gate-repair.yml .github/workflows/phase6-test-schema-diagnostic.yml .github/workflows/phase7-certifier-hotfix.yml .github/workflows/phase7-admin-diagnostic.yml .github/workflows/phase7-finalizer-format-hotfix.yml .github/workflows/phase7-finalize-v2.yml
           git add -A
           git diff --cached --check
           node scripts/verify-phase7-identity-integration.mjs
