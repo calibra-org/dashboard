@@ -93,6 +93,7 @@ jobs:
                     ['apps/api/app/services/identity/verification.ts', 'if (consumed !== 1) return { ok: false as const, reason: "consumed" };', 'if (Number(Array.isArray(consumed) ? consumed.length : consumed) !== 1) return { ok: false as const, reason: "consumed" };'],
                     ['apps/api/app/services/identity/verification.ts', 'return updated === 1;', 'return Number(Array.isArray(updated) ? updated.length : updated) === 1;'],
                     ['apps/api/app/services/identity/webauthn.ts', 'if (consumed !== 1)', 'if (Number(Array.isArray(consumed) ? consumed.length : consumed) !== 1)'],
+                    ['apps/admin/src/features/identity/IdentityWorkspace.tsx', 'title={<InfoTitle title={row.label} help={COPY.help.methodCard} />}', 'title={<InfoTitle title={row.label ?? row.key ?? "—"} help={COPY.help.methodCard} />}'],
                   ]
                   for (const [path, from, to] of fixes) replaceRequired(path, from, to)
                   NODE
@@ -102,6 +103,7 @@ jobs:
                     apps/api/app/services/identity/credentials.ts \
                     apps/api/app/services/identity/verification.ts \
                     apps/api/app/services/identity/webauthn.ts \
+                    apps/admin/src/features/identity/IdentityWorkspace.tsx \
                     docs/api/reference/openapi/admin.identity.v1.yaml \
                     docs/api/reference/openapi/storefront.identity.v1.yaml
                   git diff --check
@@ -112,9 +114,10 @@ jobs:
                   pnpm --filter @calibra/api-docs exec redocly lint reference/openapi/storefront.identity.v1.yaml --format stylish
                   pnpm --filter @calibra/api-docs exec redocly lint reference/openapi/admin.identity.v1.yaml --format stylish
 
-            - name: Regenerate canonical SDK
+            - name: Regenerate and build canonical SDK
               run: |
                   pnpm --filter @calibra/sdk run codegen
+                  pnpm --filter @calibra/sdk run build
                   git add packages/sdk/src/generated
 
             - name: Verify Phase 7 release invariants
