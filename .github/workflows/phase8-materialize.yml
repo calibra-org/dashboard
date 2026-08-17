@@ -1,0 +1,70 @@
+name: Phase 8 Materialize
+
+on:
+  push:
+    branches:
+      - agent/phase8-social-commerce-community-os-v2
+    paths:
+      - ".phase8/materialize/**"
+      - ".github/workflows/phase8-materialize.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: phase8-materialize-v2
+  cancel-in-progress: false
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reconstruct and verify locked payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(find .phase8/materialize -maxdepth 1 -type f -name 'part-*' | wc -l)" -eq 6
+          cat .phase8/materialize/part-* > /tmp/phase8.patch.gz.b64
+          base64 -d /tmp/phase8.patch.gz.b64 > /tmp/phase8.patch.gz
+          gzip -dc /tmp/phase8.patch.gz > /tmp/phase8.patch
+          expected="cfd53594431022b138352fddea3b091f0009de4f831ed3853500ed327ec9fef2"
+          actual="$(sha256sum /tmp/phase8.patch | awk '{print $1}')"
+          echo "expected=$expected"
+          echo "actual=$actual"
+          test "$actual" = "$expected"
+
+      - name: Apply Phase 8 as a three-way indexed patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git apply --3way --index /tmp/phase8.patch
+          test -z "$(git ls-files -u)"
+          rm -rf .phase8/materialize
+          rm -f .github/workflows/phase8-materialize.yml
+          git add -A
+          test -z "$(git ls-files -u)"
+          git diff --cached --check
+          test -z "$(git diff --cached --name-only | grep '^\.phase8/' || true)"
+          test -z "$(git diff --cached --name-only | grep '^\.github/workflows/phase8-materialize\.yml$' || true)"
+
+      - name: Verify Phase 8 static release invariants
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/verify-phase8-social-commerce.mjs
+
+      - name: Commit materialized source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Calibra Phase 8 Materializer"
+          git config user.email "phase8-materializer@users.noreply.github.com"
+          git status --short
+          git commit -m "feat(social): materialize Phase 8 Social Commerce & Community OS"
+          git push origin HEAD:agent/phase8-social-commerce-community-os-v2
