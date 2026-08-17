@@ -7834,6 +7834,246 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/governance/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminGovernanceOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/governance/registry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminGovernanceRegistry"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/governance/policies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminGovernancePolicies"];
+        put?: never;
+        post: operations["adminGovernancePolicyCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/governance/evaluate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminGovernanceEvaluate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/governance/agents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminGovernanceAgents"];
+        put?: never;
+        post: operations["adminGovernanceAgentCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/governance/agents/{id}/kill-switch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminGovernanceAgentKillSwitch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/governance/approvals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminGovernanceApprovals"];
+        put?: never;
+        post: operations["adminGovernanceApprovalCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/governance/approvals/{reference}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminGovernanceApprovalGet"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/governance/approvals/{reference}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminGovernanceApprovalDecision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/governance/approvals/{reference}/delegate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminGovernanceApprovalDelegate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/governance/approvals/{reference}/break-glass": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminGovernanceApprovalBreakGlass"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/governance/ledger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminGovernanceLedger"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/governance/ledger/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminGovernanceLedgerVerify"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/governance/shadow": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminGovernanceShadow"];
+        put?: never;
+        post: operations["adminGovernanceShadowCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/governance/shadow/{id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminGovernanceShadowReview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -10972,6 +11212,90 @@ export interface components {
             notes?: string;
             observed_at: string;
         };
+        GovernancePolicyInput: {
+            policyKey: string;
+            name: string;
+            description?: string | null;
+            actionPattern: string;
+            scope?: {
+                [key: string]: unknown;
+            };
+            predicate?: {
+                [key: string]: unknown;
+            };
+            /** @enum {string} */
+            effect: "allow" | "deny" | "require_approval" | "require_step_up" | "limit";
+            priority?: number;
+            autonomyCeiling?: number | null;
+            limits?: {
+                [key: string]: unknown;
+            };
+            enabled?: boolean;
+            reason: string;
+        };
+        GovernanceEvaluationInput: {
+            /** @enum {string} */
+            actorType?: "human" | "agent" | "service";
+            agentId?: number | null;
+            actionKey: string;
+            resourceType?: string | null;
+            resourceId?: string | number | null;
+            requestedAutonomy?: number;
+            amountMinor?: number | null;
+            currency?: string | null;
+            context?: {
+                [key: string]: unknown;
+            };
+        };
+        GovernanceAgentInput: {
+            principalKey: string;
+            name: string;
+            ownerUserId?: number | null;
+            allowedActions?: string[];
+            prohibitedActions?: string[];
+            dataAccessClasses?: string[];
+            autonomyLevel?: number;
+            budgetLimitMinor?: number | null;
+            budgetCurrency?: string | null;
+            budgetPeriod?: string;
+            attributes?: {
+                [key: string]: unknown;
+            };
+            enabled?: boolean;
+        };
+        GovernanceApprovalInput: {
+            actionKey: string;
+            resourceType?: string | null;
+            resourceId?: string | number | null;
+            reason: string;
+            payload?: {
+                [key: string]: unknown;
+            };
+            /** @enum {string} */
+            workflowKind?: "single" | "sequential" | "quorum";
+            separationOfDuties?: boolean;
+            expiresInMinutes?: number;
+            steps?: {
+                label: string;
+                assignedUserId?: number | null;
+                requiredPermission?: string | null;
+                escalateAfterMinutes?: number | null;
+                escalationPermission?: string | null;
+                quorum?: number;
+            }[];
+        };
+        GovernanceShadowInput: {
+            agentPrincipalId?: number | null;
+            actionKey: string;
+            autonomyStage?: number;
+            proposal?: {
+                [key: string]: unknown;
+            };
+            policyDecision?: {
+                [key: string]: unknown;
+            };
+            policyDigest?: string | null;
+        };
     };
     responses: {
         /** @description Unauthorized (401) — the request did not include a valid bearer token, or the token has been revoked. */
@@ -11056,6 +11380,7 @@ export interface components {
         ConfigurationRevision: number;
         UserId: number;
         IntelligenceCaseId: string;
+        GovernanceApprovalReference: string;
     };
     requestBodies: never;
     headers: never;
@@ -23847,6 +24172,456 @@ export interface operations {
             };
             /** @description Invalid outcome input */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminGovernanceOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Governance control-plane overview */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminGovernanceRegistry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Governed action registry and autonomy ceilings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminGovernancePolicies: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Immutable policy versions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminGovernancePolicyCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GovernancePolicyInput"];
+            };
+        };
+        responses: {
+            /** @description Policy version appended */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Recent identity step-up required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminGovernanceEvaluate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GovernanceEvaluationInput"];
+            };
+        };
+        responses: {
+            /** @description Policy decision with matched policies and digest */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminGovernanceAgents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Agent principals and effective autonomy */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminGovernanceAgentCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GovernanceAgentInput"];
+            };
+        };
+        responses: {
+            /** @description Agent principal created */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Recent identity step-up required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminGovernanceAgentKillSwitch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    enabled: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Emergency stop state changed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Recent identity step-up required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminGovernanceApprovals: {
+        parameters: {
+            query?: {
+                status?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Approval queue */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminGovernanceApprovalCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GovernanceApprovalInput"];
+            };
+        };
+        responses: {
+            /** @description Approval request created and request hash bound */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminGovernanceApprovalGet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reference: components["parameters"]["GovernanceApprovalReference"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Approval request with steps and immutable decisions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminGovernanceApprovalDecision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reference: components["parameters"]["GovernanceApprovalReference"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    decision: "approve" | "reject";
+                    reason: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Approval decision recorded */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Separation-of-duties or duplicate-decision conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminGovernanceApprovalDelegate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reference: components["parameters"]["GovernanceApprovalReference"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    delegatedToUserId: number;
+                    reason: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Approval authority delegated for the active step */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminGovernanceApprovalBreakGlass: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reference: components["parameters"]["GovernanceApprovalReference"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    reason: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Break-glass decision recorded with elevated audit */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Recent identity step-up required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminGovernanceLedger: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tenant-scoped tamper-evident action ledger */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminGovernanceLedgerVerify: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Full ledger chain verification result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminGovernanceShadow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Shadow observations and measured promotion readiness */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminGovernanceShadowCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GovernanceShadowInput"];
+            };
+        };
+        responses: {
+            /** @description Shadow proposal recorded */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminGovernanceShadowReview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    humanDecision: "approve" | "reject" | "modify" | "abstain";
+                    outcome?: {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+        responses: {
+            /** @description Human shadow review recorded */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };

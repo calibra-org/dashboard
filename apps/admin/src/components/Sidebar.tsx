@@ -106,6 +106,7 @@ const groups: NavGroup[] = [
         titleKey: "configuration",
         items: [
             { href: "/settings/general", labelKey: "settings", icon: Settings },
+            { href: "/governance/overview", label: "Governance OS", icon: ShieldCheck },
             { href: "/reports", labelKey: "reports", icon: BarChart3 },
         ],
     },
