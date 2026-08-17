@@ -1,0 +1,53 @@
+name: Phase 7 admin diagnostics
+
+on:
+  push:
+    branches: [agent/phase7-identity-trust-os]
+    paths: [.github/workflows/phase7-admin-diagnostic.yml]
+
+permissions:
+  contents: write
+
+env:
+  NODE_VERSION: "24.14.0"
+  PNPM_VERSION: "10.32.1"
+  TURBO_TELEMETRY_DISABLED: 1
+  DO_NOT_TRACK: 1
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/phase7-identity-trust-os
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Capture admin typecheck and build diagnostics
+        shell: bash
+        run: |
+          set +e
+          mkdir -p diagnostics
+          pnpm --filter @calibra/admin run typecheck > diagnostics/phase7-admin-typecheck.log 2>&1
+          TYPECHECK_EXIT=$?
+          pnpm --filter @calibra/admin run build > diagnostics/phase7-admin-build.log 2>&1
+          BUILD_EXIT=$?
+          printf 'typecheck_exit=%s\nbuild_exit=%s\n' "$TYPECHECK_EXIT" "$BUILD_EXIT" > diagnostics/phase7-admin-status.txt
+          set -e
+      - name: Commit diagnostic evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "calibra-phase7-bot"
+          git config user.email "calibra-phase7-bot@users.noreply.github.com"
+          git add diagnostics/phase7-admin-typecheck.log diagnostics/phase7-admin-build.log diagnostics/phase7-admin-status.txt
+          git commit -m "test: capture Phase 7 admin diagnostics"
+          git push origin HEAD:agent/phase7-identity-trust-os
