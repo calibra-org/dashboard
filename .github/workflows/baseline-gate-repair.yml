@@ -95,6 +95,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # Remove the temporary OpenAPI diagnostic instrumentation before certification/publish.
+          git show e8481b5fe1aac0412a2d0d27af2cddf65b12655b:apps/api/tests/bootstrap.ts > apps/api/tests/bootstrap.ts
           node --input-type=module <<'NODE'
           import fs from 'node:fs'
           const packagePath = 'docs/api/package.json'
@@ -102,13 +104,22 @@ jobs:
           pkg.scripts['build:json:admin-phase6'] = 'redocly bundle reference/openapi/admin.phase6.v1.yaml -o dist/admin.phase6.v1.json --ext json'
           if (!pkg.scripts['build:json:admin'].includes('build:json:admin-phase6')) pkg.scripts['build:json:admin'] = pkg.scripts['build:json:admin'].replace('pnpm build:json:admin-phase5 &&', 'pnpm build:json:admin-phase5 && pnpm build:json:admin-phase6 &&')
           fs.writeFileSync(packagePath, `${JSON.stringify(pkg, null, 4)}\n`)
+
           const mergePath = 'docs/api/scripts/merge-admin-spec.js'
           let merge = fs.readFileSync(mergePath, 'utf8')
           if (!merge.includes('dist/admin.phase6.v1.json')) merge = merge.replace('const phase5 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase5.v1.json"), "utf8"));', 'const phase5 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase5.v1.json"), "utf8"));\nconst phase6 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase6.v1.json"), "utf8"));')
           if (!merge.includes('[phase6, "Phase6Overlay"]')) merge = merge.replace('    [phase5, "Phase5Overlay"],', '    [phase5, "Phase5Overlay"],\n    [phase6, "Phase6Overlay"],')
           fs.writeFileSync(mergePath, merge)
-          const spec = fs.readFileSync('docs/api/reference/openapi/admin.phase6.v1.yaml', 'utf8')
+
+          const phase6SpecPath = 'docs/api/reference/openapi/admin.phase6.v1.yaml'
+          let spec = fs.readFileSync(phase6SpecPath, 'utf8')
+          const malformed422 = "        '422': { description: Validation, stale version, preview or approval failure }"
+          const canonical422 = "        '422': { description: \"Validation, stale version, preview or approval failure\" }"
+          if (spec.includes(malformed422)) spec = spec.replace(malformed422, canonical422)
+          if (!spec.includes(canonical422)) throw new Error('Canonical Phase 6 422 response description missing')
           for (const required of ['/api/v1/admin/settings/configuration/blueprint/apply:', '/api/v1/admin/settings/configuration/tax/simulate:', 'ConfigurationBlueprintApplyInput:', 'ConfigurationTaxSimulationInput:']) if (!spec.includes(required)) throw new Error(`Missing canonical Phase 6 OpenAPI contract: ${required}`)
+          fs.writeFileSync(phase6SpecPath, spec)
+
           const viewPath = 'apps/admin/src/views/store-config/settings/configuration-group-view.tsx'
           let view = fs.readFileSync(viewPath, 'utf8')
           if (!view.includes('        unset: false,')) view = view.replace('        value: parsed.value,\n        reason,', '        value: parsed.value,\n        unset: false,\n        reason,')
@@ -118,11 +129,13 @@ jobs:
             view = view.replace(anchor, `${anchor}\n        rollout_percent: 100,`)
           }
           fs.writeFileSync(viewPath, view)
+
           const openapiPath = 'docs/api/reference/openapi/admin.v1.yaml'
           let openapi = fs.readFileSync(openapiPath, 'utf8')
           const staleHead = '    /api/v1/admin/payment-attempts/{id}/reconcile:\n        post:\n            $ref: "./admin/paths/payments/payment-attempts-id-reconcile.post.yaml"\n\n        head:\n            $ref: "./common/components/operations/HeadCompanion.yaml"'
           if (openapi.includes(staleHead)) openapi = openapi.replace(staleHead, '    /api/v1/admin/payment-attempts/{id}/reconcile:\n        post:\n            $ref: "./admin/paths/payments/payment-attempts-id-reconcile.post.yaml"')
           fs.writeFileSync(openapiPath, openapi)
+
           const ordersPath = 'apps/api/tests/functional/admin/orders.spec.ts'
           let orders = fs.readFileSync(ordersPath, 'utf8')
           orders = orders.replace('test("transitions processing → completed, persists tracking metadata, idempotent re-runs"', 'test("creates a canonical shipment without completing the processing order, persists tracking metadata, idempotent re-runs"')
@@ -131,10 +144,12 @@ jobs:
           orders = orders.replace('/** Draft → markShipped — state machine refuses the implicit completed transition. */', '/** Draft → markShipped is rejected because only processing orders may create a compatibility shipment. */')
           orders = orders.replace('        res.assertStatus(200);\n        const fresh = await Order.findOrFail(Number(order.id));', '        res.assertStatus(422);\n        const fresh = await Order.findOrFail(Number(order.id));')
           fs.writeFileSync(ordersPath, orders)
+
           const txPath = 'apps/api/tests/functional/payments/admin_transaction_center.spec.ts'
           let tx = fs.readFileSync(txPath, 'utf8')
           tx = tx.replace('.qs({ "filter[]": ["amount_minor:gte:1500000", "amount_minor:lte:3000000"], "sort[]": "amount_minor:desc" })', '.qs({ "filter[]": "amount_minor:between:1500000,3000000", "sort[]": "amount_minor:desc" })')
           fs.writeFileSync(txPath, tx)
+
           const paymentPath = 'apps/api/app/controllers/admin/payment_attempts_controller.ts'
           let payment = fs.readFileSync(paymentPath, 'utf8')
           payment = payment.replace('.sum("amount_minor as amount_minor")', '.sum("amount_minor as amount_sum_minor")')
@@ -146,7 +161,7 @@ jobs:
             apps/admin/src/lib/queries/configuration.ts apps/admin/src/views/store-config/settings/configuration-group-view.tsx \
             apps/api/app/controllers/admin/configuration_controller.ts apps/api/app/controllers/admin/payment_attempts_controller.ts \
             apps/api/app/services/configuration_engine_service.ts apps/api/app/services/configuration_registry.ts apps/api/app/services/configuration_revision_service.ts \
-            apps/api/app/services/settings_service.ts apps/api/app/services/admin_audit_log_service.ts apps/api/start/routes/admin_settings.ts \
+            apps/api/app/services/settings_service.ts apps/api/app/services/admin_audit_log_service.ts apps/api/start/routes/admin_settings.ts apps/api/tests/bootstrap.ts \
             apps/api/database/migrations/1763200000000_create_configuration_revisions.ts apps/api/database/migrations/1763300000000_create_configuration_engine.ts \
             apps/api/tests/functional/admin/configuration_engine.spec.ts apps/api/tests/functional/admin/configuration_history.spec.ts \
             apps/api/tests/functional/admin/orders.spec.ts apps/api/tests/functional/payments/admin_transaction_center.spec.ts
