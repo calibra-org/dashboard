@@ -1,0 +1,118 @@
+name: Phase 10 Integrate
+
+on:
+  push:
+    branches:
+      - agent/phase10-decision-intelligence-20260817
+
+permissions:
+  contents: write
+
+jobs:
+  integrate:
+    if: contains(github.event.head_commit.message, '[phase10-integrate]')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/phase10-decision-intelligence-20260817
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Wire permanent Phase 10 integration
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const read = (p) => fs.readFileSync(p, 'utf8');
+          const write = (p, v) => fs.writeFileSync(p, v, 'utf8');
+          const replaceExact = (p, from, to) => {
+            const source = read(p);
+            if (!source.includes(from)) throw new Error(`Missing anchor in ${p}: ${from.slice(0, 100)}`);
+            write(p, source.replace(from, to));
+          };
+
+          const rootPath = 'package.json';
+          const root = JSON.parse(read(rootPath));
+          root.scripts['verify:phase10'] = 'node scripts/verify-phase10-decision-intelligence-integration.mjs';
+          write(rootPath, `${JSON.stringify(root, null, 4)}\n`);
+
+          const docsPath = 'docs/api/package.json';
+          const docs = JSON.parse(read(docsPath));
+          docs.scripts['build:json:admin-phase10'] = 'redocly bundle reference/openapi/admin.phase10.v1.yaml -o dist/admin.phase10.v1.json --ext json';
+          docs.scripts['build:json:admin'] = 'pnpm build:json:admin-base && pnpm build:json:admin-tickets && pnpm build:json:admin-ticket-omnichannel && pnpm build:json:admin-phase5 && pnpm build:json:admin-phase6 && pnpm build:json:admin-runtime-sync && pnpm build:json:admin-identity && pnpm build:json:admin-phase10 && pnpm build:json:admin-completion && pnpm build:json:admin-merge';
+          write(docsPath, `${JSON.stringify(docs, null, 4)}\n`);
+
+          replaceExact(
+            'docs/api/scripts/merge-admin-spec.js',
+            'const identity = JSON.parse(readFileSync(resolve(root, "dist/admin.identity.v1.json"), "utf8"));',
+            'const identity = JSON.parse(readFileSync(resolve(root, "dist/admin.identity.v1.json"), "utf8"));\nconst phase10 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase10.v1.json"), "utf8"));',
+          );
+          replaceExact(
+            'docs/api/scripts/merge-admin-spec.js',
+            '    [identity, "IdentityOverlay"],\n]) {',
+            '    [identity, "IdentityOverlay"],\n    [phase10, "Phase10Overlay"],\n]) {',
+          );
+
+          replaceExact(
+            'apps/admin/src/components/Sidebar.tsx',
+            '            { href: "/analytics/stock", labelKey: "analyticsStock", icon: Boxes },',
+            '            { href: "/analytics/stock", labelKey: "analyticsStock", icon: Boxes },\n            { href: "/analytics/decision-intelligence", label: "هوش تصمیم‌گیری", icon: Sparkles },',
+          );
+
+          const workspacePath = 'apps/admin/src/features/intelligence/DecisionIntelligenceWorkspace.tsx';
+          let workspace = read(workspacePath);
+          workspace = workspace
+            .replace('item.scoreMode === "provisional" ? "text-amber-700 dark:text-amber-300" : "text-emerald-700 dark:text-emerald-300"', '"text-muted-foreground"')
+            .replace('"mt-3 rounded-xl border border-amber-500/20 bg-amber-500/[0.06] p-3 text-sm"', '"mt-3 rounded-xl border border-border bg-muted/40 p-3 text-sm"');
+          write(workspacePath, workspace);
+
+          replaceExact(
+            '.github/workflows/check.yml',
+            '            - name: Verify Phase 5 fulfillment and operations invariants\n              run: pnpm run verify:phase5',
+            '            - name: Verify Phase 5 fulfillment and operations invariants\n              run: pnpm run verify:phase5\n            - name: Verify Phase 10 decision intelligence invariants\n              run: pnpm run verify:phase10',
+          );
+          NODE
+          rm -rf .phase10
+      - name: Format Phase 10 and shared integration files
+        run: |
+          pnpm exec biome format --write \
+            package.json \
+            docs/api/package.json \
+            docs/api/scripts/merge-admin-spec.js \
+            docs/api/reference/openapi/admin.phase10.v1.yaml \
+            .github/workflows/check.yml \
+            apps/admin/src/components/Sidebar.tsx \
+            apps/admin/src/lib/queries/intelligence.ts \
+            apps/admin/src/features/intelligence/DecisionIntelligenceWorkspace.tsx \
+            'apps/admin/src/app/[locale]/(authenticated)/analytics/decision-intelligence/page.tsx' \
+            apps/api/app/services/decision_intelligence_service.ts \
+            apps/api/app/controllers/admin/decision_intelligence_controller.ts \
+            apps/api/app/validators/admin/intelligence_validator.ts \
+            apps/api/start/routes/admin_decision_intelligence.ts \
+            apps/api/start/routes.ts \
+            apps/api/database/migrations/1764000000000_create_decision_intelligence_kernel.ts \
+            apps/api/tests/unit/intelligence/decision_scoring.spec.ts \
+            apps/api/tests/functional/admin/decision_intelligence.spec.ts \
+            scripts/verify-phase10-decision-intelligence-integration.mjs
+      - name: Generate canonical OpenAPI SDK surface
+        run: pnpm --filter @calibra/sdk run codegen
+      - name: Verify integration before commit
+        run: |
+          pnpm run verify:phase10
+          pnpm --filter @calibra/api-docs run build:json
+      - name: Commit production-only integrated tree
+        run: |
+          rm -f .github/workflows/phase10-integrate.yml
+          git config user.name "calibra-dev"
+          git config user.email "calibra-dev@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "feat(intelligence): integrate Phase 10 decision intelligence"
+          git push origin HEAD:agent/phase10-decision-intelligence-20260817
