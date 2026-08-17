@@ -6,6 +6,7 @@ import Customer from "#models/customer";
 import User from "#models/user";
 import { truncatePhase03Tables } from "#tests/helpers/db";
 
+// This suite is intentionally part of the repository-wide sharded API regression matrix.
 const BASE = "/api/v1/admin/governance";
 const STEP_UP = "/api/v1/admin/identity/step-up/verify";
 
