@@ -37,10 +37,14 @@ jobs:
           python3 scripts/phase17-bootstrap-fixes.py
           python3 scripts/phase17-bootstrap-servers.py
           python3 scripts/phase17-bootstrap-typefixes.py
+          python3 scripts/phase17-bootstrap-completeness.py
+          python3 scripts/phase17-bootstrap-openapi-extra.py
       - name: Format changed repository files
         run: pnpm run format:fix
       - name: Regenerate OpenAPI bundles and SDK
         run: pnpm --filter @calibra/sdk run codegen
+      - name: Build SDK before downstream typechecks
+        run: pnpm --filter @calibra/sdk run build
       - name: Lint Phase 17 API overlays
         working-directory: docs/api
         run: |
@@ -56,8 +60,8 @@ jobs:
       - name: Typecheck affected workspaces
         run: |
           pnpm --filter @calibra/api run typecheck
-          pnpm --filter @calibra/admin run typecheck
           pnpm --filter @calibra/sdk run typecheck
+          pnpm --filter @calibra/admin run typecheck
       - name: Verify admin design-token policy
         run: pnpm run lint:tokens
       - name: Run Phase 17 unit tests
@@ -70,6 +74,8 @@ jobs:
           rm scripts/phase17-bootstrap-fixes.py
           rm scripts/phase17-bootstrap-servers.py
           rm scripts/phase17-bootstrap-typefixes.py
+          rm scripts/phase17-bootstrap-completeness.py
+          rm scripts/phase17-bootstrap-openapi-extra.py
           rm .github/workflows/phase17-finalize.yml
       - name: Commit verified Phase 17 tree
         run: |
