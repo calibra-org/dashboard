@@ -887,7 +887,8 @@ export class Phase13PlanningService {
                 .whereNull("o.deleted_at")
                 .whereRaw("COALESCE(o.date_paid_at, o.created_at) >= ?", [`${earliest}T00:00:00.000Z`])
                 .whereRaw("COALESCE(o.date_paid_at, o.created_at) < ?", [today.toISO()])
-                .groupBy("li.product_id", "li.variation_id", trx.raw("DATE(COALESCE(o.date_paid_at, o.created_at))"))
+                .groupBy("li.product_id", "li.variation_id")
+                .groupByRaw("DATE(COALESCE(o.date_paid_at, o.created_at))")
                 .select(
                     "li.product_id",
                     "li.variation_id",
@@ -1083,14 +1084,12 @@ export class Phase13PlanningService {
         if (!updated)
             throw new Exception("Planning cycle version conflict", { status: 409, code: "PLANNING_CYCLE_VERSION_CONFLICT" });
         if (["approved", "published"].includes(input.status)) {
-            await trx
-                .table("planning_approvals")
-                .insert({
-                    planning_cycle_id: cycleId,
-                    decision: input.status === "approved" ? "approved" : "published",
-                    note: input.note ?? null,
-                    actor_user_id: actor.id,
-                });
+            await trx.table("planning_approvals").insert({
+                planning_cycle_id: cycleId,
+                decision: input.status === "approved" ? "approved" : "published",
+                note: input.note ?? null,
+                actor_user_id: actor.id,
+            });
         }
         return { data: this.cycleRow(updated) };
     }
@@ -1231,12 +1230,12 @@ export class Phase13PlanningService {
                     trx.raw("COUNT(DISTINCT (li.product_id, li.variation_id))::integer AS series"),
                 )
                 .first(),
-            trx.from("inventory_items").where("manage_stock", true).count<{ count: string }[]>("id as count").first(),
-            trx.from("inventory_items").whereNotNull("location_id").count<{ count: string }[]>("id as count").first(),
+            trx.from("inventory_items").where("manage_stock", true).count("id as count").first(),
+            trx.from("inventory_items").whereNotNull("location_id").count("id as count").first(),
             trx
                 .from("inventory_movements")
                 .where("occurred_at", ">=", DateTime.utc().minus({ days: 84 }).toSQL())
-                .count<{ count: string }[]>("id as count")
+                .count("id as count")
                 .first(),
         ]);
         const locationReady = numberValue(locationCount?.count) > 0;
