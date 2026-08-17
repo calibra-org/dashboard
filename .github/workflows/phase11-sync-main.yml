@@ -1,0 +1,122 @@
+name: Phase 11 sync latest main
+
+on:
+    pull_request:
+        branches: ["main"]
+        types: [synchronize, reopened]
+
+permissions:
+    contents: write
+
+concurrency:
+    group: phase11-sync-${{ github.event.pull_request.number }}
+    cancel-in-progress: true
+
+jobs:
+    sync:
+        if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'agent/phase11-governance-os'
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  ref: ${{ github.event.pull_request.head.ref }}
+                  fetch-depth: 0
+            - name: Merge latest main and preserve Phase 10 + Phase 11 wiring
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  git config user.name "calibra-dev"
+                  git config user.email "calibra-dev@users.noreply.github.com"
+                  git fetch origin main
+                  git merge --no-edit -X ours origin/main
+                  node <<'NODE'
+                  const fs = require('node:fs');
+
+                  function edit(path, fn) {
+                    const before = fs.readFileSync(path, 'utf8');
+                    const after = fn(before);
+                    if (after !== before) fs.writeFileSync(path, after);
+                  }
+
+                  edit('.github/workflows/check.yml', (text) => {
+                    text = text.replace(/(name: Verify Phase 5 fulfillment and operations invariants\n\s+run: pnpm run verify:phase5\n)(?!\s+- name: Verify Phase 10 decision intelligence invariants)/,
+                      '$1            - name: Verify Phase 10 decision intelligence invariants\n              run: pnpm run verify:phase10\n');
+                    text = text.replace(/(test-api:\n\s+runs-on: ubuntu-latest\n\s+timeout-minutes:)\s*4/, '$1 12');
+                    return text;
+                  });
+
+                  edit('apps/admin/src/components/Sidebar.tsx', (text) => {
+                    if (!text.includes('/analytics/decision-intelligence')) {
+                      text = text.replace(
+                        '            { href: "/analytics/stock", labelKey: "analyticsStock", icon: Boxes },\n',
+                        '            { href: "/analytics/stock", labelKey: "analyticsStock", icon: Boxes },\n            { href: "/analytics/decision-intelligence", label: "هوش تصمیم‌گیری", icon: Sparkles },\n',
+                      );
+                    }
+                    if (!text.includes('/governance/overview')) {
+                      text = text.replace(
+                        '            { href: "/settings/general", labelKey: "settings", icon: Settings },\n',
+                        '            { href: "/settings/general", labelKey: "settings", icon: Settings },\n            { href: "/governance/overview", label: "Governance OS", icon: ShieldCheck },\n',
+                      );
+                    }
+                    return text;
+                  });
+
+                  edit('apps/api/start/routes.ts', (text) => {
+                    if (!text.includes('./routes/admin_decision_intelligence.js')) {
+                      text = text.replace(
+                        'await import("./routes/admin_identity.js");\n',
+                        'await import("./routes/admin_identity.js");\nawait import("./routes/admin_decision_intelligence.js");\n',
+                      );
+                    }
+                    if (!text.includes('./routes/admin_governance.js')) {
+                      text = text.replace(
+                        'await import("./routes/admin_identity.js");\n',
+                        'await import("./routes/admin_identity.js");\nawait import("./routes/admin_governance.js");\n',
+                      );
+                    }
+                    return text;
+                  });
+
+                  const docsPath = 'docs/api/package.json';
+                  const docs = JSON.parse(fs.readFileSync(docsPath, 'utf8'));
+                  docs.scripts['build:json:admin-phase10'] = 'redocly bundle reference/openapi/admin.phase10.v1.yaml -o dist/admin.phase10.v1.json --ext json';
+                  docs.scripts['build:json:admin-phase11'] = 'redocly bundle reference/openapi/admin.phase11.v1.yaml -o dist/admin.phase11.v1.json --ext json';
+                  docs.scripts['build:json:admin'] = 'pnpm build:json:admin-base && pnpm build:json:admin-tickets && pnpm build:json:admin-ticket-omnichannel && pnpm build:json:admin-phase5 && pnpm build:json:admin-phase6 && pnpm build:json:admin-runtime-sync && pnpm build:json:admin-identity && pnpm build:json:admin-phase10 && pnpm build:json:admin-phase11 && pnpm build:json:admin-completion && pnpm build:json:admin-merge';
+                  fs.writeFileSync(docsPath, JSON.stringify(docs, null, 4) + '\n');
+
+                  edit('docs/api/scripts/merge-admin-spec.js', (text) => {
+                    if (!text.includes('dist/admin.phase10.v1.json')) {
+                      text = text.replace(
+                        'const phase11 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase11.v1.json"), "utf8"));',
+                        'const phase10 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase10.v1.json"), "utf8"));\nconst phase11 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase11.v1.json"), "utf8"));',
+                      );
+                    }
+                    if (!text.includes('[phase10, "Phase10DecisionIntelligenceOverlay"]')) {
+                      text = text.replace(
+                        '    [phase11, "Phase11GovernanceOverlay"],',
+                        '    [phase10, "Phase10DecisionIntelligenceOverlay"],\n    [phase11, "Phase11GovernanceOverlay"],',
+                      );
+                    }
+                    return text;
+                  });
+                  NODE
+            - uses: pnpm/action-setup@v4
+              with:
+                  version: 10.32.1
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 24.14.0
+                  cache: pnpm
+            - run: pnpm install --frozen-lockfile
+            - name: Regenerate combined OpenAPI SDK
+              run: pnpm --filter @calibra/sdk run codegen
+            - name: Commit synchronized source
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  rm .github/workflows/phase11-sync-main.yml
+                  git add -A
+                  git diff --cached --check
+                  git commit -m "merge(main): synchronize Phase 11 with Phase 10"
+                  git push origin HEAD:agent/phase11-governance-os
