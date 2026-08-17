@@ -38,7 +38,7 @@ paths:
       responses:
         '200': { description: Versioned update, content: { application/json: { schema: { $ref: '#/components/schemas/ConfigurationUpdateEnvelope' } } } }
         '403': { description: Fine-grained permission denied }
-        '422': { description: Validation, stale version, preview or approval failure }
+        '422': { description: "Validation, stale version, preview or approval failure" }
   /api/v1/admin/settings/configuration/groups/{group}/preview:
     post:
       operationId: adminPhase6ConfigurationPreview
