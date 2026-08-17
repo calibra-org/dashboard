@@ -1,7 +1,7 @@
 "use client";
 
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, HelperTooltip, Input, Label } from "@calibra/panel-kit";
-import { useActionState } from "react";
+import { useActionState, type ReactNode } from "react";
 
 import { BadgePercent, BarChart3, Package, ShieldCheck, Sparkles, TrendingUp, Wallet } from "#/icons";
 import { Link } from "#/lib/i18n/navigation";
@@ -36,7 +36,7 @@ export function PricingBrainDashboard({ overview }: { overview: PricingBrainOver
     return (
         <div className="flex flex-col gap-6" dir="rtl">
             <header className="flex flex-col gap-2">
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-3">
                     <div className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary">
                         <Sparkles className="size-5" aria-hidden="true" />
                     </div>
@@ -49,7 +49,7 @@ export function PricingBrainDashboard({ overview }: { overview: PricingBrainOver
                 </div>
             </header>
 
-            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4" aria-label="نمای کلی">
+            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4" aria-label="نمای کلی قیمت‌گذاری">
                 <MetricCard
                     title="محصولات قیمت‌دار"
                     value={`${overview.catalog.priced_products} از ${overview.catalog.products}`}
@@ -58,7 +58,7 @@ export function PricingBrainDashboard({ overview }: { overview: PricingBrainOver
                     help="تعداد محصولاتی که regular_price معتبر دارند. این عدد مستقیماً از کاتالوگ tenant فعلی خوانده می‌شود و دادهٔ نمایشی نیست."
                 />
                 <MetricCard
-                    title="فروش ویژه فعال/تعریف‌شده"
+                    title="فروش ویژه تعریف‌شده"
                     value={String(overview.catalog.sale_products)}
                     detail="محصول دارای sale_price"
                     icon={<TrendingUp className="size-4" aria-hidden="true" />}
@@ -69,12 +69,12 @@ export function PricingBrainDashboard({ overview }: { overview: PricingBrainOver
                     value={`${overview.promotions.active_coupons} از ${overview.promotions.coupons}`}
                     detail="موتور تخفیف موجود"
                     icon={<BadgePercent className="size-4" aria-hidden="true" />}
-                    help="تعداد کوپن‌های فعال از domain فعلی Coupons. Phase 18 موتور تخفیف دوم نمی‌سازد و همین Discounter را مصرف می‌کند."
+                    help="تعداد کوپن‌های فعال از domain فعلی Coupons. Phase 18 موتور تخفیف دوم نمی‌سازد و همان Discounter را مصرف می‌کند."
                 />
                 <MetricCard
                     title="وضعیت شواهد اقتصادی"
                     value="نیازمند داده"
-                    detail="هیچ Margin ساختگی نمایش داده نمی‌شود"
+                    detail="Margin ساختگی نمایش داده نمی‌شود"
                     icon={<Wallet className="size-4" aria-hidden="true" />}
                     help="تا وقتی پوشش COGS برای کاتالوگ اثبات نشود، سیستم سود و پیشنهاد اقتصادی جعلی تولید نمی‌کند."
                 />
@@ -107,7 +107,11 @@ export function PricingBrainDashboard({ overview }: { overview: PricingBrainOver
                             </div>
                         </form>
 
-                        {state.error ? <div className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-destructive text-sm">{state.error}</div> : null}
+                        {state.error ? (
+                            <div className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-destructive text-sm" role="alert">
+                                {state.error}
+                            </div>
+                        ) : null}
                         {state.data ? <SimulationResult data={state.data} /> : null}
                     </CardContent>
                 </Card>
@@ -128,8 +132,8 @@ export function PricingBrainDashboard({ overview }: { overview: PricingBrainOver
                             <RuntimeRow label="پروموشن" value="Discounter موجود" />
                             <RuntimeRow label="شبیه‌سازی" value="Pricing Decision Engine" />
                             <div className="mt-2 flex flex-wrap gap-2">
-                                <Button render={<Link href="/products" />} variant="outline" size="sm">مدیریت محصولات</Button>
-                                <Button render={<Link href="/coupons" />} variant="outline" size="sm">مدیریت کوپن‌ها</Button>
+                                <Button asChild variant="outline" size="sm"><Link href="/products">مدیریت محصولات</Link></Button>
+                                <Button asChild variant="outline" size="sm"><Link href="/coupons">مدیریت کوپن‌ها</Link></Button>
                             </div>
                         </CardContent>
                     </Card>
@@ -139,16 +143,14 @@ export function PricingBrainDashboard({ overview }: { overview: PricingBrainOver
     );
 }
 
-function MetricCard({ title, value, detail, icon, help }: { title: string; value: string; detail: string; icon: React.ReactNode; help: string }) {
+function MetricCard({ title, value, detail, icon, help }: { title: string; value: string; detail: string; icon: ReactNode; help: string }) {
     return (
         <Card>
             <CardContent className="p-5">
-                <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                        {icon}
-                        <span>{title}</span>
-                        <HelperTooltip>{help}</HelperTooltip>
-                    </div>
+                <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                    {icon}
+                    <span>{title}</span>
+                    <HelperTooltip>{help}</HelperTooltip>
                 </div>
                 <div className="mt-4 font-semibold text-2xl tabular-nums">{value}</div>
                 <div className="mt-1 text-muted-foreground text-xs">{detail}</div>
@@ -178,7 +180,7 @@ function EvidenceCard({ title, status, reason }: { title: string; status: string
                         {title}
                         <HelperTooltip>{reason}</HelperTooltip>
                     </div>
-                    <Badge variant="outline">{status}</Badge>
+                    <Badge variant="outline" tone="warning">{status}</Badge>
                 </div>
                 <p className="mt-3 text-muted-foreground text-xs leading-5">{reason}</p>
             </CardContent>
@@ -197,10 +199,10 @@ function RuntimeRow({ label, value }: { label: string; value: string }) {
 
 function SimulationResult({ data }: { data: NonNullable<import("./actions").PricingSimulationState["data"]> }) {
     return (
-        <div className="mt-5 rounded-xl border bg-muted/20 p-4">
+        <div className="mt-5 rounded-xl border bg-muted/20 p-4" aria-live="polite">
             <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="font-medium">نتیجه شبیه‌سازی</div>
-                <Badge variant={data.accepted ? "default" : "destructive"}>{data.accepted ? "قابل قبول" : "رد شده"}</Badge>
+                <Badge variant="outline" tone={data.accepted ? "success" : "danger"}>{data.accepted ? "قابل قبول" : "رد شده"}</Badge>
             </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <ResultMetric label="قیمت مؤثر" value={data.effectivePrice} help="اگر Guardrail نقض شود، قیمت مرجع حفظ می‌شود." />
