@@ -21,14 +21,15 @@ if source.count(old_append) != 1:
 source = source.replace(old_append, new_append, 1)
 
 old_verify = '''            const hash = sha256(ledgerHashMaterial(row));
-            if (hash !== String(row.entry_hash)) {
-                return { ok: false, checked, reason: "entry_hash_mismatch", sequence: Number(row.sequence) };
-            }
+            if (hash !== String(row.entry_hash))
+                return { ok: false, checked: expected - 1, reason: "entry_hash_mismatch", sequence: expected };
+            previous = hash;
 '''
 new_verify = '''            const hashPayload = String(row.hash_payload ?? "");
-            if (!hashPayload || sha256(hashPayload) !== String(row.entry_hash)) {
-                return { ok: false, checked, reason: "entry_hash_mismatch", sequence: Number(row.sequence) };
-            }
+            const hash = sha256(hashPayload);
+            if (!hashPayload || hash !== String(row.entry_hash))
+                return { ok: false, checked: expected - 1, reason: "entry_hash_mismatch", sequence: expected };
+            previous = hash;
 '''
 if source.count(old_verify) != 1:
     raise SystemExit("verify hash block not found exactly once")
