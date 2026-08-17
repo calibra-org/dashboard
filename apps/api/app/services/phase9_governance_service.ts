@@ -8,7 +8,7 @@ export default class Phase9GovernanceService {
         return currentTrx().from("personalization_feature_registry").orderBy("feature_key", "asc");
     }
 
-    async upsertFeature(input: Record<string, unknown>) {
+    async upsertFeature(input: Record<string, unknown>, _actorUserId?: number | null) {
         const key = registryKey(input.feature_key);
         const source = String(input.source ?? "").trim();
         if (source.length < 2 || source.length > 96) throw new Phase9ValidationError("invalid_feature_source");
