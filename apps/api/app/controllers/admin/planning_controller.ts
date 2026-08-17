@@ -86,7 +86,13 @@ export default class PlanningController {
         const payload = await ctx.request.validateUsing(createPlanningCycleValidator);
         const result = await phase13PlanningService.createCycle(payload, await ctx.auth.authenticate());
         ctx.response.status(201);
-        await recordAudit({ ctx, action: "planning.cycle.create", entityKind: "planning_cycle", entityId: result.data.id, payload: { title: payload.title } });
+        await recordAudit({
+            ctx,
+            action: "planning.cycle.create",
+            entityKind: "planning_cycle",
+            entityId: result.data.id,
+            payload: { title: payload.title },
+        });
         return result;
     }
 

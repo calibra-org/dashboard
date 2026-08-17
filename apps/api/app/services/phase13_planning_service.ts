@@ -3,7 +3,12 @@ import { Exception } from "@adonisjs/core/exceptions";
 import { DateTime } from "luxon";
 
 import type User from "#models/user";
-import { computeReplenishment, forecastDemand, type AvailabilityState, type DailyDemandObservation } from "#services/planning_forecast_engine";
+import {
+    computeReplenishment,
+    forecastDemand,
+    type AvailabilityState,
+    type DailyDemandObservation,
+} from "#services/planning_forecast_engine";
 import { currentTrx } from "#services/tenant_context";
 
 interface SalesRow {
@@ -75,7 +80,8 @@ function round4(value: number): number {
 }
 
 function isoDay(value: Date | string): string {
-    const parsed = value instanceof Date ? DateTime.fromJSDate(value, { zone: "utc" }) : DateTime.fromISO(String(value), { zone: "utc" });
+    const parsed =
+        value instanceof Date ? DateTime.fromJSDate(value, { zone: "utc" }) : DateTime.fromISO(String(value), { zone: "utc" });
     if (!parsed.isValid) throw new Exception("Invalid planning timestamp", { status: 500, code: "E_PLANNING_TIMESTAMP" });
     return parsed.toISODate()!;
 }
@@ -143,7 +149,10 @@ function buildAvailabilityHistory(input: {
     const demandByDay = bucket.byDay;
     if (matches.length !== 1 || !matches[0]!.manage_stock) {
         return Array.from({ length: historyDays }, (_, index) => {
-            const date = cutoff.startOf("day").minus({ days: historyDays - 1 - index }).toISODate()!;
+            const date = cutoff
+                .startOf("day")
+                .minus({ days: historyDays - 1 - index })
+                .toISODate()!;
             return { date, observedDemand: demandByDay.get(date) ?? 0, availability: "unknown" as const };
         });
     }
@@ -156,9 +165,8 @@ function buildAvailabilityHistory(input: {
         const day = isoDay(movement.occurred_at);
         movementByDay.set(day, (movementByDay.get(day) ?? 0) + numberValue(movement.quantity_delta));
     }
-    const earliestMovement = itemMovements.length > 0
-        ? itemMovements.map((movement) => isoDay(movement.occurred_at)).sort()[0]!
-        : null;
+    const earliestMovement =
+        itemMovements.length > 0 ? itemMovements.map((movement) => isoDay(movement.occurred_at)).sort()[0]! : null;
 
     const availabilityByDay = new Map<string, AvailabilityState>();
     let reconstructedClosingStock = numberValue(item.stock_quantity);
@@ -175,7 +183,10 @@ function buildAvailabilityHistory(input: {
     }
 
     return Array.from({ length: historyDays }, (_, index) => {
-        const date = cutoff.startOf("day").minus({ days: historyDays - 1 - index }).toISODate()!;
+        const date = cutoff
+            .startOf("day")
+            .minus({ days: historyDays - 1 - index })
+            .toISODate()!;
         return {
             date,
             observedDemand: demandByDay.get(date) ?? 0,
@@ -188,7 +199,10 @@ function maxTimestamp(values: Array<Date | string | null | undefined>): string |
     let latest: DateTime | null = null;
     for (const value of values) {
         if (!value) continue;
-        const parsed = value instanceof Date ? DateTime.fromJSDate(value, { zone: "utc" }) : DateTime.fromISO(String(value), { zone: "utc" });
+        const parsed =
+            value instanceof Date
+                ? DateTime.fromJSDate(value, { zone: "utc" })
+                : DateTime.fromISO(String(value), { zone: "utc" });
         if (!parsed.isValid) continue;
         if (!latest || parsed.toMillis() > latest.toMillis()) latest = parsed;
     }
@@ -246,7 +260,17 @@ export class Phase13PlanningService {
                 ) as Promise<SalesRow[]>,
             trx
                 .from("inventory_items")
-                .select("id", "product_id", "variation_id", "location_id", "stock_quantity", "manage_stock", "stock_status", "low_stock_threshold", "updated_at") as Promise<InventoryRow[]>,
+                .select(
+                    "id",
+                    "product_id",
+                    "variation_id",
+                    "location_id",
+                    "stock_quantity",
+                    "manage_stock",
+                    "stock_status",
+                    "low_stock_threshold",
+                    "updated_at",
+                ) as Promise<InventoryRow[]>,
             trx
                 .from("inventory_movements")
                 .where("occurred_at", ">=", historyStart.toSQL())
@@ -379,12 +403,14 @@ export class Phase13PlanningService {
                     pointCount += forecast.points.length;
                 }
 
-                const dailyP50 = forecast.points.length > 0
-                    ? forecast.points.reduce((sum, point) => sum + point.p50, 0) / forecast.points.length
-                    : 0;
-                const dailyP90 = forecast.points.length > 0
-                    ? forecast.points.reduce((sum, point) => sum + point.p90, 0) / forecast.points.length
-                    : 0;
+                const dailyP50 =
+                    forecast.points.length > 0
+                        ? forecast.points.reduce((sum, point) => sum + point.p50, 0) / forecast.points.length
+                        : 0;
+                const dailyP90 =
+                    forecast.points.length > 0
+                        ? forecast.points.reduce((sum, point) => sum + point.p90, 0) / forecast.points.length
+                        : 0;
                 const recommendation = this.buildRecommendation({
                     matches,
                     dailyP50,
@@ -431,20 +457,17 @@ export class Phase13PlanningService {
             const bias = weightedMetric(metricRows.map((row) => ({ value: row.bias, weight: row.weight })));
             const intervalCoverage = weightedMetric(metricRows.map((row) => ({ value: row.coverage, weight: row.weight })));
             const evaluatedDays = metricRows.reduce((sum, row) => sum + row.weight, 0);
-            await trx
-                .from("planning_forecast_runs")
-                .where("id", runId)
-                .update({
-                    status: "completed",
-                    series_count: series.length,
-                    point_count: pointCount,
-                    insufficient_series_count: insufficientSeriesCount,
-                    stockout_censored_days: stockoutCensoredDays,
-                    wape,
-                    bias,
-                    interval_coverage: intervalCoverage,
-                    accuracy_evaluated_days: evaluatedDays,
-                });
+            await trx.from("planning_forecast_runs").where("id", runId).update({
+                status: "completed",
+                series_count: series.length,
+                point_count: pointCount,
+                insufficient_series_count: insufficientSeriesCount,
+                stockout_censored_days: stockoutCensoredDays,
+                wape,
+                bias,
+                interval_coverage: intervalCoverage,
+                accuracy_evaluated_days: evaluatedDays,
+            });
             return this.forecast(runId);
         } catch (error) {
             await trx
@@ -520,7 +543,8 @@ export class Phase13PlanningService {
             ...policy,
             onHand: numberValue(item.stock_quantity),
             leadTimeDays: input.defaultLeadTimeDays,
-            reasonCodes: input.serviceLevelTarget === 0.9 ? policy.reasonCodes : [...policy.reasonCodes, "SERVICE_LEVEL_TARGET_DISCLOSED"],
+            reasonCodes:
+                input.serviceLevelTarget === 0.9 ? policy.reasonCodes : [...policy.reasonCodes, "SERVICE_LEVEL_TARGET_DISCLOSED"],
         };
     }
 
@@ -531,14 +555,23 @@ export class Phase13PlanningService {
         const run = await trx.from("planning_forecast_runs").where("id", resolvedRunId).first();
         if (!run) throw new Exception("Forecast run not found", { status: 404, code: "E_PLANNING_RUN_NOT_FOUND" });
         const [rows, approvedOverrides] = await Promise.all([
-            trx.from("planning_forecast_points").where("forecast_run_id", resolvedRunId).orderBy("product_name_snapshot", "asc").orderBy("forecast_date", "asc"),
+            trx
+                .from("planning_forecast_points")
+                .where("forecast_run_id", resolvedRunId)
+                .orderBy("product_name_snapshot", "asc")
+                .orderBy("forecast_date", "asc"),
             trx
                 .from("planning_overrides")
                 .where("status", "approved")
-                .whereIn("forecast_point_id", trx.from("planning_forecast_points").where("forecast_run_id", resolvedRunId).select("id"))
+                .whereIn(
+                    "forecast_point_id",
+                    trx.from("planning_forecast_points").where("forecast_run_id", resolvedRunId).select("id"),
+                )
                 .select("forecast_point_id", "override_quantity"),
         ]);
-        const overrideByPoint = new Map(approvedOverrides.map((row) => [numberValue(row.forecast_point_id), numberValue(row.override_quantity)]));
+        const overrideByPoint = new Map(
+            approvedOverrides.map((row) => [numberValue(row.forecast_point_id), numberValue(row.override_quantity)]),
+        );
         const grouped = new Map<string, Record<string, unknown>>();
         for (const row of rows) {
             const key = `${row.product_id ?? "null"}:${row.variation_id ?? "null"}:${row.location_key}`;
@@ -602,25 +635,33 @@ export class Phase13PlanningService {
             .from("planning_forecast_points")
             .where("forecast_run_id", resolvedRunId)
             .orderBy("forecast_date", "asc");
-        const productIds = [...new Set(points.map((row) => numberOrNull(row.product_id)).filter((value): value is number => value !== null))];
-        const links = productIds.length > 0
-            ? await trx.from("product_category_links").whereIn("product_id", productIds).select("product_id", "category_id")
-            : [];
+        const productIds = [
+            ...new Set(points.map((row) => numberOrNull(row.product_id)).filter((value): value is number => value !== null)),
+        ];
+        const links =
+            productIds.length > 0
+                ? await trx.from("product_category_links").whereIn("product_id", productIds).select("product_id", "category_id")
+                : [];
         const categoryIds = [...new Set(links.map((row) => numberValue(row.category_id)))];
-        const translations = categoryIds.length > 0
-            ? await trx
-                  .from("product_category_translations")
-                  .whereIn("category_id", categoryIds)
-                  .whereIn("locale", ["fa", "en"])
-                  .select("category_id", "locale", "name", "slug")
-            : [];
-        const approvedOverrides = points.length > 0
-            ? await trx
-                  .from("planning_overrides")
-                  .where("status", "approved")
-                  .whereIn("forecast_point_id", points.map((row) => numberValue(row.id)))
-                  .select("forecast_point_id", "override_quantity")
-            : [];
+        const translations =
+            categoryIds.length > 0
+                ? await trx
+                      .from("product_category_translations")
+                      .whereIn("category_id", categoryIds)
+                      .whereIn("locale", ["fa", "en"])
+                      .select("category_id", "locale", "name", "slug")
+                : [];
+        const approvedOverrides =
+            points.length > 0
+                ? await trx
+                      .from("planning_overrides")
+                      .where("status", "approved")
+                      .whereIn(
+                          "forecast_point_id",
+                          points.map((row) => numberValue(row.id)),
+                      )
+                      .select("forecast_point_id", "override_quantity")
+                : [];
 
         const categoriesByProduct = new Map<number, number[]>();
         for (const link of links) {
@@ -633,10 +674,15 @@ export class Phase13PlanningService {
         const translationByCategory = new Map<number, { name: string; slug: string | null }>();
         for (const locale of ["en", "fa"]) {
             for (const row of translations.filter((item) => String(item.locale) === locale)) {
-                translationByCategory.set(numberValue(row.category_id), { name: String(row.name), slug: row.slug ? String(row.slug) : null });
+                translationByCategory.set(numberValue(row.category_id), {
+                    name: String(row.name),
+                    slug: row.slug ? String(row.slug) : null,
+                });
             }
         }
-        const overrideByPoint = new Map(approvedOverrides.map((row) => [numberValue(row.forecast_point_id), numberValue(row.override_quantity)]));
+        const overrideByPoint = new Map(
+            approvedOverrides.map((row) => [numberValue(row.forecast_point_id), numberValue(row.override_quantity)]),
+        );
 
         type AggregatePoint = {
             date: string;
@@ -648,17 +694,20 @@ export class Phase13PlanningService {
             actualObserved: number;
             seriesKeys: Set<string>;
         };
-        const grouped = new Map<string, { categoryId: number | null; name: string; slug: string | null; points: Map<string, AggregatePoint> }>();
+        const grouped = new Map<
+            string,
+            { categoryId: number | null; name: string; slug: string | null; points: Map<string, AggregatePoint> }
+        >();
         for (const row of points) {
             const productId = numberOrNull(row.product_id);
-            const memberships = productId === null ? [] : categoriesByProduct.get(productId) ?? [];
+            const memberships = productId === null ? [] : (categoriesByProduct.get(productId) ?? []);
             const categoryMemberships: Array<number | null> = memberships.length > 0 ? memberships : [null];
             for (const categoryId of categoryMemberships) {
                 const key = categoryId === null ? "unclassified" : String(categoryId);
                 const translation = categoryId === null ? null : translationByCategory.get(categoryId);
                 const category = grouped.get(key) ?? {
                     categoryId,
-                    name: categoryId === null ? "بدون دسته" : translation?.name ?? `دسته #${categoryId}`,
+                    name: categoryId === null ? "بدون دسته" : (translation?.name ?? `دسته #${categoryId}`),
                     slug: translation?.slug ?? null,
                     points: new Map<string, AggregatePoint>(),
                 };
@@ -767,7 +816,8 @@ export class Phase13PlanningService {
 
     async inventoryRisks() {
         const recommendations = await this.recommendations();
-        if (recommendations.data.status !== "ready") return { data: { status: recommendations.data.status, run_id: null, items: [] } };
+        if (recommendations.data.status !== "ready")
+            return { data: { status: recommendations.data.status, run_id: null, items: [] } };
         const items = recommendations.data.items.map((item) => {
             let risk: "high" | "medium" | "low" | "unavailable" = "unavailable";
             let reasonCode = item.reason_codes[0] ?? "INPUT_UNAVAILABLE";
@@ -791,7 +841,8 @@ export class Phase13PlanningService {
     async refreshAccuracy(runId?: number | null) {
         const trx = currentTrx();
         const resolvedRunId = runId ?? (await latestCompletedRunId());
-        if (resolvedRunId === null) throw new Exception("No completed forecast run exists", { status: 409, code: "E_PLANNING_FORECAST_REQUIRED" });
+        if (resolvedRunId === null)
+            throw new Exception("No completed forecast run exists", { status: 409, code: "E_PLANNING_FORECAST_REQUIRED" });
         const run = await trx.from("planning_forecast_runs").where("id", resolvedRunId).first();
         if (!run) throw new Exception("Forecast run not found", { status: 404, code: "E_PLANNING_RUN_NOT_FOUND" });
         const today = DateTime.utc().startOf("day");
@@ -799,13 +850,35 @@ export class Phase13PlanningService {
             .from("planning_forecast_points")
             .where("forecast_run_id", resolvedRunId)
             .where("forecast_date", "<", today.toISODate()!)
-            .select("id", "product_id", "variation_id", "inventory_item_id", "forecast_date", "p10_quantity", "p50_quantity", "p90_quantity");
+            .select(
+                "id",
+                "product_id",
+                "variation_id",
+                "inventory_item_id",
+                "forecast_date",
+                "p10_quantity",
+                "p50_quantity",
+                "p90_quantity",
+            );
         if (points.length === 0) {
-            return { data: { run_id: resolvedRunId, evaluated_points: 0, censored_points: 0, wape: null, bias: null, interval_coverage: null } };
+            return {
+                data: {
+                    run_id: resolvedRunId,
+                    evaluated_points: 0,
+                    censored_points: 0,
+                    wape: null,
+                    bias: null,
+                    interval_coverage: null,
+                },
+            };
         }
 
         const earliest = points.map((point) => String(point.forecast_date)).sort()[0]!;
-        const inventoryItemIds = [...new Set(points.map((point) => numberOrNull(point.inventory_item_id)).filter((value): value is number => value !== null))];
+        const inventoryItemIds = [
+            ...new Set(
+                points.map((point) => numberOrNull(point.inventory_item_id)).filter((value): value is number => value !== null),
+            ),
+        ];
         const [actualRows, inventoryRows, movementRows] = await Promise.all([
             trx
                 .from("orders as o")
@@ -863,7 +936,10 @@ export class Phase13PlanningService {
             for (let cursor = today.minus({ days: 1 }); cursor.toISODate()! >= earliest; cursor = cursor.minus({ days: 1 })) {
                 const day = cursor.toISODate()!;
                 const covered = firstMovement !== null && day >= firstMovement;
-                availabilityByItemDay.set(`${itemId}:${day}`, covered ? (reconstructedClosingStock <= 0 ? "stockout" : "available") : "unknown");
+                availabilityByItemDay.set(
+                    `${itemId}:${day}`,
+                    covered ? (reconstructedClosingStock <= 0 ? "stockout" : "available") : "unknown",
+                );
                 reconstructedClosingStock -= movementByItemDay.get(`${itemId}:${day}`) ?? 0;
             }
         }
@@ -879,7 +955,8 @@ export class Phase13PlanningService {
             const key = `${seriesKey(numberOrNull(point.product_id), numberOrNull(point.variation_id))}:${day}`;
             const actual = actualByKey.get(key) ?? 0;
             const inventoryItemId = numberOrNull(point.inventory_item_id);
-            const availability = inventoryItemId === null ? "unknown" : availabilityByItemDay.get(`${inventoryItemId}:${day}`) ?? "unknown";
+            const availability =
+                inventoryItemId === null ? "unknown" : (availabilityByItemDay.get(`${inventoryItemId}:${day}`) ?? "unknown");
             const actualCensored = availability === "stockout";
             await trx
                 .from("planning_forecast_points")
@@ -908,7 +985,16 @@ export class Phase13PlanningService {
             accuracy_evaluated_days: evaluated,
             accuracy_censored_points: censored,
         });
-        return { data: { run_id: resolvedRunId, evaluated_points: evaluated, censored_points: censored, wape, bias, interval_coverage: intervalCoverage } };
+        return {
+            data: {
+                run_id: resolvedRunId,
+                evaluated_points: evaluated,
+                censored_points: censored,
+                wape,
+                bias,
+                interval_coverage: intervalCoverage,
+            },
+        };
     }
 
     async overview() {
@@ -942,7 +1028,8 @@ export class Phase13PlanningService {
                     procurement_execution: EXECUTION_BOUNDARY,
                     multi_location_master: "not_landed_location_id_is_advisory",
                 },
-                next_action: forecast.data.status !== "ready" ? "RUN_FORECAST" : cycle ? "REVIEW_ACTIVE_CYCLE" : "CREATE_PLANNING_CYCLE",
+                next_action:
+                    forecast.data.status !== "ready" ? "RUN_FORECAST" : cycle ? "REVIEW_ACTIVE_CYCLE" : "CREATE_PLANNING_CYCLE",
             },
         };
     }
@@ -955,7 +1042,8 @@ export class Phase13PlanningService {
     async createCycle(input: { title: string; forecast_run_id?: number }, actor: User) {
         const trx = currentTrx();
         const forecastRunId = input.forecast_run_id ?? (await latestCompletedRunId());
-        if (forecastRunId === null) throw new Exception("A completed forecast is required", { status: 409, code: "E_PLANNING_FORECAST_REQUIRED" });
+        if (forecastRunId === null)
+            throw new Exception("A completed forecast is required", { status: 409, code: "E_PLANNING_FORECAST_REQUIRED" });
         const [row] = await trx
             .table("planning_cycles")
             .insert({ title: input.title, forecast_run_id: forecastRunId, status: "draft", created_by_user_id: actor.id })
@@ -973,7 +1061,11 @@ export class Phase13PlanningService {
         if (!(CYCLE_TRANSITIONS[String(cycle.status)] ?? []).includes(input.status)) {
             throw new Exception("Invalid planning cycle transition", { status: 422, code: "E_PLANNING_CYCLE_TRANSITION" });
         }
-        const patch: Record<string, unknown> = { status: input.status, version: numberValue(cycle.version) + 1, updated_at: DateTime.utc().toSQL() };
+        const patch: Record<string, unknown> = {
+            status: input.status,
+            version: numberValue(cycle.version) + 1,
+            updated_at: DateTime.utc().toSQL(),
+        };
         if (input.status === "approved") {
             patch.approved_by_user_id = actor.id;
             patch.approved_at = DateTime.utc().toSQL();
@@ -982,10 +1074,23 @@ export class Phase13PlanningService {
             patch.published_by_user_id = actor.id;
             patch.published_at = DateTime.utc().toSQL();
         }
-        const [updated] = await trx.from("planning_cycles").where("id", cycleId).where("version", input.expected_version).update(patch).returning("*");
-        if (!updated) throw new Exception("Planning cycle version conflict", { status: 409, code: "PLANNING_CYCLE_VERSION_CONFLICT" });
+        const [updated] = await trx
+            .from("planning_cycles")
+            .where("id", cycleId)
+            .where("version", input.expected_version)
+            .update(patch)
+            .returning("*");
+        if (!updated)
+            throw new Exception("Planning cycle version conflict", { status: 409, code: "PLANNING_CYCLE_VERSION_CONFLICT" });
         if (["approved", "published"].includes(input.status)) {
-            await trx.table("planning_approvals").insert({ planning_cycle_id: cycleId, decision: input.status === "approved" ? "approved" : "published", note: input.note ?? null, actor_user_id: actor.id });
+            await trx
+                .table("planning_approvals")
+                .insert({
+                    planning_cycle_id: cycleId,
+                    decision: input.status === "approved" ? "approved" : "published",
+                    note: input.note ?? null,
+                    actor_user_id: actor.id,
+                });
         }
         return { data: this.cycleRow(updated) };
     }
@@ -1008,7 +1113,8 @@ export class Phase13PlanningService {
         actor: User,
     ) {
         const baseRunId = input.base_forecast_run_id ?? (await latestCompletedRunId());
-        if (baseRunId === null) throw new Exception("A completed forecast is required", { status: 409, code: "E_PLANNING_FORECAST_REQUIRED" });
+        if (baseRunId === null)
+            throw new Exception("A completed forecast is required", { status: 409, code: "E_PLANNING_FORECAST_REQUIRED" });
         const [row] = await currentTrx()
             .table("planning_scenarios")
             .insert({
@@ -1032,7 +1138,10 @@ export class Phase13PlanningService {
         if (!scenario) throw new Exception("Planning scenario not found", { status: 404, code: "E_PLANNING_SCENARIO_NOT_FOUND" });
         const runId = numberOrNull(scenario.base_forecast_run_id);
         if (runId === null) throw new Exception("Scenario has no forecast run", { status: 409, code: "E_PLANNING_SCENARIO_RUN" });
-        const points = await trx.from("planning_forecast_points").where("forecast_run_id", runId).select("p10_quantity", "p50_quantity", "p90_quantity");
+        const points = await trx
+            .from("planning_forecast_points")
+            .where("forecast_run_id", runId)
+            .select("p10_quantity", "p50_quantity", "p90_quantity");
         const multiplier = numberValue(scenario.demand_multiplier);
         return {
             data: {
@@ -1058,7 +1167,10 @@ export class Phase13PlanningService {
         return { data: rows.map((row) => this.overrideRow(row)) };
     }
 
-    async createOverride(input: { forecast_point_id: number; override_quantity: number; reason: string; evidence?: Record<string, unknown> }, actor: User) {
+    async createOverride(
+        input: { forecast_point_id: number; override_quantity: number; reason: string; evidence?: Record<string, unknown> },
+        actor: User,
+    ) {
         const trx = currentTrx();
         const point = await trx.from("planning_forecast_points").where("id", input.forecast_point_id).first();
         if (!point) throw new Exception("Forecast point not found", { status: 404, code: "E_PLANNING_POINT_NOT_FOUND" });
@@ -1074,7 +1186,14 @@ export class Phase13PlanningService {
                 created_by_user_id: actor.id,
             })
             .returning("*");
-        return { data: this.overrideRow({ ...row, product_name_snapshot: point.product_name_snapshot, sku_snapshot: point.sku_snapshot, forecast_date: point.forecast_date }) };
+        return {
+            data: this.overrideRow({
+                ...row,
+                product_name_snapshot: point.product_name_snapshot,
+                sku_snapshot: point.sku_snapshot,
+                forecast_date: point.forecast_date,
+            }),
+        };
     }
 
     async reviewOverride(overrideId: number, decision: "approved" | "rejected", actor: User) {
@@ -1082,9 +1201,18 @@ export class Phase13PlanningService {
             .from("planning_overrides")
             .where("id", overrideId)
             .where("status", "pending")
-            .update({ status: decision, reviewed_by_user_id: actor.id, reviewed_at: DateTime.utc().toSQL(), updated_at: DateTime.utc().toSQL() })
+            .update({
+                status: decision,
+                reviewed_by_user_id: actor.id,
+                reviewed_at: DateTime.utc().toSQL(),
+                updated_at: DateTime.utc().toSQL(),
+            })
             .returning("*");
-        if (!updated) throw new Exception("Planning override not found or already reviewed", { status: 409, code: "E_PLANNING_OVERRIDE_REVIEW" });
+        if (!updated)
+            throw new Exception("Planning override not found or already reviewed", {
+                status: 409,
+                code: "E_PLANNING_OVERRIDE_REVIEW",
+            });
         return { data: this.overrideRow(updated) };
     }
 
@@ -1105,7 +1233,11 @@ export class Phase13PlanningService {
                 .first(),
             trx.from("inventory_items").where("manage_stock", true).count<{ count: string }[]>("id as count").first(),
             trx.from("inventory_items").whereNotNull("location_id").count<{ count: string }[]>("id as count").first(),
-            trx.from("inventory_movements").where("occurred_at", ">=", DateTime.utc().minus({ days: 84 }).toSQL()).count<{ count: string }[]>("id as count").first(),
+            trx
+                .from("inventory_movements")
+                .where("occurred_at", ">=", DateTime.utc().minus({ days: 84 }).toSQL())
+                .count<{ count: string }[]>("id as count")
+                .first(),
         ]);
         const locationReady = numberValue(locationCount?.count) > 0;
         const movementReady = numberValue(movementCount?.count) > 0;

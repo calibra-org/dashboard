@@ -16,7 +16,10 @@ assert.ok(forecast.points.every((point) => point.p10 <= point.p50 && point.p50 <
 assert.ok(forecast.diagnostics.censoredDays >= 2);
 assert.ok(forecast.diagnostics.imputedDemand > 0);
 assert.ok(forecast.diagnostics.wape === null || forecast.diagnostics.wape >= 0);
-assert.ok(forecast.diagnostics.intervalCoverage === null || (forecast.diagnostics.intervalCoverage >= 0 && forecast.diagnostics.intervalCoverage <= 1));
+assert.ok(
+    forecast.diagnostics.intervalCoverage === null ||
+        (forecast.diagnostics.intervalCoverage >= 0 && forecast.diagnostics.intervalCoverage <= 1),
+);
 
 const blocked = computeReplenishment({ onHand: 10, dailyP50: 5, dailyP90: 8, leadTimeDays: null, reviewPeriodDays: 7 });
 assert.equal(blocked.status, "needs_input");

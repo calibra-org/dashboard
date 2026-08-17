@@ -217,7 +217,8 @@ export function usePlanningCategoryForecast(runId?: number | null) {
     const currentLocale = usePlanningLocale();
     return useQuery({
         queryKey: ["planning", "forecast", "categories", currentLocale, runId ?? "latest"],
-        queryFn: () => apiGet<CategoryForecastEnvelope>("planning/forecast/categories", { locale: currentLocale, query: { run_id: runId } }),
+        queryFn: () =>
+            apiGet<CategoryForecastEnvelope>("planning/forecast/categories", { locale: currentLocale, query: { run_id: runId } }),
     });
 }
 
@@ -225,7 +226,16 @@ export function usePlanningRecommendations(runId?: number | null) {
     const currentLocale = usePlanningLocale();
     return useQuery({
         queryKey: ["planning", "replenishment", currentLocale, runId ?? "latest"],
-        queryFn: () => apiGet<{ data: { status: string; run_id: number | null; economics_status: string; execution_boundary: string; items: ReplenishmentItem[] } }>("planning/replenishment", { locale: currentLocale, query: { run_id: runId } }),
+        queryFn: () =>
+            apiGet<{
+                data: {
+                    status: string;
+                    run_id: number | null;
+                    economics_status: string;
+                    execution_boundary: string;
+                    items: ReplenishmentItem[];
+                };
+            }>("planning/replenishment", { locale: currentLocale, query: { run_id: runId } }),
     });
 }
 
@@ -233,7 +243,10 @@ export function usePlanningRisks() {
     const currentLocale = usePlanningLocale();
     return useQuery({
         queryKey: ["planning", "inventory-risks", currentLocale],
-        queryFn: () => apiGet<{ data: { status: string; run_id: number | null; items: RiskItem[] } }>("planning/inventory-risks", { locale: currentLocale }),
+        queryFn: () =>
+            apiGet<{ data: { status: string; run_id: number | null; items: RiskItem[] } }>("planning/inventory-risks", {
+                locale: currentLocale,
+            }),
     });
 }
 
@@ -274,8 +287,13 @@ export function useRunPlanningForecast() {
     const currentLocale = usePlanningLocale();
     const client = useQueryClient();
     return useMutation({
-        mutationFn: (body: { history_days: number; horizon_days: number; review_period_days: number; default_lead_time_days: number | null; service_level_target: number }) =>
-            apiMutate<ForecastEnvelope>("POST", "planning/forecast/run", { locale: currentLocale, body }),
+        mutationFn: (body: {
+            history_days: number;
+            horizon_days: number;
+            review_period_days: number;
+            default_lead_time_days: number | null;
+            service_level_target: number;
+        }) => apiMutate<ForecastEnvelope>("POST", "planning/forecast/run", { locale: currentLocale, body }),
         onSuccess: async () => client.invalidateQueries({ queryKey: ["planning"] }),
     });
 }
@@ -284,7 +302,8 @@ export function useRefreshPlanningAccuracy() {
     const currentLocale = usePlanningLocale();
     const client = useQueryClient();
     return useMutation({
-        mutationFn: (runId?: number | null) => apiMutate("POST", "planning/accuracy/refresh", { locale: currentLocale, body: { run_id: runId ?? null } }),
+        mutationFn: (runId?: number | null) =>
+            apiMutate("POST", "planning/accuracy/refresh", { locale: currentLocale, body: { run_id: runId ?? null } }),
         onSuccess: async () => client.invalidateQueries({ queryKey: ["planning"] }),
     });
 }
@@ -293,7 +312,8 @@ export function useCreatePlanningCycle() {
     const currentLocale = usePlanningLocale();
     const client = useQueryClient();
     return useMutation({
-        mutationFn: (body: { title: string; forecast_run_id?: number }) => apiMutate("POST", "planning/cycles", { locale: currentLocale, body }),
+        mutationFn: (body: { title: string; forecast_run_id?: number }) =>
+            apiMutate("POST", "planning/cycles", { locale: currentLocale, body }),
         onSuccess: async () => client.invalidateQueries({ queryKey: ["planning"] }),
     });
 }
@@ -302,7 +322,13 @@ export function useCreatePlanningScenario() {
     const currentLocale = usePlanningLocale();
     const client = useQueryClient();
     return useMutation({
-        mutationFn: (body: { title: string; demand_multiplier: number; lead_time_days: number | null; review_period_days: number; notes?: string }) => apiMutate("POST", "planning/scenarios", { locale: currentLocale, body }),
+        mutationFn: (body: {
+            title: string;
+            demand_multiplier: number;
+            lead_time_days: number | null;
+            review_period_days: number;
+            notes?: string;
+        }) => apiMutate("POST", "planning/scenarios", { locale: currentLocale, body }),
         onSuccess: async () => client.invalidateQueries({ queryKey: ["planning"] }),
     });
 }

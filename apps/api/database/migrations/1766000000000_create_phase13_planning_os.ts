@@ -49,10 +49,28 @@ export default class extends BaseSchema {
         this.schema.createTable("planning_forecast_points", (table) => {
             table.bigIncrements("id").notNullable();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("forecast_run_id").unsigned().notNullable().references("id").inTable("planning_forecast_runs").onDelete("CASCADE");
+            table
+                .bigInteger("forecast_run_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("planning_forecast_runs")
+                .onDelete("CASCADE");
             table.bigInteger("product_id").unsigned().nullable().references("id").inTable("products").onDelete("SET NULL");
-            table.bigInteger("variation_id").unsigned().nullable().references("id").inTable("product_variations").onDelete("SET NULL");
-            table.bigInteger("inventory_item_id").unsigned().nullable().references("id").inTable("inventory_items").onDelete("SET NULL");
+            table
+                .bigInteger("variation_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("product_variations")
+                .onDelete("SET NULL");
+            table
+                .bigInteger("inventory_item_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("inventory_items")
+                .onDelete("SET NULL");
             table.bigInteger("location_id").unsigned().nullable();
             table.string("location_key", 96).notNullable().defaultTo("unassigned");
             table.string("sku_snapshot", 190).nullable();
@@ -87,10 +105,28 @@ export default class extends BaseSchema {
         this.schema.createTable("planning_replenishment_recommendations", (table) => {
             table.bigIncrements("id").notNullable();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("forecast_run_id").unsigned().notNullable().references("id").inTable("planning_forecast_runs").onDelete("CASCADE");
+            table
+                .bigInteger("forecast_run_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("planning_forecast_runs")
+                .onDelete("CASCADE");
             table.bigInteger("product_id").unsigned().nullable().references("id").inTable("products").onDelete("SET NULL");
-            table.bigInteger("variation_id").unsigned().nullable().references("id").inTable("product_variations").onDelete("SET NULL");
-            table.bigInteger("inventory_item_id").unsigned().nullable().references("id").inTable("inventory_items").onDelete("SET NULL");
+            table
+                .bigInteger("variation_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("product_variations")
+                .onDelete("SET NULL");
+            table
+                .bigInteger("inventory_item_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("inventory_items")
+                .onDelete("SET NULL");
             table.bigInteger("location_id").unsigned().nullable();
             table.string("location_key", 96).notNullable();
             table.string("sku_snapshot", 190).nullable();
@@ -122,7 +158,13 @@ export default class extends BaseSchema {
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
             table.string("title", 160).notNullable();
             table.string("status", 32).notNullable().defaultTo("draft");
-            table.bigInteger("forecast_run_id").unsigned().nullable().references("id").inTable("planning_forecast_runs").onDelete("SET NULL");
+            table
+                .bigInteger("forecast_run_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("planning_forecast_runs")
+                .onDelete("SET NULL");
             table.integer("version").notNullable().defaultTo(1);
             table.bigInteger("created_by_user_id").unsigned().nullable().references("id").inTable("users").onDelete("SET NULL");
             table.bigInteger("approved_by_user_id").unsigned().nullable().references("id").inTable("users").onDelete("SET NULL");
@@ -138,7 +180,13 @@ export default class extends BaseSchema {
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
             table.string("title", 160).notNullable();
             table.string("status", 24).notNullable().defaultTo("draft");
-            table.bigInteger("base_forecast_run_id").unsigned().nullable().references("id").inTable("planning_forecast_runs").onDelete("SET NULL");
+            table
+                .bigInteger("base_forecast_run_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("planning_forecast_runs")
+                .onDelete("SET NULL");
             table.decimal("demand_multiplier", 8, 4).notNullable().defaultTo(1);
             table.integer("lead_time_days").nullable();
             table.integer("review_period_days").notNullable().defaultTo(7);
@@ -153,7 +201,13 @@ export default class extends BaseSchema {
         this.schema.createTable("planning_overrides", (table) => {
             table.bigIncrements("id").notNullable();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("forecast_point_id").unsigned().notNullable().references("id").inTable("planning_forecast_points").onDelete("CASCADE");
+            table
+                .bigInteger("forecast_point_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("planning_forecast_points")
+                .onDelete("CASCADE");
             table.decimal("original_quantity", 18, 4).notNullable();
             table.decimal("override_quantity", 18, 4).notNullable();
             table.string("reason", 320).notNullable();
@@ -169,7 +223,13 @@ export default class extends BaseSchema {
         this.schema.createTable("planning_approvals", (table) => {
             table.bigIncrements("id").notNullable();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("planning_cycle_id").unsigned().notNullable().references("id").inTable("planning_cycles").onDelete("CASCADE");
+            table
+                .bigInteger("planning_cycle_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("planning_cycles")
+                .onDelete("CASCADE");
             table.string("decision", 16).notNullable();
             table.text("note").nullable();
             table.bigInteger("actor_user_id").unsigned().nullable().references("id").inTable("users").onDelete("SET NULL");

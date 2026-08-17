@@ -116,7 +116,7 @@ function prepareHistory(history: DailyDemandObservation[]): PreparedObservation[
         const weekdayValues = byWeekday.get(utcWeekday(item.date)) ?? [];
         const fallback = weekdayValues.length > 0 ? median(weekdayValues) : globalFallback;
         const demand = Math.max(item.observedDemand, fallback);
-        return { ...item, demand, censored: demand > item.observedDemand, };
+        return { ...item, demand, censored: demand > item.observedDemand };
     });
 }
 
@@ -129,7 +129,8 @@ function estimatePoint(history: PreparedObservation[], targetDate: string, offse
     const overallMean = weightedMean(values);
     const weekdayMedian = median(weekdayValues);
     const seasonalBase = weekdayValues.length >= 2 ? weekdayMedian : recentMean;
-    let p50 = seasonalBase > 0 ? seasonalBase * 0.5 + recentMean * 0.35 + overallMean * 0.15 : recentMean * 0.7 + overallMean * 0.3;
+    let p50 =
+        seasonalBase > 0 ? seasonalBase * 0.5 + recentMean * 0.35 + overallMean * 0.15 : recentMean * 0.7 + overallMean * 0.3;
 
     if (previous.length >= 7 && recent.length >= 7) {
         const rawDailyTrend = (mean(recent) - mean(previous)) / Math.max(1, recent.length);
@@ -139,7 +140,9 @@ function estimatePoint(history: PreparedObservation[], targetDate: string, offse
     p50 = nonNegative(p50);
 
     const residuals = history.map((item) => {
-        const peers = history.filter((candidate) => candidate.date < item.date && utcWeekday(candidate.date) === utcWeekday(item.date));
+        const peers = history.filter(
+            (candidate) => candidate.date < item.date && utcWeekday(candidate.date) === utcWeekday(item.date),
+        );
         const baseline = peers.length > 0 ? median(peers.map((peer) => peer.demand)) : overallMean;
         return item.demand - baseline;
     });
@@ -223,7 +226,10 @@ export function forecastDemand(history: DailyDemandObservation[], horizonDays: n
     const quality: ForecastQuality = activeDays >= 8 ? "ready" : activeDays >= 4 ? "limited_history" : "insufficient_data";
     const confidence = round4(
         clamp(
-            0.2 + Math.min(0.5, (activeDays / 14) * 0.5) + (knownAvailabilityDays / prepared.length) * 0.2 - (censoredDays / prepared.length) * 0.15,
+            0.2 +
+                Math.min(0.5, (activeDays / 14) * 0.5) +
+                (knownAvailabilityDays / prepared.length) * 0.2 -
+                (censoredDays / prepared.length) * 0.15,
             0.05,
             0.95,
         ),
