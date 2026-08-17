@@ -37,6 +37,8 @@ jobs:
               run: pnpm run verify:tickets
             - name: Verify Phase 5 fulfillment and operations invariants
               run: pnpm run verify:phase5
+            - name: Verify Phase 10 decision intelligence invariants
+              run: pnpm run verify:phase10
 
     typecheck:
         runs-on: ubuntu-latest
@@ -207,8 +209,6 @@ jobs:
                   DB_USER: calibra
                   DB_PASSWORD: calibra
                   DB_DATABASE: calibra
-                  # The next block satisfies env validation. check:api-docs only boots far
-                  # enough to enumerate routes; none of these services are actually contacted.
                   MAIL_FROM_ADDRESS: ops@calibra.local
                   MAIL_FROM_NAME: Calibra
                   MAIL_NOTIFICATIONS_ENABLED: "false"
