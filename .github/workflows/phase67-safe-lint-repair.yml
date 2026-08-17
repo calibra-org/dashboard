@@ -1,0 +1,65 @@
+name: Phase 6-7 safe lint repair
+
+on:
+  push:
+    branches:
+      - agent/phase7-identity-trust-os
+
+permissions:
+  contents: write
+
+concurrency:
+  group: phase67-safe-lint-repair
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/phase7-identity-trust-os
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Apply Biome safe fixes only
+        run: pnpm exec biome check . --write --diagnostic-level=error --max-diagnostics=300
+
+      - name: Verify repository format and lint
+        run: |
+          pnpm run format
+          pnpm run lint
+
+      - name: Verify canonical phase invariants
+        run: |
+          pnpm run verify:phase1-4
+          pnpm run verify:tickets
+          pnpm run verify:phase5
+          if [ -f scripts/verify-phase6-configuration-integration.mjs ]; then node scripts/verify-phase6-configuration-integration.mjs; fi
+          node scripts/verify-phase7-identity-integration.mjs
+
+      - name: Verify type safety
+        run: pnpm run typecheck
+
+      - name: Remove temporary diagnostics and repair helper
+        run: |
+          rm -f .github/workflows/phase67-error-diagnostic.yml
+          rm -f .github/workflows/phase67-safe-lint-repair.yml
+
+      - name: Commit safe repairs
+        run: |
+          git config user.name "calibra-release-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "style(phase6-7): normalize canonical imports and clear lint gate"
+          git push origin HEAD:agent/phase7-identity-trust-os
