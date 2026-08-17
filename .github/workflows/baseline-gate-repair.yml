@@ -94,6 +94,13 @@ jobs:
           test -s /tmp/phase6-shared.patch
           git apply --3way /tmp/phase6-shared.patch
 
+          # Lucid's current strict query binding excludes bigint even though Phase 6 can receive
+          # bigint IDs from the database driver. Preserve the exact identifier by binding its
+          # decimal string representation instead of coercing it through Number().
+          perl -0pi -e 's/\.where\("id", current\.id\)\.update\(payload\)/.where("id", String(current.id)).update(payload)/g' \
+            apps/api/app/services/configuration_engine_service.ts
+          grep -F '.where("id", String(current.id)).update(payload)' apps/api/app/services/configuration_engine_service.ts
+
           grep -F '.use(middleware.admin());' apps/api/start/routes/admin_settings.ts
           grep -F 'router.get("/configuration/registry"' apps/api/start/routes/admin_settings.ts
           grep -F 'router.post("/configuration/history/:scope/:revision/rollback"' apps/api/start/routes/admin_settings.ts
