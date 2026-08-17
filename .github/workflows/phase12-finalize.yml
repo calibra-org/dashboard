@@ -1,0 +1,186 @@
+name: Phase 12 finalizer
+
+on:
+  push:
+    branches:
+      - agent/bootstrap-tools-20260817
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: read
+  actions: read
+
+concurrency:
+  group: phase12-finalizer
+  cancel-in-progress: false
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout repository history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Resolve the real Phase 12 branch
+        id: target
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin '+refs/heads/*:refs/remotes/origin/*'
+          candidates=(
+            'agent/phase12-profitability-cash-os'
+            'feat/phase12-economics-os-20260816'
+          )
+          target=''
+          for candidate in "${candidates[@]}"; do
+            if git show-ref --verify --quiet "refs/remotes/origin/${candidate}"; then
+              changed=$(git diff --name-only "origin/main...origin/${candidate}" | wc -l | tr -d ' ')
+              if [ "$changed" -gt 0 ]; then
+                target="$candidate"
+                break
+              fi
+            fi
+          done
+          if [ -z "$target" ]; then
+            echo 'No non-empty Phase 12 implementation branch exists on the remote.' >&2
+            exit 1
+          fi
+          echo "branch=$target" >> "$GITHUB_OUTPUT"
+          git switch -C "$target" "origin/$target"
+
+      - name: Reject bootstrap contamination and require Phase 12 implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          target='${{ steps.target.outputs.branch }}'
+          changed=$(git diff --name-only "origin/main...HEAD")
+          printf '%s\n' "$changed"
+          if printf '%s\n' "$changed" | grep -Eq '^\.github/workflows/(bootstrap-tools|bootstrap-pnpm|phase12-finalize)\.yml$'; then
+            echo 'Bootstrap workflow leaked into Phase 12 scope.' >&2
+            exit 1
+          fi
+          printf '%s\n' "$changed" | grep -q '^apps/api/'
+          printf '%s\n' "$changed" | grep -q '^apps/admin/'
+          grep -RqiE 'economic[_ -]?ledger|economics[_ -]?ledger|profitability' apps/api/app apps/api/database apps/api/start 2>/dev/null
+          grep -RqiE 'profitability|working capital|workingCapital|economics' apps/admin 2>/dev/null
+          if ! git grep -qiE 'idempotency|idempotent' -- apps/api apps/admin; then
+            echo 'Phase 12 idempotency contract is missing.' >&2
+            exit 1
+          fi
+
+      - name: Rebase Phase 12 onto live main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'calibra-dev'
+          git config user.email 'keshavarz20.com@gmail.com'
+          git rebase origin/main
+          git push --force-with-lease origin HEAD:'${{ steps.target.outputs.branch }}'
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Enable project pnpm
+        shell: bash
+        run: |
+          set -euo pipefail
+          corepack enable
+          corepack prepare pnpm@10.32.1 --activate
+          pnpm --version
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Diff integrity
+        run: git diff --check origin/main...HEAD
+
+      - name: Typecheck all packages
+        run: pnpm -r --if-present typecheck
+
+      - name: Run package tests
+        run: pnpm -r --if-present test
+
+      - name: Build all packages
+        run: pnpm -r --if-present build
+
+      - name: Phase 12 financial invariants
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Unknown cost must not be silently represented as an unconditional zero default.
+          if git grep -nE 'landed.*cost.*(default|\?\?).*0|cost.*snapshot.*(default|\?\?).*0' -- apps/api | grep -vE 'test|fixture|example'; then
+            echo 'Suspicious unknown-cost-to-zero fallback detected.' >&2
+            exit 1
+          fi
+          # The implementation must expose explicit quality/state semantics and reconciliation.
+          git grep -qiE 'estimated|realized|forecast|incomplete' -- apps/api apps/admin
+          git grep -qiE 'reconcil|settlement' -- apps/api apps/admin
+          git grep -qiE 'reversal|replacement|replaced' -- apps/api
+          # Tenant/RLS and immutable/idempotency evidence must exist in Phase 12 migrations/services.
+          git grep -qiE 'row level security|enable row level security|tenant_id|tenantId' -- apps/api/database apps/api/app
+          git grep -qiE 'idempotency' -- apps/api apps/admin
+
+      - name: Create or reuse Phase 12 pull request
+        id: pr
+        shell: bash
+        run: |
+          set -euo pipefail
+          target='${{ steps.target.outputs.branch }}'
+          pr=$(gh pr list --repo '${{ github.repository }}' --head "$target" --base main --state open --json number --jq '.[0].number // empty')
+          if [ -z "$pr" ]; then
+            url=$(gh pr create \
+              --repo '${{ github.repository }}' \
+              --base main \
+              --head "$target" \
+              --title 'feat(economics): Phase 12 Profitability, Cash & Working Capital OS' \
+              --body 'Canonical Phase 12 implementation: append-only economic truth, immutable/versioned cost basis, explicit Estimated/Realized/Forecast states, source lineage, idempotent mutations, settlement reconciliation, currency-safe working capital, rebuildable profitability projections, Admin Finance workspace, OpenAPI/contracts, RLS and regression coverage. Finalizer rebased this branch onto live main and ran repository validation before merge.')
+            pr=${url##*/}
+          else
+            if [ "$(gh pr view "$pr" --repo '${{ github.repository }}' --json isDraft --jq .isDraft)" = 'true' ]; then
+              gh pr ready "$pr" --repo '${{ github.repository }}'
+            fi
+          fi
+          echo "number=$pr" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for repository PR checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          pr='${{ steps.pr.outputs.number }}'
+          # Let pull_request workflows register before watching them.
+          sleep 15
+          gh pr checks "$pr" --repo '${{ github.repository }}' --watch --interval 10 || {
+            echo 'One or more repository PR checks failed.' >&2
+            gh pr checks "$pr" --repo '${{ github.repository }}' || true
+            exit 1
+          }
+
+      - name: Merge Phase 12 into main
+        shell: bash
+        run: |
+          set -euo pipefail
+          pr='${{ steps.pr.outputs.number }}'
+          head_sha=$(gh pr view "$pr" --repo '${{ github.repository }}' --json headRefOid --jq .headRefOid)
+          gh pr merge "$pr" \
+            --repo '${{ github.repository }}' \
+            --merge \
+            --match-head-commit "$head_sha" \
+            --delete-branch
+
+      - name: Verify main contains Phase 12 head
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git merge-base --is-ancestor HEAD origin/main
+          echo "Merged Phase 12 head $(git rev-parse HEAD) into $(git rev-parse origin/main)"
