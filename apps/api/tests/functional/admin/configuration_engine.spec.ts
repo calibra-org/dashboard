@@ -8,6 +8,7 @@ import SettingsService from "#services/settings_service";
 import { truncatePhase03Tables } from "#tests/helpers/db";
 
 const BASE = "/api/v1/admin/settings/configuration";
+const GOVERNANCE = "/api/v1/admin/governance";
 
 async function createAdmin() {
     const user = await User.create({
@@ -29,7 +30,7 @@ async function createAdmin() {
 test.group("Phase 6 Configuration OS engine", (group) => {
     group.each.setup(async () => {
         await db.rawQuery(
-            "TRUNCATE TABLE configuration_url_redirect_history, configuration_overrides, configuration_revisions RESTART IDENTITY CASCADE",
+            "TRUNCATE TABLE governance_shadow_observations, governance_action_ledger, governance_ledger_heads, governance_approval_decisions, governance_approval_steps, governance_approval_requests, governance_agent_principals, governance_policy_versions, configuration_url_redirect_history, configuration_overrides, configuration_revisions RESTART IDENTITY CASCADE",
         );
         await truncatePhase03Tables();
         await new FoundationSeeder(db.connection()).run();
@@ -180,8 +181,9 @@ test.group("Phase 6 Configuration OS engine", (group) => {
         assert.include(serialized, '"configured":true');
     });
 
-    test("critical launch controls require both fresh preview and governance approval reference", async ({ client }) => {
+    test("critical launch controls require both fresh preview and a real approved Governance OS request", async ({ client }) => {
         const admin = await createAdmin();
+        const approver = await createAdmin();
         const change = {
             key: "visibility.site_state",
             scope_type: "tenant",
@@ -199,7 +201,25 @@ test.group("Phase 6 Configuration OS engine", (group) => {
             .json({ ...change, preview_hash: preview.body().data.preview_hash });
         missingApproval.assertStatus(422);
 
-        const approvedChange = { ...change, approval_reference: "CAB-2026-08-16" };
+        const requested = await client.post(`${GOVERNANCE}/approvals`).withGuard("api").loginAs(admin).json({
+            actionKey: "configuration.apply",
+            resourceType: "configuration",
+            resourceId: "visibility:visibility.site_state",
+            reason: "Independent approval for private launch",
+            payload: {},
+            separationOfDuties: true,
+        });
+        requested.assertStatus(200);
+        const reference = requested.body().data.reference;
+
+        const approved = await client
+            .post(`${GOVERNANCE}/approvals/${reference}/decision`)
+            .withGuard("api")
+            .loginAs(approver)
+            .json({ decision: "approve", reason: "Launch change reviewed" });
+        approved.assertStatus(200);
+
+        const approvedChange = { ...change, approval_reference: reference };
         const approvedPreview = await client
             .post(`${BASE}/groups/visibility/preview`)
             .withGuard("api")
@@ -212,6 +232,10 @@ test.group("Phase 6 Configuration OS engine", (group) => {
             .loginAs(admin)
             .json({ ...approvedChange, preview_hash: approvedPreview.body().data.preview_hash });
         applied.assertStatus(200);
+
+        const consumed = await client.get(`${GOVERNANCE}/approvals/${reference}`).withGuard("api").loginAs(admin);
+        consumed.assertStatus(200);
+        if (consumed.body().data.status !== "executed") throw new Error("configuration approval was not consumed");
     });
 
     test("rollback restores an override baseline and appends a forward rollback revision", async ({ client, assert }) => {
