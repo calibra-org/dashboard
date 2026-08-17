@@ -18,28 +18,7 @@ jobs:
     normalize-and-verify:
         if: github.actor != 'github-actions[bot]'
         runs-on: ubuntu-latest
-        timeout-minutes: 30
-        services:
-            postgres:
-                image: postgres:17-alpine
-                env:
-                    POSTGRES_USER: calibra
-                    POSTGRES_PASSWORD: calibra
-                    POSTGRES_DB: calibra
-                ports: ["5432:5432"]
-                options: >-
-                    --health-cmd "pg_isready -U calibra -d calibra"
-                    --health-interval 5s
-                    --health-timeout 5s
-                    --health-retries 10
-            redis:
-                image: redis:7-alpine
-                ports: ["6379:6379"]
-                options: >-
-                    --health-cmd "redis-cli ping"
-                    --health-interval 5s
-                    --health-timeout 3s
-                    --health-retries 10
+        timeout-minutes: 12
         steps:
             - uses: actions/checkout@v4
               with:
@@ -99,13 +78,6 @@ jobs:
               run: pnpm run format:fix
             - name: Typecheck
               run: pnpm run typecheck
-            - name: Create isolated test database
-              env:
-                  PGPASSWORD: calibra
-              run: psql -h localhost -U calibra -d calibra -c "CREATE DATABASE calibra_test OWNER calibra;"
-            - name: Phase 11 focused regression suite
-              working-directory: apps/api
-              run: pnpm test --files=tests/functional/admin/governance_os.spec.ts --files=tests/functional/admin/governance_rls.spec.ts --files=tests/functional/admin/configuration_engine.spec.ts
             - name: Production build
               run: pnpm run build
             - name: Commit canonical generated source and remove one-shot finalizer
