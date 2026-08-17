@@ -1,0 +1,36 @@
+name: Phase 11 OpenAPI Diagnose
+
+on:
+  push:
+    branches: ["agent/phase11-governance-os-rebase"]
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.14.0"
+      - run: npm install --global pnpm@10.32.1
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @calibra/api-docs run build:test-spec
+      - name: Print api-schema-builder validation errors
+        working-directory: apps/api
+        run: |
+          node <<'NODE'
+          const builder = require('api-schema-builder')
+          const path = require('node:path')
+          const spec = path.resolve('../../docs/api/dist/_merged.test.json')
+          try {
+            builder.buildSchemaSync(spec)
+            console.log('api-schema-builder accepted merged spec')
+          } catch (error) {
+            console.error(error?.stack || error)
+            console.error('VALIDATION_ERRORS_BEGIN')
+            console.error(JSON.stringify(error?.errors ?? null, null, 2))
+            console.error('VALIDATION_ERRORS_END')
+            process.exit(1)
+          }
+          NODE
