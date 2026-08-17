@@ -61,7 +61,13 @@ export default class extends BaseSchema {
         this.schema.createTable("intelligence_evidence_links", (table) => {
             table.bigIncrements("id").notNullable();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("case_id").unsigned().notNullable().references("id").inTable("intelligence_cases").onDelete("CASCADE");
+            table
+                .bigInteger("case_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("intelligence_cases")
+                .onDelete("CASCADE");
             table.string("evidence_type", 48).notNullable();
             table.string("source_domain", 48).notNullable();
             table.string("source_kind", 80).notNullable();
@@ -79,7 +85,13 @@ export default class extends BaseSchema {
         this.schema.createTable("intelligence_decisions", (table) => {
             table.bigIncrements("id").notNullable();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("case_id").unsigned().notNullable().references("id").inTable("intelligence_cases").onDelete("CASCADE");
+            table
+                .bigInteger("case_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("intelligence_cases")
+                .onDelete("CASCADE");
             table.string("decision", 16).notNullable();
             table.text("reason").notNullable();
             table.bigInteger("reviewer_user_id").unsigned().nullable().references("id").inTable("users").onDelete("SET NULL");
@@ -93,8 +105,20 @@ export default class extends BaseSchema {
         this.schema.createTable("intelligence_action_records", (table) => {
             table.bigIncrements("id").notNullable();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("case_id").unsigned().notNullable().references("id").inTable("intelligence_cases").onDelete("CASCADE");
-            table.bigInteger("decision_id").unsigned().nullable().references("id").inTable("intelligence_decisions").onDelete("SET NULL");
+            table
+                .bigInteger("case_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("intelligence_cases")
+                .onDelete("CASCADE");
+            table
+                .bigInteger("decision_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("intelligence_decisions")
+                .onDelete("SET NULL");
             table.string("action_kind", 48).notNullable();
             table.string("status", 24).notNullable().defaultTo("planned");
             table.string("action_route", 500).nullable();
@@ -110,8 +134,20 @@ export default class extends BaseSchema {
         this.schema.createTable("intelligence_outcome_records", (table) => {
             table.bigIncrements("id").notNullable();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("case_id").unsigned().notNullable().references("id").inTable("intelligence_cases").onDelete("CASCADE");
-            table.bigInteger("action_record_id").unsigned().nullable().references("id").inTable("intelligence_action_records").onDelete("SET NULL");
+            table
+                .bigInteger("case_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("intelligence_cases")
+                .onDelete("CASCADE");
+            table
+                .bigInteger("action_record_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("intelligence_action_records")
+                .onDelete("SET NULL");
             table.string("metric_name", 160).notNullable();
             table.decimal("baseline_value", 24, 6).nullable();
             table.decimal("observed_value", 24, 6).nullable();
@@ -145,7 +181,9 @@ export default class extends BaseSchema {
             );
             this.schema.raw(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`);
             this.schema.raw(`ALTER TABLE ${table} FORCE ROW LEVEL SECURITY`);
-            this.schema.raw(`CREATE POLICY tenant_isolation ON ${table} USING (${TENANT_PREDICATE}) WITH CHECK (${TENANT_PREDICATE})`);
+            this.schema.raw(
+                `CREATE POLICY tenant_isolation ON ${table} USING (${TENANT_PREDICATE}) WITH CHECK (${TENANT_PREDICATE})`,
+            );
         }
     }
 

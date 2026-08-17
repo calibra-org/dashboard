@@ -90,10 +90,7 @@ export function scoreAvailableComponents(input: {
         capitalEfficiency: input.capitalEfficiency ?? null,
         timeToValue: input.timeToValue ?? null,
     };
-    const availableWeight = POSITIVE_COMPONENTS.reduce(
-        (sum, key) => sum + (values[key] === null ? 0 : BASE_WEIGHTS[key]),
-        0,
-    );
+    const availableWeight = POSITIVE_COMPONENTS.reduce((sum, key) => sum + (values[key] === null ? 0 : BASE_WEIGHTS[key]), 0);
     const components: Record<string, ScoreComponent> = {};
     let positiveScore = 0;
     for (const key of POSITIVE_COMPONENTS) {
@@ -118,7 +115,11 @@ export function scoreAvailableComponents(input: {
     const missing = Object.entries(components)
         .filter(([, value]) => !value.available)
         .map(([key]) => key);
-    const calibrated = input.expectedValue !== null && input.expectedValue !== undefined && input.confidence !== null && input.confidence !== undefined;
+    const calibrated =
+        input.expectedValue !== null &&
+        input.expectedValue !== undefined &&
+        input.confidence !== null &&
+        input.confidence !== undefined;
     return {
         score: Number(score.toFixed(4)),
         mode: calibrated ? ("calibrated" as const) : ("provisional" as const),
@@ -131,13 +132,6 @@ function severityUrgency(severity: IntelligenceSeverity): number {
     return { low: 0.35, medium: 0.55, high: 0.78, critical: 1 }[severity];
 }
 
-function severityFromCount(count: number, criticalAt = 20, highAt = 5): IntelligenceSeverity {
-    if (count >= criticalAt) return "critical";
-    if (count >= highAt) return "high";
-    if (count >= 2) return "medium";
-    return "low";
-}
-
 function numberFrom(value: unknown): number {
     const parsed = Number(value ?? 0);
     return Number.isFinite(parsed) ? parsed : 0;
@@ -148,11 +142,16 @@ async function paymentSignals(now: string): Promise<NormalizedSignal[]> {
     const row = await trx
         .from("payment_attempts")
         .whereIn("reconciliation_status", ["mismatch", "error"])
-        .select(trx.raw("COUNT(*)::int AS count"), trx.raw("COALESCE(SUM(amount_minor), 0)::bigint AS amount_minor"))
+        .select(
+            trx.raw("COUNT(*)::int AS count"),
+            trx.raw("COUNT(*) FILTER (WHERE reconciliation_status = 'error')::int AS error_count"),
+            trx.raw("COALESCE(SUM(amount_minor), 0)::bigint AS amount_minor"),
+        )
         .first();
     const count = numberFrom(row?.count);
     if (count === 0) return [];
-    const severity = severityFromCount(count, 10, 3);
+    const errorCount = numberFrom(row?.error_count);
+    const severity: IntelligenceSeverity = errorCount > 0 ? "high" : "medium";
     return [
         {
             stableKey: "payments:reconciliation_attention",
@@ -167,7 +166,7 @@ async function paymentSignals(now: string): Promise<NormalizedSignal[]> {
             recommendedActionEn: "Review the affected attempts in Transactions and reconcile them against gateway evidence.",
             actionRoute: "/transactions",
             urgency: severityUrgency(severity),
-            signalSnapshot: { count, amountMinor: String(row?.amount_minor ?? 0) },
+            signalSnapshot: { count, errorCount, amountMinor: String(row?.amount_minor ?? 0) },
             observationSnapshot: { reconciliationStatuses: ["mismatch", "error"] },
             anomalySnapshot: { affectedAttempts: count },
             freshnessAt: now,
@@ -180,7 +179,7 @@ async function paymentSignals(now: string): Promise<NormalizedSignal[]> {
                     labelFa: "تلاش‌های پرداخت نیازمند تطبیق",
                     labelEn: "Payment attempts requiring reconciliation",
                     metricName: "reconciliation_attention_count",
-                    payload: { count, amountMinor: String(row?.amount_minor ?? 0) },
+                    payload: { count, errorCount, amountMinor: String(row?.amount_minor ?? 0) },
                     freshnessAt: now,
                 },
             ],
@@ -193,11 +192,15 @@ async function fulfillmentSignals(now: string): Promise<NormalizedSignal[]> {
     const row = await trx
         .from("order_shipments")
         .whereIn("status", ["exception", "returned"])
-        .select(trx.raw("COUNT(*)::int AS count"))
+        .select(
+            trx.raw("COUNT(*)::int AS count"),
+            trx.raw("COUNT(*) FILTER (WHERE status = 'exception')::int AS exception_count"),
+        )
         .first();
     const count = numberFrom(row?.count);
     if (count === 0) return [];
-    const severity = severityFromCount(count, 12, 4);
+    const exceptionCount = numberFrom(row?.exception_count);
+    const severity: IntelligenceSeverity = exceptionCount > 0 ? "high" : "medium";
     return [
         {
             stableKey: "fulfillment:shipment_exceptions",
@@ -212,7 +215,7 @@ async function fulfillmentSignals(now: string): Promise<NormalizedSignal[]> {
             recommendedActionEn: "Review the related shipments and orders, then record their actual delivery or return state.",
             actionRoute: "/orders",
             urgency: severityUrgency(severity),
-            signalSnapshot: { count },
+            signalSnapshot: { count, exceptionCount },
             observationSnapshot: { shipmentStatuses: ["exception", "returned"] },
             anomalySnapshot: { affectedShipments: count },
             freshnessAt: now,
@@ -225,7 +228,7 @@ async function fulfillmentSignals(now: string): Promise<NormalizedSignal[]> {
                     labelFa: "مرسوله‌های استثنا یا بازگشتی",
                     labelEn: "Exception or returned shipments",
                     metricName: "shipment_exception_count",
-                    payload: { count },
+                    payload: { count, exceptionCount },
                     freshnessAt: now,
                 },
             ],
@@ -256,7 +259,7 @@ async function supportSignals(now: string): Promise<NormalizedSignal[]> {
     const resolutionCount = numberFrom(resolution?.count);
     const count = firstResponseCount + resolutionCount;
     if (count === 0) return [];
-    const severity = severityFromCount(count, 15, 5);
+    const severity: IntelligenceSeverity = "high";
     return [
         {
             stableKey: "support:sla_breach",
@@ -310,7 +313,7 @@ async function inventorySignals(now: string): Promise<NormalizedSignal[]> {
     const count = numberFrom(row?.count);
     if (count === 0) return [];
     const outOfStockCount = numberFrom(row?.out_of_stock_count);
-    const severity: IntelligenceSeverity = outOfStockCount > 0 ? severityFromCount(outOfStockCount, 20, 5) : severityFromCount(count, 30, 10);
+    const severity: IntelligenceSeverity = outOfStockCount > 0 ? "high" : "medium";
     return [
         {
             stableKey: "inventory:stock_attention",
@@ -322,7 +325,8 @@ async function inventorySignals(now: string): Promise<NormalizedSignal[]> {
             summaryFa: `${count} ردیف موجودی مدیریت‌شده به آستانه کمبود رسیده یا ناموجود است؛ ${outOfStockCount} ردیف صراحتاً outofstock است.`,
             summaryEn: `${count} managed inventory rows are at/below their configured low-stock threshold or out of stock; ${outOfStockCount} are explicitly outofstock.`,
             recommendedActionFa: "موجودی‌های درگیر را در گزارش انبار بازبینی و تصمیم تأمین را خارج از این فاز انجام دهید.",
-            recommendedActionEn: "Review affected inventory in the stock report; procurement execution remains outside this phase.",
+            recommendedActionEn:
+                "Review affected inventory in the stock report; procurement execution remains outside this phase.",
             actionRoute: "/analytics/stock",
             urgency: severityUrgency(severity),
             signalSnapshot: { count, outOfStockCount },
@@ -348,12 +352,16 @@ async function inventorySignals(now: string): Promise<NormalizedSignal[]> {
 
 async function seoSignals(now: string): Promise<NormalizedSignal[]> {
     const trx = currentTrx();
-    const latest = await trx.from("seo_crawl_runs").select("id", "status", "failed_count", "completed_count", "finished_at", "updated_at").orderBy("id", "desc").first();
+    const latest = await trx
+        .from("seo_crawl_runs")
+        .select("id", "status", "failed_count", "completed_count", "finished_at", "updated_at")
+        .orderBy("id", "desc")
+        .first();
     if (!latest) return [];
     const failedCount = numberFrom(latest.failed_count);
     const problematicStatus = latest.status === "failed" || latest.status === "partial";
     if (!problematicStatus && failedCount === 0) return [];
-    const severity = latest.status === "failed" ? "high" : severityFromCount(failedCount, 50, 10);
+    const severity: IntelligenceSeverity = latest.status === "failed" ? "high" : "medium";
     const freshnessAt = String(latest.finished_at ?? latest.updated_at ?? now);
     return [
         {
@@ -369,7 +377,12 @@ async function seoSignals(now: string): Promise<NormalizedSignal[]> {
             recommendedActionEn: "Inspect the crawl run and failed observations in Crawl Monitoring.",
             actionRoute: "/seo/crawl-monitoring",
             urgency: severityUrgency(severity),
-            signalSnapshot: { runId: String(latest.id), status: latest.status, failedCount, completedCount: numberFrom(latest.completed_count) },
+            signalSnapshot: {
+                runId: String(latest.id),
+                status: latest.status,
+                failedCount,
+                completedCount: numberFrom(latest.completed_count),
+            },
             observationSnapshot: { source: "latest seo_crawl_runs row" },
             anomalySnapshot: { failedCount, partial: latest.status === "partial" },
             freshnessAt,
@@ -489,7 +502,10 @@ export async function refreshDecisionIntelligence(): Promise<void> {
             await trx
                 .from("intelligence_cases")
                 .where("id", existing.id)
-                .update({ ...payload, version: materialChanged ? numberFrom(existing.version) + 1 : numberFrom(existing.version) });
+                .update({
+                    ...payload,
+                    version: materialChanged ? numberFrom(existing.version) + 1 : numberFrom(existing.version),
+                });
         }
 
         await trx.from("intelligence_evidence_links").where("case_id", caseId).delete();
@@ -570,7 +586,10 @@ export async function listIntelligenceCases(options: {
     if (options.state) query.where("signal_state", options.state);
     if (options.q) {
         query.where((nested) => {
-            nested.whereILike("title_fa", `%${options.q}%`).orWhereILike("title_en", `%${options.q}%`).orWhereILike("summary_fa", `%${options.q}%`);
+            nested
+                .whereILike("title_fa", `%${options.q}%`)
+                .orWhereILike("title_en", `%${options.q}%`)
+                .orWhereILike("summary_fa", `%${options.q}%`);
         });
     }
     const countQuery = query.clone().clearSelect().clearOrder().count("id as count").first();
@@ -599,7 +618,9 @@ export async function intelligenceSummary() {
             .where("tenant_id", tenantId)
             .select(
                 trx.raw("COUNT(*) FILTER (WHERE signal_state = 'open')::int AS open_count"),
-                trx.raw("COUNT(*) FILTER (WHERE signal_state = 'open' AND severity IN ('high','critical'))::int AS high_critical_count"),
+                trx.raw(
+                    "COUNT(*) FILTER (WHERE signal_state = 'open' AND severity IN ('high','critical'))::int AS high_critical_count",
+                ),
                 trx.raw("COUNT(*) FILTER (WHERE signal_state = 'open' AND score_mode = 'provisional')::int AS provisional_count"),
                 trx.raw("COUNT(*) FILTER (WHERE lifecycle_stage IN ('measured','learned'))::int AS measured_count"),
             )
@@ -658,8 +679,12 @@ export async function recordIntelligenceDecision(input: {
     const tenantId = currentTenantId().toString();
     const current = await trx.from("intelligence_cases").where({ id: input.caseId, tenant_id: tenantId }).first();
     if (!current) return { kind: "not_found" as const };
-    if (numberFrom(current.version) !== input.version) return { kind: "conflict" as const, currentVersion: numberFrom(current.version) };
-    const evidence = await trx.from("intelligence_evidence_links").where({ case_id: input.caseId, tenant_id: tenantId }).orderBy("freshness_at", "desc");
+    if (numberFrom(current.version) !== input.version)
+        return { kind: "conflict" as const, currentVersion: numberFrom(current.version) };
+    const evidence = await trx
+        .from("intelligence_evidence_links")
+        .where({ case_id: input.caseId, tenant_id: tenantId })
+        .orderBy("freshness_at", "desc");
     const lifecycleStage = input.decision === "accept" ? "approved" : input.decision === "reject" ? "rejected" : "reviewed";
     const updated = await trx
         .from("intelligence_cases")
@@ -712,7 +737,8 @@ export async function recordIntelligenceOutcome(input: {
     const tenantId = currentTenantId().toString();
     const intelligenceCase = await trx.from("intelligence_cases").where({ id: input.caseId, tenant_id: tenantId }).first();
     if (!intelligenceCase) return null;
-    const delta = input.baselineValue === undefined || input.observedValue === undefined ? null : input.observedValue - input.baselineValue;
+    const delta =
+        input.baselineValue === undefined || input.observedValue === undefined ? null : input.observedValue - input.baselineValue;
     const [outcome] = await trx
         .table("intelligence_outcome_records")
         .insert({
@@ -731,6 +757,9 @@ export async function recordIntelligenceOutcome(input: {
             created_at: trx.fn.now(),
         })
         .returning("*");
-    await trx.from("intelligence_cases").where({ id: input.caseId, tenant_id: tenantId }).update({ lifecycle_stage: "measured", updated_at: trx.fn.now() });
+    await trx
+        .from("intelligence_cases")
+        .where({ id: input.caseId, tenant_id: tenantId })
+        .update({ lifecycle_stage: "measured", updated_at: trx.fn.now() });
     return outcome;
 }
