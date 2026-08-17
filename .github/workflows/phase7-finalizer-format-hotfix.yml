@@ -1,0 +1,38 @@
+name: Phase 7 finalizer format hotfix
+
+on:
+  push:
+    branches: [agent/phase7-identity-trust-os]
+    paths: [.github/workflows/phase7-finalizer-format-hotfix.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  hotfix:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/phase7-identity-trust-os
+      - name: Normalize restored sources before final checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('.github/workflows/phase7-finalize-v2.yml')
+          s = p.read_text()
+          old = '          pnpm run format\n          pnpm run lint\n'
+          new = '          pnpm run format:fix\n          pnpm run lint\n'
+          if old not in s:
+              raise SystemExit('final gate anchor not found')
+          p.write_text(s.replace(old, new, 1))
+          PY
+          rm -f .github/workflows/phase7-finalizer-format-hotfix.yml
+          git add -A
+          git diff --cached --check
+          git config user.name "calibra-phase7-bot"
+          git config user.email "calibra-phase7-bot@users.noreply.github.com"
+          git commit -m "ci: format restored sources before release gates"
+          git push origin HEAD:agent/phase7-identity-trust-os
