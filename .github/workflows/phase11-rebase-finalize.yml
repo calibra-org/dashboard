@@ -1,0 +1,50 @@
+name: Phase 11 Rebase Finalize
+
+on:
+    push:
+        branches: ["agent/phase11-governance-os-rebase"]
+
+permissions:
+    contents: write
+
+jobs:
+    finalize:
+        if: github.actor != 'github-actions[bot]'
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: "24.14.0"
+            - run: npm install --global pnpm@10.32.1
+            - run: pnpm install --frozen-lockfile
+            - name: Add Governance OS navigation without disturbing Phase 10
+              run: |
+                  node <<'NODE'
+                  const fs = require('node:fs');
+                  const path = 'apps/admin/src/components/Sidebar.tsx';
+                  let source = fs.readFileSync(path, 'utf8');
+                  const governance = '            { href: "/governance/overview", label: "Governance OS", icon: ShieldCheck },';
+                  if (!source.includes(governance)) {
+                    const needle = '            { href: "/settings/general", labelKey: "settings", icon: Settings },\n';
+                    if (!source.includes(needle)) throw new Error('Sidebar settings anchor not found');
+                    source = source.replace(needle, `${needle}${governance}\n`);
+                    fs.writeFileSync(path, source);
+                  }
+                  NODE
+            - name: Regenerate SDK from composed OpenAPI
+              run: pnpm --filter @calibra/sdk run codegen
+            - name: Format changed sources
+              run: pnpm run format
+            - name: Commit canonical generated and navigation sources
+              run: |
+                  git config user.name "calibra-dev"
+                  git config user.email "keshavarz20.com@gmail.com"
+                  git add apps/admin/src/components/Sidebar.tsx packages/sdk/src/generated/admin.d.ts
+                  if git diff --cached --quiet; then
+                    echo "No finalization changes required"
+                    exit 0
+                  fi
+                  git commit -m "chore(governance): finalize Phase 11 on Phase 10 baseline"
+                  git push
