@@ -1,0 +1,71 @@
+name: Phase 6 test schema diagnostic
+
+on:
+  push:
+    branches: [agent/phase7-identity-trust-os]
+    paths: [.github/workflows/phase6-test-schema-diagnostic.yml]
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "24.14.0"
+  PNPM_VERSION: "10.32.1"
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/phase7-identity-trust-os
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Materialize Phase 6 into canonical admin bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs'
+          const p='docs/api/package.json'
+          const pkg=JSON.parse(fs.readFileSync(p,'utf8'))
+          pkg.scripts['build:json:admin-phase6']='redocly bundle reference/openapi/admin.phase6.v1.yaml -o dist/admin.phase6.v1.json --ext json'
+          pkg.scripts['build:json:admin']=pkg.scripts['build:json:admin'].replace('pnpm build:json:admin-phase5 &&','pnpm build:json:admin-phase5 && pnpm build:json:admin-phase6 &&')
+          fs.writeFileSync(p,JSON.stringify(pkg,null,4)+'\n')
+          const m='docs/api/scripts/merge-admin-spec.js'
+          let s=fs.readFileSync(m,'utf8')
+          if(!s.includes('dist/admin.phase6.v1.json')) s=s.replace('const phase5 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase5.v1.json"), "utf8"));','const phase5 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase5.v1.json"), "utf8"));\nconst phase6 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase6.v1.json"), "utf8"));')
+          if(!s.includes('[phase6, "Phase6Overlay"]')) s=s.replace('    [phase5, "Phase5Overlay"],','    [phase5, "Phase5Overlay"],\n    [phase6, "Phase6Overlay"],')
+          fs.writeFileSync(m,s)
+          NODE
+          pnpm --filter @calibra/api-docs run build:test-spec
+      - name: Print api-schema-builder validation errors
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs'
+          import path from 'node:path'
+          import { createRequire } from 'node:module'
+          const pnpm=path.resolve('node_modules/.pnpm')
+          const dir=fs.readdirSync(pnpm).find((name)=>name.startsWith('api-schema-builder@2.0.11_'))
+          if(!dir) throw new Error('api-schema-builder@2.0.11 package directory not found')
+          const require=createRequire(import.meta.url)
+          const builder=require(path.join(pnpm,dir,'node_modules/api-schema-builder'))
+          const schema=JSON.parse(fs.readFileSync('docs/api/dist/_merged.test.json','utf8'))
+          try {
+            builder.buildSchemaSync(schema,{buildResponses:true})
+            console.log('api-schema-builder: PASS')
+          } catch (error) {
+            console.error('api-schema-builder: FAIL')
+            console.error(JSON.stringify(error?.errors ?? error,null,2))
+            process.exit(1)
+          }
+          NODE
