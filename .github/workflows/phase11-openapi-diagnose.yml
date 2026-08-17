@@ -19,9 +19,11 @@ jobs:
       - name: Print api-schema-builder validation errors
         working-directory: apps/api
         run: |
-          node <<'NODE'
-          const builder = require('api-schema-builder')
+          BUILDER=$(find ../../node_modules/.pnpm -type d -path '*/node_modules/api-schema-builder' | head -1)
+          test -n "$BUILDER"
+          BUILDER="$BUILDER" node <<'NODE'
           const path = require('node:path')
+          const builder = require(path.resolve(process.env.BUILDER))
           const spec = path.resolve('../../docs/api/dist/_merged.test.json')
           try {
             builder.buildSchemaSync(spec)
