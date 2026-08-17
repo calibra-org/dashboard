@@ -1045,10 +1045,11 @@ export class GovernanceService {
             previous_hash: previousHash,
             occurred_at: occurredAt,
         };
-        const entryHash = sha256(ledgerHashMaterial(record));
+        const hashPayload = canonical(ledgerHashMaterial(record));
+        const entryHash = sha256(hashPayload);
         const rows = await trx
             .table("governance_action_ledger")
-            .insert({ ...record, entry_hash: entryHash })
+            .insert({ ...record, hash_payload: hashPayload, entry_hash: entryHash })
             .returning("*");
         await trx
             .from("governance_ledger_heads")
@@ -1068,8 +1069,9 @@ export class GovernanceService {
         for (const row of rows) {
             if (Number(row.sequence) !== expected || String(row.previous_hash) !== previous)
                 return { ok: false, checked: expected - 1, reason: "chain_link_mismatch", sequence: Number(row.sequence) };
-            const hash = sha256(ledgerHashMaterial(row));
-            if (hash !== String(row.entry_hash))
+            const hashPayload = String(row.hash_payload ?? "");
+            const hash = sha256(hashPayload);
+            if (!hashPayload || hash !== String(row.entry_hash))
                 return { ok: false, checked: expected - 1, reason: "entry_hash_mismatch", sequence: expected };
             previous = hash;
             expected += 1;
