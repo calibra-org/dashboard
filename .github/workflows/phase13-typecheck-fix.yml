@@ -1,0 +1,79 @@
+name: Phase 13 Guarded Typecheck Fix
+
+on:
+  push:
+    branches: ["feat/phase13-planning-os-20260817"]
+    paths:
+      - ".github/workflows/phase13-typecheck-fix.yml"
+
+permissions:
+  contents: write
+
+env:
+  NODE_VERSION: "24.14.0"
+  PNPM_VERSION: "10.32.1"
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: "feat/phase13-planning-os-20260817"
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - run: npm install --global pnpm@${PNPM_VERSION}
+      - run: pnpm install --frozen-lockfile
+      - name: Apply exact QueryBuilder typing fixes
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = 'apps/api/app/services/phase13_planning_service.ts';
+          let source = fs.readFileSync(path, 'utf8');
+          const groupNeedle = '.groupBy("li.product_id", "li.variation_id", trx.raw("DATE(COALESCE(o.date_paid_at, o.created_at))"))';
+          const groupReplacement = '.groupBy("li.product_id", "li.variation_id")\n                .groupByRaw("DATE(COALESCE(o.date_paid_at, o.created_at))")';
+          if (!source.includes(groupNeedle)) throw new Error('Expected groupBy typing target not found');
+          source = source.replace(groupNeedle, groupReplacement);
+          const countNeedle = '.count<{ count: string }[]>("id as count")';
+          const occurrences = source.split(countNeedle).length - 1;
+          if (occurrences !== 3) throw new Error(`Expected 3 count typing targets, found ${occurrences}`);
+          source = source.split(countNeedle).join('.count("id as count")');
+          fs.writeFileSync(path, source);
+          NODE
+      - name: Apply repository formatting
+        run: pnpm run format:fix
+      - name: Guard source scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --name-only | sort -u > /tmp/phase13-fix-files.txt
+          cat /tmp/phase13-fix-files.txt
+          while IFS= read -r path; do
+            [ -z "$path" ] && continue
+            if [ "$path" != "apps/api/app/services/phase13_planning_service.ts" ]; then
+              echo "Unexpected source change before cleanup: $path"
+              exit 1
+            fi
+          done < /tmp/phase13-fix-files.txt
+      - name: Verify API typecheck
+        run: pnpm --filter @calibra/api run typecheck
+      - name: Verify Phase 13 contracts
+        run: node scripts/verify-phase13-planning-integration.mjs
+      - name: Smoke forecast engine
+        run: node --experimental-strip-types scripts/smoke-phase13-forecast.mjs
+      - name: Publish clean fix and remove diagnostics
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .calibra-phase13 \
+            .github/workflows/phase13-typecheck-diagnostic.yml \
+            .github/workflows/phase13-typecheck-fix.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix(planning): align planning queries with database typings"
+          git push origin HEAD:feat/phase13-planning-os-20260817
