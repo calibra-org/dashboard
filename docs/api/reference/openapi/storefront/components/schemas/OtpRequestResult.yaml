@@ -5,6 +5,14 @@ description: >
     caller can never use it for account enumeration.
 type: object
 properties:
+    verification_id:
+        type: string
+        format: uuid
+        description: Opaque verification transaction id used for resend and optional verify binding.
+    delivery:
+        type: string
+        enum: [accepted, sent, delivered, delivery_unknown, failed, blocked]
+        description: Delivery state known at request time; accepted does not mean delivered.
     expires_in:
         type: integer
         description: Seconds until the issued OTP code expires.

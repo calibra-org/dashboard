@@ -2,6 +2,7 @@ import type { HttpContext } from "@adonisjs/core/http";
 
 import User from "#models/user";
 import { recordAuthEvent } from "#services/metrics/domain_metrics";
+import { markIdentitySessionRevoked } from "#services/identity/sessions";
 
 export default class LogoutController {
     /**
@@ -13,6 +14,7 @@ export default class LogoutController {
         const user = ctx.auth.getUserOrFail();
         const token = user.currentAccessToken;
         if (token) {
+            await markIdentitySessionRevoked(Number(token.identifier));
             await User.accessTokens.delete(user, token.identifier);
         }
         recordAuthEvent("logout");

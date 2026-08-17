@@ -3,6 +3,7 @@ import { DateTime } from "luxon";
 
 import User from "#models/user";
 import { recordAuthEvent } from "#services/metrics/domain_metrics";
+import { registerIdentitySession } from "#services/identity/sessions";
 import CustomerTransformer from "#transformers/customer_transformer";
 import UserTransformer from "#transformers/user_transformer";
 import { loginValidator } from "#validators/auth/login_validator";
@@ -41,6 +42,13 @@ export default class LoginController {
         await user.load("customer");
 
         const token = await User.accessTokens.create(user);
+        await registerIdentitySession({
+            ctx,
+            userId: Number(user.id),
+            tokenIdentifier: Number(token.identifier),
+            expiresAt: token.expiresAt?.toISOString() ?? null,
+            authMethod: "password",
+        });
         recordAuthEvent("login_success");
 
         return {

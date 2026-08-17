@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import type { HttpContext } from "@adonisjs/core/http";
-import logger from "@adonisjs/core/services/logger";
+import mail from "@adonisjs/mail/services/main";
 import { DateTime } from "luxon";
 
 import PasswordResetToken from "#models/password_reset_token";
@@ -10,15 +10,8 @@ import { passwordForgotValidator } from "#validators/auth/password_validator";
 const TOKEN_TTL_MINUTES = 60;
 
 export default class PasswordForgotController {
-    /**
-     * Always returns 200, even when the email is unknown — leaking which addresses are registered
-     * lets attackers enumerate accounts. The token is generated, hashed, and stored only when the
-     * email matches; in dev the plaintext token is logged at info level so the smoke flow can
-     * grab it without a real mail provider.
-     */
     async handle(ctx: HttpContext) {
         const { email } = await ctx.request.validateUsing(passwordForgotValidator);
-
         const user = await User.findBy("email", email);
         if (user && !user.deletedAt) {
             const tokenPlain = crypto.randomBytes(32).toString("hex");
@@ -28,10 +21,17 @@ export default class PasswordForgotController {
                 tokenHash,
                 expiresAt: DateTime.utc().plus({ minutes: TOKEN_TTL_MINUTES }),
             });
-
-            logger.info({ user_id: user.id, token: tokenPlain }, "password reset requested");
+            try {
+                await mail.send((message) => {
+                    message
+                        .to(email)
+                        .subject("Calibra password reset")
+                        .text(`Password reset token: ${tokenPlain}\nThis token expires in ${TOKEN_TTL_MINUTES} minutes.`);
+                });
+            } catch (error) {
+                ctx.logger.warn({ err: error, user_id: user.id }, "password_reset_delivery_failed");
+            }
         }
-
         return { message: "If the email matches an account, a reset link has been sent." };
     }
 }

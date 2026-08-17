@@ -15,6 +15,10 @@ requestBody:
                 type: object
                 required: [identifier, code]
                 properties:
+                    verification_id:
+                        type: string
+                        format: uuid
+                        description: Optional transaction binding for the new verification ledger.
                     identifier:
                         type: string
                         minLength: 3
