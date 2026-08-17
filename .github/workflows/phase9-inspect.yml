@@ -1,0 +1,42 @@
+name: Phase 9 Inspect
+
+on:
+    push:
+        branches: ["agent/phase9-personalization-deals-20260816"]
+
+permissions:
+    contents: write
+
+env:
+    GH_TOKEN: ${{ github.token }}
+
+jobs:
+    inspect:
+        if: contains(github.event.head_commit.message, '[phase9-inspect]')
+        runs-on: ubuntu-latest
+        timeout-minutes: 3
+        steps:
+            - uses: actions/checkout@v4
+            - name: Extract only source payload and capture price wiring
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  cat .phase9-payload/part-00 .phase9-payload/part-01 .phase9-payload/part-02 .phase9-payload/part-03 > /tmp/phase9.b64
+                  echo "13e9ffcbcbeb7c72f7f68c5f2482acf910c5acd3bbb28e220fa92aed9d4347dc  /tmp/phase9.b64" | sha256sum -c -
+                  base64 -d /tmp/phase9.b64 > /tmp/phase9.tgz
+                  tar -xzf /tmp/phase9.tgz -C .
+                  {
+                    echo '=== service price wiring ==='
+                    grep -nE 'resolvePrice|price_resolver|regularPrice|effectivePrice|salePrice|onSale' apps/api/app/services/phase9_personalization_service.ts || true
+                    echo
+                    echo '=== verifier price checks ==='
+                    grep -nE 'resolvePrice|price_resolver|price resolver|service missing' scripts/verify-phase9.mjs || true
+                    echo
+                    echo '=== service imports ==='
+                    sed -n '1,45p' apps/api/app/services/phase9_personalization_service.ts
+                  } > /tmp/phase9-price-diagnostic.txt
+                  encoded=$(base64 -w0 /tmp/phase9-price-diagnostic.txt)
+                  old=$(gh api "repos/${GITHUB_REPOSITORY}/contents/phase9-price-diagnostic.txt?ref=${GITHUB_REF_NAME}" --jq .sha 2>/dev/null || true)
+                  args=(--method PUT "repos/${GITHUB_REPOSITORY}/contents/phase9-price-diagnostic.txt" -f message="chore(ci): capture Phase 9 price wiring" -f content="$encoded" -f branch="${GITHUB_REF_NAME}")
+                  if [ -n "$old" ]; then args+=(-f sha="$old"); fi
+                  gh api "${args[@]}" >/dev/null
