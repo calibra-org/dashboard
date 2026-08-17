@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import encryption from "@adonisjs/core/services/encryption";
 import mail from "@adonisjs/mail/services/main";
 import { DateTime } from "luxon";
+
 import { currentTenantId, currentTrx } from "#services/tenant_context";
 
 export type IdentityProviderChannel = "sms" | "email";

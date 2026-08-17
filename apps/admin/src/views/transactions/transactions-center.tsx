@@ -37,8 +37,8 @@ import {
     useReconcileTransaction,
     useTransaction,
     useTransactionReconciliationHistory,
-    useTransactions,
     useTransactionSummary,
+    useTransactions,
 } from "#/lib/queries/transactions";
 import type { TableViewFilter, TableViewQuery } from "#/lib/table-view";
 import { dateFilterValueToTableViewFilter } from "#/lib/table-view/date-adapter";
@@ -633,7 +633,7 @@ function TransactionCard({ row, locale, onOpen }: { row: AdminTransaction; local
         <button
             type="button"
             onClick={onOpen}
-            className="w-full space-y-3 p-4 text-start outline-none hover:bg-muted/35 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+            className="w-full space-y-3 p-4 text-start outline-none hover:bg-muted/35 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
         >
             <div className="flex items-start justify-between gap-3">
                 <div>
@@ -1023,7 +1023,7 @@ function Identifier({ label, value, copied }: { label: string; value: string | n
     return (
         <div className="flex items-center justify-between gap-3 px-3 py-2.5">
             <div className="min-w-0">
-                <p className="text-muted-foreground text-[11px]">{label}</p>
+                <p className="text-[11px] text-muted-foreground">{label}</p>
                 <p className="truncate font-mono text-xs" dir="ltr">
                     {value ?? "—"}
                 </p>

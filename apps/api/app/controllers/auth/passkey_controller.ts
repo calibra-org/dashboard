@@ -2,9 +2,9 @@ import type { HttpContext } from "@adonisjs/core/http";
 import { DateTime } from "luxon";
 
 import User from "#models/user";
-import { recordAuthEvent } from "#services/metrics/domain_metrics";
 import { registerIdentitySession } from "#services/identity/sessions";
 import { beginPasskeyAuthentication, finishPasskeyAuthentication } from "#services/identity/webauthn";
+import { recordAuthEvent } from "#services/metrics/domain_metrics";
 import UserTransformer from "#transformers/user_transformer";
 import { identityPasskeyAuthenticationValidator } from "#validators/identity/identity_validator";
 

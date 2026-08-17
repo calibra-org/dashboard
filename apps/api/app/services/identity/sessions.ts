@@ -1,8 +1,9 @@
 import type { HttpContext } from "@adonisjs/core/http";
 import { DateTime } from "luxon";
+
 import User from "#models/user";
-import { currentTenantId, currentTrx } from "#services/tenant_context";
 import { identityHash, maskIp, recordIdentitySecurityEvent, requestDeviceHash } from "#services/identity/security";
+import { currentTenantId, currentTrx } from "#services/tenant_context";
 
 export async function registerIdentitySession(input: {
     ctx: HttpContext;

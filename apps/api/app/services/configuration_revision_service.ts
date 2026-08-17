@@ -2,11 +2,11 @@ import { DateTime } from "luxon";
 
 import type { SettingValueType } from "#models/setting";
 import {
+    type ConfigurationScope,
+    type ConfigurationScopeType,
     configurationScopeForAuditAction,
     configurationScopeSettings,
     isConfigurationGroup,
-    type ConfigurationScope,
-    type ConfigurationScopeType,
 } from "#services/configuration_registry";
 import SettingsService from "#services/settings_service";
 import { currentTenantId, currentTrx } from "#services/tenant_context";

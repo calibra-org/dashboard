@@ -2,9 +2,10 @@ import { createHash, createPublicKey, randomBytes, randomUUID, verify as verifyS
 import type { HttpContext } from "@adonisjs/core/http";
 import encryption from "@adonisjs/core/services/encryption";
 import { DateTime } from "luxon";
-import { currentTenantId, currentTrx } from "#services/tenant_context";
-import { recordIdentitySecurityEvent } from "#services/identity/security";
+
 import { requireIdentityFeature } from "#services/identity/features";
+import { recordIdentitySecurityEvent } from "#services/identity/security";
+import { currentTenantId, currentTrx } from "#services/tenant_context";
 
 interface CeremonyPayload {
     challenge: string;

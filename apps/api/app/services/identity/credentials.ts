@@ -2,9 +2,10 @@ import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import encryption from "@adonisjs/core/services/encryption";
 import hash from "@adonisjs/core/services/hash";
 import { DateTime } from "luxon";
-import { currentTenantId, currentTrx } from "#services/tenant_context";
-import { recordIdentitySecurityEvent } from "#services/identity/security";
+
 import { requireIdentityFeature } from "#services/identity/features";
+import { recordIdentitySecurityEvent } from "#services/identity/security";
+import { currentTenantId, currentTrx } from "#services/tenant_context";
 
 const BASE32_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 

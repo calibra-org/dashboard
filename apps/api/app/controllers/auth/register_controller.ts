@@ -3,8 +3,8 @@ import db from "@adonisjs/lucid/services/db";
 
 import Customer from "#models/customer";
 import User from "#models/user";
-import phoneService from "#services/phone_service";
 import { registerIdentitySession } from "#services/identity/sessions";
+import phoneService from "#services/phone_service";
 import CustomerTransformer from "#transformers/customer_transformer";
 import UserTransformer from "#transformers/user_transformer";
 import { registerValidator } from "#validators/auth/register_validator";

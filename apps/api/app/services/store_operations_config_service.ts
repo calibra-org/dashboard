@@ -252,7 +252,7 @@ export class StoreOperationsConfigService {
 
     async deleteShippingZone(id: number) {
         const zone = await zoneOrFail(id);
-        if (Boolean(zone.is_fallback)) {
+        if (zone.is_fallback) {
             throw new Exception("Fallback shipping zone cannot be deleted", { status: 409, code: "E_SHIPPING_FALLBACK_DELETE" });
         }
         const trx = currentTrx();

@@ -1,15 +1,14 @@
 import { createHash } from "node:crypto";
-
 import { DateTime } from "luxon";
 
 import { BusinessRuleException } from "#exceptions/domain_exceptions";
 import {
-    configurationDefinition,
-    configurationDefinitions,
-    configurationDefinitionsForGroup,
     type ConfigurationGroup,
     type ConfigurationScopeType,
     type ConfigurationSettingDefinition,
+    configurationDefinition,
+    configurationDefinitions,
+    configurationDefinitionsForGroup,
 } from "#services/configuration_registry";
 import SettingsService from "#services/settings_service";
 import { currentTenantId, currentTrx } from "#services/tenant_context";

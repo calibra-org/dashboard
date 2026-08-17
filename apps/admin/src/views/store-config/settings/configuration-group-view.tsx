@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import { useLocale } from "next-intl";
+import { useMemo, useState } from "react";
 
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
@@ -27,14 +27,14 @@ export function ConfigurationGroupView({ group }: { group: ConfigurationGroup })
 
     if (query.isPending) {
         return (
-            <div className="rounded-xl border p-8 text-sm text-muted-foreground">
+            <div className="rounded-xl border p-8 text-muted-foreground text-sm">
                 {fa ? "در حال بارگذاری تنظیمات…" : "Loading configuration…"}
             </div>
         );
     }
     if (query.isError || !query.data) {
         return (
-            <div className="rounded-xl border border-destructive/30 p-8 text-sm text-destructive">
+            <div className="rounded-xl border border-destructive/30 p-8 text-destructive text-sm">
                 {fa ? "بارگذاری تنظیمات ناموفق بود." : "Configuration could not be loaded."}
             </div>
         );
@@ -42,7 +42,7 @@ export function ConfigurationGroupView({ group }: { group: ConfigurationGroup })
 
     return (
         <div className="space-y-5">
-            <div className="rounded-xl border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+            <div className="rounded-xl border bg-muted/20 px-4 py-3 text-muted-foreground text-sm">
                 {fa
                     ? "هر تغییر نسخه‌دار و قابل بازگردانی است. تنظیمات پرریسک پیش از ذخیره به پیش‌نمایش اثر نیاز دارند و رازها فقط با مرجع متغیر محیطی ثبت می‌شوند."
                     : "Every change is versioned and reversible. High-risk settings require an impact preview, and secrets are stored only as environment references."}
@@ -174,7 +174,7 @@ function SettingCard({ group, item, fa }: { group: ConfigurationGroup; item: Ite
                                 />
                             )}
                             {!parsed.ok ? (
-                                <p className="text-xs text-destructive">
+                                <p className="text-destructive text-xs">
                                     {fa ? "فرمت مقدار معتبر نیست." : "Value format is invalid."}
                                 </p>
                             ) : null}
@@ -194,7 +194,7 @@ function SettingCard({ group, item, fa }: { group: ConfigurationGroup; item: Ite
                             </div>
                         ) : null}
                         {preview.data ? (
-                            <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-xs">
+                            <div className="rounded-lg border border-warning/30 bg-warning/5 p-3 text-xs">
                                 <div className="flex items-center gap-2 font-medium">
                                     <ShieldAlert className="size-4" />
                                     {fa ? "پیش‌نمایش اثر" : "Impact preview"}
@@ -207,19 +207,19 @@ function SettingCard({ group, item, fa }: { group: ConfigurationGroup; item: Ite
                             </div>
                         ) : null}
                         {testConfig.data?.data.passed ? (
-                            <div className="flex items-center gap-2 text-xs text-emerald-700">
+                            <div className="flex items-center gap-2 text-success text-xs">
                                 <CheckCircle2 className="size-4" />
                                 {fa ? "تست بدون اثر جانبی پاس شد." : "Side-effect-free test passed."}
                             </div>
                         ) : null}
                         {update.isSuccess ? (
-                            <div className="flex items-center gap-2 text-xs text-emerald-700">
+                            <div className="flex items-center gap-2 text-success text-xs">
                                 <CheckCircle2 className="size-4" />
                                 {fa ? "ذخیره شد و نسخه جدید ثبت شد." : "Saved and a new revision was recorded."}
                             </div>
                         ) : null}
                         {preview.isError || testConfig.isError || update.isError ? (
-                            <div className="text-xs text-destructive">
+                            <div className="text-destructive text-xs">
                                 {fa
                                     ? "عملیات انجام نشد؛ مقدار فعال بدون تغییر ماند."
                                     : "Operation failed; active configuration was unchanged."}

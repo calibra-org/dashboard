@@ -1,8 +1,8 @@
 import type { HttpContext } from "@adonisjs/core/http";
 
 import User from "#models/user";
-import { recordAuthEvent } from "#services/metrics/domain_metrics";
 import { markIdentitySessionRevoked } from "#services/identity/sessions";
+import { recordAuthEvent } from "#services/metrics/domain_metrics";
 
 export default class LogoutController {
     /**

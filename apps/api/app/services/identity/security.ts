@@ -1,7 +1,8 @@
 import { createHmac } from "node:crypto";
 import type { HttpContext } from "@adonisjs/core/http";
-import env from "#start/env";
+
 import { currentTenantId, currentTrx } from "#services/tenant_context";
+import env from "#start/env";
 
 /** Canonicalize user identifiers before hashing, lookup, and verification. */
 export function normalizeIdentityIdentifier(value: string): string {

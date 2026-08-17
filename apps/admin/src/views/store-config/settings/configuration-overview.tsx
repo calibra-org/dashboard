@@ -52,8 +52,8 @@ export function ConfigurationOverview() {
             <section className="space-y-4">
                 <div className="flex flex-wrap items-end justify-between gap-3">
                     <div>
-                        <h2 className="text-base font-semibold">{fa ? "مرکز پیکربندی" : "Configuration workspace"}</h2>
-                        <p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">
+                        <h2 className="font-semibold text-base">{fa ? "مرکز پیکربندی" : "Configuration workspace"}</h2>
+                        <p className="mt-1 max-w-3xl text-muted-foreground text-sm leading-6">
                             {fa
                                 ? "تنظیمات سیاستی در این مرکز نسخه‌دار، قابل پیش‌نمایش و قابل بازگردانی هستند؛ مالیات، ارسال، پرداخت و کاتالوگ همچنان از دامنه‌های اصلی خود استفاده می‌کنند."
                                 : "Policy settings are versioned, previewable and reversible here; tax, shipping, payments and catalog remain owned by their canonical domains."}
@@ -82,7 +82,7 @@ export function ConfigurationOverview() {
                             if (items.length === 0) return null;
                             return (
                                 <div key={category} className="space-y-2.5">
-                                    <h3 className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                    <h3 className="px-1 font-semibold text-muted-foreground text-xs uppercase tracking-wide">
                                         {categoryLabel(category, fa)}
                                     </h3>
                                     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -113,10 +113,10 @@ export function ConfigurationOverview() {
                                                         {modeLabel(item.mode, fa)}
                                                     </Badge>
                                                 </div>
-                                                <p className="mt-2 min-h-10 text-sm leading-5 text-muted-foreground">
+                                                <p className="mt-2 min-h-10 text-muted-foreground text-sm leading-5">
                                                     {fa ? item.description_fa : item.description_en}
                                                 </p>
-                                                <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                                <div className="mt-4 flex flex-wrap items-center gap-2 text-muted-foreground text-xs">
                                                     <span>
                                                         {item.definition_count.toLocaleString(locale)}{" "}
                                                         {fa ? "تعریف" : "definitions"}
@@ -142,8 +142,8 @@ export function ConfigurationOverview() {
             <section className="space-y-3">
                 <div className="flex items-center justify-between gap-3">
                     <div>
-                        <h2 className="text-base font-semibold">{fa ? "تغییرات اخیر" : "Recent changes"}</h2>
-                        <p className="mt-1 text-sm text-muted-foreground">
+                        <h2 className="font-semibold text-base">{fa ? "تغییرات اخیر" : "Recent changes"}</h2>
+                        <p className="mt-1 text-muted-foreground text-sm">
                             {fa
                                 ? "بازگردانی تاریخچه را حذف نمی‌کند؛ یک نسخه جدید و قابل ممیزی ایجاد می‌شود."
                                 : "Rollback never erases history; it appends a new auditable revision."}
@@ -153,7 +153,7 @@ export function ConfigurationOverview() {
                 </div>
 
                 {rollback.isError ? (
-                    <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                    <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-destructive text-sm">
                         {fa
                             ? "بازگردانی انجام نشد؛ تنظیمات فعال بدون تغییر باقی ماند."
                             : "Rollback failed; active configuration was left unchanged."}
@@ -191,7 +191,7 @@ export function ConfigurationOverview() {
                                                     {revisionSourceLabel(item.source, fa)}
                                                 </Badge>
                                             </div>
-                                            <p className="mt-0.5 max-w-xl truncate text-xs text-muted-foreground">
+                                            <p className="mt-0.5 max-w-xl truncate text-muted-foreground text-xs">
                                                 {item.changed_keys.length > 0
                                                     ? item.changed_keys.join("، ")
                                                     : fa
@@ -201,7 +201,7 @@ export function ConfigurationOverview() {
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3">
-                                        <div className="text-left text-xs text-muted-foreground" dir="ltr">
+                                        <div className="text-left text-muted-foreground text-xs" dir="ltr">
                                             <div>r{item.revision}</div>
                                             <time dateTime={item.created_at}>
                                                 {new Intl.DateTimeFormat(locale, {
@@ -272,8 +272,8 @@ function MetricCard({ icon: Icon, label, value }: { icon: typeof Settings2; labe
                     <Icon className="size-4" />
                 </div>
                 <div>
-                    <div className="text-xl font-semibold tabular-nums">{value}</div>
-                    <div className="text-xs text-muted-foreground">{label}</div>
+                    <div className="font-semibold text-xl tabular-nums">{value}</div>
+                    <div className="text-muted-foreground text-xs">{label}</div>
                 </div>
             </CardContent>
         </Card>
@@ -281,7 +281,7 @@ function MetricCard({ icon: Icon, label, value }: { icon: typeof Settings2; labe
 }
 
 function StateCard({ text }: { text: string }) {
-    return <div className="rounded-xl border border-dashed px-5 py-10 text-center text-sm text-muted-foreground">{text}</div>;
+    return <div className="rounded-xl border border-dashed px-5 py-10 text-center text-muted-foreground text-sm">{text}</div>;
 }
 
 function revisionSourceLabel(source: ConfigurationRevision["source"], fa: boolean) {

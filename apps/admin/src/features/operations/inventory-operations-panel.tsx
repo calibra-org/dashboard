@@ -71,7 +71,7 @@ export function InventoryOperationsPanel({
                             </span>
                         </div>
                         <div className="grid gap-3 rounded-lg border p-3 md:grid-cols-[160px_minmax(0,1fr)_auto] md:items-end">
-                            <label className="grid gap-1.5 text-xs font-medium">
+                            <label className="grid gap-1.5 font-medium text-xs">
                                 <span>{t("adjustmentDelta")}</span>
                                 <Input
                                     value={delta}
@@ -81,7 +81,7 @@ export function InventoryOperationsPanel({
                                     placeholder="+5 / -2"
                                 />
                             </label>
-                            <label className="grid gap-1.5 text-xs font-medium">
+                            <label className="grid gap-1.5 font-medium text-xs">
                                 <span>{t("adjustmentReason")}</span>
                                 <Input value={reason} onChange={(event) => setReason(event.target.value)} />
                             </label>

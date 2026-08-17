@@ -9,12 +9,12 @@ import ConfigurationEngineService, {
     type ConfigurationResolutionContext,
 } from "#services/configuration_engine_service";
 import {
+    type ConfigurationGroup,
+    type ConfigurationScope,
     configurationCapabilities,
     configurationDefinitions,
     isConfigurationGroup,
     isConfigurationScope,
-    type ConfigurationGroup,
-    type ConfigurationScope,
 } from "#services/configuration_registry";
 import ConfigurationRevisionService from "#services/configuration_revision_service";
 import { calculateTax, fetchRates } from "#services/tax_calculator";

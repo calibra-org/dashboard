@@ -46,7 +46,7 @@ export function ShippingMethodsView() {
                                 {Object.keys(method.settings_schema).map((key) => (
                                     <span
                                         key={key}
-                                        className="rounded-md border px-2 py-1 font-mono text-xs text-muted-foreground"
+                                        className="rounded-md border px-2 py-1 font-mono text-muted-foreground text-xs"
                                     >
                                         {key}
                                     </span>

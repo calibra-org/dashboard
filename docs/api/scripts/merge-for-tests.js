@@ -113,7 +113,7 @@ function downgradeTo30(node, root) {
 
     // OpenAPI 3.1 supports const; OpenAPI 3.0 expresses the same constraint
     // with a single-value enum. This conversion is test-fixture only.
-    if (Object.prototype.hasOwnProperty.call(node, "const")) {
+    if (Object.hasOwn(node, "const")) {
         node.enum = [node.const];
         delete node.const;
     }

@@ -197,7 +197,7 @@ function MetricCard({ label, value, help, suffix }: { label: string; value: Reac
     return (
         <Card title={<InfoTitle title={label} help={help} />} className="min-h-28 border-border/80 bg-card/95 shadow-sm">
             <div className="flex items-end gap-1.5">
-                <strong className="font-semibold text-2xl tracking-tight tabular-nums">{value ?? "—"}</strong>
+                <strong className="font-semibold text-2xl tabular-nums tracking-tight">{value ?? "—"}</strong>
                 {suffix ? <span className="pb-0.5 text-muted-foreground text-xs">{suffix}</span> : null}
             </div>
         </Card>

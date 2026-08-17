@@ -2,8 +2,8 @@ import type { HttpContext } from "@adonisjs/core/http";
 import { DateTime } from "luxon";
 
 import User from "#models/user";
-import { recordAuthEvent } from "#services/metrics/domain_metrics";
 import { registerIdentitySession } from "#services/identity/sessions";
+import { recordAuthEvent } from "#services/metrics/domain_metrics";
 import CustomerTransformer from "#transformers/customer_transformer";
 import UserTransformer from "#transformers/user_transformer";
 import { loginValidator } from "#validators/auth/login_validator";

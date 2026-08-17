@@ -3,7 +3,7 @@ import type { HttpContext } from "@adonisjs/core/http";
 import hash from "@adonisjs/core/services/hash";
 import { DateTime } from "luxon";
 
-import User from "#models/user";
+import type User from "#models/user";
 import { consumeRecoveryCode, verifyTotpForUser } from "#services/identity/credentials";
 import { recordIdentitySecurityEvent } from "#services/identity/security";
 import { currentTenantId, currentTrx } from "#services/tenant_context";

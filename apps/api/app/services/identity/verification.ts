@@ -2,10 +2,9 @@ import { randomInt, randomUUID } from "node:crypto";
 import type { HttpContext } from "@adonisjs/core/http";
 import hash from "@adonisjs/core/services/hash";
 import { DateTime } from "luxon";
-import SettingsService from "#services/settings_service";
-import { currentTenantId, currentTrx } from "#services/tenant_context";
-import { estimateIdentityProviderCost, sendIdentityMessage } from "#services/identity/providers";
+
 import { resolveIdentityPolicy } from "#services/identity/policy";
+import { estimateIdentityProviderCost, sendIdentityMessage } from "#services/identity/providers";
 import {
     identityHash,
     maskIdentifier,
@@ -15,6 +14,8 @@ import {
     recordIdentitySecurityEvent,
     requestDeviceHash,
 } from "#services/identity/security";
+import SettingsService from "#services/settings_service";
+import { currentTenantId, currentTrx } from "#services/tenant_context";
 
 export type VerificationChannel = "sms" | "email";
 export type VerificationPurpose = "login" | "verify" | "recovery" | "change_phone" | "change_email" | "step_up" | "diagnostic";

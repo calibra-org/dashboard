@@ -53,7 +53,7 @@ function ZoneEditor({ zone }: { zone: ShippingZone }) {
     return (
         <div className="grid gap-4 rounded-xl border bg-card p-4">
             <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-end">
-                <label className="grid gap-1.5 text-xs font-medium">
+                <label className="grid gap-1.5 font-medium text-xs">
                     <span>{shipping("zoneName")}</span>
                     <Input value={name} onChange={(event) => setName(event.target.value)} />
                 </label>
@@ -153,7 +153,7 @@ function ZoneEditor({ zone }: { zone: ShippingZone }) {
                 {zone.methods.length === 0 ? <p className="text-muted-foreground text-xs">{shipping("noMethods")}</p> : null}
                 {availableDefinitions.length > 0 ? (
                     <div className="flex flex-wrap items-end gap-2 rounded-lg border border-dashed p-3">
-                        <label className="grid min-w-56 flex-1 gap-1 text-xs font-medium">
+                        <label className="grid min-w-56 flex-1 gap-1 font-medium text-xs">
                             <span>{shipping("addMethod")}</span>
                             <select
                                 className="h-9 rounded-md border border-input bg-background px-2 text-sm"
@@ -269,7 +269,7 @@ export function ShippingZonesView() {
                 ]}
             />
             <div className="flex flex-wrap items-end gap-2 rounded-xl border bg-card p-4">
-                <label className="grid min-w-64 flex-1 gap-1.5 text-xs font-medium">
+                <label className="grid min-w-64 flex-1 gap-1.5 font-medium text-xs">
                     <span>{shipping("newZone")}</span>
                     <Input
                         value={newName}

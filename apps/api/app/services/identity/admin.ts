@@ -1,8 +1,8 @@
 import { DateTime } from "luxon";
 
-import SettingsService from "#services/settings_service";
 import { identityFeatureEnabled } from "#services/identity/features";
 import { listIdentityProviders } from "#services/identity/providers";
+import SettingsService from "#services/settings_service";
 import { currentTenantId, currentTrx } from "#services/tenant_context";
 
 const SMS_DEFAULTS = {

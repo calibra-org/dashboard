@@ -95,7 +95,7 @@ function ShipmentPanel({ orderId, shipment }: { orderId: number; shipment: Order
             </div>
             {nextStatuses.length > 0 ? (
                 <div className="grid gap-2 lg:grid-cols-[170px_1fr_1fr_auto] lg:items-end">
-                    <label className="grid gap-1 text-xs font-medium">
+                    <label className="grid gap-1 font-medium text-xs">
                         <span>{t("statusLabel")}</span>
                         <select
                             className="h-9 rounded-md border border-input bg-background px-2 text-sm"
@@ -109,11 +109,11 @@ function ShipmentPanel({ orderId, shipment }: { orderId: number; shipment: Order
                             ))}
                         </select>
                     </label>
-                    <label className="grid gap-1 text-xs font-medium">
+                    <label className="grid gap-1 font-medium text-xs">
                         <span>{t("eventLocation")}</span>
                         <Input value={location} onChange={(event) => setLocation(event.target.value)} />
                     </label>
-                    <label className="grid gap-1 text-xs font-medium">
+                    <label className="grid gap-1 font-medium text-xs">
                         <span>{t("eventMessage")}</span>
                         <Input value={message} onChange={(event) => setMessage(event.target.value)} />
                     </label>
@@ -458,7 +458,7 @@ function ReturnPanel({ orderId, item, lines }: { orderId: number; item: OrderRet
                                     </label>
                                 </>
                             ) : (
-                                <div className="md:col-span-2 text-end text-muted-foreground text-xs">
+                                <div className="text-end text-muted-foreground text-xs md:col-span-2">
                                     {t("damaged")}: {line.damaged_quantity} · {t("restock")}: {line.restock_quantity}
                                 </div>
                             )}
@@ -625,7 +625,7 @@ export function FulfillmentOperationsCard({ orderId }: { orderId: number }) {
             </div>
             {operations.data.order_status === "processing" ? (
                 <div className="grid gap-2 rounded-xl border border-dashed p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-                    <label className="grid gap-1 text-xs font-medium">
+                    <label className="grid gap-1 font-medium text-xs">
                         <span>{t("createFulfillment")}</span>
                         <Input
                             value={note}

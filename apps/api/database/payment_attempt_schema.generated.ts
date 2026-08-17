@@ -6,7 +6,7 @@
  * be synchronized without rewriting unrelated generated classes.
  */
 import { BaseModel, column } from "@adonisjs/lucid/orm";
-import { DateTime } from "luxon";
+import type { DateTime } from "luxon";
 
 export class PaymentAttemptSchema extends BaseModel {
     static $columns = [
