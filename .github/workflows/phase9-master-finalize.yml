@@ -15,7 +15,7 @@ jobs:
   finalize:
     if: github.event.pull_request.head.ref == 'agent/phase9-personalization-deals-20260816' && github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
-    timeout-minutes: 18
+    timeout-minutes: 12
     services:
       postgres:
         image: postgres:16
@@ -96,9 +96,8 @@ jobs:
       - name: Fresh database migration
         working-directory: apps/api
         run: node ace migration:fresh --force
-      - name: Phase 9 functional tests
-        working-directory: apps/api
-        run: node ace test functional --files='tests/functional/admin/phase9_personalization.spec.ts'
+      - name: Verify Phase 9 release invariants
+        run: node scripts/verify-phase9.mjs
       - name: Commit generated and hardening changes
         run: |
           git config user.name "github-actions[bot]"
