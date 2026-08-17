@@ -41,7 +41,10 @@ jobs:
               shell: bash
               run: |
                   set -euo pipefail
-                  rm -rf .calibra-phase13 .github/workflows/phase13-apply-payload.yml
+                  rm -rf .calibra-phase13 \
+                    .github/workflows/phase13-apply-payload.yml \
+                    .github/workflows/phase13-planning-check.yml \
+                    .github/workflows/phase13-sdk-codegen.yml
                   git config user.name "github-actions[bot]"
                   git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
                   git add -A
