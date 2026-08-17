@@ -1,0 +1,105 @@
+
+> @calibra/admin@0.0.0 build /home/runner/work/dashboard/dashboard/apps/admin
+> next build
+
+⚠ No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/docs/messages/no-cache
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+▲ Next.js 16.2.3 (Turbopack)
+
+  Creating an optimized production build ...
+
+> Build error occurred
+Error: Turbopack build failed with 4 errors:
+./apps/admin/src/app/api/impersonate/route.ts:2:1
+Module not found: Can't resolve '@calibra/sdk'
+  [90m1 |[0m [36mimport[0m { randomUUID } [36mfrom[0m [32m"node:crypto"[0m;
+[31m[1m>[0m [90m2 |[0m [36mimport[0m { [33mBackendError[0m, createApiClient } [36mfrom[0m [32m"@calibra/sdk"[0m;
+  [90m  |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m3 |[0m [36mimport[0m { [36mtype[0m [33mNextRequest[0m, [33mNextResponse[0m } [36mfrom[0m [32m"next/server"[0m;
+  [90m4 |[0m
+  [90m5 |[0m [36mimport[0m { [33mCSRF_COOKIE[0m, [33mSESSION_COOKIE[0m } [36mfrom[0m [32m"#/lib/auth"[0m;
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./apps/admin/src/lib/api.ts:3:1
+Module not found: Can't resolve '@calibra/sdk'
+  [90m1 |[0m [36mimport[0m [32m"server-only"[0m;
+  [90m2 |[0m
+[31m[1m>[0m [90m3 |[0m [36mimport[0m { createApiClient } [36mfrom[0m [32m"@calibra/sdk"[0m;
+  [90m  |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m4 |[0m [36mimport[0m { getLocale } [36mfrom[0m [32m"next-intl/server"[0m;
+  [90m5 |[0m
+  [90m6 |[0m [36mimport[0m { getSession } [36mfrom[0m [32m"./auth"[0m;
+
+
+
+Import trace:
+  Server Component:
+    ./apps/admin/src/lib/api.ts
+    ./apps/admin/src/lib/datetime/server.ts
+    ./apps/admin/src/app/[locale]/(authenticated)/layout.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./apps/admin/src/lib/auth-actions.ts:4:1
+Module not found: Can't resolve '@calibra/sdk'
+  [90m2 |[0m
+  [90m3 |[0m [36mimport[0m { randomUUID } [36mfrom[0m [32m"node:crypto"[0m;
+[31m[1m>[0m [90m4 |[0m [36mimport[0m { [33mBackendError[0m, createApiClient } [36mfrom[0m [32m"@calibra/sdk"[0m;
+  [90m  |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m5 |[0m [36mimport[0m { cookies } [36mfrom[0m [32m"next/headers"[0m;
+  [90m6 |[0m
+  [90m7 |[0m [36mimport[0m { getPathname } [36mfrom[0m [32m"#/lib/i18n/navigation"[0m;
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./apps/admin/src/lib/auth.ts:3:1
+Module not found: Can't resolve '@calibra/sdk'
+  [90m1 |[0m [36mimport[0m [32m"server-only"[0m;
+  [90m2 |[0m
+[31m[1m>[0m [90m3 |[0m [36mimport[0m { [33mBackendError[0m, createApiClient } [36mfrom[0m [32m"@calibra/sdk"[0m;
+  [90m  |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m4 |[0m [36mimport[0m { cookies } [36mfrom[0m [32m"next/headers"[0m;
+  [90m5 |[0m
+  [90m6 |[0m [36mimport[0m { redirect } [36mfrom[0m [32m"#/lib/i18n/navigation"[0m;
+
+
+
+Import traces:
+  #1 [App Route]:
+    ./apps/admin/src/lib/auth.ts
+    ./apps/admin/src/app/api/transmit/[...path]/route.ts
+
+  #2 [Server Component]:
+    ./apps/admin/src/lib/auth.ts
+    ./apps/admin/src/app/[locale]/(authenticated)/layout.tsx
+
+  #3 [Server Component]:
+    ./apps/admin/src/lib/auth.ts
+    ./apps/admin/src/lib/auth-actions.ts
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+    at <unknown> (./apps/admin/src/app/api/impersonate/route.ts:2:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at <unknown> (./apps/admin/src/lib/api.ts:3:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at <unknown> (./apps/admin/src/lib/auth-actions.ts:4:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at <unknown> (./apps/admin/src/lib/auth.ts:3:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+/home/runner/work/dashboard/dashboard/apps/admin:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @calibra/admin@0.0.0 build: `next build`
+Exit status 1
