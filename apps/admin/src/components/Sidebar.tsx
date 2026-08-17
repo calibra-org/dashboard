@@ -310,7 +310,51 @@ export function Sidebar({ userId }: { userId: number }) {
                 <span className="font-semibold text-sm tracking-tight">{siteT("name")}</span>
             </div>
             <nav className="flex flex-1 flex-col gap-5 overflow-y-auto px-3 py-4 text-sm">
-                {groups.map((group) => (
+                {groups.slice(0, 3).map((group) => (
+                    <div key={group.titleKey} className="flex flex-col gap-1">
+                        <div className="px-3 pb-1 font-medium text-[0.65rem] text-sidebar-foreground/50 uppercase tracking-wider">
+                            {navT(group.titleKey)}
+                        </div>
+                        {group.items.map((item) => itemLink(item))}
+                    </div>
+                ))}
+                {collapsible(
+                    "factor-sidebar-items",
+                    factorActive,
+                    factorOpen,
+                    setFactorOpen,
+                    ReceiptText,
+                    navT("factor"),
+                    factorItems,
+                )}
+                {collapsible(
+                    "content-sidebar-items",
+                    contentActive,
+                    contentOpen,
+                    setContentOpen,
+                    PenLine,
+                    navT("content"),
+                    contentItems,
+                )}
+                {collapsible("seo-sidebar-items", seoActive, seoOpen, setSeoOpen, Search, navT("seo"), seoItems, {
+                    0: navT("seoSectionControl"),
+                    2: navT("seoSectionCatalog"),
+                    6: navT("seoSectionContent"),
+                    10: navT("seoSectionMonitoring"),
+                    14: navT("seoSectionSystem"),
+                })}
+                {collapsible(
+                    "ticket-sidebar-items",
+                    ticketActive,
+                    ticketOpen,
+                    setTicketOpen,
+                    MessageSquare,
+                    navT("tickets"),
+                    ticketItems,
+                    undefined,
+                    ticketUnread,
+                )}
+                {groups.slice(3).map((group) => (
                     <div key={group.titleKey} className="flex flex-col gap-1">
                         <div className="px-3 pb-1 font-medium text-[0.65rem] text-sidebar-foreground/50 uppercase tracking-wider">
                             {navT(group.titleKey)}
@@ -327,46 +371,6 @@ export function Sidebar({ userId }: { userId: number }) {
                                     "هویت و امنیت",
                                     identityItems,
                                     { 12: "تنظیمات" },
-                                )}
-                            </div>
-                        ) : null}
-                        {group.titleKey === "sales" ? (
-                            <div className="mt-1">
-                                {collapsible(
-                                    "factor-sidebar-items",
-                                    factorActive,
-                                    factorOpen,
-                                    setFactorOpen,
-                                    ReceiptText,
-                                    navT("factor"),
-                                    factorItems,
-                                )}
-                                {collapsible(
-                                    "content-sidebar-items",
-                                    contentActive,
-                                    contentOpen,
-                                    setContentOpen,
-                                    PenLine,
-                                    navT("content"),
-                                    contentItems,
-                                )}
-                                {collapsible("seo-sidebar-items", seoActive, seoOpen, setSeoOpen, Search, navT("seo"), seoItems, {
-                                    0: navT("seoSectionControl"),
-                                    2: navT("seoSectionCatalog"),
-                                    6: navT("seoSectionContent"),
-                                    10: navT("seoSectionMonitoring"),
-                                    14: navT("seoSectionSystem"),
-                                })}
-                                {collapsible(
-                                    "ticket-sidebar-items",
-                                    ticketActive,
-                                    ticketOpen,
-                                    setTicketOpen,
-                                    MessageSquare,
-                                    navT("tickets"),
-                                    ticketItems,
-                                    undefined,
-                                    ticketUnread,
                                 )}
                             </div>
                         ) : null}
