@@ -31,16 +31,18 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Capture admin typecheck and build diagnostics
+      - name: Build SDK first, then verify admin
         shell: bash
         run: |
           set +e
           mkdir -p diagnostics
+          pnpm --filter @calibra/sdk run build > diagnostics/phase7-sdk-build.log 2>&1
+          SDK_EXIT=$?
           pnpm --filter @calibra/admin run typecheck > diagnostics/phase7-admin-typecheck.log 2>&1
           TYPECHECK_EXIT=$?
           pnpm --filter @calibra/admin run build > diagnostics/phase7-admin-build.log 2>&1
           BUILD_EXIT=$?
-          printf 'typecheck_exit=%s\nbuild_exit=%s\n' "$TYPECHECK_EXIT" "$BUILD_EXIT" > diagnostics/phase7-admin-status.txt
+          printf 'sdk_build_exit=%s\ntypecheck_exit=%s\nbuild_exit=%s\n' "$SDK_EXIT" "$TYPECHECK_EXIT" "$BUILD_EXIT" > diagnostics/phase7-admin-status.txt
           set -e
       - name: Commit diagnostic evidence
         shell: bash
@@ -48,6 +50,6 @@ jobs:
           set -euo pipefail
           git config user.name "calibra-phase7-bot"
           git config user.email "calibra-phase7-bot@users.noreply.github.com"
-          git add diagnostics/phase7-admin-typecheck.log diagnostics/phase7-admin-build.log diagnostics/phase7-admin-status.txt
-          git commit -m "test: capture Phase 7 admin diagnostics"
+          git add diagnostics/phase7-sdk-build.log diagnostics/phase7-admin-typecheck.log diagnostics/phase7-admin-build.log diagnostics/phase7-admin-status.txt
+          git commit -m "test: verify SDK-first Phase 7 build order"
           git push origin HEAD:agent/phase7-identity-trust-os
