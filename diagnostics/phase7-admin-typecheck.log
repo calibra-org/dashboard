@@ -2,63 +2,13 @@
 > @calibra/admin@0.0.0 typecheck /home/runner/work/dashboard/dashboard/apps/admin
 > tsc --noEmit
 
-src/app/api/impersonate/route.ts(2,47): error TS2307: Cannot find module '@calibra/sdk' or its corresponding type declarations.
-src/lib/adapters/coupons.ts(1,35): error TS2307: Cannot find module '@calibra/sdk' or its corresponding type declarations.
-src/lib/adapters/coupons.ts(29,86): error TS7006: Parameter 'acc' implicitly has an 'any' type.
-src/lib/adapters/coupons.ts(29,91): error TS7006: Parameter 't' implicitly has an 'any' type.
-src/lib/adapters/customers.ts(1,35): error TS2307: Cannot find module '@calibra/sdk' or its corresponding type declarations.
-src/lib/adapters/orders.ts(1,35): error TS2307: Cannot find module '@calibra/sdk' or its corresponding type declarations.
-src/lib/adapters/orders.ts(168,71): error TS7006: Parameter 'li' implicitly has an 'any' type.
-src/lib/adapters/orders.ts(180,83): error TS7006: Parameter 's' implicitly has an 'any' type.
-src/lib/adapters/orders.ts(185,68): error TS7006: Parameter 't' implicitly has an 'any' type.
-src/lib/adapters/orders.ts(191,83): error TS7006: Parameter 'h' implicitly has an 'any' type.
-src/lib/adapters/product-detail.ts(1,35): error TS2307: Cannot find module '@calibra/sdk' or its corresponding type declarations.
-src/lib/adapters/product-detail.ts(168,89): error TS7006: Parameter 'img' implicitly has an 'any' type.
-src/lib/adapters/product-detail.ts(189,113): error TS7006: Parameter 't' implicitly has an 'any' type.
-src/lib/adapters/products.ts(1,35): error TS2307: Cannot find module '@calibra/sdk' or its corresponding type declarations.
-src/lib/adapters/reviews.ts(1,35): error TS2307: Cannot find module '@calibra/sdk' or its corresponding type declarations.
-src/lib/api.ts(3,33): error TS2307: Cannot find module '@calibra/sdk' or its corresponding type declarations.
-src/lib/auth-actions.ts(4,47): error TS2307: Cannot find module '@calibra/sdk' or its corresponding type declarations.
-src/lib/auth-actions.ts(71,45): error TS18046: 'err' is of type 'unknown'.
-src/lib/auth-actions.ts(71,67): error TS18046: 'err' is of type 'unknown'.
-src/lib/auth.ts(3,47): error TS2307: Cannot find module '@calibra/sdk' or its corresponding type declarations.
-src/lib/auth.ts(107,45): error TS18046: 'err' is of type 'unknown'.
-src/lib/auth.ts(107,67): error TS18046: 'err' is of type 'unknown'.
-src/lib/currency/config.ts(1,40): error TS2307: Cannot find module '@calibra/sdk' or its corresponding type declarations.
-src/lib/currency/provider.tsx(15,51): error TS7006: Parameter 'c' implicitly has an 'any' type.
-src/lib/products/queries.ts(3,35): error TS2307: Cannot find module '@calibra/sdk' or its corresponding type declarations.
-src/lib/queries/analytics.ts(3,35): error TS2307: Cannot find module '@calibra/sdk' or its corresponding type declarations.
-src/lib/queries/attributes.ts(3,35): error TS2307: Cannot find module '@calibra/sdk' or its corresponding type declarations.
-src/lib/queries/branding.ts(3,35): error TS2307: Cannot find module '@calibra/sdk' or its corresponding type declarations.
-src/lib/queries/configuration.ts(3,35): error TS2307: Cannot find module '@calibra/sdk' or its corresponding type declarations.
-src/lib/queries/coupons.ts(3,35): error TS2307: Cannot find module '@calibra/sdk' or its corresponding type declarations.
-src/lib/queries/dashboard.ts(3,35): error TS2307: Cannot find module '@calibra/sdk' or its corresponding type declarations.
-src/lib/queries/datetime-settings.ts(3,35): error TS2307: Cannot find module '@calibra/sdk' or its corresponding type declarations.
-src/lib/queries/general-settings.ts(3,35): error TS2307: Cannot find module '@calibra/sdk' or its corresponding type declarations.
-src/lib/queries/media-settings.ts(3,35): error TS2307: Cannot find module '@calibra/sdk' or its corresponding type declarations.
-src/lib/queries/orders.ts(3,35): error TS2307: Cannot find module '@calibra/sdk' or its corresponding type declarations.
-src/lib/queries/payments.ts(3,35): error TS2307: Cannot find module '@calibra/sdk' or its corresponding type declarations.
-src/lib/queries/products.ts(3,35): error TS2307: Cannot find module '@calibra/sdk' or its corresponding type declarations.
-src/lib/reviews/queries.ts(3,35): error TS2307: Cannot find module '@calibra/sdk' or its corresponding type declarations.
-src/views/analytics/lib/series.ts(12,33): error TS7006: Parameter 'point' implicitly has an 'any' type.
-src/views/analytics/lib/series.ts(12,40): error TS7006: Parameter 'index' implicitly has an 'any' type.
-src/views/analytics/lib/series.ts(23,33): error TS7006: Parameter 'point' implicitly has an 'any' type.
-src/views/analytics/lib/series.ts(23,40): error TS7006: Parameter 'index' implicitly has an 'any' type.
-src/views/products/_taxonomy-shared/taxonomy-detail-sheet.tsx(3,35): error TS2307: Cannot find module '@calibra/sdk' or its corresponding type declarations.
-src/views/products/_taxonomy-shared/taxonomy-detail-sheet.tsx(37,30): error TS7006: Parameter 'row' implicitly has an 'any' type.
-src/views/products/_taxonomy-shared/use-taxonomy-term.ts(3,35): error TS2307: Cannot find module '@calibra/sdk' or its corresponding type declarations.
-src/views/products/attributes/queries.ts(3,35): error TS2307: Cannot find module '@calibra/sdk' or its corresponding type declarations.
-src/views/products/attributes/terms/queries.ts(3,35): error TS2307: Cannot find module '@calibra/sdk' or its corresponding type declarations.
-src/views/products/brands/queries.ts(3,35): error TS2307: Cannot find module '@calibra/sdk' or its corresponding type declarations.
-src/views/products/categories/queries.ts(3,35): error TS2307: Cannot find module '@calibra/sdk' or its corresponding type declarations.
-src/views/products/tags/queries.ts(3,35): error TS2307: Cannot find module '@calibra/sdk' or its corresponding type declarations.
-src/views/settings/general/general-settings.tsx(89,73): error TS7006: Parameter 'c' implicitly has an 'any' type.
-src/views/settings/general/general-settings.tsx(93,57): error TS7006: Parameter 'c' implicitly has an 'any' type.
-src/views/settings/general/general-settings.tsx(118,72): error TS7006: Parameter 'p' implicitly has an 'any' type.
-src/views/settings/general/general-settings.tsx(124,57): error TS7006: Parameter 'p' implicitly has an 'any' type.
-src/views/settings/general/general-settings.tsx(231,80): error TS7006: Parameter 'x' implicitly has an 'any' type.
-src/views/settings/general/general-settings.tsx(237,62): error TS7006: Parameter 'c' implicitly has an 'any' type.
-src/views/settings/general/schema.ts(84,34): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/lib/queries/configuration.ts(9,63): error TS2339: Property 'ConfigurationCapability' does not exist on type '{ Money: number; PaginationMeta: { page: number; limit: number; total: number; lastPage: number; }; BasicMessage: { message?: string | null | undefined; code?: string | undefined; errors?: { [key: string]: unknown; } | undefined; }; ... 161 more ...; IdentityListEnvelope: { ...; }; } & { ...; } & { ...; } & { ...; }'.
+src/lib/queries/configuration.ts(10,61): error TS2339: Property 'ConfigurationRevision' does not exist on type '{ Money: number; PaginationMeta: { page: number; limit: number; total: number; lastPage: number; }; BasicMessage: { message?: string | null | undefined; code?: string | undefined; errors?: { [key: string]: unknown; } | undefined; }; ... 161 more ...; IdentityListEnvelope: { ...; }; } & { ...; } & { ...; } & { ...; }'.
+src/lib/queries/configuration.ts(11,58): error TS2339: Property 'ConfigurationScope' does not exist on type '{ Money: number; PaginationMeta: { page: number; limit: number; total: number; lastPage: number; }; BasicMessage: { message?: string | null | undefined; code?: string | undefined; errors?: { [key: string]: unknown; } | undefined; }; ... 161 more ...; IdentityListEnvelope: { ...; }; } & { ...; } & { ...; } & { ...; }'.
+src/lib/queries/configuration.ts(12,58): error TS2339: Property 'ConfigurationGroup' does not exist on type '{ Money: number; PaginationMeta: { page: number; limit: number; total: number; lastPage: number; }; BasicMessage: { message?: string | null | undefined; code?: string | undefined; errors?: { [key: string]: unknown; } | undefined; }; ... 161 more ...; IdentityListEnvelope: { ...; }; } & { ...; } & { ...; } & { ...; }'.
+src/lib/queries/configuration.ts(13,64): error TS2339: Property 'ConfigurationGroupDetail' does not exist on type '{ Money: number; PaginationMeta: { page: number; limit: number; total: number; lastPage: number; }; BasicMessage: { message?: string | null | undefined; code?: string | undefined; errors?: { [key: string]: unknown; } | undefined; }; ... 161 more ...; IdentityListEnvelope: { ...; }; } & { ...; } & { ...; } & { ...; }'.
+src/lib/queries/configuration.ts(14,64): error TS2339: Property 'ConfigurationChangeInput' does not exist on type '{ Money: number; PaginationMeta: { page: number; limit: number; total: number; lastPage: number; }; BasicMessage: { message?: string | null | undefined; code?: string | undefined; errors?: { [key: string]: unknown; } | undefined; }; ... 161 more ...; IdentityListEnvelope: { ...; }; } & { ...; } & { ...; } & { ...; }'.
+src/lib/queries/configuration.ts(15,60): error TS2339: Property 'ConfigurationPreview' does not exist on type '{ Money: number; PaginationMeta: { page: number; limit: number; total: number; lastPage: number; }; BasicMessage: { message?: string | null | undefined; code?: string | undefined; errors?: { [key: string]: unknown; } | undefined; }; ... 161 more ...; IdentityListEnvelope: { ...; }; } & { ...; } & { ...; } & { ...; }'.
 src/views/store-config/settings/configuration-group-view.tsx(43,46): error TS7006: Parameter 'item' implicitly has an 'any' type.
 /home/runner/work/dashboard/dashboard/apps/admin:
  ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @calibra/admin@0.0.0 typecheck: `tsc --noEmit`
