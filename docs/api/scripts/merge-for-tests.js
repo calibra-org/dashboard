@@ -86,6 +86,8 @@ console.log(`✓ Wrote ${outPath} (${Object.keys(merged.paths).length} paths)`);
  *
  * Conversions:
  *   - `type: ["X", "null"]` (3.1 nullable shorthand) becomes `type: "X", nullable: true`.
+ *   - Multi-type unions such as `type: ["string", "integer", "null"]` become an OAS 3.0
+ *     `oneOf` over the non-null primitive types, with `nullable: true` when null is present.
  *   - `anyOf` / `oneOf` containing a `{ type: "null" }` branch sheds the null branch and
  *     marks the parent `nullable: true`; if the combinator collapses to a single member, it
  *     is hoisted into the parent so the validator sees a Schema rather than an empty `anyOf`.
@@ -125,6 +127,13 @@ function downgradeTo30(node, root) {
         if (nonNull.length === 1) {
             node.type = nonNull[0];
             if (hasNull) node.nullable = true;
+        } else if (nonNull.length > 1) {
+            delete node.type;
+            node.oneOf = nonNull.map((type) => ({ type }));
+            if (hasNull) node.nullable = true;
+        } else if (hasNull) {
+            delete node.type;
+            node.nullable = true;
         }
     }
 

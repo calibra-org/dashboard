@@ -73,6 +73,7 @@ await import("./routes/admin_ticket_operations.js");
 await import("./routes/admin_ticket_campaign_review.js");
 await import("./routes/admin_ticket_omnichannel.js");
 await import("./routes/admin_identity.js");
+await import("./routes/admin_governance.js");
 await import("./routes/admin_reports.js");
 await import("./routes/admin_insights.js");
 await import("./routes/admin_decision_intelligence.js");
