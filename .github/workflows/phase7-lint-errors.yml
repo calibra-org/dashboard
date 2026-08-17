@@ -1,16 +1,15 @@
 name: Phase 7 Lint Errors
 
 on:
-  push:
+  pull_request:
     branches:
-      - agent/phase7-identity-trust-os
+      - main
 
 permissions:
   contents: write
 
 jobs:
   diagnose:
-    if: contains(github.event.head_commit.message, '[phase7-lint-errors]')
     runs-on: ubuntu-24.04
     env:
       NODE_VERSION: "24.14.0"
