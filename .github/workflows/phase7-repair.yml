@@ -1,0 +1,154 @@
+name: Phase 7 repair and certify
+
+on:
+    push:
+        branches: [agent/phase7-identity-trust-os]
+        paths: [.github/workflows/phase7-repair.yml]
+
+permissions:
+    contents: write
+
+env:
+    NODE_VERSION: "24.14.0"
+    PNPM_VERSION: "10.32.1"
+    TURBO_TELEMETRY_DISABLED: 1
+    DO_NOT_TRACK: 1
+
+jobs:
+    repair-certify:
+        runs-on: ubuntu-24.04
+        timeout-minutes: 45
+        services:
+            postgres:
+                image: postgres:17-alpine
+                env:
+                    POSTGRES_USER: calibra
+                    POSTGRES_PASSWORD: calibra
+                    POSTGRES_DB: calibra
+                ports:
+                    - 5432:5432
+                options: >-
+                    --health-cmd "pg_isready -U calibra -d calibra"
+                    --health-interval 5s
+                    --health-timeout 5s
+                    --health-retries 10
+            redis:
+                image: redis:7-alpine
+                ports:
+                    - 6379:6379
+                options: >-
+                    --health-cmd "redis-cli ping"
+                    --health-interval 5s
+                    --health-timeout 3s
+                    --health-retries 10
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+                  ref: agent/phase7-identity-trust-os
+            - uses: pnpm/action-setup@v4
+              with:
+                  version: ${{ env.PNPM_VERSION }}
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: pnpm
+            - run: pnpm install --frozen-lockfile
+
+            - name: Apply Phase 7 semantic repairs
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  node --input-type=module <<'NODE'
+                  import fs from 'node:fs'
+
+                  function replaceRequired(path, from, to) {
+                    const source = fs.readFileSync(path, 'utf8')
+                    if (!source.includes(from)) throw new Error(`Missing expected source in ${path}: ${from}`)
+                    fs.writeFileSync(path, source.replace(from, to))
+                  }
+
+                  const adminSpecPath = 'docs/api/reference/openapi/admin.identity.v1.yaml'
+                  const adminSpec = fs.readFileSync(adminSpecPath, 'utf8')
+                  const repairedSpec = adminSpec
+                    .split('\n')
+                    .map((line) => {
+                      if (!line.includes('get: { <<: *identityGet')) return line
+                      const opens = [...line].filter((char) => char === '{').length
+                      const closes = [...line].filter((char) => char === '}').length
+                      return opens > closes ? `${line}${'}'.repeat(opens - closes)}` : line
+                    })
+                    .join('\n')
+                  fs.writeFileSync(adminSpecPath, repairedSpec)
+
+                  replaceRequired(
+                    'apps/api/app/services/identity/admin.ts',
+                    'else await service.set("identity_sms", key, Math.max(0, Math.round(Number(input[key]))), "integer");',
+                    'else await service.set("identity_sms", key, Math.max(0, Math.round(Number(input[key]))), "number");',
+                  )
+
+                  const fixes = [
+                    ['apps/api/app/services/identity/credentials.ts', 'if (updated === 1) {', 'if (Number(Array.isArray(updated) ? updated.length : updated) === 1) {'],
+                    ['apps/api/app/services/identity/credentials.ts', 'if (updated !== 1)', 'if (Number(Array.isArray(updated) ? updated.length : updated) !== 1)'],
+                    ['apps/api/app/services/identity/verification.ts', 'if (consumed !== 1) return { ok: false as const, reason: "consumed" };', 'if (Number(Array.isArray(consumed) ? consumed.length : consumed) !== 1) return { ok: false as const, reason: "consumed" };'],
+                    ['apps/api/app/services/identity/verification.ts', 'return updated === 1;', 'return Number(Array.isArray(updated) ? updated.length : updated) === 1;'],
+                    ['apps/api/app/services/identity/webauthn.ts', 'if (consumed !== 1)', 'if (Number(Array.isArray(consumed) ? consumed.length : consumed) !== 1)'],
+                  ]
+                  for (const [path, from, to] of fixes) replaceRequired(path, from, to)
+                  NODE
+
+                  pnpm exec biome format --write --files-ignore-unknown=true \
+                    apps/api/app/services/identity/admin.ts \
+                    apps/api/app/services/identity/credentials.ts \
+                    apps/api/app/services/identity/verification.ts \
+                    apps/api/app/services/identity/webauthn.ts \
+                    docs/api/reference/openapi/admin.identity.v1.yaml \
+                    docs/api/reference/openapi/storefront.identity.v1.yaml
+                  git diff --check
+
+            - name: Build and validate Phase 7 OpenAPI contracts
+              run: |
+                  pnpm --filter @calibra/api-docs run build:json
+                  pnpm --filter @calibra/api-docs exec redocly lint reference/openapi/storefront.identity.v1.yaml --format stylish
+                  pnpm --filter @calibra/api-docs exec redocly lint reference/openapi/admin.identity.v1.yaml --format stylish
+
+            - name: Regenerate canonical SDK
+              run: |
+                  pnpm --filter @calibra/sdk run codegen
+                  git add packages/sdk/src/generated
+
+            - name: Verify Phase 7 release invariants
+              run: node scripts/verify-phase7-identity-integration.mjs
+
+            - name: Typecheck Phase 7 surfaces
+              run: |
+                  pnpm --filter @calibra/sdk run typecheck
+                  pnpm --filter @calibra/api run typecheck
+                  pnpm --filter @calibra/admin run typecheck
+
+            - name: Create focused test database
+              env:
+                  PGPASSWORD: calibra
+              run: psql -h localhost -U calibra -d calibra -c "CREATE DATABASE calibra_test OWNER calibra;"
+
+            - name: Run Phase 7 functional tests
+              working-directory: apps/api
+              run: pnpm test --files=tests/functional/identity/phase7_identity.spec.ts
+
+            - name: Build API and Admin
+              run: |
+                  pnpm --filter @calibra/api run build
+                  pnpm --filter @calibra/admin run build
+
+            - name: Publish certified repair set
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  rm -f .github/workflows/phase7-repair.yml
+                  git add -A
+                  git diff --cached --check
+                  node scripts/verify-phase7-identity-integration.mjs
+                  git config user.name "calibra-phase7-bot"
+                  git config user.email "calibra-phase7-bot@users.noreply.github.com"
+                  git commit -m "fix(identity): certify Phase 7 production contracts"
+                  git push origin HEAD:agent/phase7-identity-trust-os
