@@ -19,16 +19,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path('.github/workflows/phase7-finalize-v2.yml')
-          s = p.read_text()
-          old = '          pnpm run format\n          pnpm run lint\n'
-          new = '          pnpm run format:fix\n          pnpm run lint\n'
-          if old not in s:
-              raise SystemExit('final gate anchor not found')
-          p.write_text(s.replace(old, new, 1))
-          PY
+          grep -n 'pnpm run format' .github/workflows/phase7-finalize-v2.yml
+          sed -i 's/pnpm run format$/pnpm run format:fix/' .github/workflows/phase7-finalize-v2.yml
+          grep -n 'pnpm run format:fix' .github/workflows/phase7-finalize-v2.yml
           rm -f .github/workflows/phase7-finalizer-format-hotfix.yml
           git add -A
           git diff --cached --check
