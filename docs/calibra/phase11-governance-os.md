@@ -26,6 +26,8 @@ Sensitive governance mutations reuse Phase 7 recent identity step-up. Policy ver
 
 The governance ledger is tenant-scoped, append-only, and hash chained. Each entry records sequence, previous hash, entry hash, actor/action/resource context, correlation and causation identifiers, policy/approval evidence, before/after hashes, result metadata, and compensation context without duplicating secrets. Evidence is recursively redacted before persistence.
 
+Entry hashes are computed from the same canonical, normalized record representation that is persisted and later verified. This makes the integrity check independent of runtime or PostgreSQL scalar representation differences while keeping the hash bound to the exact stored governance evidence.
+
 Database triggers reject updates or deletes to immutable governance records. Tenant tables use forced PostgreSQL row-level security and fail closed when tenant context is absent.
 
 ## Shadow Mode and autonomy
