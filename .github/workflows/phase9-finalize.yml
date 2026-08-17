@@ -63,10 +63,12 @@ jobs:
                   echo "f38cffa6fbb1eab253e7879389ae423810adc2316bc4bd636d51e54e4cc6d956  /tmp/phase9.tgz" | sha256sum -c -
                   tar -xzf /tmp/phase9.tgz -C .
                   test -s .phase9-finalize/apply-phase9.mjs
+                  test -s .phase9-finalize/release-fixes.mjs
                   test -s apps/api/app/services/phase9_personalization_service.ts
                   test -s apps/admin/src/views/personalization/personalization-workspace.tsx
                   test -s apps/web/src/components/amazing-deals-section.tsx
                   node .phase9-finalize/apply-phase9.mjs
+                  node .phase9-finalize/release-fixes.mjs
 
             - name: Install workspace dependencies
               shell: bash
@@ -82,7 +84,7 @@ jobs:
                   {
                     git diff --name-only --diff-filter=ACM
                     git ls-files --others --exclude-standard
-                  } | sort -u | grep -vE '^\.phase9-(payload|finalize)/|^\.github/workflows/phase9-finalize\.yml$' | grep -E '\.(ts|tsx|js|mjs|json)$' > /tmp/phase9-format.txt || true
+                  } | sort -u | grep -vE '^\.phase9-(payload|finalize)/|^\.github/workflows/phase9-(finalize|resume)\.yml$|^phase9-.*diagnostic\.txt$|^phase9-source-snippets\.txt$' | grep -E '\.(ts|tsx|js|mjs|json)$' > /tmp/phase9-format.txt || true
                   if [ -s /tmp/phase9-format.txt ]; then
                     xargs -d '\n' pnpm exec biome format --write < /tmp/phase9-format.txt
                   fi
@@ -188,11 +190,13 @@ jobs:
               shell: bash
               run: |
                   set -euo pipefail
-                  rm -rf .phase9-payload .phase9-finalize .github/workflows/phase9-finalize.yml phase9-diagnostic.txt
+                  rm -rf .phase9-payload .phase9-finalize
+                  rm -f .github/workflows/phase9-finalize.yml .github/workflows/phase9-resume.yml
+                  rm -f phase9-diagnostic.txt phase9-functional-diagnostic.txt phase9-source-snippets.txt
                   git fetch origin main
                   git reset --soft origin/main
                   git add -A
-                  if git diff --cached --name-only | grep -Eq '^\.phase9-|^\.github/workflows/phase9-finalize\.yml$|^phase9-diagnostic\.txt$'; then
+                  if git diff --cached --name-only | grep -Eq '^\.phase9-|^\.github/workflows/phase9-(finalize|resume)\.yml$|^phase9-.*diagnostic\.txt$|^phase9-source-snippets\.txt$'; then
                     echo "temporary artifact leaked into final diff"
                     exit 1
                   fi
