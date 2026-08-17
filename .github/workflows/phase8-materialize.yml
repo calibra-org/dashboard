@@ -26,23 +26,20 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Verify payload shape
+      - name: Verify payload parts exist
         shell: bash
         run: |
           set -euo pipefail
-          for n in 00 01 02 03 04; do
-            test -f ".phase8/materialize-run3/part-${n}"
-            test "$(wc -c < ".phase8/materialize-run3/part-${n}")" -eq 18000
+          for n in 00 01 02 03 04 05; do
+            test -s ".phase8/materialize-run3/part-${n}"
           done
-          test -f .phase8/materialize-run3/part-05
-          test "$(wc -c < .phase8/materialize-run3/part-05)" -eq 15084
           test "$(find .phase8/materialize-run3 -maxdepth 1 -type f -name 'part-*' | wc -l)" -eq 6
 
       - name: Reconstruct and verify locked patch
         shell: bash
         run: |
           set -euo pipefail
-          cat .phase8/materialize-run3/part-* | base64 -d | gzip -d > /tmp/phase8-run3.patch
+          cat .phase8/materialize-run3/part-* | tr -d '\r\n' | base64 -d | gzip -d > /tmp/phase8-run3.patch
           echo '66cfc8a7b6504520b8e297be636b69e38448bda28a3749e2e1598b8e15cfa76b  /tmp/phase8-run3.patch' | sha256sum -c -
           test "$(wc -c < /tmp/phase8-run3.patch)" -eq 419023
 
