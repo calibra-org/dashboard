@@ -188,6 +188,35 @@ export interface PolicyDecision {
 
 type Row = Record<string, any>;
 
+function ledgerHashMaterial(row: Row) {
+    return {
+        tenantId: Number(row.tenant_id),
+        sequence: Number(row.sequence),
+        eventId: String(row.event_id),
+        actorType: String(row.actor_type),
+        actorUserId: row.actor_user_id == null ? null : Number(row.actor_user_id),
+        actorAgentId: row.actor_agent_id == null ? null : Number(row.actor_agent_id),
+        actionKey: String(row.action_key),
+        resourceType: row.resource_type == null ? null : String(row.resource_type),
+        resourceId: row.resource_id == null ? null : String(row.resource_id),
+        requestId: row.request_id == null ? null : String(row.request_id),
+        correlationId: row.correlation_id == null ? null : String(row.correlation_id),
+        causationId: row.causation_id == null ? null : String(row.causation_id),
+        reason: String(row.reason),
+        evidenceRefs: safeGovernanceEvidence(row.evidence_refs ?? []),
+        policyDecision: safeGovernanceEvidence(row.policy_decision ?? {}),
+        approvalReferences: safeGovernanceEvidence(row.approval_references ?? []),
+        beforeHash: row.before_hash ?? null,
+        afterHash: row.after_hash ?? null,
+        externalEvidence: safeGovernanceEvidence(row.external_evidence ?? {}),
+        resultStatus: String(row.result_status),
+        result: safeGovernanceEvidence(row.result ?? {}),
+        compensation: safeGovernanceEvidence(row.compensation ?? {}),
+        previousHash: String(row.previous_hash),
+        occurredAt: new Date(row.occurred_at).toISOString(),
+    };
+}
+
 function canonical(value: unknown): string {
     if (value === null || value === undefined) return "null";
     if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
@@ -990,62 +1019,36 @@ export class GovernanceService {
         const previousHash = String(head.last_hash);
         const beforeHash = input.beforeState === undefined ? null : sha256(safeGovernanceEvidence(input.beforeState));
         const afterHash = input.afterState === undefined ? null : sha256(safeGovernanceEvidence(input.afterState));
-        const material = {
-            tenantId,
+        const record = {
+            tenant_id: tenantId,
             sequence,
-            eventId,
-            actorType: input.actorType,
-            actorUserId: input.actorUserId ?? null,
-            actorAgentId: input.actorAgentId ?? null,
-            actionKey: input.actionKey,
-            resourceType: input.resourceType ?? null,
-            resourceId: input.resourceId == null ? null : String(input.resourceId),
-            requestId: input.requestId ?? null,
-            correlationId: input.correlationId ?? null,
-            causationId: input.causationId ?? null,
-            reason: input.reason,
-            evidenceRefs: safeGovernanceEvidence(input.evidenceRefs ?? []),
-            policyDecision: safeGovernanceEvidence(input.policyDecision ?? {}),
-            approvalReferences: input.approvalReferences ?? [],
-            beforeHash,
-            afterHash,
-            externalEvidence: safeGovernanceEvidence(input.externalEvidence ?? {}),
-            resultStatus: input.resultStatus,
+            event_id: eventId,
+            actor_type: input.actorType,
+            actor_user_id: input.actorUserId == null ? null : Number(input.actorUserId),
+            actor_agent_id: input.actorAgentId == null ? null : Number(input.actorAgentId),
+            action_key: text(input.actionKey, 180),
+            resource_type: input.resourceType == null ? null : text(input.resourceType, 80),
+            resource_id: input.resourceId == null ? null : text(input.resourceId, 160),
+            request_id: input.requestId == null ? null : text(input.requestId, 120),
+            correlation_id: input.correlationId == null ? null : text(input.correlationId, 120),
+            causation_id: input.causationId == null ? null : text(input.causationId, 120),
+            reason: text(input.reason, 2000),
+            evidence_refs: safeGovernanceEvidence(input.evidenceRefs ?? []),
+            policy_decision: safeGovernanceEvidence(input.policyDecision ?? {}),
+            approval_references: safeGovernanceEvidence(input.approvalReferences ?? []),
+            before_hash: beforeHash,
+            after_hash: afterHash,
+            external_evidence: safeGovernanceEvidence(input.externalEvidence ?? {}),
+            result_status: input.resultStatus,
             result: safeGovernanceEvidence(input.result ?? {}),
             compensation: safeGovernanceEvidence(input.compensation ?? {}),
-            previousHash,
-            occurredAt,
+            previous_hash: previousHash,
+            occurred_at: occurredAt,
         };
-        const entryHash = sha256(material);
+        const entryHash = sha256(ledgerHashMaterial(record));
         const rows = await trx
             .table("governance_action_ledger")
-            .insert({
-                tenant_id: tenantId,
-                sequence,
-                event_id: eventId,
-                actor_type: input.actorType,
-                actor_user_id: input.actorUserId ?? null,
-                actor_agent_id: input.actorAgentId ?? null,
-                action_key: text(input.actionKey, 180),
-                resource_type: input.resourceType ?? null,
-                resource_id: input.resourceId == null ? null : String(input.resourceId),
-                request_id: input.requestId ?? null,
-                correlation_id: input.correlationId ?? null,
-                causation_id: input.causationId ?? null,
-                reason: text(input.reason, 2000),
-                evidence_refs: material.evidenceRefs,
-                policy_decision: material.policyDecision,
-                approval_references: material.approvalReferences,
-                before_hash: beforeHash,
-                after_hash: afterHash,
-                external_evidence: material.externalEvidence,
-                result_status: input.resultStatus,
-                result: material.result,
-                compensation: material.compensation,
-                previous_hash: previousHash,
-                entry_hash: entryHash,
-                occurred_at: occurredAt,
-            })
+            .insert({ ...record, entry_hash: entryHash })
             .returning("*");
         await trx
             .from("governance_ledger_heads")
@@ -1065,33 +1068,7 @@ export class GovernanceService {
         for (const row of rows) {
             if (Number(row.sequence) !== expected || String(row.previous_hash) !== previous)
                 return { ok: false, checked: expected - 1, reason: "chain_link_mismatch", sequence: Number(row.sequence) };
-            const material = {
-                tenantId: Number(row.tenant_id),
-                sequence: Number(row.sequence),
-                eventId: String(row.event_id),
-                actorType: String(row.actor_type),
-                actorUserId: row.actor_user_id == null ? null : Number(row.actor_user_id),
-                actorAgentId: row.actor_agent_id == null ? null : Number(row.actor_agent_id),
-                actionKey: String(row.action_key),
-                resourceType: row.resource_type ?? null,
-                resourceId: row.resource_id ?? null,
-                requestId: row.request_id ?? null,
-                correlationId: row.correlation_id ?? null,
-                causationId: row.causation_id ?? null,
-                reason: String(row.reason),
-                evidenceRefs: row.evidence_refs ?? [],
-                policyDecision: row.policy_decision ?? {},
-                approvalReferences: row.approval_references ?? [],
-                beforeHash: row.before_hash ?? null,
-                afterHash: row.after_hash ?? null,
-                externalEvidence: row.external_evidence ?? {},
-                resultStatus: String(row.result_status),
-                result: row.result ?? {},
-                compensation: row.compensation ?? {},
-                previousHash: String(row.previous_hash),
-                occurredAt: new Date(row.occurred_at).toISOString(),
-            };
-            const hash = sha256(material);
+            const hash = sha256(ledgerHashMaterial(row));
             if (hash !== String(row.entry_hash))
                 return { ok: false, checked: expected - 1, reason: "entry_hash_mismatch", sequence: expected };
             previous = hash;

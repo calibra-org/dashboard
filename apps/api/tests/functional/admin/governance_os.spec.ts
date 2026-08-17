@@ -210,6 +210,6 @@ test.group("Phase 11 Governance OS", (group) => {
         );
         const verified = await client.post(`${BASE}/ledger/verify`).withGuard("api").loginAs(admin).json({});
         verified.assertStatus(200);
-        assert.isTrue(verified.body().data.ok, JSON.stringify(verified.body().data));
+        assert.isTrue(verified.body().data.ok);
     });
 });
