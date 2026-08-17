@@ -52,7 +52,7 @@ jobs:
                   node-version: ${{ env.NODE_VERSION }}
                   cache: pnpm
             - run: pnpm install --frozen-lockfile
-            - name: Apply Phase 11 source hardening and navigation placement
+            - name: Apply verified Phase 11 type hardening
               run: |
                   python - <<'PY'
                   from pathlib import Path
@@ -63,16 +63,6 @@ jobs:
                   if old not in source and new not in source:
                       raise SystemExit("governance autonomy declaration not found")
                   service.write_text(source.replace(old, new))
-
-                  sidebar = Path("apps/admin/src/components/Sidebar.tsx")
-                  source = sidebar.read_text()
-                  needle = '{ href: "/settings", label: t("settings"), icon: Settings },'
-                  addition = needle + '\n            { href: "/governance/overview", label: "Governance OS", icon: ShieldCheck },'
-                  if 'href: "/governance/overview"' not in source:
-                      if needle not in source:
-                          raise SystemExit("configuration settings sidebar anchor not found")
-                      source = source.replace(needle, addition, 1)
-                  sidebar.write_text(source)
                   PY
             - name: Canonical format and safe lint fixes
               run: pnpm run format:fix && pnpm run lint:biome:fix
