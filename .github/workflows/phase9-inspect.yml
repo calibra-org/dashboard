@@ -17,7 +17,7 @@ jobs:
         timeout-minutes: 3
         steps:
             - uses: actions/checkout@v4
-            - name: Extract only source payload and capture price wiring
+            - name: Inspect canonical transformed pricing
               shell: bash
               run: |
                   set -euo pipefail
@@ -26,17 +26,14 @@ jobs:
                   base64 -d /tmp/phase9.b64 > /tmp/phase9.tgz
                   tar -xzf /tmp/phase9.tgz -C .
                   {
-                    echo '=== service price wiring ==='
-                    grep -nE 'resolvePrice|price_resolver|regularPrice|effectivePrice|salePrice|onSale' apps/api/app/services/phase9_personalization_service.ts || true
+                    echo '=== service transformed price eligibility ==='
+                    grep -nE 'ProductTransformer|transformed|on_sale|effective_price|regular_price|sale_price|discountPercent' apps/api/app/services/phase9_personalization_service.ts || true
                     echo
-                    echo '=== verifier price checks ==='
-                    grep -nE 'resolvePrice|price_resolver|price resolver|service missing' scripts/verify-phase9.mjs || true
-                    echo
-                    echo '=== service imports ==='
-                    sed -n '1,45p' apps/api/app/services/phase9_personalization_service.ts
+                    echo '=== verifier price check ==='
+                    grep -nE 'resolvePrice|ProductTransformer|service missing' scripts/verify-phase9.mjs || true
                   } > /tmp/phase9-price-diagnostic.txt
                   encoded=$(base64 -w0 /tmp/phase9-price-diagnostic.txt)
                   old=$(gh api "repos/${GITHUB_REPOSITORY}/contents/phase9-price-diagnostic.txt?ref=${GITHUB_REF_NAME}" --jq .sha 2>/dev/null || true)
-                  args=(--method PUT "repos/${GITHUB_REPOSITORY}/contents/phase9-price-diagnostic.txt" -f message="chore(ci): capture Phase 9 price wiring" -f content="$encoded" -f branch="${GITHUB_REF_NAME}")
+                  args=(--method PUT "repos/${GITHUB_REPOSITORY}/contents/phase9-price-diagnostic.txt" -f message="chore(ci): update Phase 9 price wiring" -f content="$encoded" -f branch="${GITHUB_REF_NAME}")
                   if [ -n "$old" ]; then args+=(-f sha="$old"); fi
                   gh api "${args[@]}" >/dev/null
