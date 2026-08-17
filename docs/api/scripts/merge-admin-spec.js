@@ -8,6 +8,7 @@ const base = JSON.parse(readFileSync(resolve(root, "dist/admin.base.v1.json"), "
 const tickets = JSON.parse(readFileSync(resolve(root, "dist/admin.tickets.v1.json"), "utf8"));
 const ticketOmnichannel = JSON.parse(readFileSync(resolve(root, "dist/admin.ticket-omnichannel.v1.json"), "utf8"));
 const phase5 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase5.v1.json"), "utf8"));
+const phase9 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase9.v1.json"), "utf8"));
 const phase6 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase6.v1.json"), "utf8"));
 const runtimeSync = JSON.parse(readFileSync(resolve(root, "dist/admin.runtime-sync.v1.json"), "utf8"));
 const completion = JSON.parse(readFileSync(resolve(root, "dist/admin.completion.v1.json"), "utf8"));
@@ -85,6 +86,7 @@ for (const [overlaySource, namespace] of [
     [tickets, "TicketOverlay"],
     [ticketOmnichannel, "TicketOmnichannelOverlay"],
     [phase5, "Phase5Overlay"],
+    [phase9, "Phase9Overlay"],
     [phase6, "Phase6Overlay"],
     [runtimeSync, "RuntimeSyncOverlay"],
     [completion, "CompletionOverlay"],

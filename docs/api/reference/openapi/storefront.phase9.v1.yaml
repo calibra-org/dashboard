@@ -1,0 +1,42 @@
+openapi: 3.1.0
+info:
+  title: Calibra Storefront Phase 9 Personalization Overlay
+  version: "1.0.0"
+components:
+  schemas:
+    Phase9PublicEnvelope: { type: object, additionalProperties: true }
+paths:
+  /api/v1/personalization/amazing-deals:
+    get:
+      operationId: getAmazingDeals
+      tags: [Personalization]
+      security: []
+      parameters: [{ name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 24 } }]
+      responses: { "200": { description: Eligible active-sale products, content: { application/json: { schema: { $ref: "#/components/schemas/Phase9PublicEnvelope" } } } } }
+  /api/v1/personalization/recommendations:
+    get:
+      operationId: getRecommendations
+      tags: [Personalization]
+      security: []
+      parameters:
+        - { name: placement, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 24 } }
+        - { name: exclude_product_ids, in: query, schema: { type: string } }
+      responses: { "200": { description: Recommendation result with request/exposure metadata } }
+  /api/v1/personalization/events:
+    post:
+      operationId: recordPersonalizationEvent
+      tags: [Personalization]
+      security: []
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [event_type], additionalProperties: true } } } }
+      responses: { "202": { description: Event accepted or consent-gated }, "422": { description: Invalid event } }
+  /api/v1/personalization/consent:
+    get: { operationId: getPersonalizationConsent, tags: [Personalization], security: [], responses: { "200": { description: Consent state }, "400": { description: Subject unavailable } } }
+    put:
+      operationId: updatePersonalizationConsent
+      tags: [Personalization]
+      security: []
+      requestBody: { required: true, content: { application/json: { schema: { type: object, properties: { analytics: { type: boolean }, personalization: { type: boolean }, source: { type: string }, policy_version: { type: string } } } } } }
+      responses: { "200": { description: Updated consent } }
+  /api/v1/personalization/reset:
+    post: { operationId: resetPersonalizationProfile, tags: [Personalization], security: [], responses: { "200": { description: Profile reset }, "400": { description: Subject unavailable } } }

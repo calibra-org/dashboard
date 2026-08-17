@@ -1,5 +1,6 @@
 import { getLocale, getTranslations, setRequestLocale } from "next-intl/server";
 
+import { AmazingDealsSection } from "#/components/amazing-deals-section";
 import { apiServer } from "#/lib/api";
 import { Link } from "#/lib/i18n/navigation";
 import { formatPrice, getMoneyFormatConfig } from "#/lib/money";
@@ -33,6 +34,8 @@ export default async function HomePage({ params }: PageProps) {
                     {t("browseProducts")}
                 </Link>
             </header>
+
+            <AmazingDealsSection />
 
             {featured.length > 0 && (
                 <section className="flex flex-col gap-4">

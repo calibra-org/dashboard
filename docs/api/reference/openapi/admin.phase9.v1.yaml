@@ -1,0 +1,50 @@
+openapi: 3.1.0
+info:
+  title: Calibra Admin Phase 9 Personalization Overlay
+  version: "1.0.0"
+security:
+  - BearerAuth: []
+components:
+  securitySchemes:
+    BearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  schemas:
+    Phase9Envelope: { type: object, additionalProperties: true }
+paths:
+  /api/v1/admin/personalization/overview:
+    get: { operationId: adminPhase9Overview, tags: [Admin / Personalization], responses: { "200": { description: Phase 9 overview, content: { application/json: { schema: { $ref: "#/components/schemas/Phase9Envelope" } } } }, "401": { description: Authentication required }, "403": { description: Admin required } } }
+  /api/v1/admin/personalization/health:
+    get: { operationId: adminPhase9Health, tags: [Admin / Personalization], responses: { "200": { description: Health }, "401": { description: Authentication required }, "403": { description: Admin required } } }
+  /api/v1/admin/personalization/campaigns:
+    get: { operationId: adminPhase9Campaigns, tags: [Admin / Personalization], responses: { "200": { description: Campaign list } } }
+    post:
+      operationId: adminPhase9CampaignCreate
+      tags: [Admin / Personalization]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [name], additionalProperties: true } } } }
+      responses: { "201": { description: Campaign created }, "422": { description: Invalid campaign } }
+  /api/v1/admin/personalization/campaigns/{id}:
+    parameters: [{ name: id, in: path, required: true, schema: { type: integer, format: int64, minimum: 1 } }]
+    patch:
+      operationId: adminPhase9CampaignUpdate
+      tags: [Admin / Personalization]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+      responses: { "200": { description: Campaign updated }, "404": { description: Not found }, "409": { description: Version conflict }, "422": { description: Invalid campaign } }
+  /api/v1/admin/personalization/campaigns/{id}/publish:
+    parameters: [{ name: id, in: path, required: true, schema: { type: integer, format: int64, minimum: 1 } }]
+    post: { operationId: adminPhase9CampaignPublish, tags: [Admin / Personalization], requestBody: { content: { application/json: { schema: { type: object, additionalProperties: true } } } }, responses: { "200": { description: Published }, "409": { description: Version conflict }, "422": { description: No eligible products } } }
+  /api/v1/admin/personalization/campaigns/{id}/pause:
+    parameters: [{ name: id, in: path, required: true, schema: { type: integer, format: int64, minimum: 1 } }]
+    post: { operationId: adminPhase9CampaignPause, tags: [Admin / Personalization], requestBody: { content: { application/json: { schema: { type: object, additionalProperties: true } } } }, responses: { "200": { description: Paused }, "409": { description: Version conflict } } }
+  /api/v1/admin/personalization/settings:
+    get: { operationId: adminPhase9Settings, tags: [Admin / Personalization], responses: { "200": { description: Settings } } }
+    patch: { operationId: adminPhase9SettingsUpdate, tags: [Admin / Personalization], requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: true } } } }, responses: { "200": { description: Settings updated } } }
+  /api/v1/admin/personalization/placements:
+    get: { operationId: adminPhase9Placements, tags: [Admin / Personalization], responses: { "200": { description: Placement list } } }
+  /api/v1/admin/personalization/placements/{placement}:
+    parameters: [{ name: placement, in: path, required: true, schema: { type: string } }]
+    patch: { operationId: adminPhase9PlacementUpdate, tags: [Admin / Personalization], requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: true } } } }, responses: { "200": { description: Placement updated }, "409": { description: Version conflict } } }
+  /api/v1/admin/personalization/simulate:
+    post: { operationId: adminPhase9Simulate, tags: [Admin / Personalization], requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: true } } } }, responses: { "200": { description: Dry-run decision trace } } }
+  /api/v1/admin/personalization/events:
+    get: { operationId: adminPhase9Events, tags: [Admin / Personalization], parameters: [{ name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100 } }], responses: { "200": { description: Recent events } } }
+  /api/v1/admin/personalization/consents:
+    get: { operationId: adminPhase9Consents, tags: [Admin / Personalization], parameters: [{ name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100 } }], responses: { "200": { description: Recent consent records } } }

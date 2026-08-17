@@ -42,6 +42,7 @@ router.get("/metrics", async ({ response }) => {
 });
 
 await import("./routes/catalog.js");
+await import("./routes/personalization.js");
 await import("./routes/auth.js");
 await import("./routes/platform.js");
 await import("./routes/account.js");
@@ -76,6 +77,7 @@ await import("./routes/admin_identity.js");
 await import("./routes/admin_reports.js");
 await import("./routes/admin_insights.js");
 await import("./routes/admin_settings.js");
+await import("./routes/admin_personalization.js");
 await import("./routes/admin_media.js");
 await import("./routes/admin_product_imports.js");
 await import("./routes/admin_product_exports.js");

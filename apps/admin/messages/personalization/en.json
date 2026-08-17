@@ -1,0 +1,128 @@
+{
+    "Nav": { "amazingDeals": "Amazing Deals" },
+    "Personalization": {
+        "title": "Personalization & Amazing Deals",
+        "subtitle": "Manage real-sale campaigns, recommendation placements, privacy and engine health without creating a parallel pricing engine.",
+        "tabs": {
+            "overview": "Overview",
+            "campaigns": "Campaigns",
+            "homepage": "Homepage",
+            "personalization": "Personalized recommendations",
+            "simulator": "Simulator",
+            "privacy": "Privacy & health"
+        },
+        "common": {
+            "loading": "Loading…",
+            "error": "Operation failed.",
+            "saved": "Saved successfully.",
+            "save": "Save",
+            "saving": "Saving…",
+            "cancel": "Cancel"
+        },
+        "state": { "active": "System active", "safeMode": "Safe mode / kill switch" },
+        "overview": {
+            "events": "Recorded events",
+            "exposures": "Recommendation exposures",
+            "activeCampaigns": "Active campaigns",
+            "attribution": "Attribution type",
+            "descriptiveOnly": "Descriptive",
+            "guardrails": "Core guardrails",
+            "canonicalPricing": "One canonical price",
+            "canonicalPricingBody": "Displayed discounts are derived from the real product price and resolvePrice; this feature does not create a second discount engine.",
+            "noFakeLift": "No fake lift claims",
+            "noFakeLiftBody": "Until experimentation is available, revenue and conversion are descriptive attribution only, not causal incrementality.",
+            "consentAware": "Separate consent",
+            "consentAwareBody": "Personalization consent is independent from marketing consent; no behavioral profile is built without it."
+        },
+        "campaigns": {
+            "title": "Amazing-deal campaigns",
+            "subtitle": "Choose products with real active sales manually, intelligently, or with controlled rotation.",
+            "new": "New campaign",
+            "empty": "No campaigns yet.",
+            "pause": "Pause",
+            "publish": "Publish",
+            "discount": "Minimum {value}% off",
+            "items": "Up to {value} products"
+        },
+        "builder": {
+            "title": "Create campaign",
+            "subtitle": "Only published, genuinely discounted products enter the pool and the backend revalidates them at publish time.",
+            "name": "Campaign name",
+            "mode": "Selection mode",
+            "minDiscount": "Minimum discount",
+            "maxItems": "Product count",
+            "products": "Select real products"
+        },
+        "modes": { "manual": "Manual", "smart": "Smart", "controlled_random": "Controlled random", "hybrid": "Hybrid" },
+        "status": {
+            "draft": "Draft",
+            "scheduled": "Scheduled",
+            "active": "Active",
+            "paused": "Paused",
+            "expired": "Expired",
+            "archived": "Archived"
+        },
+        "homepage": {
+            "title": "Homepage merchandising",
+            "subtitle": "Control the Amazing Deals section without replacing the existing featured-products area.",
+            "enabled": "Show on homepage",
+            "campaign": "Homepage campaign",
+            "auto": "Automatically select active campaign",
+            "limit": "Card count",
+            "previewTitle": "Amazing Deals",
+            "previewSubtitle": "Storefront layout preview"
+        },
+        "placement": {
+            "title": "Recommendation placements",
+            "subtitle": "Each placement can be disabled independently and falls back to generic recommendations without consent.",
+            "enabled": "Enabled",
+            "home": "Homepage",
+            "product": "Product page",
+            "cart": "Cart",
+            "search": "Search",
+            "account": "Account",
+            "max": "Up to {value}",
+            "explore": "Explore {value}%"
+        },
+        "simulator": {
+            "title": "Decision simulator",
+            "placement": "Placement",
+            "run": "Run dry run",
+            "running": "Running…",
+            "trace": "Decision trace",
+            "empty": "Run the simulator to inspect the selection path."
+        },
+        "privacy": {
+            "health": "Service health",
+            "events": "Recent events",
+            "consents": "Recent consents",
+            "controls": "Safety & privacy controls",
+            "killSwitch": "Personalization kill switch",
+            "recentEvents": "Latest events",
+            "recentConsents": "Latest consent changes"
+        },
+        "help": {
+            "systemState": "Shows feature flag and kill-switch state.",
+            "events": "First-party events recorded for the current tenant.",
+            "exposures": "Persisted exposures with request/exposure IDs; they are not stored without suitable consent.",
+            "activeCampaigns": "Campaigns currently active.",
+            "attribution": "This phase reports descriptive attribution only; causal lift requires experiments and holdouts.",
+            "campaignName": "Operational name used in the admin and reports.",
+            "selectionMode": "Manual, highest-valid-discount smart mode, stable controlled rotation, or pinned + automatic hybrid.",
+            "minDiscount": "Products below this real effective discount are ineligible.",
+            "maxItems": "Maximum products served; invalid items never backfill the requested count.",
+            "realProducts": "The picker uses the real published product API and the backend rechecks sale windows and inventory.",
+            "homepage": "Public storefront merchandising settings.",
+            "homepageEnabled": "Controls only the Amazing Deals section, not the rest of the homepage.",
+            "homepageCampaign": "Pin a campaign or let the service select the current active campaign.",
+            "homepageLimit": "The section shrinks when fewer eligible products exist.",
+            "placement": "The recommendation surface; disabling it preserves its configuration.",
+            "simulator": "Runs the real recommendation service as a dry-run-like inspection without changing commerce state.",
+            "simulatorPlacement": "Page context used by candidate selection and ranking.",
+            "health": "Shows engine status, policy version and last-event time.",
+            "consents": "Analytics and personalization consent are stored separately.",
+            "privacy": "Purpose limitation, profile reset and emergency controls.",
+            "killSwitch": "Immediately disables automatic personalization while core pricing and storefront remain independent."
+        }
+    }
+}
