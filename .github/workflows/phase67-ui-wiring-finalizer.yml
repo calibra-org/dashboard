@@ -1,0 +1,79 @@
+name: Phase 6-7 UI wiring finalizer
+
+on:
+  push:
+    branches:
+      - agent/phase7-identity-trust-os
+
+permissions:
+  contents: write
+
+concurrency:
+  group: phase67-ui-wiring-finalizer
+  cancel-in-progress: false
+
+jobs:
+  finalize-ui:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/phase7-identity-trust-os
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Import the completed Phase 6 settings shell without overwriting newer Phase 7 engines
+        run: |
+          git fetch origin agent/phase6-configuration-os:refs/remotes/origin/agent/phase6-configuration-os
+          git show origin/agent/phase6-configuration-os:'apps/admin/src/app/[locale]/(authenticated)/(store-config)/settings/page.tsx' > 'apps/admin/src/app/[locale]/(authenticated)/(store-config)/settings/page.tsx'
+          git show origin/agent/phase6-configuration-os:'apps/admin/src/app/[locale]/(authenticated)/(store-config)/settings/[group]/page.tsx' > 'apps/admin/src/app/[locale]/(authenticated)/(store-config)/settings/[group]/page.tsx'
+          git show origin/agent/phase6-configuration-os:'apps/admin/src/components/SettingsNav.tsx' > 'apps/admin/src/components/SettingsNav.tsx'
+          git show origin/agent/phase6-configuration-os:'apps/admin/src/views/store-config/settings/configuration-overview.tsx' > 'apps/admin/src/views/store-config/settings/configuration-overview.tsx'
+
+          if ! rg -n 'GenericSettingsView|settings-groups' apps/admin/src --glob '!views/store-config/settings/generic-settings-view.tsx' --glob '!lib/fixtures/settings-groups.ts' >/dev/null; then
+            rm -f apps/admin/src/views/store-config/settings/generic-settings-view.tsx
+            rm -f apps/admin/src/lib/fixtures/settings-groups.ts
+          fi
+
+      - name: Format UI wiring
+        run: >-
+          pnpm exec biome format --write
+          'apps/admin/src/app/[locale]/(authenticated)/(store-config)/settings/page.tsx'
+          'apps/admin/src/app/[locale]/(authenticated)/(store-config)/settings/[group]/page.tsx'
+          apps/admin/src/components/SettingsNav.tsx
+          apps/admin/src/views/store-config/settings/configuration-overview.tsx
+
+      - name: Verify type safety
+        run: pnpm run typecheck
+
+      - name: Verify frontend behavior
+        run: pnpm --filter @calibra/admin run test
+
+      - name: Verify production admin build
+        run: pnpm --filter @calibra/admin run build
+
+      - name: Verify Phase 6 and Phase 7 integration invariants
+        run: |
+          if [ -f scripts/verify-phase6-configuration-integration.mjs ]; then node scripts/verify-phase6-configuration-integration.mjs; fi
+          node scripts/verify-phase7-identity-integration.mjs
+
+      - name: Remove this temporary finalizer
+        run: rm -f .github/workflows/phase67-ui-wiring-finalizer.yml
+
+      - name: Commit UI wiring
+        run: |
+          git config user.name "calibra-release-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "fix(phase6): restore complete configuration workspace wiring"
+          git push origin HEAD:agent/phase7-identity-trust-os
