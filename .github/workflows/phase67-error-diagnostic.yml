@@ -1,0 +1,33 @@
+name: Phase 6-7 error diagnostic
+
+on:
+  push:
+    branches:
+      - agent/phase7-identity-trust-os
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phase67-error-diagnostic
+  cancel-in-progress: false
+
+jobs:
+  diagnose:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/phase7-identity-trust-os
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Error-only Biome diagnostics
+        run: pnpm exec biome check . --diagnostic-level=error --max-diagnostics=300
