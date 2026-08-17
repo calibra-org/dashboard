@@ -40,6 +40,8 @@ An error-only Biome diagnostic then isolated five repository lint errors. They w
 
 A concurrent branch write was also reviewed before release. It attempted to replace substantial Factor regression coverage with weaker structural checks. That commit was intentionally excluded. A dedicated restoration run then rebuilt the full canonical Factor verifier, applied only the current top-level workspace navigation invariant, and passed `verify:phase1-4`, the Phase 6/7 integration verifiers, repository formatting, and repository typecheck before deleting its temporary workflow. The branch is therefore back to the stronger regression posture rather than trading coverage for a green check.
 
+Final normalization removed the temporary error-diagnostic, lint-repair, certification, and validation-trigger helpers from the production tree and normalized the remaining semantic design tokens without reducing verifier coverage.
+
 Repository-standard `Check` and `SEO Engines` are the final merge gates for this human-authored head. No final PASS claim is made here until those workflows execute successfully on this exact commit.
 
 ## Functional evidence covered by the certification suite
