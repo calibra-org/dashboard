@@ -24,17 +24,20 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           path = Path('.github/workflows/baseline-gate-repair.yml')
-          source = path.read_text()
-          old = '            apps/api/app/controllers/admin/configuration_controller.ts apps/api/app/controllers/admin/payment_attempts_controller.ts \\\n'
-          new = '''            apps/api/app/controllers/admin/configuration_controller.ts apps/api/app/controllers/admin/payment_attempts_controller.ts \\
-            apps/api/app/controllers/admin/settings_branding_controller.ts apps/api/app/controllers/admin/settings_datetime_controller.ts \\
-            apps/api/app/controllers/admin/settings_general_controller.ts apps/api/app/controllers/admin/settings_media_controller.ts \\
-'''
-          if old not in source:
+          lines = path.read_text().splitlines()
+          anchor = '            apps/api/app/controllers/admin/configuration_controller.ts apps/api/app/controllers/admin/payment_attempts_controller.ts \\'
+          try:
+              index = lines.index(anchor)
+          except ValueError:
               raise SystemExit('Expected certifier formatter anchor not found')
-          if source.count(old) != 1:
-              raise SystemExit(f'Expected one certifier formatter anchor, found {source.count(old)}')
-          path.write_text(source.replace(old, new))
+          additions = [
+              '            apps/api/app/controllers/admin/settings_branding_controller.ts apps/api/app/controllers/admin/settings_datetime_controller.ts \\',
+              '            apps/api/app/controllers/admin/settings_general_controller.ts apps/api/app/controllers/admin/settings_media_controller.ts \\',
+          ]
+          for addition in reversed(additions):
+              if addition not in lines:
+                  lines.insert(index + 1, addition)
+          path.write_text('\n'.join(lines) + '\n')
           PY
           git diff --check
           git config user.name "calibra-phase7-bot"
