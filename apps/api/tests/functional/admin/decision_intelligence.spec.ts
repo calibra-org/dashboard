@@ -106,7 +106,11 @@ test.group("Phase 10 decision intelligence", (group) => {
             .loginAs(admin)
             .json({ metric_name: "sla_breach_count", baseline_value: 8, observed_value: 3, observed_at: DateTime.utc().toISO() });
         response.assertStatus(200);
-        const outcome = await db.connection("postgres_admin").from("intelligence_outcome_records").where("case_id", seeded.id).first();
+        const outcome = await db
+            .connection("postgres_admin")
+            .from("intelligence_outcome_records")
+            .where("case_id", seeded.id)
+            .first();
         assert.equal(Number(outcome.delta), -5);
         assert.isNull(outcome.attribution_confidence);
         const intelligenceCase = await db.connection("postgres_admin").from("intelligence_cases").where("id", seeded.id).first();

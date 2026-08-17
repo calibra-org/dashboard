@@ -117,14 +117,16 @@ export function useIntelligenceDetail(id: string | null) {
 export function useIntelligenceDecision() {
     const locale = useLocale() as Locale;
     const queryClient = useQueryClient();
-    return useMutation<Envelope<unknown>, Error, { id: string; decision: IntelligenceDecision; reason: string; version: number }>({
-        mutationFn: (input) =>
-            apiMutate<Envelope<unknown>>("POST", `intelligence/cases/${input.id}/decisions`, {
-                locale,
-                body: { decision: input.decision, reason: input.reason, version: input.version },
-            }),
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin", "intelligence"] }),
-    });
+    return useMutation<Envelope<unknown>, Error, { id: string; decision: IntelligenceDecision; reason: string; version: number }>(
+        {
+            mutationFn: (input) =>
+                apiMutate<Envelope<unknown>>("POST", `intelligence/cases/${input.id}/decisions`, {
+                    locale,
+                    body: { decision: input.decision, reason: input.reason, version: input.version },
+                }),
+            onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin", "intelligence"] }),
+        },
+    );
 }
 
 export function useIntelligenceOutcome() {

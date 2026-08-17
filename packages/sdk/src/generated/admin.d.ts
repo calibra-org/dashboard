@@ -7754,6 +7754,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/intelligence/inbox": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminDecisionIntelligenceInbox"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminDecisionIntelligenceSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/cases/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminDecisionIntelligenceCase"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/cases/{id}/decisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminDecisionIntelligenceDecide"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/cases/{id}/outcomes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminDecisionIntelligenceOutcomeCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -10791,6 +10871,107 @@ export interface components {
                 [key: string]: unknown;
             }[];
         };
+        /** @enum {string} */
+        IntelligenceDomain: "payments" | "fulfillment" | "support" | "inventory" | "seo";
+        /** @enum {string} */
+        IntelligenceSeverity: "low" | "medium" | "high" | "critical";
+        IntelligenceCase: {
+            id: string;
+            stableKey: string;
+            /** @enum {string} */
+            kind: "risk" | "opportunity" | "recommendation";
+            domain: components["schemas"]["IntelligenceDomain"];
+            /** @enum {string} */
+            lifecycleStage: "detected" | "validated" | "proposed" | "reviewed" | "approved" | "rejected" | "executed" | "measured" | "learned";
+            /** @enum {string} */
+            signalState: "open" | "cleared";
+            severity: components["schemas"]["IntelligenceSeverity"];
+            titleFa: string;
+            titleEn: string;
+            summaryFa: string;
+            summaryEn: string;
+            recommendedActionFa: string;
+            recommendedActionEn: string;
+            actionRoute?: string | null;
+            expectedValueMinor?: string | null;
+            expectedValueCurrency?: string | null;
+            confidence?: number | null;
+            confidenceSource?: string | null;
+            urgency?: number | null;
+            priorityScore: number;
+            /** @enum {string} */
+            scoreMode: "provisional" | "calibrated";
+            rankingPolicyVersion: string;
+            scoreComponents: {
+                [key: string]: unknown;
+            };
+            missingComponents: string[];
+            freshnessAt: string;
+            firstSeenAt: string;
+            lastSeenAt: string;
+            clearedAt?: string | null;
+            version: number;
+        };
+        IntelligenceInboxEnvelope: {
+            data: components["schemas"]["IntelligenceCase"][];
+            meta: {
+                page: number;
+                limit: number;
+                total: number;
+                lastPage: number;
+            };
+        };
+        IntelligenceSummary: {
+            openCount: number;
+            highCriticalCount: number;
+            provisionalCount: number;
+            measuredCount: number;
+            byDomain: {
+                domain: components["schemas"]["IntelligenceDomain"];
+                count: number;
+            }[];
+            sourceCoverage: {
+                source: string;
+                /** @enum {string} */
+                status: "active" | "dependency_not_landed";
+            }[];
+            rankingPolicyVersion: string;
+        };
+        IntelligenceSummaryEnvelope: {
+            data: components["schemas"]["IntelligenceSummary"];
+        };
+        IntelligenceDetailEnvelope: {
+            data: {
+                case: components["schemas"]["IntelligenceCase"];
+                evidence: {
+                    [key: string]: unknown;
+                }[];
+                decisions: {
+                    [key: string]: unknown;
+                }[];
+                actions: {
+                    [key: string]: unknown;
+                }[];
+                outcomes: {
+                    [key: string]: unknown;
+                }[];
+            };
+        };
+        IntelligenceDecisionInput: {
+            /** @enum {string} */
+            decision: "accept" | "reject" | "defer" | "watch";
+            reason: string;
+            version: number;
+        };
+        IntelligenceOutcomeInput: {
+            metric_name: string;
+            baseline_value?: number;
+            observed_value?: number;
+            measurement_window?: string;
+            attribution_confidence?: number;
+            notes?: string;
+            observed_at: string;
+        };
     };
     responses: {
         /** @description Unauthorized (401) — the request did not include a valid bearer token, or the token has been revoked. */
@@ -10874,6 +11055,7 @@ export interface components {
         ConfigurationScope: components["schemas"]["ConfigurationScope"];
         ConfigurationRevision: number;
         UserId: number;
+        IntelligenceCaseId: string;
     };
     requestBodies: never;
     headers: never;
@@ -23498,6 +23680,172 @@ export interface operations {
                 };
             };
             /** @description Invalid proof */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminDecisionIntelligenceInbox: {
+        parameters: {
+            query?: {
+                page?: number;
+                limit?: number;
+                domain?: components["schemas"]["IntelligenceDomain"];
+                severity?: components["schemas"]["IntelligenceSeverity"];
+                state?: "open" | "cleared";
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ranked operator inbox refreshed from landed evidence sources. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntelligenceInboxEnvelope"];
+                };
+            };
+            /** @description Invalid filter */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminDecisionIntelligenceSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Decision Intelligence coverage and live aggregate counters. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntelligenceSummaryEnvelope"];
+                };
+            };
+        };
+    };
+    adminDecisionIntelligenceCase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IntelligenceCaseId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Canonical case with evidence, decisions, action plans and outcomes. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntelligenceDetailEnvelope"];
+                };
+            };
+            /** @description Intelligence case not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminDecisionIntelligenceDecide: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IntelligenceCaseId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntelligenceDecisionInput"];
+            };
+        };
+        responses: {
+            /** @description Immutable decision recorded against the requested case version */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Intelligence case not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Optimistic version conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid decision input */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminDecisionIntelligenceOutcomeCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IntelligenceCaseId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntelligenceOutcomeInput"];
+            };
+        };
+        responses: {
+            /** @description Outcome measurement appended to the case ledger */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Intelligence case not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid outcome input */
             422: {
                 headers: {
                     [name: string]: unknown;
