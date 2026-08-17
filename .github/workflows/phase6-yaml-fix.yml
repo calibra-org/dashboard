@@ -1,0 +1,41 @@
+name: Phase 6 OpenAPI YAML scalar repair
+
+on:
+  push:
+    branches: [agent/phase7-identity-trust-os]
+    paths: [.github/workflows/phase6-yaml-fix.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/phase7-identity-trust-os
+      - name: Repair malformed flow-map scalar
+        shell: bash
+        run: |
+          set -euo pipefail
+          path=docs/api/reference/openapi/admin.phase6.v1.yaml
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('docs/api/reference/openapi/admin.phase6.v1.yaml')
+          source = path.read_text()
+          old = "        '422': { description: Validation, stale version, preview or approval failure }"
+          new = "        '422': { description: \"Validation, stale version, preview or approval failure\" }"
+          if old not in source:
+              raise SystemExit('Expected malformed Phase 6 422 response scalar not found')
+          if source.count(old) != 1:
+              raise SystemExit(f'Expected exactly one malformed scalar, found {source.count(old)}')
+          path.write_text(source.replace(old, new))
+          PY
+          grep -F "'422': { description: \"Validation, stale version, preview or approval failure\" }" "$path"
+          git diff --check
+          git config user.name "calibra-phase7-bot"
+          git config user.email "calibra-phase7-bot@users.noreply.github.com"
+          git add "$path"
+          git commit -m "fix(openapi): quote Phase 6 validation response description"
+          git push origin HEAD:agent/phase7-identity-trust-os
