@@ -6,7 +6,7 @@ on:
     paths: [.github/workflows/phase6-test-schema-diagnostic.yml]
 
 permissions:
-  contents: read
+  contents: write
 
 env:
   NODE_VERSION: "24.14.0"
@@ -20,6 +20,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: agent/phase7-identity-trust-os
+          fetch-depth: 0
       - uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
@@ -28,6 +29,22 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+
+      - name: Repair malformed Phase 6 response description
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs'
+          const path='docs/api/reference/openapi/admin.phase6.v1.yaml'
+          let source=fs.readFileSync(path,'utf8')
+          const malformed="'422': { description: Validation, stale version, preview or approval failure }"
+          const repaired="'422': { description: \"Validation, stale version, preview or approval failure\" }"
+          if (source.includes(malformed)) source=source.replace(malformed,repaired)
+          if (!source.includes(repaired)) throw new Error('Canonical quoted Phase 6 422 response not present')
+          fs.writeFileSync(path,source)
+          NODE
+
       - name: Materialize Phase 6 into canonical admin bundle
         shell: bash
         run: |
@@ -37,7 +54,7 @@ jobs:
           const p='docs/api/package.json'
           const pkg=JSON.parse(fs.readFileSync(p,'utf8'))
           pkg.scripts['build:json:admin-phase6']='redocly bundle reference/openapi/admin.phase6.v1.yaml -o dist/admin.phase6.v1.json --ext json'
-          pkg.scripts['build:json:admin']=pkg.scripts['build:json:admin'].replace('pnpm build:json:admin-phase5 &&','pnpm build:json:admin-phase5 && pnpm build:json:admin-phase6 &&')
+          if (!pkg.scripts['build:json:admin'].includes('build:json:admin-phase6')) pkg.scripts['build:json:admin']=pkg.scripts['build:json:admin'].replace('pnpm build:json:admin-phase5 &&','pnpm build:json:admin-phase5 && pnpm build:json:admin-phase6 &&')
           fs.writeFileSync(p,JSON.stringify(pkg,null,4)+'\n')
           const m='docs/api/scripts/merge-admin-spec.js'
           let s=fs.readFileSync(m,'utf8')
@@ -46,7 +63,8 @@ jobs:
           fs.writeFileSync(m,s)
           NODE
           pnpm --filter @calibra/api-docs run build:test-spec
-      - name: Print api-schema-builder validation errors
+
+      - name: Validate test fixture with api-schema-builder
         shell: bash
         run: |
           set -euo pipefail
@@ -69,3 +87,19 @@ jobs:
             process.exit(1)
           }
           NODE
+
+      - name: Publish canonical Phase 6 OpenAPI repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout -- docs/api/package.json docs/api/scripts/merge-admin-spec.js
+          git add docs/api/reference/openapi/admin.phase6.v1.yaml
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo 'No Phase 6 OpenAPI repair remains to publish.'
+            exit 0
+          fi
+          git config user.name "calibra-phase7-bot"
+          git config user.email "calibra-phase7-bot@users.noreply.github.com"
+          git commit -m "fix(api): quote Phase 6 validation response"
+          git push origin HEAD:agent/phase7-identity-trust-os
