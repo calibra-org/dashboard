@@ -1,0 +1,75 @@
+name: Phase 6-7 menu and format fix
+
+on:
+  push:
+    branches:
+      - agent/phase7-identity-trust-os
+
+permissions:
+  contents: write
+
+concurrency:
+  group: phase67-menu-format-fix
+  cancel-in-progress: false
+
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/phase7-identity-trust-os
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Align invariant with canonical top-level Factor placement
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const file = 'scripts/verify-factor-integration.mjs';
+          let source = fs.readFileSync(file, 'utf8');
+          const oldCheck = 'pass(sidebar.includes(\'group.titleKey === "sales"\'), "Factor submenu is not placed under Sales");';
+          const newCheck = `pass(
+              sidebar.includes('"factor-sidebar-items"') &&
+                  sidebar.includes('navT("factor")') &&
+                  !sidebar.includes('group.titleKey === "sales"'),
+              "Factor must be a first-level navigation heading, not nested under Sales",
+          );`;
+          if (!source.includes(oldCheck)) throw new Error('Legacy Factor-under-Sales verifier check was not found');
+          source = source.replace(oldCheck, newCheck);
+          fs.writeFileSync(file, source);
+          NODE
+
+      - name: Apply repository formatter
+        run: |
+          pnpm exec biome format --write apps/admin/src/views/store-config/settings/configuration-overview.tsx scripts/verify-factor-integration.mjs
+
+      - name: Verify navigation and Phase 1-4 contracts
+        run: pnpm run verify:phase1-4
+
+      - name: Verify Phase 6 and 7 contracts
+        run: |
+          if [ -f scripts/verify-phase6-configuration-integration.mjs ]; then node scripts/verify-phase6-configuration-integration.mjs; fi
+          node scripts/verify-phase7-identity-integration.mjs
+
+      - name: Verify type safety
+        run: pnpm run typecheck
+
+      - name: Remove temporary workflow and commit
+        run: |
+          rm -f .github/workflows/phase67-menu-format-fix.yml
+          git config user.name "calibra-release-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "fix(navigation): enforce top-level factor and phase 6 formatting"
+          git push origin HEAD:agent/phase7-identity-trust-os
