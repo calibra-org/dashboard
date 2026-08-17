@@ -237,7 +237,7 @@ jobs:
             echo "::group::${suite}"
             psql -h localhost -U calibra -d postgres -v ON_ERROR_STOP=1 -c "DROP DATABASE IF EXISTS calibra_test WITH (FORCE);"
             psql -h localhost -U calibra -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE calibra_test OWNER calibra;"
-            timeout --foreground 9m pnpm test --files="$suite"
+            timeout --foreground 3m pnpm test --files="$suite"
             echo "::endgroup::"
           done
 
