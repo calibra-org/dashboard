@@ -39,7 +39,54 @@ jobs:
           git show origin/agent/phase6-configuration-os:'apps/admin/src/components/SettingsNav.tsx' > 'apps/admin/src/components/SettingsNav.tsx'
           git show origin/agent/phase6-configuration-os:'apps/admin/src/views/store-config/settings/configuration-overview.tsx' > 'apps/admin/src/views/store-config/settings/configuration-overview.tsx'
 
-          if ! rg -n 'GenericSettingsView|settings-groups' apps/admin/src --glob '!views/store-config/settings/generic-settings-view.tsx' --glob '!lib/fixtures/settings-groups.ts' >/dev/null; then
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = 'apps/admin/src/views/store-config/settings/configuration-overview.tsx';
+          let source = fs.readFileSync(path, 'utf8');
+          source = source.replace(
+            /import \{[\s\S]*?\} from "#\/components\/ui\/alert-dialog";\n/,
+            'import { ConfirmDialog } from "#/components/ui/alert-dialog";\n',
+          );
+          source = source.replace(
+            'import { ArrowLeft, CheckCircle2, Clock3, Database, History, RotateCcw, Settings2, ShieldCheck } from "#/icons";',
+            'import { ArrowLeft, Boxes, CheckCircle2, Clock3, History, RotateCcw, Settings2, ShieldCheck } from "#/icons";',
+          );
+          source = source.replaceAll('<Database', '<Boxes');
+          source = source.replace(
+            /function RollbackAction\([\s\S]*?\n\}\n\nfunction MetricCard/,
+            `function RollbackAction({ item, fa, pending, onRollback }: { item: ConfigurationRevision; fa: boolean; pending: boolean; onRollback: () => void }) {
+    return (
+        <ConfirmDialog
+            trigger={
+                <Button variant="ghost" size="sm" disabled={pending} className="gap-1.5">
+                    <RotateCcw className="size-3.5" />
+                    <span className="hidden sm:inline">{fa ? "بازگردانی" : "Rollback"}</span>
+                </Button>
+            }
+            title={fa ? \`بازگردانی \${scopeLabel(item.scope, true)} به نسخه \${item.revision}؟\` : \`Restore \${scopeLabel(item.scope, false)} to revision \${item.revision}?\`}
+            description={
+                fa
+                    ? "مقادیر نسخه انتخابی دوباره روی تنظیمات فعال نوشته می‌شوند و یک نسخه بازگردانی جدید ساخته می‌شود."
+                    : "The selected snapshot is restored and a new rollback revision is appended."
+            }
+            confirmLabel={fa ? "تأیید بازگردانی" : "Confirm rollback"}
+            cancelLabel={fa ? "انصراف" : "Cancel"}
+            isConfirming={pending}
+            onConfirm={onRollback}
+        />
+    );
+}
+
+function MetricCard`,
+          );
+          if (source.includes('AlertDialogAction') || source.includes('<Database')) {
+            throw new Error('Panel-kit compatibility rewrite did not complete');
+          }
+          fs.writeFileSync(path, source);
+          NODE
+
+          if ! grep -R -E 'GenericSettingsView|settings-groups' apps/admin/src \
+              --exclude='generic-settings-view.tsx' --exclude='settings-groups.ts' >/dev/null; then
             rm -f apps/admin/src/views/store-config/settings/generic-settings-view.tsx
             rm -f apps/admin/src/lib/fixtures/settings-groups.ts
           fi
