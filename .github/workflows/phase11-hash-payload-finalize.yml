@@ -1,0 +1,29 @@
+name: Phase 11 Hash Payload Finalize
+
+on:
+  push:
+    branches:
+      - agent/phase11-governance-os-rebase
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/phase11-governance-os-rebase
+          fetch-depth: 0
+      - name: Apply canonical hash payload patch
+        run: python3 .github/scripts/phase11_hash_payload_finalize.py
+      - name: Validate patch
+        run: git diff --check
+      - name: Commit final ledger fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix(governance): verify persisted canonical ledger payload"
+          git push origin HEAD:agent/phase11-governance-os-rebase
