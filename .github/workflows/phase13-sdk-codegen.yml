@@ -1,0 +1,49 @@
+name: Phase 13 SDK Codegen
+
+on:
+    push:
+        branches: ["feat/phase13-planning-os-20260817"]
+        paths:
+            - "docs/api/reference/openapi/admin.phase13.v1.yaml"
+            - "docs/api/package.json"
+            - "docs/api/scripts/merge-admin-spec.js"
+            - ".github/workflows/phase13-sdk-codegen.yml"
+
+permissions:
+    contents: write
+
+concurrency:
+    group: phase13-sdk-codegen-${{ github.ref }}
+    cancel-in-progress: true
+
+env:
+    NODE_VERSION: "24.14.0"
+    PNPM_VERSION: "10.32.1"
+
+jobs:
+    codegen:
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  ref: "feat/phase13-planning-os-20260817"
+                  fetch-depth: 0
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+            - run: npm install --global pnpm@${PNPM_VERSION}
+            - run: pnpm install --frozen-lockfile
+            - run: pnpm --filter @calibra/sdk run codegen
+            - name: Commit generated SDK contract when changed
+              shell: bash
+              run: |
+                  if git diff --quiet -- packages/sdk/src/generated/; then
+                      echo "SDK contract is already synchronized."
+                      exit 0
+                  fi
+                  git config user.name "github-actions[bot]"
+                  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+                  git add packages/sdk/src/generated/
+                  git commit -m "chore(sdk): sync Phase 13 planning contract"
+                  git push origin HEAD:feat/phase13-planning-os-20260817
