@@ -219,20 +219,27 @@ jobs:
           CACHE_DRIVER: memory
         run: node ace check:api-docs
 
-      - name: Run Phase 6, Phase 7 and regression functional suites
+      - name: Run isolated functional regression suites
         shell: bash
         env:
           PGPASSWORD: calibra
         run: |
           set -euo pipefail
-          psql -h localhost -U calibra -d calibra -c "CREATE DATABASE calibra_test OWNER calibra;"
           cd apps/api
-          pnpm test \
-            --files=tests/functional/admin/configuration_engine.spec.ts \
-            --files=tests/functional/admin/configuration_history.spec.ts \
-            --files=tests/functional/admin/orders.spec.ts \
-            --files=tests/functional/payments/admin_transaction_center.spec.ts \
-            --files=tests/functional/identity/phase7_identity.spec.ts
+          suites=(
+            tests/functional/admin/configuration_engine.spec.ts
+            tests/functional/admin/configuration_history.spec.ts
+            tests/functional/admin/orders.spec.ts
+            tests/functional/payments/admin_transaction_center.spec.ts
+            tests/functional/identity/phase7_identity.spec.ts
+          )
+          for suite in "${suites[@]}"; do
+            echo "::group::${suite}"
+            psql -h localhost -U calibra -d postgres -v ON_ERROR_STOP=1 -c "DROP DATABASE IF EXISTS calibra_test WITH (FORCE);"
+            psql -h localhost -U calibra -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE calibra_test OWNER calibra;"
+            timeout --foreground 9m pnpm test --files="$suite"
+            echo "::endgroup::"
+          done
 
       - name: Verify format, lint, build and generated SDK drift
         run: |
@@ -245,6 +252,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          rm -f .github/workflows/baseline-gate-repair.yml
           git add -A
           git diff --cached --check
           node scripts/verify-phase7-identity-integration.mjs
