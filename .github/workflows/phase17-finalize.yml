@@ -1,0 +1,71 @@
+name: Phase 17 Finalizer
+
+on:
+  push:
+    branches:
+      - agent/phase17-causal-lab-20260817
+
+permissions:
+  contents: write
+
+concurrency:
+  group: phase17-finalizer
+  cancel-in-progress: true
+
+jobs:
+  finalize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/phase17-causal-lab-20260817
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Materialize Phase 17 implementation
+        run: |
+          python3 scripts/phase17-bootstrap.py
+          python3 scripts/phase17-bootstrap-app.py
+      - name: Format changed repository files
+        run: pnpm run format:fix
+      - name: Regenerate OpenAPI bundles and SDK
+        run: pnpm --filter @calibra/sdk run codegen
+      - name: Lint API contracts
+        run: |
+          pnpm --filter @calibra/api-docs run lint:admin
+          pnpm --filter @calibra/api-docs run lint:storefront
+      - name: Typecheck affected workspaces
+        run: |
+          pnpm --filter @calibra/api run typecheck
+          pnpm --filter @calibra/admin run typecheck
+          pnpm --filter @calibra/sdk run typecheck
+      - name: Verify admin design-token policy
+        run: pnpm run lint:tokens
+      - name: Run Phase 17 unit tests
+        working-directory: apps/api
+        run: node ace test --files="tests/unit/experimentation/*.spec.ts"
+      - name: Remove temporary bootstrap and finalizer
+        run: |
+          rm scripts/phase17-bootstrap.py
+          rm scripts/phase17-bootstrap-app.py
+          rm .github/workflows/phase17-finalize.yml
+      - name: Commit verified Phase 17 tree
+        run: |
+          git config user.name "calibra-phase17-bot"
+          git config user.email "calibra-phase17-bot@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo "Nothing to commit"
+          else
+            git commit -m "feat(experiments): add Phase 17 causal learning control plane"
+            git push origin HEAD:agent/phase17-causal-lab-20260817
+          fi
