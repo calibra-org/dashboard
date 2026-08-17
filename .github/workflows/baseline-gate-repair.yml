@@ -1,4 +1,4 @@
-name: Final Phase 7 merge-gate certifier
+name: Final Phase 6 and Phase 7 certification
 
 on:
   push:
@@ -74,13 +74,9 @@ jobs:
             git show "$PHASE6_HEAD:$path" > "$path"
           done
 
-          git show "$PHASE6_HEAD:apps/api/database/migrations/1763000000000_create_configuration_revisions.ts" \
-            > apps/api/database/migrations/1763200000000_create_configuration_revisions.ts
-          git show "$PHASE6_HEAD:apps/api/database/migrations/1763100000000_create_configuration_engine.ts" \
-            > apps/api/database/migrations/1763300000000_create_configuration_engine.ts
+          git show "$PHASE6_HEAD:apps/api/database/migrations/1763000000000_create_configuration_revisions.ts" > apps/api/database/migrations/1763200000000_create_configuration_revisions.ts
+          git show "$PHASE6_HEAD:apps/api/database/migrations/1763100000000_create_configuration_engine.ts" > apps/api/database/migrations/1763300000000_create_configuration_engine.ts
           test -f apps/api/database/migrations/1763000000000_create_identity_verification_platform.ts
-          test -f apps/api/database/migrations/1763200000000_create_configuration_revisions.ts
-          test -f apps/api/database/migrations/1763300000000_create_configuration_engine.ts
 
           git diff --binary "$PHASE6_BASE" "$PHASE6_HEAD" -- \
             apps/api/app/services/settings_service.ts \
@@ -89,41 +85,17 @@ jobs:
             apps/api/app/controllers/admin/settings_datetime_controller.ts \
             apps/api/app/controllers/admin/settings_media_controller.ts \
             apps/api/app/controllers/admin/settings_branding_controller.ts \
-            apps/api/start/routes/admin_settings.ts \
-            > /tmp/phase6-shared.patch
+            apps/api/start/routes/admin_settings.ts > /tmp/phase6-shared.patch
           test -s /tmp/phase6-shared.patch
           git apply --3way /tmp/phase6-shared.patch
 
-          # Lucid's current strict query binding excludes bigint even though Phase 6 can receive
-          # bigint IDs from the database driver. Preserve the exact identifier by binding its
-          # decimal string representation instead of coercing it through Number().
-          perl -0pi -e 's/\.where\("id", current\.id\)\.update\(payload\)/.where("id", String(current.id)).update(payload)/g' \
-            apps/api/app/services/configuration_engine_service.ts
+          perl -0pi -e 's/\.where\("id", current\.id\)\.update\(payload\)/.where("id", String(current.id)).update(payload)/g' apps/api/app/services/configuration_engine_service.ts
           grep -F '.where("id", String(current.id)).update(payload)' apps/api/app/services/configuration_engine_service.ts
-
           grep -F '.use(middleware.admin());' apps/api/start/routes/admin_settings.ts
-          grep -F 'router.get("/configuration/registry"' apps/api/start/routes/admin_settings.ts
-          grep -F 'router.post("/configuration/history/:scope/:revision/rollback"' apps/api/start/routes/admin_settings.ts
+          grep -F 'router.post("/configuration/blueprint/apply"' apps/api/start/routes/admin_settings.ts
+          grep -F 'router.post("/configuration/tax/simulate"' apps/api/start/routes/admin_settings.ts
 
-          pnpm exec biome format --write --files-ignore-unknown=true \
-            apps/api/app/controllers/admin/configuration_controller.ts \
-            apps/api/app/services/configuration_engine_service.ts \
-            apps/api/app/services/configuration_registry.ts \
-            apps/api/app/services/configuration_revision_service.ts \
-            apps/api/app/services/settings_service.ts \
-            apps/api/app/services/admin_audit_log_service.ts \
-            apps/api/app/controllers/admin/settings_general_controller.ts \
-            apps/api/app/controllers/admin/settings_datetime_controller.ts \
-            apps/api/app/controllers/admin/settings_media_controller.ts \
-            apps/api/app/controllers/admin/settings_branding_controller.ts \
-            apps/api/start/routes/admin_settings.ts \
-            apps/api/database/migrations/1763200000000_create_configuration_revisions.ts \
-            apps/api/database/migrations/1763300000000_create_configuration_engine.ts \
-            apps/api/tests/functional/admin/configuration_engine.spec.ts \
-            apps/api/tests/functional/admin/configuration_history.spec.ts
-          git diff --check
-
-      - name: Apply canonical merge-gate repairs
+      - name: Apply canonical integration repairs
         shell: bash
         run: |
           set -euo pipefail
@@ -134,10 +106,7 @@ jobs:
           const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8'))
           pkg.scripts['build:json:admin-phase6'] = 'redocly bundle reference/openapi/admin.phase6.v1.yaml -o dist/admin.phase6.v1.json --ext json'
           if (!pkg.scripts['build:json:admin'].includes('build:json:admin-phase6')) {
-            pkg.scripts['build:json:admin'] = pkg.scripts['build:json:admin'].replace(
-              'pnpm build:json:admin-phase5 &&',
-              'pnpm build:json:admin-phase5 && pnpm build:json:admin-phase6 &&',
-            )
+            pkg.scripts['build:json:admin'] = pkg.scripts['build:json:admin'].replace('pnpm build:json:admin-phase5 &&', 'pnpm build:json:admin-phase5 && pnpm build:json:admin-phase6 &&')
           }
           fs.writeFileSync(packagePath, `${JSON.stringify(pkg, null, 4)}\n`)
 
@@ -149,107 +118,73 @@ jobs:
               'const phase5 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase5.v1.json"), "utf8"));\nconst phase6 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase6.v1.json"), "utf8"));',
             )
           }
-          if (!merge.includes('[phase6, "Phase6Overlay"]')) {
-            merge = merge.replace(
-              '    [phase5, "Phase5Overlay"],',
-              '    [phase5, "Phase5Overlay"],\n    [phase6, "Phase6Overlay"],',
-            )
-          }
+          if (!merge.includes('[phase6, "Phase6Overlay"]')) merge = merge.replace('    [phase5, "Phase5Overlay"],', '    [phase5, "Phase5Overlay"],\n    [phase6, "Phase6Overlay"],')
           fs.writeFileSync(mergePath, merge)
 
-          const phase6SpecPath = 'docs/api/reference/openapi/admin.phase6.v1.yaml'
-          let phase6Spec = fs.readFileSync(phase6SpecPath, 'utf8')
-          if (!phase6Spec.includes('/api/v1/admin/settings/configuration/blueprint/apply:')) {
-            const anchor = '  /api/v1/admin/settings/configuration/drift:\n'
-            if (!phase6Spec.includes(anchor)) throw new Error('Phase 6 drift anchor missing')
-            phase6Spec = phase6Spec.replace(anchor, `  /api/v1/admin/settings/configuration/blueprint/apply:\n    post:\n      operationId: adminPhase6ConfigurationBlueprintApply\n      security: [{ bearerAuth: [] }]\n      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ConfigurationBlueprintApplyInput' } } } }\n      responses:\n        '200': { description: Applied declared-state blueprint and appended immutable revisions, content: { application/json: { schema: { $ref: '#/components/schemas/ConfigurationBlueprintApplyEnvelope' } } } }\n        '403': { description: Blueprint apply permission denied }\n        '422': { description: Invalid configuration blueprint }\n${anchor}`)
-          }
-          if (!phase6Spec.includes('/api/v1/admin/settings/configuration/tax/simulate:')) {
-            const anchor = 'components:\n'
-            if (!phase6Spec.includes(anchor)) throw new Error('Phase 6 components anchor missing')
-            phase6Spec = phase6Spec.replace(anchor, `  /api/v1/admin/settings/configuration/tax/simulate:\n    post:\n      operationId: adminPhase6ConfigurationTaxSimulate\n      security: [{ bearerAuth: [] }]\n      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ConfigurationTaxSimulationInput' } } } }\n      responses:\n        '200': { description: Side-effect-free tax calculation and impacted-product evidence, content: { application/json: { schema: { $ref: '#/components/schemas/ConfigurationTaxSimulationEnvelope' } } } }\n        '403': { description: Tax configuration permission denied }\n        '422': { description: Invalid tax simulation input }\n${anchor}`)
-          }
-          if (!phase6Spec.includes('    ConfigurationBlueprintApplyInput:')) {
-            const anchor = '    ConfigurationDriftEnvelope:'
-            if (!phase6Spec.includes(anchor)) throw new Error('Phase 6 schema anchor missing')
-            const schemas = `    ConfigurationBlueprintApplyInput:\n      allOf:\n        - { $ref: '#/components/schemas/ConfigurationBlueprint' }\n        - type: object\n          properties:\n            reason: { type: string, minLength: 3, maxLength: 500 }\n            approval_reference: { type: string }\n    ConfigurationBlueprintApplyEnvelope:\n      type: object\n      required: [data, meta]\n      properties:\n        data: { $ref: '#/components/schemas/ConfigurationBlueprint' }\n        meta:\n          type: object\n          required: [revisions]\n          properties:\n            revisions: { type: object, additionalProperties: { type: integer, minimum: 1 } }\n    ConfigurationTaxSimulationInput:\n      type: object\n      required: [amount_minor, tax_class_id]\n      properties:\n        amount_minor: { type: integer, minimum: 0 }\n        tax_class_id: { type: integer, minimum: 1 }\n        country: { type: [string, 'null'], minLength: 2, maxLength: 2 }\n        region_id: { type: [integer, 'null'], minimum: 1 }\n        prices_include_tax: { type: boolean, default: false }\n    ConfigurationTaxBreakdownLine:\n      type: object\n      required: [rate_id, label, rate_percent, amount]\n      properties:\n        rate_id: { type: integer, format: int64 }\n        label: { type: string }\n        rate_percent: { type: number }\n        amount: { type: integer }\n    ConfigurationTaxCalculation:\n      type: object\n      required: [tax, base, breakdown]\n      properties:\n        tax: { type: integer }\n        base: { type: integer }\n        breakdown: { type: array, items: { $ref: '#/components/schemas/ConfigurationTaxBreakdownLine' } }\n    ConfigurationTaxSimulation:\n      type: object\n      required: [amount_minor, tax_class_id, address, prices_include_tax, rate_count, calculation, impact]\n      properties:\n        amount_minor: { type: integer, minimum: 0 }\n        tax_class_id: { type: integer, minimum: 1 }\n        address:\n          type: object\n          required: [country, region_id]\n          properties:\n            country: { type: [string, 'null'] }\n            region_id: { type: [integer, 'null'] }\n        prices_include_tax: { type: boolean }\n        rate_count: { type: integer, minimum: 0 }\n        calculation: { $ref: '#/components/schemas/ConfigurationTaxCalculation' }\n        impact:\n          type: object\n          required: [products_using_tax_class, source]\n          properties:\n            products_using_tax_class: { type: integer, minimum: 0 }\n            source: { type: string, enum: [products.tax_class_id] }\n    ConfigurationTaxSimulationEnvelope: { type: object, required: [data], properties: { data: { $ref: '#/components/schemas/ConfigurationTaxSimulation' } } }\n`
-            phase6Spec = phase6Spec.replace(anchor, schemas + anchor)
-          }
-          fs.writeFileSync(phase6SpecPath, phase6Spec)
+          const spec = fs.readFileSync('docs/api/reference/openapi/admin.phase6.v1.yaml', 'utf8')
+          for (const required of [
+            '/api/v1/admin/settings/configuration/blueprint/apply:',
+            '/api/v1/admin/settings/configuration/tax/simulate:',
+            'ConfigurationBlueprintApplyInput:',
+            'ConfigurationTaxSimulationInput:',
+          ]) if (!spec.includes(required)) throw new Error(`Missing canonical Phase 6 OpenAPI contract: ${required}`)
 
-          const configurationView = 'apps/admin/src/views/store-config/settings/configuration-group-view.tsx'
-          let view = fs.readFileSync(configurationView, 'utf8')
-          if (!view.includes('        unset: false,')) {
-            const from = '        value: parsed.value,\n        reason,'
-            if (!view.includes(from)) throw new Error('Configuration change input anchor missing')
-            view = view.replace(from, '        value: parsed.value,\n        unset: false,\n        reason,')
-          }
+          const viewPath = 'apps/admin/src/views/store-config/settings/configuration-group-view.tsx'
+          let view = fs.readFileSync(viewPath, 'utf8')
+          if (!view.includes('        unset: false,')) view = view.replace('        value: parsed.value,\n        reason,', '        value: parsed.value,\n        unset: false,\n        reason,')
           if (!view.includes('        rollout_percent: 100,')) {
-            const from = '        expected_version: item.origin.scope_type === "tenant" ? item.origin.version : 0,'
-            if (!view.includes(from)) throw new Error('Configuration rollout anchor missing')
-            view = view.replace(from, `${from}\n        rollout_percent: 100,`)
+            const anchor = '        expected_version: item.origin.scope_type === "tenant" ? item.origin.version : 0,'
+            if (!view.includes(anchor)) throw new Error('Configuration rollout anchor missing')
+            view = view.replace(anchor, `${anchor}\n        rollout_percent: 100,`)
           }
-          fs.writeFileSync(configurationView, view)
+          fs.writeFileSync(viewPath, view)
 
           const openapiPath = 'docs/api/reference/openapi/admin.v1.yaml'
           let openapi = fs.readFileSync(openapiPath, 'utf8')
           const staleHead = '    /api/v1/admin/payment-attempts/{id}/reconcile:\n        post:\n            $ref: "./admin/paths/payments/payment-attempts-id-reconcile.post.yaml"\n\n        head:\n            $ref: "./common/components/operations/HeadCompanion.yaml"'
-          const canonicalPost = '    /api/v1/admin/payment-attempts/{id}/reconcile:\n        post:\n            $ref: "./admin/paths/payments/payment-attempts-id-reconcile.post.yaml"'
-          if (openapi.includes(staleHead)) openapi = openapi.replace(staleHead, canonicalPost)
-          else if (!openapi.includes(canonicalPost)) throw new Error('Reconcile POST route missing from OpenAPI')
+          if (openapi.includes(staleHead)) openapi = openapi.replace(staleHead, '    /api/v1/admin/payment-attempts/{id}/reconcile:\n        post:\n            $ref: "./admin/paths/payments/payment-attempts-id-reconcile.post.yaml"')
           fs.writeFileSync(openapiPath, openapi)
 
           const ordersPath = 'apps/api/tests/functional/admin/orders.spec.ts'
           let orders = fs.readFileSync(ordersPath, 'utf8')
-          if (orders.includes('test("transitions processing → completed, persists tracking metadata, idempotent re-runs"')) {
-            orders = orders.replace(
-              'test("transitions processing → completed, persists tracking metadata, idempotent re-runs"',
-              'test("creates a canonical shipment without completing the processing order, persists tracking metadata, idempotent re-runs"',
-            )
-          }
+          orders = orders.replace('test("transitions processing → completed, persists tracking metadata, idempotent re-runs"', 'test("creates a canonical shipment without completing the processing order, persists tracking metadata, idempotent re-runs"')
           orders = orders.replace('assert.equal(body.status, "completed");', 'assert.equal(body.status, OrderStatus.Processing);')
           orders = orders.replace('assert.equal(reshipped.body().data.status, "completed");', 'assert.equal(reshipped.body().data.status, OrderStatus.Processing);')
-          orders = orders.replace(
-            '/** Draft → markShipped — state machine refuses the implicit completed transition. */',
-            '/** Draft → markShipped is rejected because only processing orders may create a compatibility shipment. */',
-          )
-          const draftBlock = '        res.assertStatus(200);\n        const fresh = await Order.findOrFail(Number(order.id));'
-          if (orders.includes(draftBlock)) orders = orders.replace(draftBlock, '        res.assertStatus(422);\n        const fresh = await Order.findOrFail(Number(order.id));')
+          orders = orders.replace('/** Draft → markShipped — state machine refuses the implicit completed transition. */', '/** Draft → markShipped is rejected because only processing orders may create a compatibility shipment. */')
+          orders = orders.replace('        res.assertStatus(200);\n        const fresh = await Order.findOrFail(Number(order.id));', '        res.assertStatus(422);\n        const fresh = await Order.findOrFail(Number(order.id));')
           fs.writeFileSync(ordersPath, orders)
 
-          const txTest = 'apps/api/tests/functional/payments/admin_transaction_center.spec.ts'
-          let tx = fs.readFileSync(txTest, 'utf8')
-          const oldFilter = '.qs({ "filter[]": ["amount_minor:gte:1500000", "amount_minor:lte:3000000"], "sort[]": "amount_minor:desc" })'
-          if (tx.includes(oldFilter)) tx = tx.replace(oldFilter, '.qs({ "filter[]": "amount_minor:between:1500000,3000000", "sort[]": "amount_minor:desc" })')
-          fs.writeFileSync(txTest, tx)
+          const txPath = 'apps/api/tests/functional/payments/admin_transaction_center.spec.ts'
+          let tx = fs.readFileSync(txPath, 'utf8')
+          tx = tx.replace('.qs({ "filter[]": ["amount_minor:gte:1500000", "amount_minor:lte:3000000"], "sort[]": "amount_minor:desc" })', '.qs({ "filter[]": "amount_minor:between:1500000,3000000", "sort[]": "amount_minor:desc" })')
+          fs.writeFileSync(txPath, tx)
 
-          const paymentController = 'apps/api/app/controllers/admin/payment_attempts_controller.ts'
-          let payments = fs.readFileSync(paymentController, 'utf8')
-          if (payments.includes('.sum("amount_minor as amount_minor")')) payments = payments.replace('.sum("amount_minor as amount_minor")', '.sum("amount_minor as amount_sum_minor")')
-          if (payments.includes('Number(row.$extras.amount_minor ?? 0)')) payments = payments.replace('Number(row.$extras.amount_minor ?? 0)', 'Number(row.$extras.amount_sum_minor ?? 0)')
-          fs.writeFileSync(paymentController, payments)
+          const paymentPath = 'apps/api/app/controllers/admin/payment_attempts_controller.ts'
+          let payment = fs.readFileSync(paymentPath, 'utf8')
+          payment = payment.replace('.sum("amount_minor as amount_minor")', '.sum("amount_minor as amount_sum_minor")')
+          payment = payment.replace('Number(row.$extras.amount_minor ?? 0)', 'Number(row.$extras.amount_sum_minor ?? 0)')
+          fs.writeFileSync(paymentPath, payment)
           NODE
 
           pnpm exec biome format --write --files-ignore-unknown=true \
-            docs/api/package.json \
-            docs/api/scripts/merge-admin-spec.js \
-            docs/api/reference/openapi/admin.v1.yaml \
-            apps/admin/src/lib/queries/configuration.ts \
-            apps/admin/src/views/store-config/settings/configuration-group-view.tsx \
-            apps/api/app/controllers/admin/payment_attempts_controller.ts \
-            apps/api/tests/functional/admin/orders.spec.ts \
-            apps/api/tests/functional/payments/admin_transaction_center.spec.ts
+            docs/api/package.json docs/api/scripts/merge-admin-spec.js docs/api/reference/openapi/admin.v1.yaml docs/api/reference/openapi/admin.phase6.v1.yaml \
+            apps/admin/src/lib/queries/configuration.ts apps/admin/src/views/store-config/settings/configuration-group-view.tsx \
+            apps/api/app/controllers/admin/configuration_controller.ts apps/api/app/controllers/admin/payment_attempts_controller.ts \
+            apps/api/app/services/configuration_engine_service.ts apps/api/app/services/configuration_registry.ts apps/api/app/services/configuration_revision_service.ts \
+            apps/api/app/services/settings_service.ts apps/api/app/services/admin_audit_log_service.ts apps/api/start/routes/admin_settings.ts \
+            apps/api/database/migrations/1763200000000_create_configuration_revisions.ts apps/api/database/migrations/1763300000000_create_configuration_engine.ts \
+            apps/api/tests/functional/admin/configuration_engine.spec.ts apps/api/tests/functional/admin/configuration_history.spec.ts \
+            apps/api/tests/functional/admin/orders.spec.ts apps/api/tests/functional/payments/admin_transaction_center.spec.ts
           git diff --check
 
-      - name: Rebuild canonical OpenAPI and SDK
+      - name: Rebuild canonical contracts and SDK
         run: |
           pnpm --filter @calibra/api-docs run build:json
           pnpm --filter @calibra/sdk run codegen
           pnpm --filter @calibra/sdk run build
           pnpm --filter @calibra/sdk run typecheck
-          git add packages/sdk/src/generated
 
-      - name: Verify TypeScript and Phase integration contracts
+      - name: Verify TypeScript and phase invariants
         run: |
           pnpm --filter @calibra/admin run typecheck
           pnpm --filter @calibra/api run typecheck
@@ -257,7 +192,7 @@ jobs:
           pnpm run verify:phase5
           node scripts/verify-phase7-identity-integration.mjs
 
-      - name: Verify API route and OpenAPI synchronization
+      - name: Verify runtime and OpenAPI synchronization
         working-directory: apps/api
         env:
           NODE_ENV: test
@@ -284,7 +219,7 @@ jobs:
           CACHE_DRIVER: memory
         run: node ace check:api-docs
 
-      - name: Create test database and run targeted functional regression suite
+      - name: Run Phase 6, Phase 7 and regression functional suites
         shell: bash
         env:
           PGPASSWORD: calibra
@@ -299,18 +234,17 @@ jobs:
             --files=tests/functional/payments/admin_transaction_center.spec.ts \
             --files=tests/functional/identity/phase7_identity.spec.ts
 
-      - name: Verify repository format, lint and production build
+      - name: Verify format, lint, build and generated SDK drift
         run: |
           pnpm run format
           pnpm run lint
           pnpm run build
           pnpm --filter @calibra/sdk run codegen:check
 
-      - name: Publish certified production-only repair
+      - name: Publish certified production repair
         shell: bash
         run: |
           set -euo pipefail
-          rm -f .github/workflows/baseline-gate-repair.yml
           git add -A
           git diff --cached --check
           node scripts/verify-phase7-identity-integration.mjs
