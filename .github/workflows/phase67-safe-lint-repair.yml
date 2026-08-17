@@ -34,6 +34,23 @@ jobs:
       - name: Apply Biome safe fixes only
         run: pnpm exec biome check . --write --diagnostic-level=error --max-diagnostics=300
 
+      - name: Normalize Configuration semantic status tokens
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = 'apps/admin/src/views/store-config/settings/configuration-group-view.tsx';
+          let source = fs.readFileSync(path, 'utf8');
+          const replacements = [
+            ['border border-amber-500/30 bg-amber-500/5', 'border border-warning/30 bg-warning/5'],
+            ['text-emerald-700 text-xs', 'text-success text-xs'],
+          ];
+          for (const [from, to] of replacements) {
+            if (!source.includes(from)) throw new Error(`Expected token anchor missing: ${from}`);
+            source = source.split(from).join(to);
+          }
+          fs.writeFileSync(path, source, 'utf8');
+          NODE
+
       - name: Verify repository format and lint
         run: |
           pnpm run format
@@ -50,10 +67,11 @@ jobs:
       - name: Verify type safety
         run: pnpm run typecheck
 
-      - name: Remove temporary diagnostics and repair helper
+      - name: Remove temporary diagnostics and repair helpers
         run: |
           rm -f .github/workflows/phase67-error-diagnostic.yml
           rm -f .github/workflows/phase67-safe-lint-repair.yml
+          rm -f .github/workflows/phase7-final-certification.yml
 
       - name: Commit safe repairs
         run: |
@@ -61,5 +79,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git diff --cached --check
-          git commit -m "style(phase6-7): normalize canonical imports and clear lint gate"
+          git commit -m "style(phase6-7): normalize canonical lint and design tokens"
           git push origin HEAD:agent/phase7-identity-trust-os
