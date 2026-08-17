@@ -1,5 +1,6 @@
 name: Baseline merge-gate repair
 
+# One-shot diagnostic for pre-existing main-branch merge-gate debt.
 on:
   push:
     branches: [agent/phase7-identity-trust-os]
