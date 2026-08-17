@@ -75,28 +75,32 @@ jobs:
           pnpm exec biome format --write --files-ignore-unknown=true docs/api/package.json docs/api/scripts/merge-admin-spec.js apps/admin/src/lib/queries/configuration.ts apps/admin/src/views/store-config/settings/configuration-group-view.tsx
           pnpm --filter @calibra/api-docs run build:json
           pnpm --filter @calibra/sdk run codegen
+          pnpm --filter @calibra/sdk run build
           pnpm --filter @calibra/sdk run typecheck
           pnpm --filter @calibra/admin run typecheck
 
       - name: Print exact remaining route drift sources
+        if: always()
         shell: bash
         run: |
           set -euo pipefail
           echo '=== payment attempt reconcile references ==='
-          grep -Rni -C 7 --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=dist 'payment-attempts.*reconcile\|reconcile.*payment-attempts' apps docs scripts packages || true
-          echo '=== explicit HEAD blocks near reconcile ==='
-          grep -Rni -C 12 --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=dist '^ *head:' docs/api/reference/openapi | head -240 || true
+          grep -Rni -C 10 --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=dist 'payment-attempts.*reconcile\|reconcile.*payment-attempts' apps docs scripts packages || true
+          echo '=== explicit HEAD blocks ==='
+          grep -Rni -C 14 --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=dist '^ *head:' docs/api/reference/openapi | head -360 || true
 
       - name: Print exact failing shard source and related implementation
+        if: always()
         shell: bash
         run: |
           set -euo pipefail
           echo '=== shipping/transaction test files ==='
           find apps/api/tests -type f \( -iname '*shipping*' -o -iname '*transaction*' \) -print
           echo '=== shipping methods references ==='
-          grep -Rni -C 8 --exclude-dir=node_modules 'shipping-methods\|shipping_methods' apps/api/tests apps/api/app apps/api/start | head -520 || true
+          grep -Rni -C 12 --exclude-dir=node_modules 'shipping-methods\|shipping_methods' apps/api/tests apps/api/app apps/api/start | head -900 || true
           echo '=== transaction references / amounts ==='
-          grep -Rni -C 7 --exclude-dir=node_modules '10964\.3089346\|109643089346\|20000\|transactions' apps/api/tests apps/api/app | head -700 || true
+          grep -Rni -C 10 --exclude-dir=node_modules '10964\.3089346\|109643089346\|20000\|transactions' apps/api/tests apps/api/app | head -1200 || true
 
       - name: Verify build after Phase 6 contract repair
+        if: success()
         run: pnpm run build
