@@ -1,0 +1,43 @@
+name: Phase 7 Lint Errors
+
+on:
+  push:
+    branches:
+      - agent/phase7-identity-trust-os
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    if: contains(github.event.head_commit.message, '[phase7-lint-errors]')
+    runs-on: ubuntu-24.04
+    env:
+      NODE_VERSION: "24.14.0"
+      PNPM_VERSION: "10.32.1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/phase7-identity-trust-os
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Capture only error diagnostics
+        shell: bash
+        run: |
+          set +e
+          pnpm exec biome lint . --max-diagnostics=1000 --diagnostic-level=error > phase7-lint-errors.txt 2>&1
+          code=$?
+          echo "exit_code=$code" >> phase7-lint-errors.txt
+          rm -f .github/workflows/phase7-lint-errors.yml
+          git config user.name "calibra-dev"
+          git config user.email "calibra-dev@users.noreply.github.com"
+          git add -A
+          git commit -m "chore(ci): capture Phase 7 lint diagnostics"
+          git push origin HEAD:agent/phase7-identity-trust-os
