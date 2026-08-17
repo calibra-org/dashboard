@@ -73,4 +73,39 @@ if needle not in text:
     raise SystemExit("Phase 17 extra OpenAPI anchor missing")
 text = text.replace(needle, insert + needle, 1)
 path.write_text(text, encoding="utf-8")
-print("Phase 17 OpenAPI includes layer/holdout management, revisions and guardrail checks")
+
+service = root / "apps/api/app/services/experimentation/experiment_service.ts"
+code = service.read_text(encoding="utf-8")
+old = '''        const controlVariant = variants.find((item: Row) => item.is_control);
+        const treatmentVariant = variants.find((item: Row) => !item.is_control);
+        const results: Row[] = [];'''
+new = '''        const controlVariant = variants.find((item: Row) => item.is_control);
+        const treatmentVariant = variants.find((item: Row) => !item.is_control);
+        if (!controlVariant || !treatmentVariant) {
+            throw new Exception("Two-arm guardrail design is invalid", { status: 422, code: "E_EXPERIMENT_GUARDRAIL_ARMS" });
+        }
+        const results: Row[] = [];'''
+if old not in code:
+    raise SystemExit("Phase 17 guardrail narrowing anchor missing")
+code = code.replace(old, new, 1)
+
+old = '''        const result = {
+            primary_metric: { id: number(metric.id), key: metric.key, version: number(metric.version) },'''
+new = '''        const guardrails = await this.evaluateGuardrails(revision, assignments, variants, dataCutoff);
+        const guardrailStatus = guardrails.status;
+        const result = {
+            primary_metric: { id: number(metric.id), key: metric.key, version: number(metric.version) },'''
+if old not in code:
+    raise SystemExit("Phase 17 analysis result anchor missing")
+code = code.replace(old, new, 1)
+
+old = '''        const guardrails = await this.evaluateGuardrails(revision, assignments, variants, dataCutoff);
+        const guardrailStatus = guardrails.status;
+        const [snapshot] = await trx.table("experiment_analysis_snapshots").insert({'''
+new = '''        const [snapshot] = await trx.table("experiment_analysis_snapshots").insert({'''
+if old not in code:
+    raise SystemExit("Phase 17 duplicate guardrail declaration anchor missing")
+code = code.replace(old, new, 1)
+service.write_text(code, encoding="utf-8")
+
+print("Phase 17 OpenAPI extras and strict guardrail type flow applied")
