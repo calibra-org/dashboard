@@ -5,6 +5,7 @@ import { DateTime } from "luxon";
 
 import PasswordResetToken from "#models/password_reset_token";
 import User from "#models/user";
+import { recordIdentitySecurityEvent } from "#services/identity/security";
 import { withTenantTransaction } from "#services/tenant_context";
 import { passwordResetValidator } from "#validators/auth/password_validator";
 
@@ -43,6 +44,19 @@ export default class PasswordResetController {
              * reset would still have an active session.
              */
             await trx.from("auth_access_tokens").where("tokenable_id", Number(user.id)).delete();
+            await trx
+                .from("identity_sessions")
+                .where("user_id", Number(user.id))
+                .whereNull("revoked_at")
+                .update({ revoked_at: DateTime.utc().toSQL(), updated_at: DateTime.utc().toSQL() });
+            await recordIdentitySecurityEvent({
+                ctx,
+                userId: Number(user.id),
+                actorUserId: Number(user.id),
+                eventType: "identity.password_reset.sessions_revoked",
+                outcome: "success",
+                severity: "warning",
+            });
         });
 
         return { message: "Password has been reset." };

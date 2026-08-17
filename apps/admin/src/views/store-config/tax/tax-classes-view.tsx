@@ -19,11 +19,11 @@ function TaxClassRow({ item }: { item: TaxClass }) {
 
     return (
         <div className="grid gap-2 rounded-lg border bg-card p-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">
-            <label className="grid gap-1 text-xs font-medium">
+            <label className="grid gap-1 font-medium text-xs">
                 <span>{tax("name")}</span>
                 <Input value={name} onChange={(event) => setName(event.target.value)} />
             </label>
-            <label className="grid gap-1 text-xs font-medium">
+            <label className="grid gap-1 font-medium text-xs">
                 <span>{tax("slug")}</span>
                 <Input value={slug} onChange={(event) => setSlug(event.target.value)} dir="ltr" />
             </label>
@@ -73,11 +73,11 @@ export function TaxClassesView() {
                 <p className="mt-1 text-muted-foreground text-sm">{tax("classesSubtitle")}</p>
             </div>
             <div className="grid gap-2 rounded-xl border bg-card p-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
-                <label className="grid gap-1 text-xs font-medium">
+                <label className="grid gap-1 font-medium text-xs">
                     <span>{tax("name")}</span>
                     <Input value={name} onChange={(event) => setName(event.target.value)} />
                 </label>
-                <label className="grid gap-1 text-xs font-medium">
+                <label className="grid gap-1 font-medium text-xs">
                     <span>{tax("slug")}</span>
                     <Input value={slug} onChange={(event) => setSlug(event.target.value)} dir="ltr" />
                 </label>

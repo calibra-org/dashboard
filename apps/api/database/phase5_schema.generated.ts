@@ -6,7 +6,7 @@
  */
 
 import { BaseModel, column } from "@adonisjs/lucid/orm";
-import { DateTime } from "luxon";
+import type { DateTime } from "luxon";
 
 export class OrderFulfillmentSchema extends BaseModel {
     static $columns = [

@@ -2253,25 +2253,7 @@ export interface paths {
         post: operations["adminPaymentAttemptReconcile"];
         delete?: never;
         options?: never;
-        /** @description Headers-only companion to the corresponding `GET` operation. AdonisJS auto-registers a `HEAD` handler for every `GET` route — this stub exists so the route inventory matches the spec without duplicating the full `GET` schema. The response body is empty by definition; the headers match those returned by the `GET` operation. */
-        head: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Same headers as the matching `GET`. Body is empty. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        head?: never;
         patch?: never;
         trace?: never;
     };
@@ -6663,6 +6645,230 @@ export interface paths {
         patch: operations["adminPhase5TaxRateUpdate"];
         trace?: never;
     };
+    "/api/v1/admin/settings/configuration/registry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminPhase6ConfigurationRegistry"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/settings/configuration/definitions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminPhase6ConfigurationDefinitions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/settings/configuration/groups/{group}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminPhase6ConfigurationGroup"];
+        put: operations["adminPhase6ConfigurationUpdate"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/settings/configuration/groups/{group}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminPhase6ConfigurationPreview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/settings/configuration/groups/{group}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminPhase6ConfigurationTest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/settings/configuration/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminPhase6ConfigurationHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/settings/configuration/history/{scope}/{revision}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminPhase6ConfigurationRevisionShow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/settings/configuration/history/{scope}/{revision}/rollback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminPhase6ConfigurationRollback"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/settings/configuration/blueprint": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminPhase6ConfigurationBlueprint"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/settings/configuration/blueprint/validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminPhase6ConfigurationBlueprintValidate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/settings/configuration/blueprint/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminPhase6ConfigurationBlueprintApply"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/settings/configuration/drift": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminPhase6ConfigurationDrift"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/settings/configuration/url-redirects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminPhase6ConfigurationUrlRedirectHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/settings/configuration/tax/simulate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminPhase6ConfigurationTaxSimulate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/tickets/workflow-statuses": {
         parameters: {
             query?: never;
@@ -7181,6 +7387,367 @@ export interface paths {
         get: operations["listContentSchedulerRuns"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/identity/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read identity administration data */
+        get: operations["adminIdentityOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/identity/verifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List identity verifications */
+        get: operations["adminIdentityVerifications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/identity/verifications/{publicId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read identity verification detail */
+        get: operations["adminIdentityVerificationDetail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/identity/methods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List identity methods */
+        get: operations["adminIdentityMethods"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/identity/policies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List identity policy versions */
+        get: operations["adminIdentityPolicies"];
+        put?: never;
+        /** Create an identity policy version */
+        post: operations["adminIdentityPolicyCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/identity/providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List identity providers */
+        get: operations["adminIdentityProviders"];
+        /** Update identity provider configuration */
+        put: operations["adminIdentityProviderUpdate"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/identity/providers/{providerKey}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Probe an identity provider */
+        post: operations["adminIdentityProviderTest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/identity/provider-attempts/{attemptId}/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refresh identity delivery evidence */
+        post: operations["adminIdentityDeliveryRefresh"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/identity/delivery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read identity delivery health */
+        get: operations["adminIdentityDelivery"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/identity/risk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List identity risk events */
+        get: operations["adminIdentityRisk"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/identity/users/{userId}/credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List user identity credentials */
+        get: operations["adminIdentityCredentials"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/identity/users/{userId}/credentials/{credentialId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke a user identity credential */
+        delete: operations["adminIdentityCredentialRevoke"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/identity/users/{userId}/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List user identity sessions */
+        get: operations["adminIdentitySessions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/identity/users/{userId}/sessions/{sessionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke a user identity session */
+        delete: operations["adminIdentitySessionRevoke"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/identity/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List identity audit events */
+        get: operations["adminIdentityAudit"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/identity/analytics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read identity analytics */
+        get: operations["adminIdentityAnalytics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/identity/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read identity settings */
+        get: operations["adminIdentitySettings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update identity settings */
+        patch: operations["adminIdentitySettingsUpdate"];
+        trace?: never;
+    };
+    "/api/v1/admin/identity/sms/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read SMS identity settings */
+        get: operations["adminIdentitySmsSettings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update SMS identity settings */
+        patch: operations["adminIdentitySmsSettingsUpdate"];
+        trace?: never;
+    };
+    "/api/v1/admin/identity/access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read identity access matrix */
+        get: operations["adminIdentityAccess"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/identity/access/preset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Apply an identity access preset */
+        post: operations["adminIdentityAccessPreset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/identity/step-up/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verify a fresh scoped admin step-up */
+        post: operations["adminIdentityStepUp"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9881,6 +10448,292 @@ export interface components {
                 [key: string]: unknown;
             }[];
         };
+        /** @enum {string} */
+        ConfigurationGroup: "general" | "publishing" | "reading" | "community" | "media" | "urls" | "catalog" | "inventory" | "tax" | "shipping" | "payments" | "checkout" | "notifications" | "privacy" | "visibility" | "integrations" | "infrastructure" | "change_management";
+        /** @enum {string} */
+        ConfigurationScope: "general" | "publishing" | "reading" | "community" | "media" | "urls" | "catalog" | "inventory" | "tax" | "shipping" | "payments" | "checkout" | "notifications" | "privacy" | "visibility" | "integrations" | "infrastructure" | "change_management" | "datetime" | "branding";
+        /** @enum {string} */
+        ConfigurationScopeType: "tenant" | "market" | "channel" | "environment" | "temporary";
+        ConfigurationCapability: {
+            key: components["schemas"]["ConfigurationGroup"];
+            /** @enum {string} */
+            category: "site" | "commerce" | "communications" | "governance" | "developer" | "change_management";
+            /** @enum {string} */
+            mode: "settings" | "domain" | "hybrid";
+            label_fa: string;
+            label_en: string;
+            description_fa: string;
+            description_en: string;
+            href: string;
+            api_path: string;
+            history_enabled: boolean;
+            definition_count: number;
+        };
+        ConfigurationCapabilityEnvelope: {
+            data: components["schemas"]["ConfigurationCapability"][];
+        };
+        ConfigurationDefinition: {
+            key: string;
+            group: components["schemas"]["ConfigurationGroup"];
+            /** @enum {string} */
+            type: "string" | "number" | "boolean" | "json";
+            schema_version: number;
+            default_value: unknown;
+            allowed_scopes: components["schemas"]["ConfigurationScopeType"][];
+            validation: {
+                [key: string]: unknown;
+            };
+            /** @enum {string} */
+            secret_class: "none" | "reference";
+            /** @enum {string} */
+            risk_level: "low" | "medium" | "high" | "critical";
+            dependencies: string[];
+            side_effect_policy: string;
+            preview_capability: boolean;
+            test_capability: boolean;
+            /** @enum {string} */
+            restart_requirement: "none" | "api" | "worker" | "storefront";
+            /** @enum {string} */
+            approval_policy: "none" | "preview_required" | "governance_required";
+            /** @enum {string} */
+            deprecation_policy: "active" | "deprecated";
+            migration_policy: string;
+            required_permission: string;
+            label_fa: string;
+            label_en: string;
+            description_fa: string;
+            description_en: string;
+            linked_href: string | null;
+            /** @enum {string} */
+            storage: "settings" | "override";
+        };
+        ConfigurationDefinitionEnvelope: {
+            data: components["schemas"]["ConfigurationDefinition"][];
+        };
+        ConfigurationOrigin: {
+            source: string;
+            scope_type: string;
+            scope_key: string;
+            version: number;
+        };
+        ConfigurationResolutionStep: {
+            source: string;
+            scope_type: string;
+            scope_key: string;
+            applied: boolean;
+            version: number;
+        };
+        ConfigurationEffectiveItem: {
+            definition: components["schemas"]["ConfigurationDefinition"];
+            value: unknown;
+            origin: components["schemas"]["ConfigurationOrigin"];
+            resolution_chain: components["schemas"]["ConfigurationResolutionStep"][];
+            mutable: boolean;
+        };
+        ConfigurationGroupDetail: {
+            group: components["schemas"]["ConfigurationGroup"];
+            definitions: components["schemas"]["ConfigurationEffectiveItem"][];
+            fingerprint: string;
+        };
+        ConfigurationGroupEnvelope: {
+            data: components["schemas"]["ConfigurationGroupDetail"];
+        };
+        ConfigurationChangeInput: {
+            key: string;
+            scope_type: components["schemas"]["ConfigurationScopeType"];
+            scope_key?: string;
+            value?: unknown;
+            /** @default false */
+            unset: boolean;
+            reason: string;
+            expected_version: number;
+            preview_hash?: string;
+            /** @default 100 */
+            rollout_percent: number;
+            /** Format: date-time */
+            expires_at?: string | null;
+            approval_reference?: string | null;
+        };
+        ConfigurationImpact: {
+            /** @enum {string} */
+            risk_level: "low" | "medium" | "high" | "critical";
+            dependencies: string[];
+            evidence: {
+                [key: string]: unknown;
+            }[];
+            side_effect_policy: string;
+            restart_requirement: string;
+        };
+        ConfigurationPreview: {
+            key: string;
+            scope_type: components["schemas"]["ConfigurationScopeType"];
+            scope_key: string;
+            current_version: number;
+            before: unknown;
+            after: unknown;
+            unset: boolean;
+            preview_hash: string;
+            impact: components["schemas"]["ConfigurationImpact"];
+            requires_preview: boolean;
+            requires_approval: boolean;
+            restart_requirement: string;
+        };
+        ConfigurationPreviewEnvelope: {
+            data: components["schemas"]["ConfigurationPreview"];
+        };
+        ConfigurationTestResult: {
+            passed: boolean;
+            mode: string;
+            external_checks: unknown[];
+            preview: components["schemas"]["ConfigurationPreview"];
+        };
+        ConfigurationTestEnvelope: {
+            data: components["schemas"]["ConfigurationTestResult"];
+        };
+        ConfigurationUpdateEnvelope: {
+            data: components["schemas"]["ConfigurationGroupDetail"];
+            meta: {
+                revision: number;
+                version: number;
+            };
+        };
+        ConfigurationRevision: {
+            /** Format: int64 */
+            id: number;
+            scope: components["schemas"]["ConfigurationScope"];
+            revision: number;
+            /** @enum {string} */
+            source: "baseline" | "update" | "rollback";
+            rollback_of_revision: number | null;
+            /** Format: int64 */
+            created_by_user_id: number | null;
+            /** Format: date-time */
+            created_at: string;
+            changed_keys: string[];
+        };
+        ConfigurationRevisionListEnvelope: {
+            data: components["schemas"]["ConfigurationRevision"][];
+        };
+        ConfigurationSnapshotEntry: {
+            group: string;
+            key: string;
+            /** @enum {string} */
+            type: "string" | "number" | "boolean" | "json";
+            exists: boolean;
+            value: unknown;
+            /** @enum {string} */
+            storage?: "settings" | "override";
+            scope_type?: components["schemas"]["ConfigurationScopeType"];
+            scope_key?: string;
+            version?: number;
+        };
+        ConfigurationRevisionDetail: components["schemas"]["ConfigurationRevision"] & {
+            snapshot: {
+                entries: components["schemas"]["ConfigurationSnapshotEntry"][];
+            };
+            diff: {
+                key: string;
+                before: unknown;
+                after: unknown;
+                before_exists: boolean;
+                after_exists: boolean;
+            }[];
+        };
+        ConfigurationRevisionDetailEnvelope: {
+            data: components["schemas"]["ConfigurationRevisionDetail"];
+        };
+        ConfigurationRollbackEnvelope: {
+            data: components["schemas"]["ConfigurationRevisionDetail"];
+            meta: {
+                changed: boolean;
+            };
+        };
+        ConfigurationBlueprintEntry: {
+            group: components["schemas"]["ConfigurationGroup"];
+            key: string;
+            schema_version: number;
+            scope_type: components["schemas"]["ConfigurationScopeType"];
+            scope_key: string;
+            value: unknown;
+            rollout_percent: number;
+            /** Format: date-time */
+            expires_at: string | null;
+        };
+        ConfigurationBlueprint: {
+            /** @enum {integer} */
+            schema_version: 1;
+            entries: components["schemas"]["ConfigurationBlueprintEntry"][];
+            fingerprint?: string;
+        };
+        ConfigurationBlueprintApplyInput: {
+            /** @enum {integer} */
+            schema_version: 1;
+            entries: components["schemas"]["ConfigurationBlueprintEntry"][];
+            fingerprint?: string;
+            reason?: string;
+            approval_reference?: string | null;
+        };
+        ConfigurationBlueprintApplyEnvelope: {
+            data: components["schemas"]["ConfigurationBlueprint"];
+            meta: {
+                revisions: {
+                    [key: string]: number;
+                };
+            };
+        };
+        ConfigurationBlueprintEnvelope: {
+            data: components["schemas"]["ConfigurationBlueprint"];
+        };
+        ConfigurationBlueprintValidationEnvelope: {
+            data: {
+                valid: boolean;
+                errors: {
+                    [key: string]: unknown;
+                }[];
+            };
+        };
+        ConfigurationDriftEnvelope: {
+            data: {
+                fingerprint: string;
+                expected_fingerprint: string | null;
+                drifted: boolean | null;
+                source: string;
+                provider_drift: string;
+            };
+        };
+        ConfigurationTaxSimulationInput: {
+            amount_minor: number;
+            tax_class_id: number;
+            country?: string | null;
+            region_id?: number | null;
+            /** @default false */
+            prices_include_tax: boolean;
+        };
+        ConfigurationTaxSimulationEnvelope: {
+            data: {
+                amount_minor: number;
+                tax_class_id: number;
+                address: {
+                    country: string | null;
+                    region_id: number | null;
+                };
+                prices_include_tax: boolean;
+                rate_count: number;
+                calculation: {
+                    [key: string]: unknown;
+                };
+                impact: {
+                    products_using_tax_class: number;
+                    /** @enum {string} */
+                    source: "products.tax_class_id";
+                };
+            };
+        };
+        ConfigurationUrlRedirectEnvelope: {
+            data: {
+                [key: string]: unknown;
+            }[];
+        };
         Resource: {
             [key: string]: unknown;
         };
@@ -9927,6 +10780,16 @@ export interface components {
         };
         NewsEnvelope: {
             [key: string]: unknown;
+        };
+        IdentityEnvelope: {
+            data: {
+                [key: string]: unknown;
+            };
+        };
+        IdentityListEnvelope: {
+            data: {
+                [key: string]: unknown;
+            }[];
         };
     };
     responses: {
@@ -10007,6 +10870,10 @@ export interface components {
         Limit500: number;
         OrderId: number;
         ResourceId: number;
+        ConfigurationGroup: components["schemas"]["ConfigurationGroup"];
+        ConfigurationScope: components["schemas"]["ConfigurationScope"];
+        ConfigurationRevision: number;
+        UserId: number;
     };
     requestBodies: never;
     headers: never;
@@ -20591,6 +21458,448 @@ export interface operations {
             };
         };
     };
+    adminPhase6ConfigurationRegistry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Canonical Configuration OS registry */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigurationCapabilityEnvelope"];
+                };
+            };
+        };
+    };
+    adminPhase6ConfigurationDefinitions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Formal setting definitions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigurationDefinitionEnvelope"];
+                };
+            };
+        };
+    };
+    adminPhase6ConfigurationGroup: {
+        parameters: {
+            query?: {
+                market?: string;
+                channel?: string;
+                environment?: string;
+                temporary?: string;
+                subject_key?: string;
+            };
+            header?: never;
+            path: {
+                group: components["parameters"]["ConfigurationGroup"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Effective resolved group */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigurationGroupEnvelope"];
+                };
+            };
+            /** @description Unknown group */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPhase6ConfigurationUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                group: components["parameters"]["ConfigurationGroup"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfigurationChangeInput"];
+            };
+        };
+        responses: {
+            /** @description Versioned update */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigurationUpdateEnvelope"];
+                };
+            };
+            /** @description Fine-grained permission denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation, stale version, preview or approval failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPhase6ConfigurationPreview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                group: components["parameters"]["ConfigurationGroup"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfigurationChangeInput"];
+            };
+        };
+        responses: {
+            /** @description Side-effect-free impact preview */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigurationPreviewEnvelope"];
+                };
+            };
+            /** @description Invalid proposed configuration */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPhase6ConfigurationTest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                group: components["parameters"]["ConfigurationGroup"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfigurationChangeInput"];
+            };
+        };
+        responses: {
+            /** @description Schema and policy test */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigurationTestEnvelope"];
+                };
+            };
+            /** @description Invalid proposed configuration */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPhase6ConfigurationHistory: {
+        parameters: {
+            query?: {
+                scope?: components["schemas"]["ConfigurationScope"];
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Revision history */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigurationRevisionListEnvelope"];
+                };
+            };
+            /** @description Unknown scope */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPhase6ConfigurationRevisionShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                scope: components["parameters"]["ConfigurationScope"];
+                revision: components["parameters"]["ConfigurationRevision"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Immutable revision detail */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigurationRevisionDetailEnvelope"];
+                };
+            };
+            /** @description Revision not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPhase6ConfigurationRollback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                scope: components["parameters"]["ConfigurationScope"];
+                revision: components["parameters"]["ConfigurationRevision"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Forward rollback appends a new revision */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigurationRollbackEnvelope"];
+                };
+            };
+            /** @description Revision not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPhase6ConfigurationBlueprint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Safe non-secret declared-state blueprint */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigurationBlueprintEnvelope"];
+                };
+            };
+        };
+    };
+    adminPhase6ConfigurationBlueprintValidate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfigurationBlueprint"];
+            };
+        };
+        responses: {
+            /** @description Blueprint validation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigurationBlueprintValidationEnvelope"];
+                };
+            };
+            /** @description Malformed blueprint */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPhase6ConfigurationBlueprintApply: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfigurationBlueprintApplyInput"];
+            };
+        };
+        responses: {
+            /** @description Blueprint applied and captured as immutable revisions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigurationBlueprintApplyEnvelope"];
+                };
+            };
+            /** @description Configuration blueprint apply permission denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid configuration blueprint */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPhase6ConfigurationDrift: {
+        parameters: {
+            query?: {
+                expected_fingerprint?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Declared-state drift result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigurationDriftEnvelope"];
+                };
+            };
+        };
+    };
+    adminPhase6ConfigurationUrlRedirectHistory: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Immutable URL-governance change evidence */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigurationUrlRedirectEnvelope"];
+                };
+            };
+        };
+    };
+    adminPhase6ConfigurationTaxSimulate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfigurationTaxSimulationInput"];
+            };
+        };
+        responses: {
+            /** @description Side-effect-free tax calculation and product impact evidence */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigurationTaxSimulationEnvelope"];
+                };
+            };
+            /** @description Configuration tax write permission denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid tax simulation input */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     listTicketWorkflowStatuses: {
         parameters: {
             query?: never;
@@ -21515,6 +22824,685 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ListResource"];
                 };
+            };
+        };
+    };
+    adminIdentityOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Identity operational overview */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityEnvelope"];
+                };
+            };
+            /** @description Identity permission denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminIdentityVerifications: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Verification ledger */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityListEnvelope"];
+                };
+            };
+            /** @description Identity permission denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminIdentityVerificationDetail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Identity operational overview */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityEnvelope"];
+                };
+            };
+            /** @description Identity permission denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminIdentityMethods: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Identity methods */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityListEnvelope"];
+                };
+            };
+            /** @description Identity permission denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminIdentityPolicies: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Identity policy versions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityListEnvelope"];
+                };
+            };
+            /** @description Identity permission denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminIdentityPolicyCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description New immutable policy version */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityEnvelope"];
+                };
+            };
+            /** @description Permission or fresh step-up required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminIdentityProviders: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redacted provider registry */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityListEnvelope"];
+                };
+            };
+            /** @description Identity permission denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminIdentityProviderUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Provider configuration updated with write-only secret */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityEnvelope"];
+                };
+            };
+            /** @description Permission or fresh step-up required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminIdentityProviderTest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                providerKey: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Evidence-backed provider probe */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityEnvelope"];
+                };
+            };
+        };
+    };
+    adminIdentityDeliveryRefresh: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                attemptId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Delivery evidence refreshed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityEnvelope"];
+                };
+            };
+        };
+    };
+    adminIdentityDelivery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Provider delivery health */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityListEnvelope"];
+                };
+            };
+        };
+    };
+    adminIdentityRisk: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redacted risk events */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityListEnvelope"];
+                };
+            };
+        };
+    };
+    adminIdentityCredentials: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: components["parameters"]["UserId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redacted user credentials */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityListEnvelope"];
+                };
+            };
+        };
+    };
+    adminIdentityCredentialRevoke: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: components["parameters"]["UserId"];
+                credentialId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    reason: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Credential revoked */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityEnvelope"];
+                };
+            };
+            /** @description Permission or fresh step-up required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminIdentitySessions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: components["parameters"]["UserId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description User sessions bound to access tokens */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityListEnvelope"];
+                };
+            };
+        };
+    };
+    adminIdentitySessionRevoke: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: components["parameters"]["UserId"];
+                sessionId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    reason: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Session and access token revoked */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityEnvelope"];
+                };
+            };
+        };
+    };
+    adminIdentityAudit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redacted security audit events */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityListEnvelope"];
+                };
+            };
+        };
+    };
+    adminIdentityAnalytics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Identity operational overview */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityEnvelope"];
+                };
+            };
+            /** @description Identity permission denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminIdentitySettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Identity operational overview */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityEnvelope"];
+                };
+            };
+            /** @description Identity permission denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminIdentitySettingsUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Backend-enforced identity feature settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityEnvelope"];
+                };
+            };
+            /** @description Permission or fresh step-up required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminIdentitySmsSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Identity operational overview */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityEnvelope"];
+                };
+            };
+            /** @description Identity permission denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminIdentitySmsSettingsUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Runtime SMS controls updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityEnvelope"];
+                };
+            };
+            /** @description Permission or fresh step-up required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminIdentityAccess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Admin identity permission matrix */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityListEnvelope"];
+                };
+            };
+        };
+    };
+    adminIdentityAccessPreset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Permission preset applied */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityEnvelope"];
+                };
+            };
+            /** @description Permission or fresh step-up required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminIdentityStepUp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    method: "password" | "totp" | "recovery_code";
+                    proof: string;
+                    action_scope: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Fresh scoped step-up proof recorded */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityEnvelope"];
+                };
+            };
+            /** @description Invalid proof */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

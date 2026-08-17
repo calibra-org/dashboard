@@ -1,0 +1,29 @@
+operationId: authOtpResend
+summary: Resend a bound one-time code
+description: >
+    Issues a new generation for an existing verification transaction. The previous active challenge
+    is superseded and tenant/identifier/device resend budgets plus cooldown are enforced.
+tags: [Auth]
+security: []
+requestBody:
+    required: true
+    content:
+        application/json:
+            schema:
+                type: object
+                required: [verification_id, identifier]
+                properties:
+                    verification_id: { type: string, format: uuid }
+                    identifier: { type: string, minLength: 3, maxLength: 254 }
+responses:
+    "200":
+        description: Replacement challenge issued.
+        content:
+            application/json:
+                schema:
+                    type: object
+                    required: [data]
+                    properties:
+                        data: { $ref: "../../components/schemas/OtpRequestResult.yaml" }
+    "422": { $ref: "../../../common/components/responses/ValidationError.yaml" }
+    "429": { description: Cooldown or verification budget exceeded }

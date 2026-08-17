@@ -19,3 +19,11 @@ export const otpVerifyValidator = vine.compile(
         code: vine.string().trim().fixedLength(6),
     }),
 );
+
+/** OTP resend: existing transaction id + identifier; channel is already bound to the transaction. */
+export const otpResendValidator = vine.compile(
+    vine.object({
+        verification_id: vine.string().uuid(),
+        identifier: vine.string().trim().minLength(3).maxLength(254),
+    }),
+);

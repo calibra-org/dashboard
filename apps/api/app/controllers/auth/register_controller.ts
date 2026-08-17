@@ -3,6 +3,7 @@ import db from "@adonisjs/lucid/services/db";
 
 import Customer from "#models/customer";
 import User from "#models/user";
+import { registerIdentitySession } from "#services/identity/sessions";
 import phoneService from "#services/phone_service";
 import CustomerTransformer from "#transformers/customer_transformer";
 import UserTransformer from "#transformers/user_transformer";
@@ -54,6 +55,13 @@ export default class RegisterController {
         });
 
         const token = await User.accessTokens.create(user);
+        await registerIdentitySession({
+            ctx,
+            userId: Number(user.id),
+            tokenIdentifier: Number(token.identifier),
+            expiresAt: token.expiresAt?.toISOString() ?? null,
+            authMethod: "password_registration",
+        });
 
         ctx.response.status(201);
         return {

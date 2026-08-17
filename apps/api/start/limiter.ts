@@ -1,5 +1,6 @@
 import limiter from "@adonisjs/limiter/services/main";
 
+import { identityHash, normalizeIdentityIdentifier } from "#services/identity/security";
 import { recordRateLimitThrottled } from "#services/metrics/domain_metrics";
 
 /**
@@ -39,6 +40,17 @@ export const loginEmailLimiter = limiter.define("login_email", (ctx) => {
         .every("1 minute")
         .usingKey(`email:${email}`)
         .limitExceeded(() => recordRateLimitThrottled("login_email"));
+});
+
+/** Distributed OTP sweeps are also bounded by a tenant-scoped HMAC of the identifier. */
+export const otpIdentifierLimiter = limiter.define("otp_identifier", (ctx) => {
+    const identifier = normalizeIdentityIdentifier(String(ctx.request.input("identifier", "")));
+    const subject = identifier ? identityHash(identifier) : "missing";
+    return limiter
+        .allowRequests(5)
+        .every("10 minutes")
+        .usingKey(`subject:${subject}`)
+        .limitExceeded(() => recordRateLimitThrottled("otp_identifier"));
 });
 
 /** 30/min per customer for payment submission + verification. */

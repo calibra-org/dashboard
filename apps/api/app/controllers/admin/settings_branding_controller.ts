@@ -5,6 +5,7 @@ import Media from "#models/media";
 import type { SettingValueType } from "#models/setting";
 import { recordAudit } from "#services/admin_audit_log_service";
 import { CacheTags } from "#services/cache_keys";
+import ConfigurationRevisionService from "#services/configuration_revision_service";
 import SettingsService from "#services/settings_service";
 import { BRANDING_GROUP } from "#services/storefront_branding_service";
 import { currentTenantId } from "#services/tenant_context";
@@ -18,42 +19,24 @@ interface PlannedWrite {
 }
 
 type BrandingSettingsPayload = Awaited<ReturnType<typeof adminBrandingSettingsUpdateValidator.validate>>;
-
-/** Map a palette payload key (`muted_foreground`) to its flat settings row key (`palette_muted_foreground`). */
 const PALETTE_KEYS = ["background", "foreground", "muted", "muted_foreground", "border", "accent", "accent_foreground"] as const;
 
 export default class AdminSettingsBrandingController {
     private settings = new SettingsService();
+    private revisions = new ConfigurationRevisionService();
 
-    /**
-     * GET /api/v1/admin/settings/branding — the storefront-facing branding config (name, tagline,
-     * font, logo/favicon, OKLCH palette) the shop's staff self-serve. The logo/favicon media ids are
-     * resolved to `{ id, url }` so the screen can both preview the current asset and round-trip the
-     * id on save.
-     */
     async show() {
         return { data: await this.load() };
     }
 
-    /**
-     * PATCH /api/v1/admin/settings/branding — partial update. Writes only the keys whose value
-     * changed (a flip-back-to-original writes nothing, no audit row). Because the storefront's public
-     * `GET /api/v1/storefront/tenant` caches the resolved branding under its own tag, a real change
-     * must bust `CacheTags.storefrontTenant` — otherwise the shop keeps rendering the old palette
-     * until the 30-minute TTL lapses.
-     */
     async update(ctx: HttpContext) {
         const payload = await ctx.request.validateUsing(adminBrandingSettingsUpdateValidator);
         const current = await this.settings.all(BRANDING_GROUP);
+        const changedWrites = this.planWrites(payload).filter((write) => current[write.key] !== write.value);
 
-        let changed = false;
-        for (const w of this.planWrites(payload)) {
-            if (current[w.key] === w.value) continue;
-            await this.settings.set(BRANDING_GROUP, w.key, w.value, w.type);
-            changed = true;
-        }
-
-        if (changed) {
+        if (changedWrites.length > 0) {
+            await this.revisions.ensureBaseline("branding");
+            for (const write of changedWrites) await this.settings.set(BRANDING_GROUP, write.key, write.value, write.type);
             await cache.deleteByTag({ tags: [CacheTags.storefrontTenant(currentTenantId())] });
             await recordAudit({
                 ctx,
@@ -76,7 +59,6 @@ export default class AdminSettingsBrandingController {
             writes.push({ key: "logo_media_id", value: payload.logo_media_id, type: "json" });
         if (payload.favicon_media_id !== undefined)
             writes.push({ key: "favicon_media_id", value: payload.favicon_media_id, type: "json" });
-
         const palette = payload.palette;
         if (palette) {
             for (const key of PALETTE_KEYS) {
@@ -84,14 +66,9 @@ export default class AdminSettingsBrandingController {
                 if (value !== undefined) writes.push({ key: `palette_${key}`, value, type: "string" });
             }
         }
-
         return writes;
     }
 
-    /**
-     * Resolve a branding media id to `{ id, url }` via the tenant-scoped `media` table (RLS, so a
-     * tenant can only resolve its own media). Returns `null` when unset or the row is missing.
-     */
     private async resolveMedia(value: unknown): Promise<BrandingMediaRef | null> {
         if (typeof value !== "number" || !Number.isFinite(value)) return null;
         const row = await Media.find(value);

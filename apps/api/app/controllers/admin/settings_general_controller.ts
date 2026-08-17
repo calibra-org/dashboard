@@ -7,6 +7,7 @@ import Region from "#models/region";
 import type { SettingValueType } from "#models/setting";
 import { recordAudit } from "#services/admin_audit_log_service";
 import { CacheTags } from "#services/cache_keys";
+import ConfigurationRevisionService from "#services/configuration_revision_service";
 import { SUPPORTED_COUNTRIES } from "#services/currency_config_service";
 import SettingsService from "#services/settings_service";
 import { currentTenantId } from "#services/tenant_context";
@@ -14,60 +15,46 @@ import { type ProvinceOption, toGeneralSettings } from "#transformers/general_se
 import { adminGeneralSettingsUpdateValidator } from "#validators/admin/general_settings_validator";
 
 type SettingGroup = "general" | "tax";
-
 interface PlannedWrite {
     group: SettingGroup;
     key: string;
     value: unknown;
     type: SettingValueType;
-    /** Whether this key feeds the public currency config (drives cache invalidation). */
     currency?: boolean;
 }
 
 export default class AdminSettingsGeneralController {
     private settings = new SettingsService();
+    private revisions = new ConfigurationRevisionService();
 
-    /** GET /api/v1/admin/settings/general — typed editable settings + option lists. */
     async show() {
         return { data: await this.load() };
     }
 
-    /**
-     * PATCH /api/v1/admin/settings/general — partial update. Writes only keys whose value changed
-     * (same-value PATCH is a no-op — no write, no audit row); invalidates the public currency cache
-     * when a currency-affecting key moves.
-     */
     async update(ctx: HttpContext) {
         const payload = await ctx.request.validateUsing(adminGeneralSettingsUpdateValidator);
-
         const [general, tax, currencies, provinces] = await Promise.all([
             this.settings.all("general"),
             this.settings.all("tax"),
             Currency.query().orderBy("ordering", "asc"),
             this.fetchProvinces(),
         ]);
-
-        const enabledCurrencyCodes = new Set(currencies.filter((c) => c.enabled).map((c) => c.code));
-        const provinceCodes = new Set(provinces.map((p) => p.code));
-        const countryCodes = new Set(SUPPORTED_COUNTRIES.map((c) => c.code));
-
+        const enabledCurrencyCodes = new Set(currencies.filter((currency) => currency.enabled).map((currency) => currency.code));
+        const provinceCodes = new Set(provinces.map((province) => province.code));
+        const countryCodes = new Set(SUPPORTED_COUNTRIES.map((country) => country.code));
         this.assertCrossFieldRules(payload, general, enabledCurrencyCodes, provinceCodes, countryCodes);
 
-        const writes = this.planWrites(payload);
-        let changed = false;
-        let currencyChanged = false;
-        for (const w of writes) {
-            const currentValue = (w.group === "general" ? general : tax)[w.key];
-            if (valuesEqual(currentValue, w.value)) continue;
-            await this.settings.set(w.group, w.key, w.value, w.type);
-            changed = true;
-            if (w.currency) currencyChanged = true;
-        }
+        const changedWrites = this.planWrites(payload).filter((write) => {
+            const currentValue = (write.group === "general" ? general : tax)[write.key];
+            return !valuesEqual(currentValue, write.value);
+        });
 
-        if (currencyChanged) {
-            await cache.deleteByTag({ tags: [CacheTags.currency(currentTenantId())] });
-        }
-        if (changed) {
+        if (changedWrites.length > 0) {
+            await this.revisions.ensureBaseline("general");
+            for (const write of changedWrites) await this.settings.set(write.group, write.key, write.value, write.type);
+            if (changedWrites.some((write) => write.currency)) {
+                await cache.deleteByTag({ tags: [CacheTags.currency(currentTenantId())] });
+            }
             await recordAudit({
                 ctx,
                 action: "settings.general.patch",
@@ -76,7 +63,6 @@ export default class AdminSettingsGeneralController {
                 payload: payload as Record<string, unknown>,
             });
         }
-
         return { data: await this.load() };
     }
 
@@ -90,7 +76,6 @@ export default class AdminSettingsGeneralController {
         return toGeneralSettings({ general, tax, currencies, provinces, countries: SUPPORTED_COUNTRIES });
     }
 
-    /** All 31 IR provinces (parent regions) with fa/en names, ordered by ISO code. */
     private async fetchProvinces(): Promise<ProvinceOption[]> {
         const regions = await Region.query()
             .where("country_code", "IR")
@@ -98,8 +83,8 @@ export default class AdminSettingsGeneralController {
             .preload("translations")
             .orderBy("code", "asc");
         return regions.map((region) => {
-            const fa = region.translations.find((t) => t.locale === "fa")?.name ?? region.code;
-            const en = region.translations.find((t) => t.locale === "en")?.name ?? region.code;
+            const fa = region.translations.find((translation) => translation.locale === "fa")?.name ?? region.code;
+            const en = region.translations.find((translation) => translation.locale === "en")?.name ?? region.code;
             return { code: region.code, nameFa: fa, nameEn: en };
         });
     }
@@ -117,7 +102,6 @@ export default class AdminSettingsGeneralController {
                 field: "currency.display",
             });
         }
-
         const thousandSep = currency?.thousand_sep ?? (general.price_thousand_sep as string | undefined) ?? "٬";
         const decimalSep = currency?.decimal_sep ?? (general.price_decimal_sep as string | undefined) ?? ".";
         if (thousandSep === decimalSep) {
@@ -125,7 +109,6 @@ export default class AdminSettingsGeneralController {
                 field: "currency.decimal_sep",
             });
         }
-
         const address = payload.store_address;
         if (address?.country !== undefined && address.country !== "" && !countryCodes.has(address.country)) {
             throw new BusinessRuleException("Unknown country", "store_address.country.unknown", {
@@ -135,7 +118,6 @@ export default class AdminSettingsGeneralController {
         if (address?.state !== undefined && address.state !== "" && !provinceCodes.has(address.state)) {
             throw new BusinessRuleException("Unknown province", "store_address.state.unknown", { field: "store_address.state" });
         }
-
         const options = payload.general_options;
         for (const code of [
             ...(options?.selling_locations_specific ?? []),
@@ -164,7 +146,6 @@ export default class AdminSettingsGeneralController {
             if (addr.country !== undefined)
                 writes.push({ group: "general", key: "country_default", value: addr.country, type: "string" });
         }
-
         const opts = payload.general_options;
         if (opts) {
             if (opts.selling_locations !== undefined)
@@ -200,7 +181,6 @@ export default class AdminSettingsGeneralController {
                     type: "string",
                 });
         }
-
         const tc = payload.taxes_and_coupons;
         if (tc) {
             if (tc.taxes_enabled !== undefined)
@@ -215,7 +195,6 @@ export default class AdminSettingsGeneralController {
                     type: "boolean",
                 });
         }
-
         const cur = payload.currency;
         if (cur) {
             if (cur.display !== undefined)
@@ -253,12 +232,10 @@ export default class AdminSettingsGeneralController {
                     currency: true,
                 });
         }
-
         return writes;
     }
 }
 
-/** Order-sensitive equality good enough for settings primitives + small string arrays. */
 function valuesEqual(a: unknown, b: unknown): boolean {
     if (a === b) return true;
     if (Array.isArray(a) || Array.isArray(b)) return JSON.stringify(a) === JSON.stringify(b);

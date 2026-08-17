@@ -2,7 +2,7 @@
 
 import type { Locale } from "@calibra/shared/i18n";
 import { useLocale, useTranslations } from "next-intl";
-import { type KeyboardEvent, type ReactNode, useDeferredValue, useMemo, useState } from "react";
+import { type ReactNode, useDeferredValue, useMemo, useState } from "react";
 
 import { Button } from "#/components/ui/button";
 import { DateFilterChip, type DateFilterValue } from "#/components/ui/date-picker";
@@ -37,8 +37,8 @@ import {
     useReconcileTransaction,
     useTransaction,
     useTransactionReconciliationHistory,
-    useTransactions,
     useTransactionSummary,
+    useTransactions,
 } from "#/lib/queries/transactions";
 import type { TableViewFilter, TableViewQuery } from "#/lib/table-view";
 import { dateFilterValueToTableViewFilter } from "#/lib/table-view/date-adapter";
@@ -392,8 +392,17 @@ export function TransactionsCenter() {
 
                 {list.isPending ? (
                     <div className="space-y-2 p-4">
-                        {Array.from({ length: 8 }).map((_, index) => (
-                            <Skeleton key={index} className="h-12 w-full" />
+                        {[
+                            "transaction-1",
+                            "transaction-2",
+                            "transaction-3",
+                            "transaction-4",
+                            "transaction-5",
+                            "transaction-6",
+                            "transaction-7",
+                            "transaction-8",
+                        ].map((key) => (
+                            <Skeleton key={key} className="h-12 w-full" />
                         ))}
                     </div>
                 ) : list.isError ? (
@@ -577,22 +586,18 @@ function TransactionRow({
     detailsLabel: string;
     onOpen: () => void;
 }) {
-    const onKeyDown = (event: KeyboardEvent<HTMLTableRowElement>) => {
-        if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            onOpen();
-        }
-    };
     return (
-        <tr
-            tabIndex={0}
-            role="button"
-            aria-label={`${detailsLabel} #${row.id}`}
-            className="cursor-pointer border-b outline-none transition-colors last:border-0 hover:bg-muted/35 focus-visible:bg-muted/50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
-            onClick={onOpen}
-            onKeyDown={onKeyDown}
-        >
-            <td className="px-4 py-3 font-semibold">#{formatNumber(row.id, locale)}</td>
+        <tr className="border-b transition-colors last:border-0 hover:bg-muted/35">
+            <td className="px-4 py-3 font-semibold">
+                <button
+                    type="button"
+                    aria-label={`${detailsLabel} #${row.id}`}
+                    className="rounded-sm font-semibold outline-none hover:text-primary hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+                    onClick={onOpen}
+                >
+                    #{formatNumber(row.id, locale)}
+                </button>
+            </td>
             <td className="px-4 py-3">
                 <Link
                     href={`/orders/${row.order_id}` as never}
@@ -628,7 +633,7 @@ function TransactionCard({ row, locale, onOpen }: { row: AdminTransaction; local
         <button
             type="button"
             onClick={onOpen}
-            className="w-full space-y-3 p-4 text-start outline-none hover:bg-muted/35 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+            className="w-full space-y-3 p-4 text-start outline-none hover:bg-muted/35 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
         >
             <div className="flex items-start justify-between gap-3">
                 <div>
@@ -1018,7 +1023,7 @@ function Identifier({ label, value, copied }: { label: string; value: string | n
     return (
         <div className="flex items-center justify-between gap-3 px-3 py-2.5">
             <div className="min-w-0">
-                <p className="text-muted-foreground text-[11px]">{label}</p>
+                <p className="text-[11px] text-muted-foreground">{label}</p>
                 <p className="truncate font-mono text-xs" dir="ltr">
                     {value ?? "—"}
                 </p>

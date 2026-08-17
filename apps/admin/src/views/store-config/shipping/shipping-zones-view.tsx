@@ -21,6 +21,7 @@ import {
 import type { ShippingZone } from "#/features/operations/types";
 
 const LOCATION_TYPES = ["country", "state", "postcode", "continent"] as const;
+type EditableLocation = { clientKey: string; type: (typeof LOCATION_TYPES)[number]; code: string };
 
 function MutationMessage({ failed }: { failed: boolean }) {
     const t = useTranslations("StoreOperations");
@@ -35,7 +36,13 @@ function ZoneEditor({ zone }: { zone: ShippingZone }) {
     const replaceLocations = useReplaceShippingZoneLocations(zone.id);
     const addMethod = useAddShippingZoneMethod(zone.id);
     const [name, setName] = useState(zone.name);
-    const [locations, setLocations] = useState(zone.locations.map((item) => ({ type: item.type, code: item.code })));
+    const [locations, setLocations] = useState<EditableLocation[]>(() =>
+        zone.locations.map((item) => ({
+            clientKey: crypto.randomUUID(),
+            type: item.type as EditableLocation["type"],
+            code: item.code,
+        })),
+    );
     const [methodId, setMethodId] = useState<number | null>(null);
 
     const availableDefinitions = useMemo(
@@ -46,7 +53,7 @@ function ZoneEditor({ zone }: { zone: ShippingZone }) {
     return (
         <div className="grid gap-4 rounded-xl border bg-card p-4">
             <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-end">
-                <label className="grid gap-1.5 text-xs font-medium">
+                <label className="grid gap-1.5 font-medium text-xs">
                     <span>{shipping("zoneName")}</span>
                     <Input value={name} onChange={(event) => setName(event.target.value)} />
                 </label>
@@ -74,13 +81,15 @@ function ZoneEditor({ zone }: { zone: ShippingZone }) {
                         type="button"
                         size="sm"
                         variant="outline"
-                        onClick={() => setLocations((current) => [...current, { type: "country", code: "" }])}
+                        onClick={() =>
+                            setLocations((current) => [...current, { clientKey: crypto.randomUUID(), type: "country", code: "" }])
+                        }
                     >
                         {t("add")}
                     </Button>
                 </div>
                 {locations.map((location, index) => (
-                    <div key={`${location.type}-${index}`} className="grid gap-2 sm:grid-cols-[150px_minmax(0,1fr)_auto]">
+                    <div key={location.clientKey} className="grid gap-2 sm:grid-cols-[150px_minmax(0,1fr)_auto]">
                         <select
                             className="h-9 rounded-md border border-input bg-background px-2 text-sm"
                             value={location.type}
@@ -127,7 +136,9 @@ function ZoneEditor({ zone }: { zone: ShippingZone }) {
                         type="button"
                         size="sm"
                         disabled={replaceLocations.isPending || locations.some((item) => !item.code.trim())}
-                        onClick={() => replaceLocations.mutate(locations.map((item) => ({ ...item, code: item.code.trim() })))}
+                        onClick={() =>
+                            replaceLocations.mutate(locations.map((item) => ({ type: item.type, code: item.code.trim() })))
+                        }
                     >
                         {replaceLocations.isPending ? t("saving") : t("save")}
                     </Button>
@@ -142,7 +153,7 @@ function ZoneEditor({ zone }: { zone: ShippingZone }) {
                 {zone.methods.length === 0 ? <p className="text-muted-foreground text-xs">{shipping("noMethods")}</p> : null}
                 {availableDefinitions.length > 0 ? (
                     <div className="flex flex-wrap items-end gap-2 rounded-lg border border-dashed p-3">
-                        <label className="grid min-w-56 flex-1 gap-1 text-xs font-medium">
+                        <label className="grid min-w-56 flex-1 gap-1 font-medium text-xs">
                             <span>{shipping("addMethod")}</span>
                             <select
                                 className="h-9 rounded-md border border-input bg-background px-2 text-sm"
@@ -258,7 +269,7 @@ export function ShippingZonesView() {
                 ]}
             />
             <div className="flex flex-wrap items-end gap-2 rounded-xl border bg-card p-4">
-                <label className="grid min-w-64 flex-1 gap-1.5 text-xs font-medium">
+                <label className="grid min-w-64 flex-1 gap-1.5 font-medium text-xs">
                     <span>{shipping("newZone")}</span>
                     <Input
                         value={newName}

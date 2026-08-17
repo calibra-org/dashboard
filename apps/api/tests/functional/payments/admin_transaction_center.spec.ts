@@ -123,7 +123,7 @@ test.group("admin transaction center", (group) => {
 
         const response = await client
             .get("/api/v1/admin/payment-attempts")
-            .qs({ "filter[]": ["amount_minor:gte:1500000", "amount_minor:lte:3000000"], "sort[]": "amount_minor:desc" })
+            .qs({ "filter[]": "amount_minor:between:1500000,3000000", "sort[]": "amount_minor:desc" })
             .withGuard("api")
             .loginAs(user);
         response.assertStatus(200);

@@ -84,6 +84,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/otp/resend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resend a bound one-time code
+         * @description Issues a new generation for an existing verification transaction. The previous active challenge is superseded and tenant/identifier/device resend budgets plus cooldown are enforced.
+         */
+        post: operations["authOtpResend"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/impersonation/stop": {
         parameters: {
             query?: never;
@@ -1858,6 +1878,210 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/passkeys/begin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Begin passkey authentication */
+        post: operations["authPasskeyBegin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/passkeys/finish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Finish passkey authentication */
+        post: operations["authPasskeyFinish"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/identity/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List account sessions */
+        get: operations["accountIdentitySessions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/identity/sessions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke an account session */
+        delete: operations["accountIdentitySessionRevoke"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/identity/sessions/revoke-others": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Revoke other account sessions */
+        post: operations["accountIdentitySessionsRevokeOthers"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/identity/credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List account credentials */
+        get: operations["accountIdentityCredentials"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/identity/credentials/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke an account credential */
+        delete: operations["accountIdentityCredentialRevoke"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/identity/totp/begin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Begin TOTP enrollment */
+        post: operations["accountIdentityTotpBegin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/identity/totp/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm TOTP enrollment */
+        post: operations["accountIdentityTotpConfirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/identity/recovery-codes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Rotate account recovery codes */
+        post: operations["accountIdentityRecoveryCodes"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/identity/passkeys/begin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Begin passkey registration */
+        post: operations["accountIdentityPasskeyBegin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/identity/passkeys/finish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Finish passkey registration */
+        post: operations["accountIdentityPasskeyFinish"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1990,6 +2214,16 @@ export interface components {
          * @description The `data` envelope returned by `POST /auth/otp/request`. Carries only the lifetime of the freshly-issued code; the response is identical whether or not the identifier is registered, so a caller can never use it for account enumeration.
          */
         OtpRequestResult: {
+            /**
+             * Format: uuid
+             * @description Opaque verification transaction id used for resend and optional verify binding.
+             */
+            verification_id?: string;
+            /**
+             * @description Delivery state known at request time; accepted does not mean delivered.
+             * @enum {string}
+             */
+            delivery?: "accepted" | "sent" | "delivered" | "delivery_unknown" | "failed" | "blocked";
             /**
              * @description Seconds until the issued OTP code expires.
              * @example 300
@@ -2938,6 +3172,16 @@ export interface components {
         PublicEnvelope: {
             [key: string]: unknown;
         };
+        IdentityEnvelope: {
+            data: {
+                [key: string]: unknown;
+            };
+        };
+        IdentityListEnvelope: {
+            data: {
+                [key: string]: unknown;
+            }[];
+        };
     };
     responses: {
         /** @description Validation failed (422). The `errors` array contains one item per field that failed validation. VineJS rule name is in `rule`; the failing path is in `field`. */
@@ -3192,6 +3436,11 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
+                    /**
+                     * Format: uuid
+                     * @description Optional transaction binding for the new verification ledger.
+                     */
+                    verification_id?: string;
                     /** @example 09121234567 */
                     identifier: string;
                     /** @example 123456 */
@@ -3212,6 +3461,44 @@ export interface operations {
                 };
             };
             422: components["responses"]["ValidationError"];
+        };
+    };
+    authOtpResend: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    verification_id: string;
+                    identifier: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Replacement challenge issued. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["OtpRequestResult"];
+                    };
+                };
+            };
+            422: components["responses"]["ValidationError"];
+            /** @description Cooldown or verification budget exceeded */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     authImpersonationStop: {
@@ -5192,7 +5479,7 @@ export interface operations {
                     "application/json": components["schemas"]["PublicEnvelope"];
                 };
             };
-            /** @description Tracking token invalid */
+            /** @description Tracking token invalid, expired, revoked, or outside the current tenant */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -5270,6 +5557,293 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    authPasskeyBegin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description WebAuthn authentication ceremony started */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityEnvelope"];
+                };
+            };
+        };
+    };
+    authPasskeyFinish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Passkey verified and bearer token minted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityEnvelope"];
+                };
+            };
+            /** @description Invalid or expired WebAuthn ceremony */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    accountIdentitySessions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current account sessions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityListEnvelope"];
+                };
+            };
+        };
+    };
+    accountIdentitySessionRevoke: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    reason: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Session revoked */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityEnvelope"];
+                };
+            };
+        };
+    };
+    accountIdentitySessionsRevokeOthers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    reason: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Other sessions revoked */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityEnvelope"];
+                };
+            };
+        };
+    };
+    accountIdentityCredentials: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redacted account credentials */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityListEnvelope"];
+                };
+            };
+        };
+    };
+    accountIdentityCredentialRevoke: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    reason: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Credential revoked */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityEnvelope"];
+                };
+            };
+        };
+    };
+    accountIdentityTotpBegin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description TOTP enrollment started */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityEnvelope"];
+                };
+            };
+        };
+    };
+    accountIdentityTotpConfirm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    code: string;
+                };
+            };
+        };
+        responses: {
+            /** @description TOTP enrollment confirmed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityEnvelope"];
+                };
+            };
+        };
+    };
+    accountIdentityRecoveryCodes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description New recovery codes returned once */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityEnvelope"];
+                };
+            };
+        };
+    };
+    accountIdentityPasskeyBegin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Passkey registration ceremony started */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityEnvelope"];
+                };
+            };
+        };
+    };
+    accountIdentityPasskeyFinish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Passkey public credential registered */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityEnvelope"];
+                };
             };
         };
     };

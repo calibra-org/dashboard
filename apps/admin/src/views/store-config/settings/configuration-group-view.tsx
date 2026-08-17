@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import { useLocale } from "next-intl";
+import { useMemo, useState } from "react";
 
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
@@ -26,15 +26,23 @@ export function ConfigurationGroupView({ group }: { group: ConfigurationGroup })
     const query = useConfigurationGroup(group);
 
     if (query.isPending) {
-        return <div className="rounded-xl border p-8 text-sm text-muted-foreground">{fa ? "در حال بارگذاری تنظیمات…" : "Loading configuration…"}</div>;
+        return (
+            <div className="rounded-xl border p-8 text-muted-foreground text-sm">
+                {fa ? "در حال بارگذاری تنظیمات…" : "Loading configuration…"}
+            </div>
+        );
     }
     if (query.isError || !query.data) {
-        return <div className="rounded-xl border border-destructive/30 p-8 text-sm text-destructive">{fa ? "بارگذاری تنظیمات ناموفق بود." : "Configuration could not be loaded."}</div>;
+        return (
+            <div className="rounded-xl border border-destructive/30 p-8 text-destructive text-sm">
+                {fa ? "بارگذاری تنظیمات ناموفق بود." : "Configuration could not be loaded."}
+            </div>
+        );
     }
 
     return (
         <div className="space-y-5">
-            <div className="rounded-xl border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+            <div className="rounded-xl border bg-muted/20 px-4 py-3 text-muted-foreground text-sm">
                 {fa
                     ? "هر تغییر نسخه‌دار و قابل بازگردانی است. تنظیمات پرریسک پیش از ذخیره به پیش‌نمایش اثر نیاز دارند و رازها فقط با مرجع متغیر محیطی ثبت می‌شوند."
                     : "Every change is versioned and reversible. High-risk settings require an impact preview, and secrets are stored only as environment references."}
@@ -54,7 +62,9 @@ export function ConfigurationGroupView({ group }: { group: ConfigurationGroup })
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <code className="break-all text-xs" dir="ltr">{query.data.fingerprint}</code>
+                    <code className="break-all text-xs" dir="ltr">
+                        {query.data.fingerprint}
+                    </code>
                 </CardContent>
             </Card>
         </div>
@@ -80,8 +90,10 @@ function SettingCard({ group, item, fa }: { group: ConfigurationGroup; item: Ite
         key: item.definition.key,
         scope_type: "tenant",
         value: parsed.value,
+        unset: false,
         reason,
         expected_version: item.origin.scope_type === "tenant" ? item.origin.version : 0,
+        rollout_percent: 100,
         ...(previewHash ? { preview_hash: previewHash } : {}),
         ...(approval ? { approval_reference: approval } : {}),
     });
@@ -116,14 +128,18 @@ function SettingCard({ group, item, fa }: { group: ConfigurationGroup; item: Ite
                 </div>
                 <div className="flex flex-wrap gap-1.5 text-[11px] text-muted-foreground">
                     <Badge variant="outline">{item.definition.key}</Badge>
-                    <Badge variant="secondary">{fa ? `مبدأ: ${item.origin.scope_type}` : `Origin: ${item.origin.scope_type}`}</Badge>
+                    <Badge variant="secondary">
+                        {fa ? `مبدأ: ${item.origin.scope_type}` : `Origin: ${item.origin.scope_type}`}
+                    </Badge>
                     <Badge variant="secondary">v{item.origin.version}</Badge>
                 </div>
             </CardHeader>
             <CardContent className="space-y-4">
                 {!item.mutable ? (
                     <div className="flex items-center justify-between gap-3 rounded-lg border bg-muted/30 p-3">
-                        <div className="text-sm">{fa ? "این مقدار در دامنه اصلی خودش مدیریت می‌شود." : "This value is managed by its canonical domain."}</div>
+                        <div className="text-sm">
+                            {fa ? "این مقدار در دامنه اصلی خودش مدیریت می‌شود." : "This value is managed by its canonical domain."}
+                        </div>
                         {item.definition.linked_href ? (
                             <Button asChild size="sm" variant="outline">
                                 <Link href={item.definition.linked_href as never}>
@@ -157,11 +173,19 @@ function SettingCard({ group, item, fa }: { group: ConfigurationGroup; item: Ite
                                     dir={item.definition.type === "string" ? "auto" : "ltr"}
                                 />
                             )}
-                            {!parsed.ok ? <p className="text-xs text-destructive">{fa ? "فرمت مقدار معتبر نیست." : "Value format is invalid."}</p> : null}
+                            {!parsed.ok ? (
+                                <p className="text-destructive text-xs">
+                                    {fa ? "فرمت مقدار معتبر نیست." : "Value format is invalid."}
+                                </p>
+                            ) : null}
                         </div>
                         <div className="space-y-2">
                             <Label>{fa ? "دلیل تغییر" : "Change reason"}</Label>
-                            <Input value={reason} onChange={(event) => setReason(event.target.value)} placeholder={fa ? "حداقل ۳ کاراکتر" : "At least 3 characters"} />
+                            <Input
+                                value={reason}
+                                onChange={(event) => setReason(event.target.value)}
+                                placeholder={fa ? "حداقل ۳ کاراکتر" : "At least 3 characters"}
+                            />
                         </div>
                         {item.definition.approval_policy === "governance_required" ? (
                             <div className="space-y-2">
@@ -170,7 +194,7 @@ function SettingCard({ group, item, fa }: { group: ConfigurationGroup; item: Ite
                             </div>
                         ) : null}
                         {preview.data ? (
-                            <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-xs">
+                            <div className="rounded-lg border border-warning/30 bg-warning/5 p-3 text-xs">
                                 <div className="flex items-center gap-2 font-medium">
                                     <ShieldAlert className="size-4" />
                                     {fa ? "پیش‌نمایش اثر" : "Impact preview"}
@@ -183,28 +207,48 @@ function SettingCard({ group, item, fa }: { group: ConfigurationGroup; item: Ite
                             </div>
                         ) : null}
                         {testConfig.data?.data.passed ? (
-                            <div className="flex items-center gap-2 text-xs text-emerald-700">
+                            <div className="flex items-center gap-2 text-success text-xs">
                                 <CheckCircle2 className="size-4" />
                                 {fa ? "تست بدون اثر جانبی پاس شد." : "Side-effect-free test passed."}
                             </div>
                         ) : null}
                         {update.isSuccess ? (
-                            <div className="flex items-center gap-2 text-xs text-emerald-700">
+                            <div className="flex items-center gap-2 text-success text-xs">
                                 <CheckCircle2 className="size-4" />
                                 {fa ? "ذخیره شد و نسخه جدید ثبت شد." : "Saved and a new revision was recorded."}
                             </div>
                         ) : null}
                         {preview.isError || testConfig.isError || update.isError ? (
-                            <div className="text-xs text-destructive">{fa ? "عملیات انجام نشد؛ مقدار فعال بدون تغییر ماند." : "Operation failed; active configuration was unchanged."}</div>
+                            <div className="text-destructive text-xs">
+                                {fa
+                                    ? "عملیات انجام نشد؛ مقدار فعال بدون تغییر ماند."
+                                    : "Operation failed; active configuration was unchanged."}
+                            </div>
                         ) : null}
                         <div className="flex flex-wrap justify-end gap-2">
-                            <Button type="button" variant="outline" disabled={!parsed.ok || reason.trim().length < 3 || testConfig.isPending} onClick={doTest}>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                disabled={!parsed.ok || reason.trim().length < 3 || testConfig.isPending}
+                                onClick={doTest}
+                            >
                                 {testConfig.isPending ? (fa ? "تست…" : "Testing…") : fa ? "تست" : "Test"}
                             </Button>
-                            <Button type="button" variant="outline" disabled={!parsed.ok || reason.trim().length < 3 || preview.isPending} onClick={doPreview}>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                disabled={!parsed.ok || reason.trim().length < 3 || preview.isPending}
+                                onClick={doPreview}
+                            >
                                 {preview.isPending ? (fa ? "بررسی…" : "Checking…") : fa ? "پیش‌نمایش" : "Preview"}
                             </Button>
-                            <Button type="button" disabled={!parsed.ok || reason.trim().length < 3 || (highRisk && !previewHash) || update.isPending} onClick={doSave}>
+                            <Button
+                                type="button"
+                                disabled={
+                                    !parsed.ok || reason.trim().length < 3 || (highRisk && !previewHash) || update.isPending
+                                }
+                                onClick={doSave}
+                            >
                                 {update.isPending ? (fa ? "ذخیره…" : "Saving…") : fa ? "ذخیره نسخه‌دار" : "Save version"}
                             </Button>
                         </div>
@@ -218,7 +262,7 @@ function SettingCard({ group, item, fa }: { group: ConfigurationGroup; item: Ite
 function RiskBadge({ risk, fa }: { risk: string; fa: boolean }) {
     const variant = risk === "critical" || risk === "high" ? "destructive" : risk === "medium" ? "secondary" : "outline";
     const faLabels: Record<string, string> = { low: "کم", medium: "متوسط", high: "زیاد", critical: "بحرانی" };
-    return <Badge variant={variant}>{fa ? faLabels[risk] ?? risk : risk}</Badge>;
+    return <Badge variant={variant}>{fa ? (faLabels[risk] ?? risk) : risk}</Badge>;
 }
 
 function stringifyValue(value: unknown) {

@@ -166,7 +166,26 @@ pass(
         sidebar.includes("setFactorOpen,"),
     "Factor sidebar submenu is not accessible/collapsible",
 );
-pass(sidebar.includes('group.titleKey === "sales"'), "Factor submenu is not placed under Sales");
+const primaryWorkspaceStart = sidebar.indexOf("{groups.slice(0, 3).map");
+const primaryWorkspaceEnd = sidebar.indexOf("{groups.slice(3).map");
+const primaryWorkspaceIds = [
+    '"factor-sidebar-items"',
+    '"content-sidebar-items"',
+    '"seo-sidebar-items"',
+    '"ticket-sidebar-items"',
+];
+pass(
+    primaryWorkspaceStart >= 0 && primaryWorkspaceEnd > primaryWorkspaceStart,
+    "Primary workspace navigation boundary is missing",
+);
+for (const id of primaryWorkspaceIds) {
+    const index = sidebar.indexOf(id, primaryWorkspaceStart);
+    pass(
+        index > primaryWorkspaceStart && index < primaryWorkspaceEnd,
+        `${id} must be rendered as a first-level navigation heading`,
+    );
+}
+pass(!sidebar.includes('group.titleKey === "sales"'), "Primary workspaces must not be nested under Sales");
 
 const visibleFiles = [
     ...walk("apps/admin/src/features/factor"),

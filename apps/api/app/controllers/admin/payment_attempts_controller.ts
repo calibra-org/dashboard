@@ -40,7 +40,7 @@ export default class AdminPaymentAttemptsController {
     async summary() {
         const statusRows = await PaymentAttempt.query()
             .select("status")
-            .sum("amount_minor as amount_minor")
+            .sum("amount_minor as amount_sum_minor")
             .count("id as count")
             .groupBy("status");
         const reconciliationRows = await PaymentAttempt.query()
@@ -58,7 +58,7 @@ export default class AdminPaymentAttemptsController {
         for (const row of statusRows) {
             const status = String(row.status);
             const count = Number(row.$extras.count ?? 0);
-            const amountMinor = Number(row.$extras.amount_minor ?? 0);
+            const amountMinor = Number(row.$extras.amount_sum_minor ?? 0);
             byStatus[status] = { count, amount_minor: amountMinor };
             totalCount += count;
             totalAmountMinor += amountMinor;

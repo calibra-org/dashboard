@@ -1,0 +1,155 @@
+openapi: 3.1.0
+info:
+  title: Calibra Admin Identity Phase 7 Overlay
+  version: 1.0.0
+servers:
+  - url: /
+tags:
+  - name: Identity
+    description: Administrative identity, verification, credential, provider, risk, and security controls.
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque
+      description: Opaque Calibra access token sent in the Authorization Bearer header.
+  schemas:
+    IdentityEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { type: object, additionalProperties: true }
+    IdentityListEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items: { type: object, additionalProperties: true }
+  parameters:
+    UserId: { in: path, name: userId, required: true, schema: { type: integer, format: int64, minimum: 1 } }
+    ResourceId: { in: path, name: id, required: true, schema: { type: integer, format: int64, minimum: 1 } }
+paths:
+  /api/v1/admin/identity/overview:
+    get: &identityGet { summary: Read identity administration data, tags: [Identity], operationId: adminIdentityOverview, security: [{ BearerAuth: [] }], responses: { '200': { description: Identity operational overview, content: { application/json: { schema: { $ref: '#/components/schemas/IdentityEnvelope' } } } }, '403': { description: Identity permission denied } } }
+  /api/v1/admin/identity/verifications:
+    get: { <<: *identityGet, summary: List identity verifications, operationId: adminIdentityVerifications, responses: { '200': { description: Verification ledger, content: { application/json: { schema: { $ref: '#/components/schemas/IdentityListEnvelope' } } } }, '403': { description: Identity permission denied } } }
+  /api/v1/admin/identity/verifications/{publicId}:
+    get:
+      <<: *identityGet
+      summary: Read identity verification detail
+      operationId: adminIdentityVerificationDetail
+      parameters: [{ in: path, name: publicId, required: true, schema: { type: string, format: uuid } }]
+  /api/v1/admin/identity/methods:
+    get: { <<: *identityGet, summary: List identity methods, operationId: adminIdentityMethods, responses: { '200': { description: Identity methods, content: { application/json: { schema: { $ref: '#/components/schemas/IdentityListEnvelope' } } } }, '403': { description: Identity permission denied } } }
+  /api/v1/admin/identity/policies:
+    get: { <<: *identityGet, summary: List identity policy versions, operationId: adminIdentityPolicies, responses: { '200': { description: Identity policy versions, content: { application/json: { schema: { $ref: '#/components/schemas/IdentityListEnvelope' } } } }, '403': { description: Identity permission denied } } }
+    post:
+      summary: Create an identity policy version
+      tags: [Identity]
+      operationId: adminIdentityPolicyCreate
+      security: [{ BearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+      responses: { '200': { description: New immutable policy version, content: { application/json: { schema: { $ref: '#/components/schemas/IdentityEnvelope' } } } }, '403': { description: Permission or fresh step-up required } }
+  /api/v1/admin/identity/providers:
+    get: { <<: *identityGet, summary: List identity providers, operationId: adminIdentityProviders, responses: { '200': { description: Redacted provider registry, content: { application/json: { schema: { $ref: '#/components/schemas/IdentityListEnvelope' } } } }, '403': { description: Identity permission denied } } }
+    put:
+      summary: Update identity provider configuration
+      tags: [Identity]
+      operationId: adminIdentityProviderUpdate
+      security: [{ BearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+      responses: { '200': { description: Provider configuration updated with write-only secret, content: { application/json: { schema: { $ref: '#/components/schemas/IdentityEnvelope' } } } }, '403': { description: Permission or fresh step-up required } }
+  /api/v1/admin/identity/providers/{providerKey}/test:
+    post:
+      summary: Probe an identity provider
+      tags: [Identity]
+      operationId: adminIdentityProviderTest
+      security: [{ BearerAuth: [] }]
+      parameters: [{ in: path, name: providerKey, required: true, schema: { type: string } }]
+      responses: { '200': { description: Evidence-backed provider probe, content: { application/json: { schema: { $ref: '#/components/schemas/IdentityEnvelope' } } } } }
+  /api/v1/admin/identity/provider-attempts/{attemptId}/refresh:
+    post:
+      summary: Refresh identity delivery evidence
+      tags: [Identity]
+      operationId: adminIdentityDeliveryRefresh
+      security: [{ BearerAuth: [] }]
+      parameters: [{ in: path, name: attemptId, required: true, schema: { type: integer, format: int64 } }]
+      responses: { '200': { description: Delivery evidence refreshed, content: { application/json: { schema: { $ref: '#/components/schemas/IdentityEnvelope' } } } } }
+  /api/v1/admin/identity/delivery:
+    get: { <<: *identityGet, summary: Read identity delivery health, operationId: adminIdentityDelivery, responses: { '200': { description: Provider delivery health, content: { application/json: { schema: { $ref: '#/components/schemas/IdentityListEnvelope' } } } } }}
+  /api/v1/admin/identity/risk:
+    get: { <<: *identityGet, summary: List identity risk events, operationId: adminIdentityRisk, responses: { '200': { description: Redacted risk events, content: { application/json: { schema: { $ref: '#/components/schemas/IdentityListEnvelope' } } } } }}
+  /api/v1/admin/identity/users/{userId}/credentials:
+    get:
+      <<: *identityGet
+      summary: List user identity credentials
+      operationId: adminIdentityCredentials
+      parameters: [{ $ref: '#/components/parameters/UserId' }]
+      responses: { '200': { description: Redacted user credentials, content: { application/json: { schema: { $ref: '#/components/schemas/IdentityListEnvelope' } } } } }
+  /api/v1/admin/identity/users/{userId}/credentials/{credentialId}:
+    delete:
+      summary: Revoke a user identity credential
+      tags: [Identity]
+      operationId: adminIdentityCredentialRevoke
+      security: [{ BearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/UserId' }, { in: path, name: credentialId, required: true, schema: { type: integer, format: int64 } }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [reason], properties: { reason: { type: string, minLength: 4 } } } } } }
+      responses: { '200': { description: Credential revoked, content: { application/json: { schema: { $ref: '#/components/schemas/IdentityEnvelope' } } } }, '403': { description: Permission or fresh step-up required } }
+  /api/v1/admin/identity/users/{userId}/sessions:
+    get:
+      <<: *identityGet
+      summary: List user identity sessions
+      operationId: adminIdentitySessions
+      parameters: [{ $ref: '#/components/parameters/UserId' }]
+      responses: { '200': { description: User sessions bound to access tokens, content: { application/json: { schema: { $ref: '#/components/schemas/IdentityListEnvelope' } } } } }
+  /api/v1/admin/identity/users/{userId}/sessions/{sessionId}:
+    delete:
+      summary: Revoke a user identity session
+      tags: [Identity]
+      operationId: adminIdentitySessionRevoke
+      security: [{ BearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/UserId' }, { in: path, name: sessionId, required: true, schema: { type: integer, format: int64 } }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [reason], properties: { reason: { type: string, minLength: 4 } } } } } }
+      responses: { '200': { description: Session and access token revoked, content: { application/json: { schema: { $ref: '#/components/schemas/IdentityEnvelope' } } } } }
+  /api/v1/admin/identity/audit:
+    get: { <<: *identityGet, summary: List identity audit events, operationId: adminIdentityAudit, responses: { '200': { description: Redacted security audit events, content: { application/json: { schema: { $ref: '#/components/schemas/IdentityListEnvelope' } } } } }}
+  /api/v1/admin/identity/analytics:
+    get: { <<: *identityGet, summary: Read identity analytics, operationId: adminIdentityAnalytics }
+  /api/v1/admin/identity/settings:
+    get: { <<: *identityGet, summary: Read identity settings, operationId: adminIdentitySettings }
+    patch:
+      summary: Update identity settings
+      tags: [Identity]
+      operationId: adminIdentitySettingsUpdate
+      security: [{ BearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+      responses: { '200': { description: Backend-enforced identity feature settings, content: { application/json: { schema: { $ref: '#/components/schemas/IdentityEnvelope' } } } }, '403': { description: Permission or fresh step-up required } }
+  /api/v1/admin/identity/sms/settings:
+    get: { <<: *identityGet, summary: Read SMS identity settings, operationId: adminIdentitySmsSettings }
+    patch:
+      summary: Update SMS identity settings
+      tags: [Identity]
+      operationId: adminIdentitySmsSettingsUpdate
+      security: [{ BearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+      responses: { '200': { description: Runtime SMS controls updated, content: { application/json: { schema: { $ref: '#/components/schemas/IdentityEnvelope' } } } }, '403': { description: Permission or fresh step-up required } }
+  /api/v1/admin/identity/access:
+    get: { <<: *identityGet, summary: Read identity access matrix, operationId: adminIdentityAccess, responses: { '200': { description: Admin identity permission matrix, content: { application/json: { schema: { $ref: '#/components/schemas/IdentityListEnvelope' } } } } }}
+  /api/v1/admin/identity/access/preset:
+    post:
+      summary: Apply an identity access preset
+      tags: [Identity]
+      operationId: adminIdentityAccessPreset
+      security: [{ BearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+      responses: { '200': { description: Permission preset applied, content: { application/json: { schema: { $ref: '#/components/schemas/IdentityEnvelope' } } } }, '403': { description: Permission or fresh step-up required } }
+  /api/v1/admin/identity/step-up/verify:
+    post:
+      summary: Verify a fresh scoped admin step-up
+      tags: [Identity]
+      operationId: adminIdentityStepUp
+      security: [{ BearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [method, proof, action_scope], properties: { method: { type: string, enum: [password, totp, recovery_code] }, proof: { type: string }, action_scope: { type: string } } } } } }
+      responses: { '200': { description: Fresh scoped step-up proof recorded, content: { application/json: { schema: { $ref: '#/components/schemas/IdentityEnvelope' } } } }, '422': { description: Invalid proof } }

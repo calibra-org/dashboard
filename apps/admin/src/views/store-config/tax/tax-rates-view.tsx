@@ -33,15 +33,15 @@ function TaxRateRow({ item }: { item: TaxRate }) {
     return (
         <article className="grid gap-3 rounded-xl border bg-card p-4">
             <div className="grid gap-2 md:grid-cols-3">
-                <label className="grid gap-1 text-xs font-medium">
+                <label className="grid gap-1 font-medium text-xs">
                     <span>{tax("label")}</span>
                     <Input value={label} onChange={(event) => setLabel(event.target.value)} />
                 </label>
-                <label className="grid gap-1 text-xs font-medium">
+                <label className="grid gap-1 font-medium text-xs">
                     <span>{tax("rate")}</span>
                     <Input value={rate} onChange={(event) => setRate(event.target.value)} inputMode="decimal" dir="ltr" />
                 </label>
-                <label className="grid gap-1 text-xs font-medium">
+                <label className="grid gap-1 font-medium text-xs">
                     <span>{tax("country")}</span>
                     <Input
                         value={country}
@@ -50,11 +50,11 @@ function TaxRateRow({ item }: { item: TaxRate }) {
                         dir="ltr"
                     />
                 </label>
-                <label className="grid gap-1 text-xs font-medium">
+                <label className="grid gap-1 font-medium text-xs">
                     <span>{tax("priority")}</span>
                     <Input value={priority} onChange={(event) => setPriority(event.target.value)} inputMode="numeric" />
                 </label>
-                <label className="grid gap-1 text-xs font-medium">
+                <label className="grid gap-1 font-medium text-xs">
                     <span>{tax("ordering")}</span>
                     <Input value={ordering} onChange={(event) => setOrdering(event.target.value)} inputMode="numeric" />
                 </label>
@@ -62,11 +62,11 @@ function TaxRateRow({ item }: { item: TaxRate }) {
                     <span>{tax("class")}</span>
                     <div className="flex h-9 items-center rounded-md border bg-muted/20 px-3">{item.tax_class_name}</div>
                 </div>
-                <label className="grid gap-1 text-xs font-medium md:col-span-2">
+                <label className="grid gap-1 font-medium text-xs md:col-span-2">
                     <span>{tax("postcodes")}</span>
                     <Input value={postcodes} onChange={(event) => setPostcodes(event.target.value)} dir="ltr" />
                 </label>
-                <label className="grid gap-1 text-xs font-medium">
+                <label className="grid gap-1 font-medium text-xs">
                     <span>{tax("cities")}</span>
                     <Input value={cities} onChange={(event) => setCities(event.target.value)} />
                 </label>
@@ -152,7 +152,7 @@ export function TaxRatesView() {
                 <p className="mt-1 text-muted-foreground text-sm">{tax("ratesSubtitle")}</p>
             </div>
             <div className="grid gap-2 rounded-xl border bg-card p-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_130px_100px_auto] md:items-end">
-                <label className="grid gap-1 text-xs font-medium">
+                <label className="grid gap-1 font-medium text-xs">
                     <span>{tax("class")}</span>
                     <select
                         className="h-9 rounded-md border border-input bg-background px-2 text-sm"
@@ -167,15 +167,15 @@ export function TaxRatesView() {
                         ))}
                     </select>
                 </label>
-                <label className="grid gap-1 text-xs font-medium">
+                <label className="grid gap-1 font-medium text-xs">
                     <span>{tax("label")}</span>
                     <Input value={label} onChange={(event) => setLabel(event.target.value)} />
                 </label>
-                <label className="grid gap-1 text-xs font-medium">
+                <label className="grid gap-1 font-medium text-xs">
                     <span>{tax("rate")}</span>
                     <Input value={rate} onChange={(event) => setRate(event.target.value)} inputMode="decimal" dir="ltr" />
                 </label>
-                <label className="grid gap-1 text-xs font-medium">
+                <label className="grid gap-1 font-medium text-xs">
                     <span>{tax("country")}</span>
                     <Input
                         value={country}
