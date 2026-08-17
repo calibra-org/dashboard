@@ -95,7 +95,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          # Remove the temporary OpenAPI diagnostic instrumentation before certification/publish.
           git show e8481b5fe1aac0412a2d0d27af2cddf65b12655b:apps/api/tests/bootstrap.ts > apps/api/tests/bootstrap.ts
           node --input-type=module <<'NODE'
           import fs from 'node:fs'
@@ -160,6 +159,8 @@ jobs:
             docs/api/package.json docs/api/scripts/merge-admin-spec.js docs/api/reference/openapi/admin.v1.yaml docs/api/reference/openapi/admin.phase6.v1.yaml \
             apps/admin/src/lib/queries/configuration.ts apps/admin/src/views/store-config/settings/configuration-group-view.tsx \
             apps/api/app/controllers/admin/configuration_controller.ts apps/api/app/controllers/admin/payment_attempts_controller.ts \
+            apps/api/app/controllers/admin/settings_branding_controller.ts apps/api/app/controllers/admin/settings_datetime_controller.ts \
+            apps/api/app/controllers/admin/settings_general_controller.ts apps/api/app/controllers/admin/settings_media_controller.ts \
             apps/api/app/services/configuration_engine_service.ts apps/api/app/services/configuration_registry.ts apps/api/app/services/configuration_revision_service.ts \
             apps/api/app/services/settings_service.ts apps/api/app/services/admin_audit_log_service.ts apps/api/start/routes/admin_settings.ts apps/api/tests/bootstrap.ts \
             apps/api/database/migrations/1763200000000_create_configuration_revisions.ts apps/api/database/migrations/1763300000000_create_configuration_engine.ts \
