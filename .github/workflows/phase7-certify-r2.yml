@@ -1,4 +1,5 @@
 name: Phase 7 certify r2
+# Registered on branch; this follow-up push intentionally triggers the one-shot certifier.
 
 on:
     push:
