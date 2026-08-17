@@ -13,6 +13,7 @@ const runtimeSync = JSON.parse(readFileSync(resolve(root, "dist/admin.runtime-sy
 const completion = JSON.parse(readFileSync(resolve(root, "dist/admin.completion.v1.json"), "utf8"));
 const identity = JSON.parse(readFileSync(resolve(root, "dist/admin.identity.v1.json"), "utf8"));
 const phase10 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase10.v1.json"), "utf8"));
+const phase11 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase11.v1.json"), "utf8"));
 
 function mergeRecord(baseRecord = {}, overlayRecord = {}, label, allowIdentical = false) {
     const merged = { ...baseRecord };
@@ -91,6 +92,7 @@ for (const [overlaySource, namespace] of [
     [completion, "CompletionOverlay"],
     [identity, "IdentityOverlay"],
     [phase10, "Phase10Overlay"],
+    [phase11, "Phase11GovernanceOverlay"],
 ]) {
     const overlay = namespaceConflictingComponents(overlaySource, namespace);
     base.paths = mergePaths(base.paths, overlay.paths);
