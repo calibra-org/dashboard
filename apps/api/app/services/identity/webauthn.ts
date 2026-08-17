@@ -150,7 +150,7 @@ async function consumeCeremony(verificationId: number, challengeId: number, user
         .where("state", "active")
         .whereNull("consumed_at")
         .update({ state: "consumed", consumed_at: now });
-    if (consumed !== 1)
+    if (Number(Array.isArray(consumed) ? consumed.length : consumed) !== 1)
         throw Object.assign(new Error("Passkey challenge was already consumed"), { status: 422, code: "E_WEBAUTHN_REPLAY" });
     await currentTrx()
         .from("identity_verifications")
@@ -295,16 +295,13 @@ export async function finishPasskeyAuthentication(input: {
     if (authData.signCount !== 0 && previousCount !== 0 && authData.signCount <= previousCount)
         throw Object.assign(new Error("Passkey signature counter did not advance"), { status: 422, code: "E_WEBAUTHN_COUNTER" });
     const now = DateTime.utc().toSQL();
-    await currentTrx()
-        .from("identity_credentials")
-        .where("id", credential.id)
-        .update({
-            sign_count: authData.signCount,
-            backup_eligible: authData.backupEligible,
-            backed_up: authData.backedUp,
-            last_used_at: now,
-            updated_at: now,
-        });
+    await currentTrx().from("identity_credentials").where("id", credential.id).update({
+        sign_count: authData.signCount,
+        backup_eligible: authData.backupEligible,
+        backed_up: authData.backedUp,
+        last_used_at: now,
+        updated_at: now,
+    });
     await consumeCeremony(Number(ceremony.verification.id), Number(ceremony.challenge.id), Number(credential.user_id));
     await recordIdentitySecurityEvent({
         ctx: input.ctx,

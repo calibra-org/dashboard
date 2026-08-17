@@ -434,7 +434,7 @@ export async function verifyChallenge(input: VerifyInput) {
         .where("state", "active")
         .whereNull("consumed_at")
         .update({ state: "consumed", consumed_at: now.toSQL() });
-    if (consumed !== 1) return { ok: false as const, reason: "consumed" };
+    if (Number(Array.isArray(consumed) ? consumed.length : consumed) !== 1) return { ok: false as const, reason: "consumed" };
     await trx
         .from("identity_verifications")
         .where("id", verification.id)
@@ -463,5 +463,5 @@ export async function consumeVerifiedTransaction(verificationId: number, userId?
         .where("status", "verified")
         .whereNull("consumed_at")
         .update({ status: "consumed", consumed_at: now.toSQL(), user_id: userId ?? null, updated_at: now.toSQL() });
-    return updated === 1;
+    return Number(Array.isArray(updated) ? updated.length : updated) === 1;
 }

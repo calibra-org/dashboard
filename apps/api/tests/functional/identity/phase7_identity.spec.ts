@@ -60,8 +60,10 @@ test.group("Phase 7 identity platform", (group) => {
             .where("public_id", verificationId)
             .first();
         assert.exists(verification);
-        assert.notEqual(String(verification.identifier_hmac), "09120008888");
-        assert.match(String(verification.identifier_masked), /\*/);
+        assert.exists(verification.identifier_hash);
+        assert.match(String(verification.identifier_hash), /^[0-9a-f]{64}$/i);
+        assert.notEqual(String(verification.identifier_hash), "09120008888");
+        assert.match(String(verification.identifier_masked), /[•*]/);
 
         const challenge = await db
             .connection("postgres_admin")
@@ -73,17 +75,24 @@ test.group("Phase 7 identity platform", (group) => {
     });
 
     test("resend rotates the challenge generation and supersedes the previous challenge", async ({ client, assert }) => {
-        const first = await client.post("/api/v1/auth/otp/request").json({ identifier: "09120007777", channel: "sms" });
+        const identifier = "09120007777";
+        const first = await client.post("/api/v1/auth/otp/request").json({ identifier, channel: "sms" });
         first.assertStatus(200);
         const publicId = first.body().data.verification_id as string;
 
-        await db
+        const verificationBeforeResend = await db
             .connection("postgres_admin")
             .from("identity_verifications")
             .where("tenant_id", TEST_TENANT_ID)
             .where("public_id", publicId)
-            .update({ last_sent_at: DateTime.utc().minus({ minutes: 2 }).toSQL() });
-        const resend = await client.post("/api/v1/auth/otp/resend").json({ verification_id: publicId });
+            .firstOrFail();
+        await db
+            .connection("postgres_admin")
+            .from("identity_verification_challenges")
+            .where("verification_id", verificationBeforeResend.id)
+            .where("state", "active")
+            .update({ created_at: DateTime.utc().minus({ minutes: 2 }).toSQL() });
+        const resend = await client.post("/api/v1/auth/otp/resend").json({ verification_id: publicId, identifier });
         resend.assertStatus(200);
 
         const verification = await db
@@ -99,7 +108,9 @@ test.group("Phase 7 identity platform", (group) => {
             .orderBy("generation", "asc");
         assert.lengthOf(challenges, 2);
         assert.equal(Number(challenges[1].generation), Number(challenges[0].generation) + 1);
-        assert.exists(challenges[0].superseded_at);
+        assert.equal(String(challenges[0].state), "superseded");
+        assert.equal(String(challenges[1].state), "active");
+        assert.notEqual(String(challenges[0].secret_hash), String(challenges[1].secret_hash));
     });
 
     test("admin permission override is enforced by the backend", async ({ client }) => {

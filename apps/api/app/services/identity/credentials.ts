@@ -207,7 +207,7 @@ export async function consumeRecoveryCode(userId: number, code: string) {
             .where("id", row.id)
             .whereNull("revoked_at")
             .update({ revoked_at: now, last_used_at: now, updated_at: now });
-        if (updated === 1) {
+        if (Number(Array.isArray(updated) ? updated.length : updated) === 1) {
             await recordIdentitySecurityEvent({
                 userId,
                 actorUserId: userId,
@@ -235,7 +235,7 @@ export async function revokeIdentityCredential(input: {
         .where("id", input.credentialId)
         .whereNull("revoked_at")
         .update({ revoked_at: now, updated_at: now });
-    if (updated !== 1)
+    if (Number(Array.isArray(updated) ? updated.length : updated) !== 1)
         throw Object.assign(new Error("Credential not found"), { status: 404, code: "E_IDENTITY_CREDENTIAL_NOT_FOUND" });
     await recordIdentitySecurityEvent({
         userId: input.userId,

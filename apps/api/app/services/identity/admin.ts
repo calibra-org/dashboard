@@ -369,7 +369,7 @@ export async function updateIdentitySmsSettings(input: Partial<Record<keyof type
         if (input[key] === undefined) continue;
         const fallback = SMS_DEFAULTS[key];
         if (typeof fallback === "boolean") await service.set("identity_sms", key, Boolean(input[key]), "boolean");
-        else await service.set("identity_sms", key, Math.max(0, Math.round(Number(input[key]))), "integer");
+        else await service.set("identity_sms", key, Math.max(0, Math.round(Number(input[key]))), "number");
     }
     return identitySmsSettings();
 }

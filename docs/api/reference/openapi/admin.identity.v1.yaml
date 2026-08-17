@@ -78,9 +78,9 @@ paths:
       parameters: [{ in: path, name: attemptId, required: true, schema: { type: integer, format: int64 } }]
       responses: { '200': { description: Delivery evidence refreshed, content: { application/json: { schema: { $ref: '#/components/schemas/IdentityEnvelope' } } } } }
   /api/v1/admin/identity/delivery:
-    get: { <<: *identityGet, summary: Read identity delivery health, operationId: adminIdentityDelivery, responses: { '200': { description: Provider delivery health, content: { application/json: { schema: { $ref: '#/components/schemas/IdentityListEnvelope' } } } } }
+    get: { <<: *identityGet, summary: Read identity delivery health, operationId: adminIdentityDelivery, responses: { '200': { description: Provider delivery health, content: { application/json: { schema: { $ref: '#/components/schemas/IdentityListEnvelope' } } } } }}
   /api/v1/admin/identity/risk:
-    get: { <<: *identityGet, summary: List identity risk events, operationId: adminIdentityRisk, responses: { '200': { description: Redacted risk events, content: { application/json: { schema: { $ref: '#/components/schemas/IdentityListEnvelope' } } } } }
+    get: { <<: *identityGet, summary: List identity risk events, operationId: adminIdentityRisk, responses: { '200': { description: Redacted risk events, content: { application/json: { schema: { $ref: '#/components/schemas/IdentityListEnvelope' } } } } }}
   /api/v1/admin/identity/users/{userId}/credentials:
     get:
       <<: *identityGet
@@ -114,7 +114,7 @@ paths:
       requestBody: { required: true, content: { application/json: { schema: { type: object, required: [reason], properties: { reason: { type: string, minLength: 4 } } } } } }
       responses: { '200': { description: Session and access token revoked, content: { application/json: { schema: { $ref: '#/components/schemas/IdentityEnvelope' } } } } }
   /api/v1/admin/identity/audit:
-    get: { <<: *identityGet, summary: List identity audit events, operationId: adminIdentityAudit, responses: { '200': { description: Redacted security audit events, content: { application/json: { schema: { $ref: '#/components/schemas/IdentityListEnvelope' } } } } }
+    get: { <<: *identityGet, summary: List identity audit events, operationId: adminIdentityAudit, responses: { '200': { description: Redacted security audit events, content: { application/json: { schema: { $ref: '#/components/schemas/IdentityListEnvelope' } } } } }}
   /api/v1/admin/identity/analytics:
     get: { <<: *identityGet, summary: Read identity analytics, operationId: adminIdentityAnalytics }
   /api/v1/admin/identity/settings:
@@ -136,7 +136,7 @@ paths:
       requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
       responses: { '200': { description: Runtime SMS controls updated, content: { application/json: { schema: { $ref: '#/components/schemas/IdentityEnvelope' } } } }, '403': { description: Permission or fresh step-up required } }
   /api/v1/admin/identity/access:
-    get: { <<: *identityGet, summary: Read identity access matrix, operationId: adminIdentityAccess, responses: { '200': { description: Admin identity permission matrix, content: { application/json: { schema: { $ref: '#/components/schemas/IdentityListEnvelope' } } } } }
+    get: { <<: *identityGet, summary: Read identity access matrix, operationId: adminIdentityAccess, responses: { '200': { description: Admin identity permission matrix, content: { application/json: { schema: { $ref: '#/components/schemas/IdentityListEnvelope' } } } } }}
   /api/v1/admin/identity/access/preset:
     post:
       summary: Apply an identity access preset

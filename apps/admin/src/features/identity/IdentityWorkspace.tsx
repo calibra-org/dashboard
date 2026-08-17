@@ -455,7 +455,11 @@ function Methods({ rows, loading }: { rows?: AnyRecord[]; loading?: boolean }) {
     return (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {(rows ?? []).map((row) => (
-                <Card key={row.key} isLoading={loading} title={<InfoTitle title={row.label} help={COPY.help.methodCard} />}>
+                <Card
+                    key={row.key}
+                    isLoading={loading}
+                    title={<InfoTitle title={row.label ?? row.key ?? "—"} help={COPY.help.methodCard} />}
+                >
                     <div className="flex items-center justify-between">
                         <StatusBadge tone={row.enabled ? "success" : "neutral"}>{row.enabled ? "فعال" : "غیرفعال"}</StatusBadge>
                         <span className="text-muted-foreground text-xs">
