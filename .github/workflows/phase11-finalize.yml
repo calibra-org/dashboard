@@ -1,0 +1,82 @@
+name: Phase 11 Finalize
+
+on:
+    push:
+        branches: ["agent/phase11-governance-os"]
+
+permissions:
+    contents: write
+
+env:
+    FORCE_COLOR: 3
+    TURBO_TELEMETRY_DISABLED: 1
+    DO_NOT_TRACK: 1
+    NODE_VERSION: "24.14.0"
+    PNPM_VERSION: "10.32.1"
+
+jobs:
+    normalize-and-verify:
+        if: github.actor != 'github-actions[bot]'
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+        services:
+            postgres:
+                image: postgres:17-alpine
+                env:
+                    POSTGRES_USER: calibra
+                    POSTGRES_PASSWORD: calibra
+                    POSTGRES_DB: calibra
+                ports: ["5432:5432"]
+                options: >-
+                    --health-cmd "pg_isready -U calibra -d calibra"
+                    --health-interval 5s
+                    --health-timeout 5s
+                    --health-retries 10
+            redis:
+                image: redis:7-alpine
+                ports: ["6379:6379"]
+                options: >-
+                    --health-cmd "redis-cli ping"
+                    --health-interval 5s
+                    --health-timeout 3s
+                    --health-retries 10
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+            - uses: pnpm/action-setup@v4
+              with:
+                  version: ${{ env.PNPM_VERSION }}
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: pnpm
+            - run: pnpm install --frozen-lockfile
+            - name: Canonical format and safe lint fixes
+              run: pnpm run format:fix && pnpm run lint:biome:fix
+            - name: Regenerate OpenAPI-derived SDK
+              run: pnpm --filter @calibra/sdk run codegen
+            - name: Reformat generated sources
+              run: pnpm run format:fix
+            - name: Typecheck
+              run: pnpm run typecheck
+            - name: Create isolated test database
+              env:
+                  PGPASSWORD: calibra
+              run: psql -h localhost -U calibra -d calibra -c "CREATE DATABASE calibra_test OWNER calibra;"
+            - name: Phase 11 focused regression suite
+              working-directory: apps/api
+              run: pnpm test --files=tests/functional/admin/governance_os.spec.ts --files=tests/functional/admin/governance_rls.spec.ts --files=tests/functional/admin/configuration_engine.spec.ts
+            - name: Production build
+              run: pnpm run build
+            - name: Commit canonical generated source
+              run: |
+                  if [ -z "$(git status --porcelain)" ]; then
+                    echo "No normalization changes required"
+                    exit 0
+                  fi
+                  git config user.name "calibra-phase11-bot"
+                  git config user.email "calibra-phase11-bot@users.noreply.github.com"
+                  git add -A
+                  git commit -m "chore(governance): finalize Phase 11 generated and formatted source"
+                  git push origin HEAD:agent/phase11-governance-os
