@@ -1,0 +1,47 @@
+name: Phase9 Master Finalize
+
+on:
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: phase9-master-finalize-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  finalize:
+    if: github.event.pull_request.head.ref == 'agent/phase9-personalization-deals-20260816' && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Format Phase 9 changes
+        run: pnpm run format
+      - name: Generate OpenAPI SDK contracts
+        run: pnpm --filter @calibra/sdk run codegen
+      - name: Typecheck before publishing generated artifacts
+        run: pnpm run typecheck
+      - name: Commit generated and formatting changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/api/app/services/phase9_master_service.ts apps/api/app/controllers/phase9_master_controller.ts apps/api/app/controllers/admin/phase9_master_controller.ts apps/api/start/routes.ts apps/api/start/routes/phase9_master.ts apps/api/start/routes/admin_phase9_master.ts apps/api/database/migrations/1763001000000_harden_phase9_master_dod.ts apps/api/database/migrations/1763002000000_complete_phase9_deal_capacity.ts apps/api/tests/functional/admin/phase9_master_dod.spec.ts docs/api/reference/openapi/storefront.phase9.v1.yaml docs/api/reference/openapi/admin.phase9.v1.yaml packages/sdk/src/generated/storefront.d.ts packages/sdk/src/generated/admin.d.ts
+          if git diff --cached --quiet; then
+            echo "No generated drift"
+          else
+            git commit -m "chore(personalization): sync Phase 9 generated contracts"
+            git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          fi
