@@ -166,7 +166,12 @@ pass(
         sidebar.includes("setFactorOpen,"),
     "Factor sidebar submenu is not accessible/collapsible",
 );
-pass(sidebar.includes('group.titleKey === "sales"'), "Factor submenu is not placed under Sales");
+pass(
+    sidebar.includes('"factor-sidebar-items"') &&
+        sidebar.includes('navT("factor")') &&
+        !sidebar.includes('group.titleKey === "sales"'),
+    "Factor must be a first-level navigation heading, not nested under Sales",
+);
 
 const visibleFiles = [
     ...walk("apps/admin/src/features/factor"),

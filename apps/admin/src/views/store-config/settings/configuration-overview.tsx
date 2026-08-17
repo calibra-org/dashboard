@@ -32,7 +32,11 @@ export function ConfigurationOverview() {
     return (
         <div className="flex flex-col gap-7">
             <section className="grid gap-3 sm:grid-cols-3">
-                <MetricCard icon={ShieldCheck} label={fa ? "پیکربندی قابل ویرایش" : "Editable configuration"} value={settingsCount} />
+                <MetricCard
+                    icon={ShieldCheck}
+                    label={fa ? "پیکربندی قابل ویرایش" : "Editable configuration"}
+                    value={settingsCount}
+                />
                 <MetricCard icon={Boxes} label={fa ? "دامنه‌های متصل" : "Connected domains"} value={linkedCount} />
                 <MetricCard icon={History} label={fa ? "نسخه‌های اخیر" : "Recent revisions"} value={history.data?.length ?? 0} />
             </section>
@@ -60,7 +64,9 @@ export function ConfigurationOverview() {
                         ))}
                     </div>
                 ) : registry.isError ? (
-                    <StateCard text={fa ? "بارگذاری رجیستری پیکربندی ناموفق بود." : "Configuration registry could not be loaded."} />
+                    <StateCard
+                        text={fa ? "بارگذاری رجیستری پیکربندی ناموفق بود." : "Configuration registry could not be loaded."}
+                    />
                 ) : (
                     <div className="space-y-6">
                         {CATEGORIES.map((category) => {
@@ -80,7 +86,11 @@ export function ConfigurationOverview() {
                                             >
                                                 <div className="flex items-start justify-between gap-3">
                                                     <div className="flex size-10 items-center justify-center rounded-xl border bg-muted/45 shadow-inner">
-                                                        {item.mode === "settings" ? <Settings2 className="size-4" /> : <Boxes className="size-4" />}
+                                                        {item.mode === "settings" ? (
+                                                            <Settings2 className="size-4" />
+                                                        ) : (
+                                                            <Boxes className="size-4" />
+                                                        )}
                                                     </div>
                                                     <ArrowLeft
                                                         className={cn(
@@ -99,7 +109,10 @@ export function ConfigurationOverview() {
                                                     {fa ? item.description_fa : item.description_en}
                                                 </p>
                                                 <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                                                    <span>{item.definition_count.toLocaleString(locale)} {fa ? "تعریف" : "definitions"}</span>
+                                                    <span>
+                                                        {item.definition_count.toLocaleString(locale)}{" "}
+                                                        {fa ? "تعریف" : "definitions"}
+                                                    </span>
                                                     {item.history_enabled ? (
                                                         <>
                                                             <span aria-hidden="true">•</span>
@@ -133,7 +146,9 @@ export function ConfigurationOverview() {
 
                 {rollback.isError ? (
                     <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-                        {fa ? "بازگردانی انجام نشد؛ تنظیمات فعال بدون تغییر باقی ماند." : "Rollback failed; active configuration was left unchanged."}
+                        {fa
+                            ? "بازگردانی انجام نشد؛ تنظیمات فعال بدون تغییر باقی ماند."
+                            : "Rollback failed; active configuration was left unchanged."}
                     </div>
                 ) : null}
 
@@ -147,7 +162,9 @@ export function ConfigurationOverview() {
                     <Card>
                         <CardHeader className="pb-2">
                             <CardTitle className="text-sm">{fa ? "آخرین نسخه‌ها" : "Latest revisions"}</CardTitle>
-                            <CardDescription>{fa ? "جدیدترین تغییرات ابتدا نمایش داده می‌شوند." : "Newest revisions appear first."}</CardDescription>
+                            <CardDescription>
+                                {fa ? "جدیدترین تغییرات ابتدا نمایش داده می‌شوند." : "Newest revisions appear first."}
+                            </CardDescription>
                         </CardHeader>
                         <CardContent className="divide-y p-0">
                             {history.data?.map((item) => (
@@ -159,12 +176,19 @@ export function ConfigurationOverview() {
                                         <div className="min-w-0">
                                             <div className="flex flex-wrap items-center gap-2">
                                                 <span className="font-medium">{scopeLabel(item.scope, fa)}</span>
-                                                <Badge variant={item.source === "rollback" ? "outline" : "secondary"} className="text-[10px]">
+                                                <Badge
+                                                    variant={item.source === "rollback" ? "outline" : "secondary"}
+                                                    className="text-[10px]"
+                                                >
                                                     {revisionSourceLabel(item.source, fa)}
                                                 </Badge>
                                             </div>
                                             <p className="mt-0.5 max-w-xl truncate text-xs text-muted-foreground">
-                                                {item.changed_keys.length > 0 ? item.changed_keys.join("، ") : fa ? "نسخه پایه" : "Baseline revision"}
+                                                {item.changed_keys.length > 0
+                                                    ? item.changed_keys.join("، ")
+                                                    : fa
+                                                      ? "نسخه پایه"
+                                                      : "Baseline revision"}
                                             </p>
                                         </div>
                                     </div>
@@ -172,7 +196,10 @@ export function ConfigurationOverview() {
                                         <div className="text-left text-xs text-muted-foreground" dir="ltr">
                                             <div>r{item.revision}</div>
                                             <time dateTime={item.created_at}>
-                                                {new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(item.created_at))}
+                                                {new Intl.DateTimeFormat(locale, {
+                                                    dateStyle: "medium",
+                                                    timeStyle: "short",
+                                                }).format(new Date(item.created_at))}
                                             </time>
                                         </div>
                                         <RollbackAction
@@ -192,7 +219,17 @@ export function ConfigurationOverview() {
     );
 }
 
-function RollbackAction({ item, fa, pending, onRollback }: { item: ConfigurationRevision; fa: boolean; pending: boolean; onRollback: () => void }) {
+function RollbackAction({
+    item,
+    fa,
+    pending,
+    onRollback,
+}: {
+    item: ConfigurationRevision;
+    fa: boolean;
+    pending: boolean;
+    onRollback: () => void;
+}) {
     return (
         <ConfirmDialog
             trigger={
@@ -201,7 +238,11 @@ function RollbackAction({ item, fa, pending, onRollback }: { item: Configuration
                     <span className="hidden sm:inline">{fa ? "بازگردانی" : "Rollback"}</span>
                 </Button>
             }
-            title={fa ? `بازگردانی ${scopeLabel(item.scope, true)} به نسخه ${item.revision}؟` : `Restore ${scopeLabel(item.scope, false)} to revision ${item.revision}?`}
+            title={
+                fa
+                    ? `بازگردانی ${scopeLabel(item.scope, true)} به نسخه ${item.revision}؟`
+                    : `Restore ${scopeLabel(item.scope, false)} to revision ${item.revision}?`
+            }
             description={
                 fa
                     ? "مقادیر نسخه انتخابی دوباره روی تنظیمات فعال نوشته می‌شوند و یک نسخه بازگردانی جدید ساخته می‌شود."
