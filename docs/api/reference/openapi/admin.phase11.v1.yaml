@@ -1,0 +1,317 @@
+openapi: 3.1.0
+info:
+  title: Calibra Admin Phase 11 Governance OS Overlay
+  version: 1.0.0
+servers:
+  - url: /
+tags:
+  - name: Governance OS
+    description: Policy-as-data, approval workflows, bounded agent autonomy, shadow evidence, and tamper-evident action history.
+paths:
+  /api/v1/admin/governance/overview:
+    get:
+      tags: [Governance OS]
+      operationId: adminGovernanceOverview
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Governance control-plane overview }
+  /api/v1/admin/governance/registry:
+    get:
+      tags: [Governance OS]
+      operationId: adminGovernanceRegistry
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Governed action registry and autonomy ceilings }
+  /api/v1/admin/governance/policies:
+    get:
+      tags: [Governance OS]
+      operationId: adminGovernancePolicies
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Immutable policy versions }
+    post:
+      tags: [Governance OS]
+      operationId: adminGovernancePolicyCreate
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/GovernancePolicyInput' }
+      responses:
+        '200': { description: Policy version appended }
+        '403': { description: Recent identity step-up required }
+  /api/v1/admin/governance/evaluate:
+    post:
+      tags: [Governance OS]
+      operationId: adminGovernanceEvaluate
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/GovernanceEvaluationInput' }
+      responses:
+        '200': { description: Policy decision with matched policies and digest }
+  /api/v1/admin/governance/agents:
+    get:
+      tags: [Governance OS]
+      operationId: adminGovernanceAgents
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Agent principals and effective autonomy }
+    post:
+      tags: [Governance OS]
+      operationId: adminGovernanceAgentCreate
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/GovernanceAgentInput' }
+      responses:
+        '200': { description: Agent principal created }
+        '403': { description: Recent identity step-up required }
+  /api/v1/admin/governance/agents/{id}/kill-switch:
+    post:
+      tags: [Governance OS]
+      operationId: adminGovernanceAgentKillSwitch
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [enabled]
+              properties: { enabled: { type: boolean } }
+      responses:
+        '200': { description: Emergency stop state changed }
+        '403': { description: Recent identity step-up required }
+  /api/v1/admin/governance/approvals:
+    get:
+      tags: [Governance OS]
+      operationId: adminGovernanceApprovals
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: status, in: query, required: false, schema: { type: string } }
+      responses:
+        '200': { description: Approval queue }
+    post:
+      tags: [Governance OS]
+      operationId: adminGovernanceApprovalCreate
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/GovernanceApprovalInput' }
+      responses:
+        '200': { description: Approval request created and request hash bound }
+  /api/v1/admin/governance/approvals/{reference}:
+    get:
+      tags: [Governance OS]
+      operationId: adminGovernanceApprovalGet
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/GovernanceApprovalReference' }]
+      responses:
+        '200': { description: Approval request with steps and immutable decisions }
+  /api/v1/admin/governance/approvals/{reference}/decision:
+    post:
+      tags: [Governance OS]
+      operationId: adminGovernanceApprovalDecision
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/GovernanceApprovalReference' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision, reason]
+              properties:
+                decision: { type: string, enum: [approve, reject] }
+                reason: { type: string, minLength: 1, maxLength: 1000 }
+      responses:
+        '200': { description: Approval decision recorded }
+        '409': { description: Separation-of-duties or duplicate-decision conflict }
+  /api/v1/admin/governance/approvals/{reference}/delegate:
+    post:
+      tags: [Governance OS]
+      operationId: adminGovernanceApprovalDelegate
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/GovernanceApprovalReference' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [delegatedToUserId, reason]
+              properties:
+                delegatedToUserId: { type: integer, minimum: 1 }
+                reason: { type: string, minLength: 1, maxLength: 1000 }
+      responses:
+        '200': { description: Approval authority delegated for the active step }
+  /api/v1/admin/governance/approvals/{reference}/break-glass:
+    post:
+      tags: [Governance OS]
+      operationId: adminGovernanceApprovalBreakGlass
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/GovernanceApprovalReference' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties: { reason: { type: string, minLength: 1, maxLength: 1000 } }
+      responses:
+        '200': { description: Break-glass decision recorded with elevated audit }
+        '403': { description: Recent identity step-up required }
+  /api/v1/admin/governance/ledger:
+    get:
+      tags: [Governance OS]
+      operationId: adminGovernanceLedger
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 500, default: 100 } }
+      responses:
+        '200': { description: Tenant-scoped tamper-evident action ledger }
+  /api/v1/admin/governance/ledger/verify:
+    post:
+      tags: [Governance OS]
+      operationId: adminGovernanceLedgerVerify
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Full ledger chain verification result }
+  /api/v1/admin/governance/shadow:
+    get:
+      tags: [Governance OS]
+      operationId: adminGovernanceShadow
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Shadow observations and measured promotion readiness }
+    post:
+      tags: [Governance OS]
+      operationId: adminGovernanceShadowCreate
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/GovernanceShadowInput' }
+      responses:
+        '200': { description: Shadow proposal recorded }
+  /api/v1/admin/governance/shadow/{id}/review:
+    post:
+      tags: [Governance OS]
+      operationId: adminGovernanceShadowReview
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [humanDecision]
+              properties:
+                humanDecision: { type: string, enum: [approve, reject, modify, abstain] }
+                outcome: { type: object, additionalProperties: true }
+      responses:
+        '200': { description: Human shadow review recorded }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  parameters:
+    GovernanceApprovalReference:
+      name: reference
+      in: path
+      required: true
+      schema: { type: string, pattern: '^govap_[A-Za-z0-9_-]+$' }
+  schemas:
+    GovernancePolicyInput:
+      type: object
+      required: [policyKey, name, actionPattern, effect, reason]
+      properties:
+        policyKey: { type: string, minLength: 1, maxLength: 128 }
+        name: { type: string, minLength: 1, maxLength: 180 }
+        description: { type: [string, 'null'], maxLength: 4000 }
+        actionPattern: { type: string, minLength: 1, maxLength: 180 }
+        scope: { type: object, additionalProperties: true }
+        predicate: { type: object, additionalProperties: true }
+        effect: { type: string, enum: [allow, deny, require_approval, require_step_up, limit] }
+        priority: { type: integer, minimum: 0, maximum: 10000 }
+        autonomyCeiling: { type: [integer, 'null'], minimum: 0, maximum: 5 }
+        limits: { type: object, additionalProperties: true }
+        enabled: { type: boolean }
+        reason: { type: string, minLength: 1, maxLength: 2000 }
+    GovernanceEvaluationInput:
+      type: object
+      required: [actionKey]
+      properties:
+        actorType: { type: string, enum: [human, agent, service] }
+        agentId: { type: [integer, 'null'], minimum: 1 }
+        actionKey: { type: string, minLength: 1, maxLength: 180 }
+        resourceType: { type: [string, 'null'], maxLength: 80 }
+        resourceId: { type: [string, integer, 'null'] }
+        requestedAutonomy: { type: integer, minimum: 0, maximum: 5 }
+        amountMinor: { type: [integer, 'null'], minimum: 0 }
+        currency: { type: [string, 'null'], maxLength: 3 }
+        context: { type: object, additionalProperties: true }
+    GovernanceAgentInput:
+      type: object
+      required: [principalKey, name]
+      properties:
+        principalKey: { type: string, minLength: 1, maxLength: 120 }
+        name: { type: string, minLength: 1, maxLength: 180 }
+        ownerUserId: { type: [integer, 'null'], minimum: 1 }
+        allowedActions: { type: array, items: { type: string, maxLength: 180 }, maxItems: 200 }
+        prohibitedActions: { type: array, items: { type: string, maxLength: 180 }, maxItems: 200 }
+        dataAccessClasses: { type: array, items: { type: string, maxLength: 180 }, maxItems: 200 }
+        autonomyLevel: { type: integer, minimum: 0, maximum: 5 }
+        budgetLimitMinor: { type: [integer, 'null'], minimum: 0 }
+        budgetCurrency: { type: [string, 'null'], maxLength: 3 }
+        budgetPeriod: { type: string, maxLength: 16 }
+        attributes: { type: object, additionalProperties: true }
+        enabled: { type: boolean }
+    GovernanceApprovalInput:
+      type: object
+      required: [actionKey, reason]
+      properties:
+        actionKey: { type: string, minLength: 1, maxLength: 180 }
+        resourceType: { type: [string, 'null'], maxLength: 80 }
+        resourceId: { type: [string, integer, 'null'] }
+        reason: { type: string, minLength: 1, maxLength: 2000 }
+        payload: { type: object, additionalProperties: true }
+        workflowKind: { type: string, enum: [single, sequential, quorum] }
+        separationOfDuties: { type: boolean }
+        expiresInMinutes: { type: integer, minimum: 5, maximum: 10080 }
+        steps:
+          type: array
+          maxItems: 10
+          items:
+            type: object
+            required: [label]
+            properties:
+              label: { type: string, maxLength: 160 }
+              assignedUserId: { type: [integer, 'null'], minimum: 1 }
+              requiredPermission: { type: [string, 'null'], maxLength: 160 }
+              escalateAfterMinutes: { type: [integer, 'null'], minimum: 1, maximum: 10080 }
+              escalationPermission: { type: [string, 'null'], maxLength: 160 }
+              quorum: { type: integer, minimum: 1, maximum: 20 }
+    GovernanceShadowInput:
+      type: object
+      required: [actionKey]
+      properties:
+        agentPrincipalId: { type: [integer, 'null'], minimum: 1 }
+        actionKey: { type: string, minLength: 1, maxLength: 180 }
+        autonomyStage: { type: integer, minimum: 0, maximum: 5 }
+        proposal: { type: object, additionalProperties: true }
+        policyDecision: { type: object, additionalProperties: true }
+        policyDigest: { type: [string, 'null'], maxLength: 64 }
