@@ -34,7 +34,11 @@ The Phase 6/7 integration certification ran on GitHub Actions against PostgreSQL
 - Phase 7 Identity functional regressions
 - formatting normalization before the production-source commit
 
-The materialization job then removed all temporary bootstrap, diagnostic and repair workflows and published the normalized source to the Phase 7 branch. Repository-standard `Check` and `SEO Engines` remain the final merge gates for this exact branch head.
+The materialization job then removed temporary bootstrap and repair workflows and published the normalized source to the Phase 7 branch. A subsequent release-gate repair corrected concrete integration drift found by repository CI: Phase 6 is included in the composed Admin OpenAPI/SDK contract, the transaction summary aggregate uses non-colliding aliases, stale Phase 5 shipment expectations were aligned with explicit delivery semantics, the payment TableView regression uses the current filter grammar, and the stale implicit HEAD reconcile contract was removed.
+
+An error-only Biome diagnostic then isolated five repository lint errors. They were fixed semantically rather than suppressed: Configuration and Transaction skeletons use stable keys, editable shipping locations carry stable client keys that are stripped before API writes, transaction-table details use a semantic button instead of an interactive table row role, and payment reconciliation declares its adapter type explicitly. The targeted lint repair completed formatting, error-level Biome lint, and repository typecheck successfully before committing the production-only tree.
+
+Repository-standard `Check` and `SEO Engines` are the final merge gates for this exact branch head. No final PASS claim is made here until those workflows execute successfully on the final commit.
 
 ## Functional evidence covered by the certification suite
 
