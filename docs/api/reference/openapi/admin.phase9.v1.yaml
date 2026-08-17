@@ -13,71 +13,57 @@ paths:
   /api/v1/admin/personalization/overview:
     get: { operationId: adminPhase9Overview, tags: [Admin / Personalization], responses: { "200": { description: Phase 9 overview }, "401": { description: Authentication required }, "403": { description: Admin required } } }
   /api/v1/admin/personalization/health:
-    get: { operationId: adminPhase9Health, tags: [Admin / Personalization], responses: { "200": { description: Health } } }
+    get: { operationId: adminPhase9Health, tags: [Admin / Personalization], responses: { "200": { description: Event, recommendation and deal health } } }
   /api/v1/admin/personalization/campaigns:
-    get: { operationId: adminPhase9Campaigns, tags: [Admin / Personalization], responses: { "200": { description: Campaign list } } }
-    post: { operationId: adminPhase9CampaignCreate, tags: [Admin / Personalization], requestBody: { required: true, content: { application/json: { schema: { type: object, required: [name], additionalProperties: true } } } }, responses: { "201": { description: Campaign created }, "422": { description: Invalid campaign } } }
+    get: { operationId: adminPhase9Campaigns, tags: [Admin / Personalization], responses: { "200": { description: Deal campaigns } } }
+    post: { operationId: adminPhase9CampaignCreate, tags: [Admin / Personalization], requestBody: { required: true, content: { application/json: { schema: { type: object, required: [name], additionalProperties: true } } } }, responses: { "201": { description: Draft campaign created }, "422": { description: Invalid campaign } } }
   /api/v1/admin/personalization/campaigns/{id}:
     parameters: [{ name: id, in: path, required: true, schema: { type: integer, format: int64, minimum: 1 } }]
     patch: { operationId: adminPhase9CampaignUpdate, tags: [Admin / Personalization], requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: true } } } }, responses: { "200": { description: Campaign updated }, "404": { description: Not found }, "409": { description: Version conflict } } }
   /api/v1/admin/personalization/campaigns/{id}/publish:
     parameters: [{ name: id, in: path, required: true, schema: { type: integer, format: int64, minimum: 1 } }]
-    post: { operationId: adminPhase9CampaignPublish, tags: [Admin / Personalization], responses: { "200": { description: Published }, "409": { description: Version conflict }, "422": { description: No eligible products } } }
+    post: { operationId: adminPhase9CampaignPublish, tags: [Admin / Personalization], responses: { "200": { description: Campaign activated }, "409": { description: Version conflict }, "422": { description: No eligible products } } }
   /api/v1/admin/personalization/campaigns/{id}/pause:
     parameters: [{ name: id, in: path, required: true, schema: { type: integer, format: int64, minimum: 1 } }]
-    post: { operationId: adminPhase9CampaignPause, tags: [Admin / Personalization], responses: { "200": { description: Paused }, "409": { description: Version conflict } } }
+    post: { operationId: adminPhase9CampaignPause, tags: [Admin / Personalization], responses: { "200": { description: Campaign paused }, "409": { description: Version conflict } } }
+  /api/v1/admin/personalization/campaigns/{id}/transition/{target}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, format: int64, minimum: 1 } }
+      - { name: target, in: path, required: true, schema: { type: string, enum: [scheduled, preheat, active, paused, sold_out, expired, cancelled, ended, archived] } }
+    post: { operationId: adminPhase9CampaignTransition, tags: [Admin / Personalization], requestBody: { content: { application/json: { schema: { type: object, properties: { expected_version: { type: integer, minimum: 1 } } } } } }, responses: { "200": { description: Deterministic lifecycle transition }, "409": { description: Invalid transition or version conflict } } }
   /api/v1/admin/personalization/settings:
-    get: { operationId: adminPhase9Settings, tags: [Admin / Personalization], responses: { "200": { description: Settings } } }
+    get: { operationId: adminPhase9Settings, tags: [Admin / Personalization], responses: { "200": { description: Runtime settings } } }
     patch: { operationId: adminPhase9SettingsUpdate, tags: [Admin / Personalization], requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: true } } } }, responses: { "200": { description: Settings updated } } }
   /api/v1/admin/personalization/placements:
-    get: { operationId: adminPhase9Placements, tags: [Admin / Personalization], responses: { "200": { description: Placement list } } }
+    get: { operationId: adminPhase9Placements, tags: [Admin / Personalization], responses: { "200": { description: Placement policies } } }
   /api/v1/admin/personalization/placements/{placement}:
     parameters: [{ name: placement, in: path, required: true, schema: { type: string } }]
-    patch: { operationId: adminPhase9PlacementUpdate, tags: [Admin / Personalization], requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: true } } } }, responses: { "200": { description: Placement updated } } }
-  /api/v1/admin/personalization/simulate:
-    post: { operationId: adminPhase9Simulate, tags: [Admin / Personalization], requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: true } } } }, responses: { "200": { description: Recommendation decision trace } } }
-  /api/v1/admin/personalization/events:
-    get: { operationId: adminPhase9Events, tags: [Admin / Personalization], responses: { "200": { description: Recent events } } }
-  /api/v1/admin/personalization/consents:
-    get: { operationId: adminPhase9Consents, tags: [Admin / Personalization], responses: { "200": { description: Recent consent records } } }
+    patch: { operationId: adminPhase9PlacementUpdate, tags: [Admin / Personalization], requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: true } } } }, responses: { "200": { description: Placement updated }, "404": { description: Placement not found } } }
+  /api/v1/admin/personalization/features:
+    get: { operationId: adminPhase9Features, tags: [Admin / Personalization], responses: { "200": { description: Feature registry } } }
+    put: { operationId: adminPhase9FeatureUpsert, tags: [Admin / Personalization], requestBody: { required: true, content: { application/json: { schema: { type: object, required: [feature_key, source], additionalProperties: true } } } }, responses: { "200": { description: Feature registry entry upserted } } }
   /api/v1/admin/personalization/policies:
-    get: { operationId: adminPhase9Policies, tags: [Admin / Personalization], responses: { "200": { description: Policy versions } } }
+    get: { operationId: adminPhase9Policies, tags: [Admin / Personalization], responses: { "200": { description: Ranking policy versions } } }
     post: { operationId: adminPhase9PolicyCreate, tags: [Admin / Personalization], requestBody: { required: true, content: { application/json: { schema: { type: object, required: [policy_key], additionalProperties: true } } } }, responses: { "201": { description: Draft policy version created } } }
-  /api/v1/admin/personalization/policies/{id}/activate:
-    parameters: [{ name: id, in: path, required: true, schema: { type: integer, format: int64 } }]
-    post: { operationId: adminPhase9PolicyActivate, tags: [Admin / Personalization], responses: { "200": { description: Policy activated }, "404": { description: Policy not found } } }
-  /api/v1/admin/personalization/policies/{key}/rollback:
-    parameters: [{ name: key, in: path, required: true, schema: { type: string } }]
-    post: { operationId: adminPhase9PolicyRollback, tags: [Admin / Personalization], requestBody: { required: true, content: { application/json: { schema: { type: object, required: [version], properties: { version: { type: integer, minimum: 1 } } } } } }, responses: { "200": { description: Previous policy version restored } } }
   /api/v1/admin/personalization/models:
-    get: { operationId: adminPhase9Models, tags: [Admin / Personalization], responses: { "200": { description: Model/rule versions } } }
+    get: { operationId: adminPhase9Models, tags: [Admin / Personalization], responses: { "200": { description: Model and rule versions } } }
     post: { operationId: adminPhase9ModelCreate, tags: [Admin / Personalization], requestBody: { required: true, content: { application/json: { schema: { type: object, required: [model_key, version], additionalProperties: true } } } }, responses: { "201": { description: Draft model/rule version created } } }
-  /api/v1/admin/personalization/models/{id}/activate:
-    parameters: [{ name: id, in: path, required: true, schema: { type: integer, format: int64 } }]
-    post: { operationId: adminPhase9ModelActivate, tags: [Admin / Personalization], requestBody: { content: { application/json: { schema: { type: object, properties: { rollout_percent: { type: integer, minimum: 1, maximum: 100 } } } } } }, responses: { "200": { description: Model/rule rollout activated } } }
-  /api/v1/admin/personalization/models/{key}/rollback:
-    parameters: [{ name: key, in: path, required: true, schema: { type: string } }]
-    post: { operationId: adminPhase9ModelRollback, tags: [Admin / Personalization], requestBody: { required: true, content: { application/json: { schema: { type: object, required: [version], properties: { version: { type: string } } } } } }, responses: { "200": { description: Previous model/rule version restored } } }
   /api/v1/admin/personalization/rollouts:
     get: { operationId: adminPhase9Rollouts, tags: [Admin / Personalization], responses: { "200": { description: Rollout and rollback history } } }
-  /api/v1/admin/personalization/analytics:
-    get: { operationId: adminPhase9Analytics, tags: [Admin / Personalization], responses: { "200": { description: Placement, event and deal telemetry } } }
-  /api/v1/admin/personalization/deals/{id}/transition/{status}:
+  /api/v1/admin/personalization/registry/{kind}/{key}/{version}/activate:
     parameters:
-      - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
-      - { name: status, in: path, required: true, schema: { type: string, enum: [scheduled, preheat, active, paused, sold_out, expired, cancelled, ended, archived] } }
-    post: { operationId: adminPhase9DealTransition, tags: [Admin / Personalization], requestBody: { content: { application/json: { schema: { type: object, properties: { expected_version: { type: integer, minimum: 1 } } } } } }, responses: { "200": { description: Lifecycle transition committed }, "409": { description: Invalid transition or version conflict } } }
-  /api/v1/admin/personalization/deals/{id}/allocation:
-    parameters: [{ name: id, in: path, required: true, schema: { type: integer, format: int64 } }]
-    put: { operationId: adminPhase9DealAllocation, tags: [Admin / Personalization], requestBody: { required: true, content: { application/json: { schema: { type: object, required: [allocated_quantity], additionalProperties: true } } } }, responses: { "200": { description: Concurrency-safe allocation configured } } }
-  /api/v1/admin/personalization/deals/{id}/reservations:
-    parameters: [{ name: id, in: path, required: true, schema: { type: integer, format: int64 } }]
-    post: { operationId: adminPhase9DealReserve, tags: [Admin / Personalization], requestBody: { required: true, content: { application/json: { schema: { type: object, required: [idempotency_key], additionalProperties: true } } } }, responses: { "201": { description: Quantity reserved or idempotent replay }, "409": { description: Capacity/eligibility conflict } } }
-  /api/v1/admin/personalization/reservations/{reservationId}/consume:
-    parameters: [{ name: reservationId, in: path, required: true, schema: { type: string, format: uuid } }]
-    post: { operationId: adminPhase9ReservationConsume, tags: [Admin / Personalization], requestBody: { required: true, content: { application/json: { schema: { type: object, required: [order_id], properties: { order_id: { type: integer, format: int64 } } } } } }, responses: { "200": { description: Reservation atomically consumed into redemption ledger } } }
-  /api/v1/admin/personalization/reservations/{reservationId}/release:
-    parameters: [{ name: reservationId, in: path, required: true, schema: { type: string, format: uuid } }]
-    post: { operationId: adminPhase9ReservationRelease, tags: [Admin / Personalization], responses: { "200": { description: Reservation released idempotently } } }
-  /api/v1/admin/personalization/promotion-simulator:
-    post: { operationId: adminPhase9PromotionSimulator, tags: [Admin / Personalization], requestBody: { required: true, content: { application/json: { schema: { type: object, required: [items], additionalProperties: true } } } }, responses: { "200": { description: Economics preview using the same canonical DiscounterService as cart and checkout } } }
+      - { name: kind, in: path, required: true, schema: { type: string, enum: [policy, model] } }
+      - { name: key, in: path, required: true, schema: { type: string } }
+      - { name: version, in: path, required: true, schema: { type: string } }
+    post: { operationId: adminPhase9RegistryActivate, tags: [Admin / Personalization], requestBody: { content: { application/json: { schema: { type: object, properties: { percentage: { type: integer, minimum: 0, maximum: 100 } } } } } }, responses: { "200": { description: Registry version activated with controlled rollout }, "422": { description: Invalid registry version } } }
+  /api/v1/admin/personalization/registry/{kind}/{key}/rollback:
+    parameters:
+      - { name: kind, in: path, required: true, schema: { type: string, enum: [policy, model] } }
+      - { name: key, in: path, required: true, schema: { type: string } }
+    post: { operationId: adminPhase9RegistryRollback, tags: [Admin / Personalization], responses: { "200": { description: Previous registry version restored }, "422": { description: Rollback unavailable } } }
+  /api/v1/admin/personalization/simulate:
+    post: { operationId: adminPhase9Simulate, tags: [Admin / Personalization], requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: true } } } }, responses: { "200": { description: Recommendation decision trace or canonical DiscounterService economics preview } } }
+  /api/v1/admin/personalization/events:
+    get: { operationId: adminPhase9Events, tags: [Admin / Personalization], parameters: [{ name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100 } }], responses: { "200": { description: Recent versioned behavior events } } }
+  /api/v1/admin/personalization/consents:
+    get: { operationId: adminPhase9Consents, tags: [Admin / Personalization], parameters: [{ name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100 } }], responses: { "200": { description: Recent consent records } } }
