@@ -11,10 +11,12 @@ import {
 } from "#services/phase9_personalization_service";
 
 const TRANSITIONS: Record<string, ReadonlyArray<string>> = {
-    draft: ["scheduled", "active", "cancelled"],
-    scheduled: ["active", "paused", "cancelled", "expired"],
-    active: ["paused", "ended", "expired", "cancelled"],
+    draft: ["scheduled", "preheat", "active", "cancelled"],
+    scheduled: ["preheat", "active", "paused", "cancelled", "expired"],
+    preheat: ["active", "paused", "cancelled", "expired"],
+    active: ["paused", "sold_out", "ended", "expired", "cancelled"],
     paused: ["active", "ended", "expired", "cancelled"],
+    sold_out: ["ended", "expired", "archived"],
     ended: ["archived"],
     expired: ["archived"],
     cancelled: ["archived"],
@@ -36,6 +38,7 @@ export default class Phase9DealGuardService {
             status: target,
             version: Number(row.version) + 1,
             updated_at: now,
+            ...(target === "active" && !row.published_at ? { published_at: now } : {}),
             ...(target === "cancelled" ? { cancelled_at: now } : {}),
             ...(target === "ended" ? { ended_at: now } : {}),
         });
@@ -50,8 +53,10 @@ export default class Phase9DealGuardService {
         const idempotencyKey = String(input.idempotency_key ?? "").trim();
         if (!Number.isInteger(campaignId) || campaignId < 1 || !/^[a-zA-Z0-9._:-]{8,96}$/.test(idempotencyKey))
             throw new Phase9ValidationError("invalid_reservation");
-        if (productId !== null && (!Number.isInteger(productId) || productId < 1)) throw new Phase9ValidationError("invalid_product_id");
-        if (orderId !== null && (!Number.isInteger(orderId) || orderId < 1)) throw new Phase9ValidationError("invalid_order_id");
+        if (productId !== null && (!Number.isInteger(productId) || productId < 1))
+            throw new Phase9ValidationError("invalid_product_id");
+        if (orderId !== null && (!Number.isInteger(orderId) || orderId < 1))
+            throw new Phase9ValidationError("invalid_order_id");
 
         const trx = currentTrx();
         const existing = await trx.from("deal_reservations").where("idempotency_key", idempotencyKey).first();
@@ -59,19 +64,31 @@ export default class Phase9DealGuardService {
 
         const campaign = await trx.from("deal_campaigns").where("id", campaignId).forUpdate().first();
         if (!campaign || campaign.status !== "active") throw new Phase9ConflictError("deal_not_active");
-        if (campaign.starts_at && DateTime.fromJSDate(new Date(campaign.starts_at)) > DateTime.utc())
+        const now = DateTime.utc();
+        if (campaign.starts_at && DateTime.fromJSDate(new Date(campaign.starts_at)) > now)
             throw new Phase9ConflictError("deal_not_started");
-        if (campaign.ends_at && DateTime.fromJSDate(new Date(campaign.ends_at)) <= DateTime.utc())
+        if (campaign.ends_at && DateTime.fromJSDate(new Date(campaign.ends_at)) <= now)
             throw new Phase9ConflictError("deal_expired");
+
+        await trx
+            .from("deal_reservations")
+            .where("campaign_id", campaignId)
+            .where("status", "reserved")
+            .where("expires_at", "<=", now.toSQL())
+            .update({ status: "expired", updated_at: now.toSQL() });
 
         const liveReservations = await trx
             .from("deal_reservations")
             .where("campaign_id", campaignId)
             .where("status", "reserved")
-            .where("expires_at", ">", DateTime.utc().toSQL())
+            .where("expires_at", ">", now.toSQL())
             .sum("quantity as quantity")
             .first();
-        const redemptions = await trx.from("deal_redemptions").where("campaign_id", campaignId).sum("quantity as quantity").first();
+        const redemptions = await trx
+            .from("deal_redemptions")
+            .where("campaign_id", campaignId)
+            .sum("quantity as quantity")
+            .first();
         const quantityLimit = campaign.quantity_limit === null ? null : Number(campaign.quantity_limit);
         if (
             quantityLimit !== null &&
@@ -81,22 +98,49 @@ export default class Phase9DealGuardService {
         if (campaign.max_applications !== null && Number(campaign.usage_count ?? 0) >= Number(campaign.max_applications))
             throw new Phase9ConflictError("deal_application_limit_reached");
 
-        const [row] = await trx.table("deal_reservations").insert({
-            tenant_id: currentTenantId(),
-            reservation_id: randomUUID(),
-            campaign_id: campaignId,
-            product_id: productId,
-            order_id: orderId,
-            subject_type: subject?.type ?? null,
-            subject_id: subject?.id ?? null,
-            quantity,
-            status: "reserved",
-            idempotency_key: idempotencyKey,
-            expires_at: DateTime.utc().plus({ minutes: 15 }).toSQL(),
-            created_at: DateTime.utc().toSQL(),
-            updated_at: DateTime.utc().toSQL(),
-        }).returning("*");
-        return row;
+        const rules = object(campaign.rules);
+        const perCustomerLimit = Math.max(0, Math.round(Number(rules.per_customer_limit ?? 0)));
+        if (subject && perCustomerLimit > 0) {
+            const subjectReserved = await trx
+                .from("deal_reservations")
+                .where("campaign_id", campaignId)
+                .where("subject_type", subject.type)
+                .where("subject_id", subject.id)
+                .where("status", "reserved")
+                .where("expires_at", ">", now.toSQL())
+                .sum("quantity as quantity")
+                .first();
+            const subjectRedeemed = await trx
+                .from("deal_reservations")
+                .where("campaign_id", campaignId)
+                .where("subject_type", subject.type)
+                .where("subject_id", subject.id)
+                .where("status", "consumed")
+                .sum("quantity as quantity")
+                .first();
+            if (Number(subjectReserved?.quantity ?? 0) + Number(subjectRedeemed?.quantity ?? 0) + quantity > perCustomerLimit)
+                throw new Phase9ConflictError("deal_customer_limit_reached");
+        }
+
+        const [row] = await trx
+            .table("deal_reservations")
+            .insert({
+                tenant_id: currentTenantId(),
+                reservation_id: randomUUID(),
+                campaign_id: campaignId,
+                product_id: productId,
+                order_id: orderId,
+                subject_type: subject?.type ?? null,
+                subject_id: subject?.id ?? null,
+                quantity,
+                status: "reserved",
+                idempotency_key: idempotencyKey,
+                expires_at: now.plus({ minutes: 15 }).toSQL(),
+                created_at: now.toSQL(),
+                updated_at: now.toSQL(),
+            })
+            .returning("*");
+        return { ...row, deduplicated: false };
     }
 
     async release(reservationId: string) {
@@ -109,7 +153,7 @@ export default class Phase9DealGuardService {
                 updated_at: DateTime.utc().toSQL(),
             });
         }
-        return trx.from("deal_reservations").where("id", row.id).first();
+        return { ...(await trx.from("deal_reservations").where("id", row.id).first()), deduplicated: row.status !== "reserved" };
     }
 
     async consumeOrder(orderId: number) {
@@ -123,7 +167,10 @@ export default class Phase9DealGuardService {
             .forUpdate();
         for (const reservation of reservations) {
             if (DateTime.fromJSDate(new Date(reservation.expires_at)) <= DateTime.utc()) {
-                await trx.from("deal_reservations").where("id", reservation.id).update({ status: "expired", updated_at: DateTime.utc().toSQL() });
+                await trx
+                    .from("deal_reservations")
+                    .where("id", reservation.id)
+                    .update({ status: "expired", updated_at: DateTime.utc().toSQL() });
                 throw new Phase9ConflictError("deal_reservation_expired");
             }
             const campaign = await trx.from("deal_campaigns").where("id", reservation.campaign_id).forUpdate().first();
@@ -146,7 +193,10 @@ export default class Phase9DealGuardService {
                 });
                 await trx.from("deal_campaigns").where("id", reservation.campaign_id).increment("usage_count", 1);
             }
-            await trx.from("deal_reservations").where("id", reservation.id).update({ status: "consumed", updated_at: DateTime.utc().toSQL() });
+            await trx
+                .from("deal_reservations")
+                .where("id", reservation.id)
+                .update({ status: "consumed", updated_at: DateTime.utc().toSQL() });
         }
         return { consumed: reservations.length };
     }
@@ -182,7 +232,10 @@ export default class Phase9DealGuardService {
                 input.customer && typeof input.customer === "object"
                     ? {
                           customerId: Number(object(input.customer).customer_id) || null,
-                          email: typeof object(input.customer).email === "string" ? String(object(input.customer).email) : null,
+                          email:
+                              typeof object(input.customer).email === "string"
+                                  ? String(object(input.customer).email)
+                                  : null,
                       }
                     : null,
         };
@@ -205,5 +258,14 @@ export default class Phase9DealGuardService {
 }
 
 function object(value: unknown): Record<string, unknown> {
-    return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+    if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+    if (typeof value === "string") {
+        try {
+            const parsed = JSON.parse(value);
+            return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+        } catch {
+            return {};
+        }
+    }
+    return value as Record<string, unknown>;
 }
