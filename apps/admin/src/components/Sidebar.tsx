@@ -95,6 +95,7 @@ const groups: NavGroup[] = [
             { href: "/analytics/coupons", labelKey: "analyticsCoupons", icon: BadgePercent },
             { href: "/analytics/taxes", labelKey: "analyticsTaxes", icon: Wallet },
             { href: "/analytics/stock", labelKey: "analyticsStock", icon: Boxes },
+            { href: "/analytics/decision-intelligence", label: "هوش تصمیم‌گیری", icon: Sparkles },
         ],
     },
     {

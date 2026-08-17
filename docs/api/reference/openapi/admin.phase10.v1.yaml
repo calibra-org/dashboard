@@ -1,0 +1,183 @@
+openapi: 3.1.0
+info:
+  title: Calibra Admin Phase 10 Decision Intelligence Overlay
+  version: 1.0.0
+  description: Evidence-backed cross-domain intelligence inbox, transparent ranking, immutable decision memory and measured outcomes.
+paths:
+  /api/v1/admin/intelligence/inbox:
+    get:
+      operationId: adminDecisionIntelligenceInbox
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: query, name: page, schema: { type: integer, minimum: 1, default: 1 } }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 100, default: 50 } }
+        - { in: query, name: domain, schema: { $ref: '#/components/schemas/IntelligenceDomain' } }
+        - { in: query, name: severity, schema: { $ref: '#/components/schemas/IntelligenceSeverity' } }
+        - { in: query, name: state, schema: { type: string, enum: [open, cleared] } }
+        - { in: query, name: q, schema: { type: string, maxLength: 160 } }
+      responses:
+        '200':
+          description: Ranked operator inbox refreshed from landed evidence sources.
+          content: { application/json: { schema: { $ref: '#/components/schemas/IntelligenceInboxEnvelope' } } }
+        '422': { description: Invalid filter }
+  /api/v1/admin/intelligence/summary:
+    get:
+      operationId: adminDecisionIntelligenceSummary
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Decision Intelligence coverage and live aggregate counters.
+          content: { application/json: { schema: { $ref: '#/components/schemas/IntelligenceSummaryEnvelope' } } }
+  /api/v1/admin/intelligence/cases/{id}:
+    get:
+      operationId: adminDecisionIntelligenceCase
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/IntelligenceCaseId' }]
+      responses:
+        '200':
+          description: Canonical case with evidence, decisions, action plans and outcomes.
+          content: { application/json: { schema: { $ref: '#/components/schemas/IntelligenceDetailEnvelope' } } }
+        '404': { description: Intelligence case not found }
+  /api/v1/admin/intelligence/cases/{id}/decisions:
+    post:
+      operationId: adminDecisionIntelligenceDecide
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/IntelligenceCaseId' }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/IntelligenceDecisionInput' } } }
+      responses:
+        '200': { description: Immutable decision recorded against the requested case version }
+        '404': { description: Intelligence case not found }
+        '409': { description: Optimistic version conflict }
+        '422': { description: Invalid decision input }
+  /api/v1/admin/intelligence/cases/{id}/outcomes:
+    post:
+      operationId: adminDecisionIntelligenceOutcomeCreate
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/IntelligenceCaseId' }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/IntelligenceOutcomeInput' } } }
+      responses:
+        '200': { description: Outcome measurement appended to the case ledger }
+        '404': { description: Intelligence case not found }
+        '422': { description: Invalid outcome input }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer }
+  parameters:
+    IntelligenceCaseId:
+      in: path
+      name: id
+      required: true
+      schema: { type: string, pattern: '^[0-9]+$' }
+  schemas:
+    IntelligenceDomain: { type: string, enum: [payments, fulfillment, support, inventory, seo] }
+    IntelligenceSeverity: { type: string, enum: [low, medium, high, critical] }
+    IntelligenceCase:
+      type: object
+      required: [id, stableKey, kind, domain, lifecycleStage, signalState, severity, titleFa, titleEn, summaryFa, summaryEn, recommendedActionFa, recommendedActionEn, priorityScore, scoreMode, rankingPolicyVersion, scoreComponents, missingComponents, freshnessAt, firstSeenAt, lastSeenAt, version]
+      properties:
+        id: { type: string }
+        stableKey: { type: string }
+        kind: { type: string, enum: [risk, opportunity, recommendation] }
+        domain: { $ref: '#/components/schemas/IntelligenceDomain' }
+        lifecycleStage: { type: string, enum: [detected, validated, proposed, reviewed, approved, rejected, executed, measured, learned] }
+        signalState: { type: string, enum: [open, cleared] }
+        severity: { $ref: '#/components/schemas/IntelligenceSeverity' }
+        titleFa: { type: string }
+        titleEn: { type: string }
+        summaryFa: { type: string }
+        summaryEn: { type: string }
+        recommendedActionFa: { type: string }
+        recommendedActionEn: { type: string }
+        actionRoute: { type: [string, 'null'] }
+        expectedValueMinor: { type: [string, 'null'] }
+        expectedValueCurrency: { type: [string, 'null'] }
+        confidence: { type: [number, 'null'], minimum: 0, maximum: 1 }
+        confidenceSource: { type: [string, 'null'] }
+        urgency: { type: [number, 'null'], minimum: 0, maximum: 1 }
+        priorityScore: { type: number, minimum: 0, maximum: 100 }
+        scoreMode: { type: string, enum: [provisional, calibrated] }
+        rankingPolicyVersion: { type: string }
+        scoreComponents: { type: object, additionalProperties: true }
+        missingComponents: { type: array, items: { type: string } }
+        freshnessAt: { type: string }
+        firstSeenAt: { type: string }
+        lastSeenAt: { type: string }
+        clearedAt: { type: [string, 'null'] }
+        version: { type: integer, minimum: 1 }
+    IntelligenceInboxEnvelope:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/IntelligenceCase' } }
+        meta:
+          type: object
+          required: [page, limit, total, lastPage]
+          properties:
+            page: { type: integer }
+            limit: { type: integer }
+            total: { type: integer }
+            lastPage: { type: integer }
+    IntelligenceSummary:
+      type: object
+      required: [openCount, highCriticalCount, provisionalCount, measuredCount, byDomain, sourceCoverage, rankingPolicyVersion]
+      properties:
+        openCount: { type: integer, minimum: 0 }
+        highCriticalCount: { type: integer, minimum: 0 }
+        provisionalCount: { type: integer, minimum: 0 }
+        measuredCount: { type: integer, minimum: 0 }
+        byDomain:
+          type: array
+          items:
+            type: object
+            required: [domain, count]
+            properties:
+              domain: { $ref: '#/components/schemas/IntelligenceDomain' }
+              count: { type: integer, minimum: 0 }
+        sourceCoverage:
+          type: array
+          items:
+            type: object
+            required: [source, status]
+            properties:
+              source: { type: string }
+              status: { type: string, enum: [active, dependency_not_landed] }
+        rankingPolicyVersion: { type: string }
+    IntelligenceSummaryEnvelope:
+      type: object
+      required: [data]
+      properties: { data: { $ref: '#/components/schemas/IntelligenceSummary' } }
+    IntelligenceDetailEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [case, evidence, decisions, actions, outcomes]
+          properties:
+            case: { $ref: '#/components/schemas/IntelligenceCase' }
+            evidence: { type: array, items: { type: object, additionalProperties: true } }
+            decisions: { type: array, items: { type: object, additionalProperties: true } }
+            actions: { type: array, items: { type: object, additionalProperties: true } }
+            outcomes: { type: array, items: { type: object, additionalProperties: true } }
+    IntelligenceDecisionInput:
+      type: object
+      required: [decision, reason, version]
+      properties:
+        decision: { type: string, enum: [accept, reject, defer, watch] }
+        reason: { type: string, minLength: 3, maxLength: 2000 }
+        version: { type: integer, minimum: 1 }
+    IntelligenceOutcomeInput:
+      type: object
+      required: [metric_name, observed_at]
+      properties:
+        metric_name: { type: string, minLength: 2, maxLength: 160 }
+        baseline_value: { type: number }
+        observed_value: { type: number }
+        measurement_window: { type: string, maxLength: 80 }
+        attribution_confidence: { type: number, minimum: 0, maximum: 1 }
+        notes: { type: string, maxLength: 4000 }
+        observed_at: { type: string }
