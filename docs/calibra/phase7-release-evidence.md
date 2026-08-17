@@ -38,9 +38,9 @@ The materialization job then removed temporary bootstrap and repair workflows an
 
 An error-only Biome diagnostic then isolated five repository lint errors. They were fixed semantically rather than suppressed: Configuration and Transaction skeletons use stable keys, editable shipping locations carry stable client keys that are stripped before API writes, transaction-table details use a semantic button instead of an interactive table row role, and payment reconciliation declares its adapter type explicitly. The targeted lint repair completed formatting, error-level Biome lint, and repository typecheck successfully before committing the production-only tree.
 
-A concurrent branch write was also reviewed before release. It attempted to replace substantial Factor regression coverage with weaker structural checks. That commit was intentionally excluded and the branch was restored to the stronger verifier state before this final CI trigger. This keeps release integrity additive rather than trading coverage for a green check.
+A concurrent branch write was also reviewed before release. It attempted to replace substantial Factor regression coverage with weaker structural checks. That commit was intentionally excluded. A dedicated restoration run then rebuilt the full canonical Factor verifier, applied only the current top-level workspace navigation invariant, and passed `verify:phase1-4`, the Phase 6/7 integration verifiers, repository formatting, and repository typecheck before deleting its temporary workflow. The branch is therefore back to the stronger regression posture rather than trading coverage for a green check.
 
-Repository-standard `Check` and `SEO Engines` are the final merge gates for this exact branch head. No final PASS claim is made here until those workflows execute successfully on the final commit.
+Repository-standard `Check` and `SEO Engines` are the final merge gates for this human-authored head. No final PASS claim is made here until those workflows execute successfully on this exact commit.
 
 ## Functional evidence covered by the certification suite
 
