@@ -24,13 +24,10 @@ jobs:
         timeout-minutes: 6
         steps:
             - uses: actions/checkout@v4
-            - uses: pnpm/action-setup@v4
-              with:
-                  version: ${{ env.PNPM_VERSION }}
             - uses: actions/setup-node@v4
               with:
                   node-version: ${{ env.NODE_VERSION }}
-                  cache: "pnpm"
+            - run: npm install --global pnpm@${PNPM_VERSION}
             - run: pnpm install --frozen-lockfile
             - run: pnpm run format && pnpm run lint
             - name: Verify ticket full-stack release invariants
@@ -45,13 +42,10 @@ jobs:
         timeout-minutes: 6
         steps:
             - uses: actions/checkout@v4
-            - uses: pnpm/action-setup@v4
-              with:
-                  version: ${{ env.PNPM_VERSION }}
             - uses: actions/setup-node@v4
               with:
                   node-version: ${{ env.NODE_VERSION }}
-                  cache: "pnpm"
+            - run: npm install --global pnpm@${PNPM_VERSION}
             - run: pnpm install --frozen-lockfile
             - run: pnpm run typecheck
 
@@ -60,13 +54,10 @@ jobs:
         timeout-minutes: 6
         steps:
             - uses: actions/checkout@v4
-            - uses: pnpm/action-setup@v4
-              with:
-                  version: ${{ env.PNPM_VERSION }}
             - uses: actions/setup-node@v4
               with:
                   node-version: ${{ env.NODE_VERSION }}
-                  cache: "pnpm"
+            - run: npm install --global pnpm@${PNPM_VERSION}
             - run: pnpm install --frozen-lockfile
             - name: Verify Phase 1-4 wiring and release invariants
               run: pnpm run verify:phase1-4
@@ -76,13 +67,10 @@ jobs:
         timeout-minutes: 4
         steps:
             - uses: actions/checkout@v4
-            - uses: pnpm/action-setup@v4
-              with:
-                  version: ${{ env.PNPM_VERSION }}
             - uses: actions/setup-node@v4
               with:
                   node-version: ${{ env.NODE_VERSION }}
-                  cache: "pnpm"
+            - run: npm install --global pnpm@${PNPM_VERSION}
             - run: pnpm install --frozen-lockfile
             - run: pnpm --filter @calibra/sdk --filter @calibra/admin --filter @calibra/spin run test
 
@@ -118,13 +106,10 @@ jobs:
                     --health-retries 10
         steps:
             - uses: actions/checkout@v4
-            - uses: pnpm/action-setup@v4
-              with:
-                  version: ${{ env.PNPM_VERSION }}
             - uses: actions/setup-node@v4
               with:
                   node-version: ${{ env.NODE_VERSION }}
-                  cache: "pnpm"
+            - run: npm install --global pnpm@${PNPM_VERSION}
             - run: pnpm install --frozen-lockfile
             - name: Create test database
               env:
@@ -164,13 +149,10 @@ jobs:
         timeout-minutes: 6
         steps:
             - uses: actions/checkout@v4
-            - uses: pnpm/action-setup@v4
-              with:
-                  version: ${{ env.PNPM_VERSION }}
             - uses: actions/setup-node@v4
               with:
                   node-version: ${{ env.NODE_VERSION }}
-                  cache: "pnpm"
+            - run: npm install --global pnpm@${PNPM_VERSION}
             - run: pnpm install --frozen-lockfile
             - run: pnpm run build
             - name: Assert the spin panel bundles React (no CDN)
@@ -186,13 +168,10 @@ jobs:
         timeout-minutes: 6
         steps:
             - uses: actions/checkout@v4
-            - uses: pnpm/action-setup@v4
-              with:
-                  version: ${{ env.PNPM_VERSION }}
             - uses: actions/setup-node@v4
               with:
                   node-version: ${{ env.NODE_VERSION }}
-                  cache: "pnpm"
+            - run: npm install --global pnpm@${PNPM_VERSION}
             - run: pnpm install --frozen-lockfile
             - run: pnpm --filter @calibra/api-docs run build:json
             - name: Diff registered routes against the OpenAPI spec
@@ -227,13 +206,10 @@ jobs:
         timeout-minutes: 6
         steps:
             - uses: actions/checkout@v4
-            - uses: pnpm/action-setup@v4
-              with:
-                  version: ${{ env.PNPM_VERSION }}
             - uses: actions/setup-node@v4
               with:
                   node-version: ${{ env.NODE_VERSION }}
-                  cache: "pnpm"
+            - run: npm install --global pnpm@${PNPM_VERSION}
             - run: pnpm install --frozen-lockfile
             - name: Regenerate SDK types from the OpenAPI specs and assert no drift
               run: pnpm --filter @calibra/sdk run codegen:check
