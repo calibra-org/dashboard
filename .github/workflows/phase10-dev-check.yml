@@ -1,0 +1,34 @@
+name: Phase 10 Dev Check
+
+on:
+  push:
+    branches:
+      - agent/phase10-decision-intelligence-20260817
+
+concurrency:
+  group: phase10-dev-check
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "24.14.0"
+  PNPM_VERSION: "10.32.1"
+  TURBO_TELEMETRY_DISABLED: "1"
+  DO_NOT_TRACK: "1"
+
+jobs:
+  static:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run format
+      - run: pnpm run lint
+      - run: pnpm run typecheck
