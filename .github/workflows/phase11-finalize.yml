@@ -52,6 +52,28 @@ jobs:
                   node-version: ${{ env.NODE_VERSION }}
                   cache: pnpm
             - run: pnpm install --frozen-lockfile
+            - name: Apply Phase 11 source hardening and navigation placement
+              run: |
+                  python - <<'PY'
+                  from pathlib import Path
+                  service = Path("apps/api/app/services/governance_service.ts")
+                  source = service.read_text()
+                  old = "let autonomyCeiling = action.maxAutonomy;"
+                  new = "let autonomyCeiling: number = action.maxAutonomy;"
+                  if old not in source and new not in source:
+                      raise SystemExit("governance autonomy declaration not found")
+                  service.write_text(source.replace(old, new))
+
+                  sidebar = Path("apps/admin/src/components/Sidebar.tsx")
+                  source = sidebar.read_text()
+                  needle = '{ href: "/settings", label: t("settings"), icon: Settings },'
+                  addition = needle + '\n            { href: "/governance/overview", label: "Governance OS", icon: ShieldCheck },'
+                  if 'href: "/governance/overview"' not in source:
+                      if needle not in source:
+                          raise SystemExit("configuration settings sidebar anchor not found")
+                      source = source.replace(needle, addition, 1)
+                  sidebar.write_text(source)
+                  PY
             - name: Canonical format and safe lint fixes
               run: pnpm run format:fix && pnpm run lint:biome:fix
             - name: Regenerate OpenAPI-derived SDK
@@ -69,12 +91,9 @@ jobs:
               run: pnpm test --files=tests/functional/admin/governance_os.spec.ts --files=tests/functional/admin/governance_rls.spec.ts --files=tests/functional/admin/configuration_engine.spec.ts
             - name: Production build
               run: pnpm run build
-            - name: Commit canonical generated source
+            - name: Commit canonical generated source and remove one-shot finalizer
               run: |
-                  if [ -z "$(git status --porcelain)" ]; then
-                    echo "No normalization changes required"
-                    exit 0
-                  fi
+                  rm .github/workflows/phase11-finalize.yml
                   git config user.name "calibra-phase11-bot"
                   git config user.email "calibra-phase11-bot@users.noreply.github.com"
                   git add -A
