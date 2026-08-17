@@ -82,8 +82,10 @@ test.group("Phase 11 Governance RLS isolation", (group) => {
             },
         });
         return async () => {
+            // The test database is disposable and the global migration teardown removes these rows.
+            // Deleting the tenants here would cascade into immutable governance history and is
+            // intentionally rejected by the append-only trigger we are validating.
             await db.manager.close(APP_CONNECTION, true);
-            await db.connection().from("tenants").whereIn("id", [TENANT_A, TENANT_B]).delete();
         };
     });
 
