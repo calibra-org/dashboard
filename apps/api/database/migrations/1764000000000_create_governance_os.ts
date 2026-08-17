@@ -25,7 +25,13 @@ export default class extends BaseSchema {
             table.bigInteger("created_by_user_id").unsigned().nullable().references("id").inTable("users").onDelete("SET NULL");
             table.text("reason").notNullable();
             table.string("content_hash", 64).notNullable();
-            table.bigInteger("supersedes_id").unsigned().nullable().references("id").inTable("governance_policy_versions").onDelete("RESTRICT");
+            table
+                .bigInteger("supersedes_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("governance_policy_versions")
+                .onDelete("RESTRICT");
             table.timestamp("created_at", { useTz: true }).notNullable().defaultTo(this.now());
             table.unique(["tenant_id", "policy_key", "version"], { indexName: "governance_policy_versions_unique" });
             table.index(["tenant_id", "action_pattern", "priority"], "governance_policy_action_idx");
@@ -66,7 +72,13 @@ export default class extends BaseSchema {
             table.string("resource_id", 160).nullable();
             table.string("requester_type", 16).notNullable();
             table.bigInteger("requested_by_user_id").unsigned().nullable().references("id").inTable("users").onDelete("SET NULL");
-            table.bigInteger("requested_by_agent_id").unsigned().nullable().references("id").inTable("governance_agent_principals").onDelete("SET NULL");
+            table
+                .bigInteger("requested_by_agent_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("governance_agent_principals")
+                .onDelete("SET NULL");
             table.text("reason").notNullable();
             table.jsonb("safe_payload").notNullable().defaultTo(this.raw("'{}'::jsonb"));
             table.string("request_hash", 64).notNullable();
@@ -87,7 +99,13 @@ export default class extends BaseSchema {
         this.schema.createTable("governance_approval_steps", (table) => {
             table.bigIncrements("id").notNullable();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("request_id").unsigned().notNullable().references("id").inTable("governance_approval_requests").onDelete("CASCADE");
+            table
+                .bigInteger("request_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("governance_approval_requests")
+                .onDelete("CASCADE");
             table.integer("step_index").notNullable();
             table.string("label", 160).notNullable();
             table.bigInteger("assigned_user_id").unsigned().nullable().references("id").inTable("users").onDelete("SET NULL");
@@ -104,8 +122,20 @@ export default class extends BaseSchema {
         this.schema.createTable("governance_approval_decisions", (table) => {
             table.bigIncrements("id").notNullable();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("request_id").unsigned().notNullable().references("id").inTable("governance_approval_requests").onDelete("CASCADE");
-            table.bigInteger("step_id").unsigned().nullable().references("id").inTable("governance_approval_steps").onDelete("CASCADE");
+            table
+                .bigInteger("request_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("governance_approval_requests")
+                .onDelete("CASCADE");
+            table
+                .bigInteger("step_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("governance_approval_steps")
+                .onDelete("CASCADE");
             table.string("decision", 24).notNullable();
             table.bigInteger("actor_user_id").unsigned().nullable().references("id").inTable("users").onDelete("SET NULL");
             table.bigInteger("delegated_to_user_id").unsigned().nullable().references("id").inTable("users").onDelete("SET NULL");
@@ -130,7 +160,13 @@ export default class extends BaseSchema {
             table.uuid("event_id").notNullable();
             table.string("actor_type", 16).notNullable();
             table.bigInteger("actor_user_id").unsigned().nullable().references("id").inTable("users").onDelete("SET NULL");
-            table.bigInteger("actor_agent_id").unsigned().nullable().references("id").inTable("governance_agent_principals").onDelete("SET NULL");
+            table
+                .bigInteger("actor_agent_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("governance_agent_principals")
+                .onDelete("SET NULL");
             table.string("action_key", 180).notNullable();
             table.string("resource_type", 80).nullable();
             table.string("resource_id", 160).nullable();
@@ -158,7 +194,13 @@ export default class extends BaseSchema {
         this.schema.createTable("governance_shadow_observations", (table) => {
             table.bigIncrements("id").notNullable();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("agent_principal_id").unsigned().nullable().references("id").inTable("governance_agent_principals").onDelete("SET NULL");
+            table
+                .bigInteger("agent_principal_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("governance_agent_principals")
+                .onDelete("SET NULL");
             table.string("action_key", 180).notNullable();
             table.smallint("autonomy_stage").notNullable().defaultTo(0);
             table.string("proposal_hash", 64).notNullable();
@@ -174,14 +216,30 @@ export default class extends BaseSchema {
             table.index(["tenant_id", "action_key", "created_at"], "governance_shadow_action_idx");
         });
 
-        this.schema.raw(`ALTER TABLE governance_policy_versions ADD CONSTRAINT governance_policy_effect_check CHECK (effect IN ('allow','deny','require_approval','require_step_up','limit'))`);
-        this.schema.raw(`ALTER TABLE governance_policy_versions ADD CONSTRAINT governance_policy_autonomy_check CHECK (autonomy_ceiling IS NULL OR autonomy_ceiling BETWEEN 0 AND 5)`);
-        this.schema.raw(`ALTER TABLE governance_agent_principals ADD CONSTRAINT governance_agent_autonomy_check CHECK (autonomy_level BETWEEN 0 AND 5)`);
-        this.schema.raw(`ALTER TABLE governance_agent_principals ADD CONSTRAINT governance_agent_budget_check CHECK (budget_limit_minor IS NULL OR budget_limit_minor >= 0)`);
-        this.schema.raw(`ALTER TABLE governance_approval_requests ADD CONSTRAINT governance_approval_status_check CHECK (status IN ('pending','approved','rejected','expired','cancelled','executed'))`);
-        this.schema.raw(`ALTER TABLE governance_approval_decisions ADD CONSTRAINT governance_approval_decision_check CHECK (decision IN ('approve','reject','delegate','break_glass'))`);
-        this.schema.raw(`ALTER TABLE governance_action_ledger ADD CONSTRAINT governance_ledger_result_check CHECK (result_status IN ('proposed','allowed','denied','executed','failed','compensated'))`);
-        this.schema.raw(`ALTER TABLE governance_shadow_observations ADD CONSTRAINT governance_shadow_autonomy_check CHECK (autonomy_stage BETWEEN 0 AND 5)`);
+        this.schema.raw(
+            `ALTER TABLE governance_policy_versions ADD CONSTRAINT governance_policy_effect_check CHECK (effect IN ('allow','deny','require_approval','require_step_up','limit'))`,
+        );
+        this.schema.raw(
+            `ALTER TABLE governance_policy_versions ADD CONSTRAINT governance_policy_autonomy_check CHECK (autonomy_ceiling IS NULL OR autonomy_ceiling BETWEEN 0 AND 5)`,
+        );
+        this.schema.raw(
+            `ALTER TABLE governance_agent_principals ADD CONSTRAINT governance_agent_autonomy_check CHECK (autonomy_level BETWEEN 0 AND 5)`,
+        );
+        this.schema.raw(
+            `ALTER TABLE governance_agent_principals ADD CONSTRAINT governance_agent_budget_check CHECK (budget_limit_minor IS NULL OR budget_limit_minor >= 0)`,
+        );
+        this.schema.raw(
+            `ALTER TABLE governance_approval_requests ADD CONSTRAINT governance_approval_status_check CHECK (status IN ('pending','approved','rejected','expired','cancelled','executed'))`,
+        );
+        this.schema.raw(
+            `ALTER TABLE governance_approval_decisions ADD CONSTRAINT governance_approval_decision_check CHECK (decision IN ('approve','reject','delegate','break_glass'))`,
+        );
+        this.schema.raw(
+            `ALTER TABLE governance_action_ledger ADD CONSTRAINT governance_ledger_result_check CHECK (result_status IN ('proposed','allowed','denied','executed','failed','compensated'))`,
+        );
+        this.schema.raw(
+            `ALTER TABLE governance_shadow_observations ADD CONSTRAINT governance_shadow_autonomy_check CHECK (autonomy_stage BETWEEN 0 AND 5)`,
+        );
 
         for (const table of [
             "governance_policy_versions",
@@ -193,15 +251,21 @@ export default class extends BaseSchema {
             "governance_action_ledger",
             "governance_shadow_observations",
         ]) {
-            this.schema.raw(`ALTER TABLE ${table} ALTER COLUMN tenant_id SET DEFAULT NULLIF(current_setting('app.current_tenant', true), '')::bigint`);
+            this.schema.raw(
+                `ALTER TABLE ${table} ALTER COLUMN tenant_id SET DEFAULT NULLIF(current_setting('app.current_tenant', true), '')::bigint`,
+            );
             this.schema.raw(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`);
             this.schema.raw(`ALTER TABLE ${table} FORCE ROW LEVEL SECURITY`);
             this.schema.raw(`CREATE POLICY tenant_isolation ON ${table} USING (${TENANT}) WITH CHECK (${TENANT})`);
         }
 
-        this.schema.raw(`CREATE OR REPLACE FUNCTION calibra_forbid_governance_history_mutation() RETURNS trigger AS $$ BEGIN RAISE EXCEPTION 'append-only governance record cannot be modified'; END; $$ LANGUAGE plpgsql`);
+        this.schema.raw(
+            `CREATE OR REPLACE FUNCTION calibra_forbid_governance_history_mutation() RETURNS trigger AS $$ BEGIN RAISE EXCEPTION 'append-only governance record cannot be modified'; END; $$ LANGUAGE plpgsql`,
+        );
         for (const table of ["governance_policy_versions", "governance_approval_decisions", "governance_action_ledger"]) {
-            this.schema.raw(`CREATE TRIGGER ${table}_append_only BEFORE UPDATE OR DELETE ON ${table} FOR EACH ROW EXECUTE FUNCTION calibra_forbid_governance_history_mutation()`);
+            this.schema.raw(
+                `CREATE TRIGGER ${table}_append_only BEFORE UPDATE OR DELETE ON ${table} FOR EACH ROW EXECUTE FUNCTION calibra_forbid_governance_history_mutation()`,
+            );
         }
     }
 

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 
-import { GovernanceWorkspace, type GovernanceSection } from "#/features/governance/GovernanceWorkspace";
+import { type GovernanceSection, GovernanceWorkspace } from "#/features/governance/GovernanceWorkspace";
 
 const allowed = new Set<GovernanceSection>(["overview", "policies", "approvals", "agents", "ledger", "shadow"]);
 
