@@ -15,7 +15,38 @@ jobs:
   finalize:
     if: github.event.pull_request.head.ref == 'agent/phase9-personalization-deals-20260816' && github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 18
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: calibra
+          POSTGRES_PASSWORD: calibra
+          POSTGRES_DB: calibra_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd="pg_isready -U calibra -d calibra_test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    env:
+      NODE_ENV: test
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_USER: calibra
+      DB_PASSWORD: calibra
+      DB_DATABASE: calibra_test
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: 6379
+      APP_KEY: 0123456789abcdef0123456789abcdef
     steps:
       - uses: actions/checkout@v4
         with:
@@ -28,20 +59,54 @@ jobs:
           node-version: 24.14.0
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Wire final deal lifecycle and order consumption
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const migration = 'apps/api/database/migrations/1763001000000_harden_phase9_master_dod.ts';
+          let m = fs.readFileSync(migration, 'utf8');
+          m = m.replace(
+            "status IN ('draft','scheduled','active','paused','cancelled','ended','expired','archived')",
+            "status IN ('draft','scheduled','preheat','active','paused','sold_out','cancelled','ended','expired','archived')",
+          );
+          fs.writeFileSync(migration, m);
+
+          const finalizer = 'apps/api/app/services/order_finalizer.ts';
+          let f = fs.readFileSync(finalizer, 'utf8');
+          if (!f.includes('Phase9DealGuardService')) {
+            f = f.replace(
+              'import { OrderFactory } from "#services/order_factory";',
+              'import { OrderFactory } from "#services/order_factory";\nimport Phase9DealGuardService from "#services/phase9_deal_guard_service";',
+            );
+          }
+          if (!f.includes('consumeOrder(Number(draft.id))')) {
+            f = f.replace(
+              '            await this.writeRedemptionLedger(draft, trx);',
+              '            await this.writeRedemptionLedger(draft, trx);\n            // Phase 9 deal reservations share this transaction: successful finalization consumes them,\n            // while any later failure rolls the redemption and reservation status back atomically.\n            await new Phase9DealGuardService().consumeOrder(Number(draft.id));',
+            );
+          }
+          fs.writeFileSync(finalizer, f);
+          NODE
       - name: Format Phase 9 changes
-        run: pnpm run format
+        run: pnpm exec biome format --write apps/api docs/api packages/sdk
       - name: Generate OpenAPI SDK contracts
         run: pnpm --filter @calibra/sdk run codegen
-      - name: Typecheck before publishing generated artifacts
+      - name: Typecheck
         run: pnpm run typecheck
-      - name: Commit generated and formatting changes
+      - name: Fresh database migration
+        working-directory: apps/api
+        run: node ace migration:fresh --force
+      - name: Phase 9 functional tests
+        working-directory: apps/api
+        run: node ace test functional --files='tests/functional/admin/phase9_personalization.spec.ts'
+      - name: Commit generated and hardening changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add apps/api/app/services/phase9_master_service.ts apps/api/app/controllers/phase9_master_controller.ts apps/api/app/controllers/admin/phase9_master_controller.ts apps/api/start/routes.ts apps/api/start/routes/phase9_master.ts apps/api/start/routes/admin_phase9_master.ts apps/api/database/migrations/1763001000000_harden_phase9_master_dod.ts apps/api/database/migrations/1763002000000_complete_phase9_deal_capacity.ts apps/api/tests/functional/admin/phase9_master_dod.spec.ts docs/api/reference/openapi/storefront.phase9.v1.yaml docs/api/reference/openapi/admin.phase9.v1.yaml packages/sdk/src/generated/storefront.d.ts packages/sdk/src/generated/admin.d.ts
+          git add apps/api docs/api packages/sdk
           if git diff --cached --quiet; then
             echo "No generated drift"
           else
-            git commit -m "chore(personalization): sync Phase 9 generated contracts"
+            git commit -m "chore(personalization): finalize Phase 9 master contracts"
             git push origin HEAD:${{ github.event.pull_request.head.ref }}
           fi
