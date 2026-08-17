@@ -20,19 +20,21 @@ Phase 7 extends the existing Calibra authentication and tenant boundary. It does
 
 ## Contract and build evidence
 
-The final Phase 7 certification workflow completed successfully on 2026-08-17 against PostgreSQL 17 and Redis 7. It verified:
+The Phase 6/7 integration certification ran on GitHub Actions against PostgreSQL 17 and Redis 7 and verified the materialized production source before publication. The certification covered:
 
+- canonical Phase 6 Configuration backend restoration without rebuilding a parallel settings domain
 - Phase 7 semantic integration verifier
-- storefront/admin Identity OpenAPI bundle validity
-- canonical SDK generation and SDK build
-- SDK typecheck
-- API typecheck
-- Admin Identity typecheck isolation (no Phase 7 Identity errors)
-- Phase 7 functional tests against a migrated PostgreSQL test database
-- API production build
-- generated SDK publication
+- storefront/admin Identity and Configuration OpenAPI bundle validity
+- canonical SDK regeneration, SDK build and SDK typecheck
+- API and Admin typechecks
+- API route/OpenAPI synchronization
+- merged OpenAPI test-fixture validation
+- isolated Configuration engine/history regressions
+- isolated Orders and Transaction Center regressions
+- Phase 7 Identity functional regressions
+- formatting normalization before the production-source commit
 
-The certifier also removed all temporary Phase 7 bootstrap/repair workflows before publication.
+The materialization job then removed all temporary bootstrap, diagnostic and repair workflows and published the normalized source to the Phase 7 branch. Repository-standard `Check` and `SEO Engines` remain the final merge gates for this exact branch head.
 
 ## Functional evidence covered by the certification suite
 
@@ -41,7 +43,9 @@ The certifier also removed all temporary Phase 7 bootstrap/repair workflows befo
 - Explicit Admin permission denial is enforced by the backend.
 - Password step-up unlocks a sensitive identity settings mutation only after successful proof.
 - Provider credential material remains write-only and is absent from Admin API responses.
+- Configuration preview/version/approval invariants remain covered after Phase 6 and Phase 7 coexistence.
+- Order shipment and payment transaction regression suites pass against the normalized integration state.
 
-## Baseline separation
+## Baseline integration resolution
 
-The repository had pre-existing main-branch integration debt before Phase 7, notably Configuration/OpenAPI generated-type drift and other Check workflow failures. Phase 7 certification isolates those baseline failures so they cannot be misattributed to Identity code; repository-wide merge still requires the standard PR Check gate to be evaluated and repaired before PR #20 can merge.
+The earlier branch state exposed a real integration gap: Phase 6 Configuration UI existed on `main`, while its backend/OpenAPI overlay had not been materialized into the canonical branch consumed by Phase 7. That gap is now resolved in the production source. Phase 6 migrations are sequenced alongside the Phase 7 identity migration, Configuration is included in the Admin OpenAPI merge, generated SDK types are synchronized, and the targeted Phase 6/7 regression suites pass on the materialized state.
