@@ -16,14 +16,7 @@ export type ConfigurationPreview = AdminSchemas["schemas"]["ConfigurationPreview
 
 const REGISTRY_KEY = (locale: string) => ["admin", "settings", "configuration", "registry", { locale }] as const;
 const HISTORY_KEY = (locale: string) => ["admin", "settings", "configuration", "history", { locale }] as const;
-const GROUP_KEY = (locale: string, group: string) => [
-    "admin",
-    "settings",
-    "configuration",
-    "group",
-    group,
-    { locale },
-] as const;
+const GROUP_KEY = (locale: string, group: string) => ["admin", "settings", "configuration", "group", group, { locale }] as const;
 
 export function useConfigurationRegistry() {
     const locale = useLocale();

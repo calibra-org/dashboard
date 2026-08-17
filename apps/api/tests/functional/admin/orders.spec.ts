@@ -84,7 +84,10 @@ test.group("POST /api/v1/admin/orders/:id/mark-shipped", (group) => {
         await resetPhase05();
     });
 
-    test("transitions processing → completed, persists tracking metadata, idempotent re-runs", async ({ client, assert }) => {
+    test("creates a canonical shipment without completing the processing order, persists tracking metadata, idempotent re-runs", async ({
+        client,
+        assert,
+    }) => {
         const admin = await adminUser();
         const product = await createTaxableProduct({ regularPrice: 1_000_000 });
         const order = await makeDraftOrder({ customerId: null, productId: Number(product.id), quantity: 1, price: 1_000_000 });
@@ -98,7 +101,7 @@ test.group("POST /api/v1/admin/orders/:id/mark-shipped", (group) => {
         res.assertStatus(200);
         res.assertAgainstApiSpec();
         const body = res.body().data;
-        assert.equal(body.status, "completed");
+        assert.equal(body.status, OrderStatus.Processing);
         assert.equal(body.shipping_info.tracking_number, "AB123");
         assert.equal(body.shipping_info.carrier, "post");
         assert.isNotNull(body.shipping_info.shipped_at);
@@ -110,7 +113,7 @@ test.group("POST /api/v1/admin/orders/:id/mark-shipped", (group) => {
             .json({ tracking_number: "AB123-UPDATED" });
         reshipped.assertStatus(200);
         reshipped.assertAgainstApiSpec();
-        assert.equal(reshipped.body().data.status, "completed");
+        assert.equal(reshipped.body().data.status, OrderStatus.Processing);
         assert.equal(reshipped.body().data.shipping_info.tracking_number, "AB123-UPDATED");
     });
 
@@ -118,9 +121,9 @@ test.group("POST /api/v1/admin/orders/:id/mark-shipped", (group) => {
         const admin = await adminUser();
         const product = await createTaxableProduct({ regularPrice: 1_000_000 });
         const order = await makeDraftOrder({ customerId: null, productId: Number(product.id), quantity: 1, price: 1_000_000 });
-        /** Draft → markShipped — state machine refuses the implicit completed transition. */
+        /** Draft → markShipped is rejected because only processing orders may create a compatibility shipment. */
         const res = await client.post(`/api/v1/admin/orders/${order.id}/mark-shipped`).loginAs(admin).json({});
-        res.assertStatus(200);
+        res.assertStatus(422);
         const fresh = await Order.findOrFail(Number(order.id));
         assert.equal(fresh.status, OrderStatus.Draft, "no transition performed");
     });

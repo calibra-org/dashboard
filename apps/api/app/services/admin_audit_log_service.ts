@@ -3,6 +3,7 @@ import type { TransactionClientContract } from "@adonisjs/lucid/types/database";
 import { DateTime } from "luxon";
 
 import AdminAuditLog from "#models/admin_audit_log";
+import { captureConfigurationRevisionForAuditAction } from "#services/configuration_revision_service";
 
 export interface RecordAuditOptions {
     ctx?: HttpContext;
@@ -12,17 +13,9 @@ export interface RecordAuditOptions {
     entityId: bigint | number | null;
     payload?: Record<string, unknown>;
     trx?: TransactionClientContract;
-    /** Financial/control-plane actions may opt into fail-closed audit persistence. */
     strict?: boolean;
 }
 
-/**
- * Persists an admin-action row to `admin_audit_log`. Pass `ctx` to auto-derive the actor and the
- * IP address; pass `actorUserId` explicitly when the action runs outside the request lifecycle.
- * Most operational audit writes remain best-effort. Financial/control-plane callers can set
- * `strict: true` so an audit failure aborts the surrounding transaction instead of committing an
- * unaudited state change.
- */
 export async function recordAudit(options: RecordAuditOptions): Promise<void> {
     const { ctx, actorUserId, action, entityKind, entityId, payload, trx, strict = false } = options;
     let resolvedActor: bigint | number | null = actorUserId ?? null;
@@ -31,9 +24,12 @@ export async function recordAudit(options: RecordAuditOptions): Promise<void> {
             const user = await ctx.auth.authenticate();
             resolvedActor = Number(user.id);
         } catch {
-            /** unauthenticated path — leave actor null. */
+            resolvedActor = null;
         }
     }
+
+    await captureConfigurationRevisionForAuditAction(action, resolvedActor);
+
     try {
         const row = new AdminAuditLog();
         row.actorUserId = resolvedActor;

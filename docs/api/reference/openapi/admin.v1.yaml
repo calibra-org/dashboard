@@ -450,9 +450,6 @@ paths:
         post:
             $ref: "./admin/paths/payments/payment-attempts-id-reconcile.post.yaml"
 
-        head:
-            $ref: "./common/components/operations/HeadCompanion.yaml"
-
     /api/v1/admin/reports/top-products:
         get:
             $ref: "./admin/paths/reports/top-products.get.yaml"
