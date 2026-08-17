@@ -52,10 +52,11 @@ jobs:
                   node-version: ${{ env.NODE_VERSION }}
                   cache: pnpm
             - run: pnpm install --frozen-lockfile
-            - name: Apply verified Phase 11 type hardening
+            - name: Apply verified Phase 11 source hardening
               run: |
                   python - <<'PY'
                   from pathlib import Path
+
                   service = Path("apps/api/app/services/governance_service.ts")
                   source = service.read_text()
                   old = "let autonomyCeiling = action.maxAutonomy;"
@@ -63,6 +64,32 @@ jobs:
                   if old not in source and new not in source:
                       raise SystemExit("governance autonomy declaration not found")
                   service.write_text(source.replace(old, new))
+
+                  workspace = Path("apps/admin/src/features/governance/GovernanceWorkspace.tsx")
+                  source = workspace.read_text()
+                  source = source.replace("Fingerprint", "Hash")
+                  handlers = {
+                      "onValueChange={setActionPattern}": 'onValueChange={(value) => setActionPattern(String(value ?? ""))}',
+                      "onValueChange={setEffect}": 'onValueChange={(value) => setEffect(String(value ?? ""))}',
+                      "onValueChange={setActionKey}": 'onValueChange={(value) => setActionKey(String(value ?? ""))}',
+                      "onValueChange={setWorkflowKind}": 'onValueChange={(value) => setWorkflowKind(String(value ?? ""))}',
+                      "onValueChange={setAutonomy}": 'onValueChange={(value) => setAutonomy(String(value ?? ""))}',
+                  }
+                  for before, after in handlers.items():
+                      if before not in source and after not in source:
+                          raise SystemExit(f"select handler not found: {before}")
+                      source = source.replace(before, after)
+                  workspace.write_text(source)
+
+                  sidebar = Path("apps/admin/src/components/Sidebar.tsx")
+                  source = sidebar.read_text()
+                  governance_item = '{ href: "/governance/overview", label: "Governance OS", icon: ShieldCheck },'
+                  if governance_item not in source:
+                      anchor = '{ href: "/settings/general", labelKey: "settings", icon: Settings },'
+                      if anchor not in source:
+                          raise SystemExit("configuration navigation anchor not found")
+                      source = source.replace(anchor, anchor + "\n            " + governance_item, 1)
+                  sidebar.write_text(source)
                   PY
             - name: Canonical format and safe lint fixes
               run: pnpm run format:fix && pnpm run lint:biome:fix
