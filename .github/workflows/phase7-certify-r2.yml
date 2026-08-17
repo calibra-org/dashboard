@@ -1,5 +1,5 @@
 name: Phase 7 certify r2
-# Registered on branch; this follow-up push intentionally triggers the one-shot certifier.
+# Final one-shot certifier. Runtime repairs are committed only after all Phase 7 gates pass.
 
 on:
     push:
@@ -60,6 +60,7 @@ jobs:
                   set -euo pipefail
                   node --input-type=module <<'NODE'
                   import fs from 'node:fs'
+
                   function replaceRequired(path, from, to) {
                     const source = fs.readFileSync(path, 'utf8')
                     if (!source.includes(from)) throw new Error(`Missing expected source in ${path}: ${from}`)
@@ -83,8 +84,11 @@ jobs:
                     ['apps/api/app/services/identity/verification.ts', 'return updated === 1;', 'return Number(Array.isArray(updated) ? updated.length : updated) === 1;'],
                     ['apps/api/app/services/identity/webauthn.ts', 'if (consumed !== 1)', 'if (Number(Array.isArray(consumed) ? consumed.length : consumed) !== 1)'],
                     ['apps/admin/src/features/identity/IdentityWorkspace.tsx', 'title={<InfoTitle title={row.label} help={COPY.help.methodCard} />}', 'title={<InfoTitle title={row.label ?? row.key ?? "—"} help={COPY.help.methodCard} />}'],
-                    ['apps/api/database/migrations/1763000000000_create_identity_verification_platform.ts', '            table.timestamp("blocked_at", { useTz: true }).nullable();\n            table.timestamp("created_at", { useTz: true }).notNullable().defaultTo(this.now());', '            table.timestamp("blocked_at", { useTz: true }).nullable();\n            table.timestamp("last_sent_at", { useTz: true }).nullable();\n            table.timestamp("created_at", { useTz: true }).notNullable().defaultTo(this.now());'],
+                    ['apps/api/tests/functional/identity/phase7_identity.spec.ts', 'assert.notEqual(String(verification.identifier_hmac), "09120008888");', 'assert.exists(verification.identifier_hash);\n        assert.match(String(verification.identifier_hash), /^[0-9a-f]{64}$/i);\n        assert.notEqual(String(verification.identifier_hash), "09120008888");'],
                     ['apps/api/tests/functional/identity/phase7_identity.spec.ts', 'assert.match(String(verification.identifier_masked), /\\*/);', 'assert.match(String(verification.identifier_masked), /[•*]/);'],
+                    ['apps/api/tests/functional/identity/phase7_identity.spec.ts', 'const first = await client.post("/api/v1/auth/otp/request").json({ identifier: "09120007777", channel: "sms" });', 'const identifier = "09120007777";\n        const first = await client.post("/api/v1/auth/otp/request").json({ identifier, channel: "sms" });'],
+                    ['apps/api/tests/functional/identity/phase7_identity.spec.ts', 'await db\n            .connection("postgres_admin")\n            .from("identity_verifications")\n            .where("tenant_id", TEST_TENANT_ID)\n            .where("public_id", publicId)\n            .update({ last_sent_at: DateTime.utc().minus({ minutes: 2 }).toSQL() });\n        const resend = await client.post("/api/v1/auth/otp/resend").json({ verification_id: publicId });', 'const verificationBeforeResend = await db\n            .connection("postgres_admin")\n            .from("identity_verifications")\n            .where("tenant_id", TEST_TENANT_ID)\n            .where("public_id", publicId)\n            .firstOrFail();\n        await db\n            .connection("postgres_admin")\n            .from("identity_verification_challenges")\n            .where("verification_id", verificationBeforeResend.id)\n            .where("state", "active")\n            .update({ created_at: DateTime.utc().minus({ minutes: 2 }).toSQL() });\n        const resend = await client.post("/api/v1/auth/otp/resend").json({ verification_id: publicId, identifier });'],
+                    ['apps/api/tests/functional/identity/phase7_identity.spec.ts', 'assert.exists(challenges[0].superseded_at);', 'assert.equal(String(challenges[0].state), "superseded");\n        assert.equal(String(challenges[1].state), "active");\n        assert.notEqual(String(challenges[0].secret_hash), String(challenges[1].secret_hash));'],
                   ]
                   for (const [path, from, to] of fixes) replaceRequired(path, from, to)
                   NODE
@@ -94,7 +98,6 @@ jobs:
                     apps/api/app/services/identity/credentials.ts \
                     apps/api/app/services/identity/verification.ts \
                     apps/api/app/services/identity/webauthn.ts \
-                    apps/api/database/migrations/1763000000000_create_identity_verification_platform.ts \
                     apps/api/tests/functional/identity/phase7_identity.spec.ts \
                     apps/admin/src/features/identity/IdentityWorkspace.tsx \
                     docs/api/reference/openapi/admin.identity.v1.yaml \
