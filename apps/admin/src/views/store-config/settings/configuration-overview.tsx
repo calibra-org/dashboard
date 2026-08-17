@@ -18,6 +18,14 @@ import {
 import { cn } from "#/lib/utils";
 
 const CATEGORIES = ["site", "commerce", "communications", "governance", "developer", "change_management"] as const;
+const CONFIGURATION_SKELETON_KEYS = [
+    "configuration-1",
+    "configuration-2",
+    "configuration-3",
+    "configuration-4",
+    "configuration-5",
+    "configuration-6",
+] as const;
 
 export function ConfigurationOverview() {
     const locale = useLocale();
@@ -59,8 +67,8 @@ export function ConfigurationOverview() {
 
                 {registry.isPending ? (
                     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                        {Array.from({ length: 6 }).map((_, index) => (
-                            <div key={index} className="h-44 animate-pulse rounded-xl border bg-muted/35" />
+                        {CONFIGURATION_SKELETON_KEYS.map((key) => (
+                            <div key={key} className="h-44 animate-pulse rounded-xl border bg-muted/35" />
                         ))}
                     </div>
                 ) : registry.isError ? (
