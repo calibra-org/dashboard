@@ -62,7 +62,6 @@ jobs:
           git fetch --no-tags origin agent/phase6-configuration-os
           test "$(git rev-parse origin/agent/phase6-configuration-os)" = "$PHASE6_HEAD"
 
-          # New Phase 6 production modules are copied byte-for-byte from the official Phase 6 source.
           for path in \
             apps/api/app/controllers/admin/configuration_controller.ts \
             apps/api/app/services/configuration_engine_service.ts \
@@ -75,7 +74,6 @@ jobs:
             git show "$PHASE6_HEAD:$path" > "$path"
           done
 
-          # Phase 7 already owns 1763000000000, so preserve Phase 6 migration ordering with new unique timestamps.
           git show "$PHASE6_HEAD:apps/api/database/migrations/1763000000000_create_configuration_revisions.ts" \
             > apps/api/database/migrations/1763200000000_create_configuration_revisions.ts
           git show "$PHASE6_HEAD:apps/api/database/migrations/1763100000000_create_configuration_engine.ts" \
@@ -84,7 +82,6 @@ jobs:
           test -f apps/api/database/migrations/1763200000000_create_configuration_revisions.ts
           test -f apps/api/database/migrations/1763300000000_create_configuration_engine.ts
 
-          # Apply only the official Phase 6 backend integration deltas to shared files, preserving later Phase 7/main work.
           git diff --binary "$PHASE6_BASE" "$PHASE6_HEAD" -- \
             apps/api/app/services/settings_service.ts \
             apps/api/app/services/admin_audit_log_service.ts \
@@ -97,10 +94,9 @@ jobs:
           test -s /tmp/phase6-shared.patch
           git apply --3way /tmp/phase6-shared.patch
 
-          # The current route stack added the admin guard after Phase 6 was authored. It must remain intact.
           grep -F '.use(middleware.admin());' apps/api/start/routes/admin_settings.ts
-          grep -F '/configuration/capabilities' apps/api/start/routes/admin_settings.ts
-          grep -F '/configuration/revisions/:scope/:revision/rollback' apps/api/start/routes/admin_settings.ts
+          grep -F 'router.get("/configuration/registry"' apps/api/start/routes/admin_settings.ts
+          grep -F 'router.post("/configuration/history/:scope/:revision/rollback"' apps/api/start/routes/admin_settings.ts
 
           pnpm exec biome format --write --files-ignore-unknown=true \
             apps/api/app/controllers/admin/configuration_controller.ts \
@@ -126,12 +122,6 @@ jobs:
           set -euo pipefail
           node --input-type=module <<'NODE'
           import fs from 'node:fs'
-
-          function replaceRequired(path, from, to) {
-            const source = fs.readFileSync(path, 'utf8')
-            if (!source.includes(from)) throw new Error(`Missing expected source in ${path}: ${from}`)
-            fs.writeFileSync(path, source.replace(from, to))
-          }
 
           const packagePath = 'docs/api/package.json'
           const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8'))
@@ -191,10 +181,7 @@ jobs:
             )
           }
           orders = orders.replace('assert.equal(body.status, "completed");', 'assert.equal(body.status, OrderStatus.Processing);')
-          orders = orders.replace(
-            'assert.equal(reshipped.body().data.status, "completed");',
-            'assert.equal(reshipped.body().data.status, OrderStatus.Processing);',
-          )
+          orders = orders.replace('assert.equal(reshipped.body().data.status, "completed");', 'assert.equal(reshipped.body().data.status, OrderStatus.Processing);')
           orders = orders.replace(
             '/** Draft → markShipped — state machine refuses the implicit completed transition. */',
             '/** Draft → markShipped is rejected because only processing orders may create a compatibility shipment. */',
@@ -206,18 +193,13 @@ jobs:
           const txTest = 'apps/api/tests/functional/payments/admin_transaction_center.spec.ts'
           let tx = fs.readFileSync(txTest, 'utf8')
           const oldFilter = '.qs({ "filter[]": ["amount_minor:gte:1500000", "amount_minor:lte:3000000"], "sort[]": "amount_minor:desc" })'
-          const betweenFilter = '.qs({ "filter[]": "amount_minor:between:1500000,3000000", "sort[]": "amount_minor:desc" })'
-          if (tx.includes(oldFilter)) tx = tx.replace(oldFilter, betweenFilter)
+          if (tx.includes(oldFilter)) tx = tx.replace(oldFilter, '.qs({ "filter[]": "amount_minor:between:1500000,3000000", "sort[]": "amount_minor:desc" })')
           fs.writeFileSync(txTest, tx)
 
           const paymentController = 'apps/api/app/controllers/admin/payment_attempts_controller.ts'
           let payments = fs.readFileSync(paymentController, 'utf8')
-          if (payments.includes('.sum("amount_minor as amount_minor")')) {
-            payments = payments.replace('.sum("amount_minor as amount_minor")', '.sum("amount_minor as amount_sum_minor")')
-          }
-          if (payments.includes('Number(row.$extras.amount_minor ?? 0)')) {
-            payments = payments.replace('Number(row.$extras.amount_minor ?? 0)', 'Number(row.$extras.amount_sum_minor ?? 0)')
-          }
+          if (payments.includes('.sum("amount_minor as amount_minor")')) payments = payments.replace('.sum("amount_minor as amount_minor")', '.sum("amount_minor as amount_sum_minor")')
+          if (payments.includes('Number(row.$extras.amount_minor ?? 0)')) payments = payments.replace('Number(row.$extras.amount_minor ?? 0)', 'Number(row.$extras.amount_sum_minor ?? 0)')
           fs.writeFileSync(paymentController, payments)
           NODE
 
