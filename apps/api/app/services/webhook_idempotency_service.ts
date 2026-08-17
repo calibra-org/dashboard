@@ -4,6 +4,7 @@ import type { TransactionClientContract } from "@adonisjs/lucid/types/database";
 import { DateTime } from "luxon";
 
 import ProcessedWebhookEvent from "#models/processed_webhook_event";
+import { maybeTenantContext } from "#services/tenant_context";
 
 export interface WebhookEventInput {
     provider: string;
@@ -32,11 +33,16 @@ export type RecordOutcome = WebhookEventInserted | WebhookEventReplay;
  * `(tenant_id, provider, event_id, event_kind)`: the PSP authority identifies the payment while
  * event_kind identifies the delivered state. Therefore an identical success retry replays, but a
  * legitimate failed -> success evolution for the same authority is processed as a new event.
+ *
+ * Tenant-scoped callers stay on the active request transaction. The INSERT names the canonical
+ * conflict target explicitly so an unrelated/stale unique constraint can never be silently
+ * misclassified as a replay; schema drift must fail loudly instead.
  */
 export class WebhookIdempotencyService {
     async record(input: WebhookEventInput, trx?: TransactionClientContract): Promise<RecordOutcome> {
         const payloadHash = createHash("sha256").update(input.rawBody).digest("hex");
-        const client = trx ?? db.connection();
+        const scopedTrx = trx ?? maybeTenantContext()?.trx;
+        const client = scopedTrx ?? db.connection();
         const paymentAttemptId =
             input.paymentAttemptId !== undefined && input.paymentAttemptId !== null ? Number(input.paymentAttemptId) : null;
         const orderId = input.orderId !== undefined && input.orderId !== null ? Number(input.orderId) : null;
@@ -45,7 +51,7 @@ export class WebhookIdempotencyService {
             INSERT INTO processed_webhook_events
                 (provider, event_id, event_kind, payment_attempt_id, order_id, payload_hash, outcome, received_at, created_at, updated_at)
             VALUES (:provider, :event_id, :event_kind, :payment_attempt_id, :order_id, :payload_hash, 'pending', now(), now(), now())
-            ON CONFLICT DO NOTHING
+            ON CONFLICT (tenant_id, provider, event_id, event_kind) DO NOTHING
             RETURNING id
             `,
             {
@@ -60,11 +66,13 @@ export class WebhookIdempotencyService {
 
         const firstRow = insert.rows[0];
         if (firstRow) {
-            const inserted = await ProcessedWebhookEvent.query({ client: trx }).where("id", String(firstRow.id)).firstOrFail();
+            const inserted = await ProcessedWebhookEvent.query({ client: scopedTrx })
+                .where("id", String(firstRow.id))
+                .firstOrFail();
             return { replayed: false, inserted };
         }
 
-        const existing = await ProcessedWebhookEvent.query({ client: trx })
+        const existing = await ProcessedWebhookEvent.query({ client: scopedTrx })
             .where("provider", input.provider)
             .where("event_id", input.eventId)
             .where("event_kind", input.eventKind)

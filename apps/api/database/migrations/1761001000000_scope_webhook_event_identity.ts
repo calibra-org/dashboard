@@ -6,11 +6,9 @@ import { BaseSchema } from "@adonisjs/lucid/schema";
  * Treat the callback kind as part of the ledger identity so status evolution is auditable and a
  * later success can recover an earlier failure, while identical status retries remain idempotent.
  *
- * Drop both the legacy and target index names before recreating the exact target definition. This
- * keeps a fresh migration deterministic and also repairs an interrupted/unrecorded rollout where
- * the target index was created before the migration transaction was recorded. CREATE IF NOT EXISTS
- * is intentionally avoided because it could silently preserve a same-name index with the wrong
- * column definition.
+ * This migration can be replayed by fresh test databases after schema/version bootstrap work.
+ * Drop both historical names before recreating the exact intended index so a stale or partially
+ * applied index cannot make the migration fail or silently preserve the wrong definition.
  */
 export default class extends BaseSchema {
     protected tableName = "processed_webhook_events";
