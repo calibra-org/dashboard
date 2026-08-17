@@ -16,12 +16,8 @@ export default class extends BaseSchema {
     protected tableName = "processed_webhook_events";
 
     async up() {
-        await this.schema.raw(
-            `DROP INDEX IF EXISTS "processed_webhook_events_provider_event_id_unique"`,
-        );
-        await this.schema.raw(
-            `DROP INDEX IF EXISTS "processed_webhook_events_provider_event_kind_unique"`,
-        );
+        await this.schema.raw(`DROP INDEX IF EXISTS "processed_webhook_events_provider_event_id_unique"`);
+        await this.schema.raw(`DROP INDEX IF EXISTS "processed_webhook_events_provider_event_kind_unique"`);
         await this.schema.raw(`
             CREATE UNIQUE INDEX "processed_webhook_events_provider_event_kind_unique"
             ON "${this.tableName}" (tenant_id, provider, event_id, event_kind)
@@ -29,12 +25,8 @@ export default class extends BaseSchema {
     }
 
     async down() {
-        await this.schema.raw(
-            `DROP INDEX IF EXISTS "processed_webhook_events_provider_event_kind_unique"`,
-        );
-        await this.schema.raw(
-            `DROP INDEX IF EXISTS "processed_webhook_events_provider_event_id_unique"`,
-        );
+        await this.schema.raw(`DROP INDEX IF EXISTS "processed_webhook_events_provider_event_kind_unique"`);
+        await this.schema.raw(`DROP INDEX IF EXISTS "processed_webhook_events_provider_event_id_unique"`);
         await this.schema.raw(`
             CREATE UNIQUE INDEX "processed_webhook_events_provider_event_id_unique"
             ON "${this.tableName}" (tenant_id, provider, event_id)
