@@ -5,12 +5,17 @@ import { BaseSchema } from "@adonisjs/lucid/schema";
  * legitimately deliver NOK/failed first and a later OK/success result for the same authority.
  * Treat the callback kind as part of the ledger identity so status evolution is auditable and a
  * later success can recover an earlier failure, while identical status retries remain idempotent.
+ *
+ * This migration can be replayed by fresh test databases after schema/version bootstrap work.
+ * Drop both historical names before recreating the exact intended index so a stale or partially
+ * applied index cannot make the migration fail or silently preserve the wrong definition.
  */
 export default class extends BaseSchema {
     protected tableName = "processed_webhook_events";
 
     async up() {
         await this.schema.raw(`DROP INDEX IF EXISTS "processed_webhook_events_provider_event_id_unique"`);
+        await this.schema.raw(`DROP INDEX IF EXISTS "processed_webhook_events_provider_event_kind_unique"`);
         await this.schema.raw(`
             CREATE UNIQUE INDEX "processed_webhook_events_provider_event_kind_unique"
             ON "${this.tableName}" (tenant_id, provider, event_id, event_kind)
@@ -19,6 +24,7 @@ export default class extends BaseSchema {
 
     async down() {
         await this.schema.raw(`DROP INDEX IF EXISTS "processed_webhook_events_provider_event_kind_unique"`);
+        await this.schema.raw(`DROP INDEX IF EXISTS "processed_webhook_events_provider_event_id_unique"`);
         await this.schema.raw(`
             CREATE UNIQUE INDEX "processed_webhook_events_provider_event_id_unique"
             ON "${this.tableName}" (tenant_id, provider, event_id)
