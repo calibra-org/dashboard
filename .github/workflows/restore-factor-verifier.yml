@@ -38,7 +38,12 @@ jobs:
           const fs = require('node:fs');
           const file = 'scripts/verify-factor-integration.mjs';
           let source = fs.readFileSync(file, 'utf8');
-          const oldCheck = 'pass(sidebar.includes(\'group.titleKey === "sales"\'), "Factor submenu is not placed under Sales");';
+          const oldCheck = `pass(
+              sidebar.includes('"factor-sidebar-items"') &&
+                  sidebar.includes('navT("factor")') &&
+                  !sidebar.includes('group.titleKey === "sales"'),
+              "Factor must be a first-level navigation heading, not nested under Sales",
+          );`;
           const replacement = `const primaryWorkspaceStart = sidebar.indexOf("{groups.slice(0, 3).map");
           const primaryWorkspaceEnd = sidebar.indexOf("{groups.slice(3).map");
           const primaryWorkspaceIds = [
@@ -59,7 +64,7 @@ jobs:
               );
           }
           pass(!sidebar.includes('group.titleKey === "sales"'), "Primary workspaces must not be nested under Sales");`;
-          if (!source.includes(oldCheck)) throw new Error('Legacy Factor-under-Sales assertion not found in canonical verifier');
+          if (!source.includes(oldCheck)) throw new Error('Canonical Factor top-level assertion not found');
           source = source.replace(oldCheck, replacement);
           fs.writeFileSync(file, source);
           NODE
