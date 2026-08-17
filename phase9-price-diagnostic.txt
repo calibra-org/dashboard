@@ -1,51 +1,19 @@
-=== service price wiring ===
+=== service transformed price eligibility ===
+7:import ProductTransformer from "#transformers/product_transformer";
+36:    discountPercent: number;
+39:    transformed: Record<string, unknown>;
+192:            ...p.transformed,
+193:            discount_percent: p.discountPercent,
+220:                let score = p.discountPercent * 2;
+227:                if (Boolean((p.transformed as { featured?: boolean }).featured)) score += 8;
+248:            items: ranked.map((p) => ({ ...p.transformed, reason_code: p.reasonCode })),
+386:        } else { selected = [...eligible].sort((a, b) => b.discountPercent - a.discountPercent || a.id - b.id); selected.forEach((p) => reasons.set(p.id, "high_discount")); }
+393:        if (saleOnly) query.whereNotNull("sale_price");
+404:            const object = new ProductTransformer(p, locale).toObject() as Record<string, unknown>;
+405:            const regular = Number(object.regular_price ?? 0);
+406:            const effective = Number(object.effective_price ?? regular);
+408:            if (saleOnly && object.on_sale !== true) continue;
+415:            out.push({ id: Number(p.id), discountPercent: discount, categories: (p.categories ?? []).map((c) => Number(c.id)), brands: (p.brands ?? []).map((b) => Number(b.id)), transformed: object });
 
-=== verifier price checks ===
+=== verifier price check ===
 8:for(const needle of ["resolvePrice","controlled_random","category_affinity","brand_affinity","recommendation_exposures","consent","currentTrx","currentTenantId"]) check(service.includes(needle),`service missing ${needle}`);
-
-=== service imports ===
-import { createHash, randomUUID } from "node:crypto";
-import { DateTime } from "luxon";
-
-import Product from "#models/product";
-import SettingsService from "#services/settings_service";
-import { currentTenantId, currentTrx } from "#services/tenant_context";
-import ProductTransformer from "#transformers/product_transformer";
-
-export type Subject = { type: "visitor" | "customer"; id: string };
-export type SelectionMode = "manual" | "smart" | "controlled_random" | "hybrid";
-
-export interface CampaignInput {
-    name: string;
-    selection_mode?: SelectionMode;
-    min_discount_percent?: number;
-    max_items?: number;
-    rotation_minutes?: number;
-    starts_at?: string | null;
-    ends_at?: string | null;
-    rules?: Record<string, unknown>;
-    product_ids?: number[];
-    pinned_product_ids?: number[];
-    expected_version?: number;
-}
-
-export interface RecommendationContext {
-    placement: string;
-    limit?: number;
-    subject?: Subject | null;
-    locale?: string;
-    exclude_product_ids?: number[];
-}
-
-interface EligibleProduct {
-    id: number;
-    discountPercent: number;
-    categories: number[];
-    brands: number[];
-    transformed: Record<string, unknown>;
-}
-
-const SETTINGS_GROUP = "personalization";
-const POLICY_VERSION = "phase9-v1";
-const MODEL_VERSION = "rules-v1";
-const RECENT_LIMIT = 30;
