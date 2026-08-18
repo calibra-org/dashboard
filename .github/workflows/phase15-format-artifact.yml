@@ -38,8 +38,21 @@ jobs:
         run: |
           git fetch origin agent/phase15-customer-genome
           test "$(git rev-parse HEAD)" = "$(git rev-parse origin/agent/phase15-customer-genome)"
-      - name: Apply repository formatter
-        run: pnpm exec biome format --write .
+      - name: Converge repository formatting
+        run: |
+          clean=0
+          for pass in 1 2 3 4; do
+            echo "Biome formatting pass ${pass}"
+            pnpm exec biome format --write .
+            if pnpm exec biome format .; then
+              clean=1
+              break
+            fi
+          done
+          if [ "$clean" -ne 1 ]; then
+            echo "Biome formatting did not converge within four passes"
+            exit 1
+          fi
       - name: Guard formatter scope
         run: |
           changed=$(git diff --name-only | wc -l | tr -d ' ')
@@ -49,8 +62,6 @@ jobs:
             git diff --name-only
             exit 1
           fi
-      - name: Verify repository formatting
-        run: pnpm exec biome format .
       - name: Commit canonical formatting and remove one-shot workflow
         run: |
           git fetch origin agent/phase15-customer-genome
