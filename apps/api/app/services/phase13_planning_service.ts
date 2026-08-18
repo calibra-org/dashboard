@@ -4,10 +4,10 @@ import { DateTime } from "luxon";
 
 import type User from "#models/user";
 import {
-    computeReplenishment,
-    forecastDemand,
     type AvailabilityState,
+    computeReplenishment,
     type DailyDemandObservation,
+    forecastDemand,
 } from "#services/planning_forecast_engine";
 import { currentTrx } from "#services/tenant_context";
 

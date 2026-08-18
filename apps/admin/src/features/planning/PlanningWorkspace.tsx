@@ -1,8 +1,8 @@
 "use client";
 
+import { useLocale } from "next-intl";
 import type { ComponentType, SVGProps } from "react";
 import { useMemo, useState } from "react";
-import { useLocale } from "next-intl";
 import {
     Area,
     AreaChart,
@@ -17,11 +17,11 @@ import {
     YAxis,
 } from "recharts";
 
-import { BarChart3, Boxes, CalendarClock, Package, Settings2, ShieldCheck, Sparkles, TrendingUp } from "#/icons";
 import { Button } from "#/components/ui/button";
 import { CardContent, CardHeader, CardRoot, CardTitle } from "#/components/ui/card";
 import { Input } from "#/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "#/components/ui/tabs";
+import { BarChart3, Boxes, CalendarClock, Package, Settings2, ShieldCheck, Sparkles, TrendingUp } from "#/icons";
 import {
     type ForecastSeries,
     useCreatePlanningCycle,
@@ -83,7 +83,7 @@ function MetricCard({
             <CardContent className="flex items-start justify-between gap-4 p-5">
                 <div>
                     <p className="text-muted-foreground text-xs">{title}</p>
-                    <p className="mt-2 font-black text-3xl tracking-tight tabular-nums">{value}</p>
+                    <p className="mt-2 font-black text-3xl tabular-nums tracking-tight">{value}</p>
                     <p className="mt-2 text-muted-foreground text-xs leading-5">{detail}</p>
                 </div>
                 <div className="rounded-2xl bg-background/75 p-3 shadow-sm ring-1 ring-border/60 backdrop-blur">
@@ -512,7 +512,7 @@ function CategoryPanel() {
                         <span className="text-muted-foreground">Taxonomy</span>
                         <code className="mt-1 block break-all">{query.data?.data.classification_mode ?? "—"}</code>
                     </div>
-                    <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 leading-5 text-muted-foreground">
+                    <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-muted-foreground leading-5">
                         محصول چنددسته‌ای در هر دسته خودش دیده می‌شود؛ این نمودار برای مقایسه دسته‌هاست، نه جمع کل بدون double-count.
                     </div>
                 </CardContent>
