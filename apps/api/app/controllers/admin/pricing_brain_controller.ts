@@ -96,6 +96,7 @@ export default class AdminPricingBrainController {
             referencePrice: payload.reference_price,
             candidatePrice: payload.candidate_price,
             quantity: payload.quantity,
+            promotionDiscount: payload.promotion_discount,
             productId: payload.product_id,
             variationId: payload.variation_id,
             floorPrice: payload.floor_price,
