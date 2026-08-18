@@ -16,6 +16,7 @@ export interface PricingSimulationState {
             quantity: number;
             promotionDiscount: number;
             candidateGrossRevenue: number;
+            candidateNetRevenue: number;
             netRevenue: number;
             grossRevenue: number;
             estimatedGrossProfit: number | null;
