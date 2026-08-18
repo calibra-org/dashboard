@@ -293,10 +293,12 @@ export class PricingPolicyService {
                 .from("pricing_policy_versions")
                 .where("tenant_id", tenantId())
                 .where("policy_id", policyId)
-                .where("version", input.expected_version)
+                .orderBy("version", "desc")
                 .forUpdate()
                 .first();
-            if (!version) fail("Pricing policy version is stale or missing", 409, "E_PRICING_VERSION_STALE");
+            if (!version || Number(version.version) !== input.expected_version) {
+                fail("Pricing policy version is stale or missing", 409, "E_PRICING_VERSION_STALE");
+            }
 
             if (action === "rollback") {
                 return this.rollbackLocked(trx, policy, version, input, actorId, idempotencyKey);
