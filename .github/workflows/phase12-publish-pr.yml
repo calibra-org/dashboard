@@ -34,7 +34,56 @@ jobs:
           git config user.name 'calibra-dev'
           git config user.email 'keshavarz20.com@gmail.com'
           git switch -C agent/phase12-profitability-cash-os origin/main
+          set +e
           git apply --3way /tmp/phase12.patch
+          apply_rc=$?
+          set -e
+          conflicts=$(git diff --name-only --diff-filter=U || true)
+          unexpected=$(printf '%s\n' "$conflicts" | grep -v -E '^(docs/api/package.json|docs/api/scripts/merge-admin-spec.js)$' || true)
+          if [ -n "$unexpected" ]; then
+            echo "Unexpected Phase 12 conflicts:" >&2
+            printf '%s\n' "$unexpected" >&2
+            exit 1
+          fi
+          if [ "$apply_rc" -ne 0 ] && [ -z "$conflicts" ]; then
+            echo 'Patch apply failed without resolvable conflicts.' >&2
+            exit 1
+          fi
+          if printf '%s\n' "$conflicts" | grep -qx 'docs/api/package.json'; then
+            git checkout --ours docs/api/package.json
+          fi
+          if printf '%s\n' "$conflicts" | grep -qx 'docs/api/scripts/merge-admin-spec.js'; then
+            git checkout --ours docs/api/scripts/merge-admin-spec.js
+          fi
+          node <<'NODE'
+          const fs = require('node:fs');
+          const p = 'docs/api/package.json';
+          const pkg = JSON.parse(fs.readFileSync(p, 'utf8'));
+          pkg.scripts['build:json:admin-phase12'] = 'redocly bundle reference/openapi/admin.phase12.v1.yaml -o dist/admin.phase12.v1.json --ext json';
+          if (!pkg.scripts['build:json:admin'].includes('build:json:admin-phase12')) {
+            pkg.scripts['build:json:admin'] = pkg.scripts['build:json:admin'].replace('pnpm build:json:admin-phase11 && ', 'pnpm build:json:admin-phase11 && pnpm build:json:admin-phase12 && ');
+          }
+          fs.writeFileSync(p, JSON.stringify(pkg, null, 4) + '\n');
+
+          const m = 'docs/api/scripts/merge-admin-spec.js';
+          let text = fs.readFileSync(m, 'utf8');
+          if (!text.includes('const phase12 =')) {
+            text = text.replace(
+              'const phase11 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase11.v1.json"), "utf8"));',
+              'const phase11 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase11.v1.json"), "utf8"));\nconst phase12 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase12.v1.json"), "utf8"));'
+            );
+          }
+          if (!text.includes('[phase12, "Phase12Overlay"]')) {
+            text = text.replace(
+              '    [phase11, "Phase11GovernanceOverlay"],',
+              '    [phase11, "Phase11GovernanceOverlay"],\n    [phase12, "Phase12Overlay"],'
+            );
+          }
+          fs.writeFileSync(m, text);
+          NODE
+          sed -i 's/[[:space:]]\+$//' apps/admin/src/features/economics/EconomicsWorkspace.tsx
+          git add docs/api/package.json docs/api/scripts/merge-admin-spec.js apps/admin/src/features/economics/EconomicsWorkspace.tsx
+          test -z "$(git diff --name-only --diff-filter=U)"
           git diff --check
           test -f apps/api/app/services/economics_service.ts
           test -f apps/admin/src/features/economics/EconomicsWorkspace.tsx
