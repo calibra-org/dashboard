@@ -1,0 +1,11 @@
+{
+    "extends": "./tsconfig.json",
+    "include": [
+        "next-env.d.ts",
+        "src/app/[locale]/(authenticated)/experiments/page.tsx",
+        "src/features/experiments/ExperimentationWorkspace.tsx",
+        "src/lib/queries/experiments.ts",
+        "src/components/Sidebar.tsx"
+    ],
+    "exclude": ["node_modules", ".next", "dist", ".cache"]
+}
