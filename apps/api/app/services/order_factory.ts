@@ -14,6 +14,7 @@ import ProductVariation from "#models/product_variation";
 import { type CartTotalsItem, computeCartTotals } from "#services/cart_totals_service";
 import { getDiscounter } from "#services/discounter";
 import { orderNumberService } from "#services/order_number_service";
+import { pricingPolicyService } from "#services/pricing_policy_service";
 import { resolvePrice } from "#services/price_resolver";
 import SettingsService from "#services/settings_service";
 import { enumerateShippingRates } from "#services/shipping_rate_service";
@@ -111,9 +112,10 @@ export class OrderFactory {
     }
 
     /**
-     * Re-snapshot prices + lines from the latest catalog data. Returns the previous snapshot list
-     * alongside the new one so the finalizer can compare for drift and surface a 409 to the
-     * customer if anything moved.
+     * Re-snapshot prices from the one canonical resolver immediately before checkout submit.
+     * When no catalog-price drift is present, Phase 18 also validates active pricing guardrails and
+     * writes an immutable policy/promotion trace in the same transaction. Any later checkout
+     * failure rolls that trace back with the order transition.
      */
     async snapshotForFinalize(
         order: Order,
@@ -150,7 +152,14 @@ export class OrderFactory {
             const fallback = await product.related("translations").query().first();
             const name = translation?.name ?? fallback?.name ?? `#${productId}`;
             const sku = variation?.sku ?? product.sku ?? null;
-            const priceSnapshot = this.resolveLivePrice(product, variation);
+            const resolved = resolvePrice(product, variation);
+            const priceSnapshot = Number(resolved.effectivePrice);
+            if (!Number.isSafeInteger(priceSnapshot) || priceSnapshot < 0) {
+                throw new Exception("Resolved checkout price is outside the supported minor-unit range", {
+                    status: 422,
+                    code: "E_PRICE_RANGE",
+                });
+            }
 
             current.push({
                 productId,
@@ -162,6 +171,14 @@ export class OrderFactory {
                 taxClassId: this.resolveTaxClassId(product, variation),
                 attributesSnapshot: (line.attributesSnapshot as Record<string, unknown>) ?? {},
             });
+        }
+
+        const drifted = current.some((cur) => {
+            const prev = previous.find((row) => row.productId === cur.productId && row.variationId === cur.variationId);
+            return prev ? prev.priceSnapshot !== cur.priceSnapshot : false;
+        });
+        if (!drifted) {
+            await pricingPolicyService.enforceAndSnapshotOrder(Number(order.id), order.currency ?? "IRR", trx);
         }
         return { previous, current };
     }
@@ -323,33 +340,6 @@ export class OrderFactory {
      */
     private async placeholderOrderNumber(trx: TransactionClientContract): Promise<number> {
         return orderNumberService.allocate(trx);
-    }
-
-    private resolveLivePrice(product: Product, variation: ProductVariation | null): number {
-        const now = Date.now();
-        const inWindow = (start: unknown, end: unknown): boolean => {
-            const startMs = start instanceof Date ? start.getTime() : start ? Number(start) : null;
-            const endMs = end instanceof Date ? end.getTime() : end ? Number(end) : null;
-            if (startMs && startMs > now) return false;
-            if (endMs && endMs < now) return false;
-            return true;
-        };
-
-        if (variation) {
-            const salePrice = variation.salePrice === null ? null : Number(variation.salePrice);
-            // biome-ignore lint/suspicious/noExplicitAny: variation sale-window columns populated by catalog-writer but not in the static schema yet.
-            if (salePrice !== null && inWindow((variation as any).saleStartsAt, (variation as any).saleEndsAt)) {
-                return salePrice;
-            }
-            return Number(variation.regularPrice);
-        }
-
-        const salePrice = product.salePrice === null ? null : Number(product.salePrice);
-        // biome-ignore lint/suspicious/noExplicitAny: product sale-window columns populated by catalog-writer but not in the static schema yet.
-        if (salePrice !== null && inWindow((product as any).saleStartsAt, (product as any).saleEndsAt)) {
-            return salePrice;
-        }
-        return product.regularPrice === null ? 0 : Number(product.regularPrice);
     }
 
     private resolveTaxClassId(product: Product, variation: ProductVariation | null): number | null {
