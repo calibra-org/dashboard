@@ -28,6 +28,7 @@ on:
             - "docs/api/package.json"
             - "docs/api/reference/openapi/admin.customer-intelligence.v1.yaml"
             - "docs/api/scripts/merge-admin-spec.js"
+            - "packages/sdk/src/generated/admin.d.ts"
     push:
         branches: [main, agent/phase15-customer-genome]
         paths:
@@ -55,9 +56,10 @@ on:
             - "docs/api/package.json"
             - "docs/api/reference/openapi/admin.customer-intelligence.v1.yaml"
             - "docs/api/scripts/merge-admin-spec.js"
+            - "packages/sdk/src/generated/admin.d.ts"
 
 permissions:
-    contents: write
+    contents: read
 
 concurrency:
     group: phase15-customer-genome-${{ github.workflow }}-${{ github.ref }}
@@ -113,43 +115,10 @@ jobs:
             - name: Verify Phase 15 OpenAPI merge
               run: |
                   node -e "const fs=require('node:fs');const s=fs.readFileSync('docs/api/dist/admin.v1.json','utf8');for(const k of ['historical_contribution_ltv_minor','contribution_coverage_ratio','economics.historical_contribution_ltv_minor'])if(!s.includes(k))throw new Error('Missing Phase 15 contract key: '+k)"
-            - name: Regenerate typed Admin SDK
-              run: pnpm --filter @calibra/sdk run codegen:admin
-            - name: One-shot repair branch artifacts
-              if: >-
-                  (github.event_name == 'pull_request' &&
-                   github.event.pull_request.head.repo.full_name == github.repository &&
-                   github.event.pull_request.head.ref == 'agent/phase15-customer-genome') ||
-                  (github.event_name == 'push' && github.ref == 'refs/heads/agent/phase15-customer-genome')
+            - name: Regenerate typed Admin SDK and assert no drift
               run: |
-                  git reset --hard
-                  git fetch origin agent/phase15-customer-genome
-                  git checkout -B agent/phase15-customer-genome origin/agent/phase15-customer-genome
-                  pnpm --filter @calibra/api-docs run build:json:admin
                   pnpm --filter @calibra/sdk run codegen:admin
-                  git config user.name "github-actions[bot]"
-                  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-                  if ! git diff --quiet -- packages/sdk/src/generated/admin.d.ts; then
-                    git add packages/sdk/src/generated/admin.d.ts
-                    git commit -m "chore(sdk): sync Phase 15 admin types"
-                  fi
-                  python - <<'PY'
-                  from pathlib import Path
-                  path = Path('apps/api/app/services/phase20_trust_risk_service.ts')
-                  source = path.read_text()
-                  needle = 'reason_codes_json: result.reasons'
-                  count = source.count(needle)
-                  if count != 2:
-                      raise SystemExit(f'expected 2 trust reason-code JSON bindings, found {count}')
-                  path.write_text(source.replace(needle, 'reason_codes_json: JSON.stringify(result.reasons)'))
-                  PY
-                  if ! git diff --quiet -- apps/api/app/services/phase20_trust_risk_service.ts; then
-                    git add apps/api/app/services/phase20_trust_risk_service.ts
-                    git commit -m "fix(trust): serialize risk reason codes as JSON"
-                  fi
-                  if [ "$(git rev-list --count origin/agent/phase15-customer-genome..HEAD)" -gt 0 ]; then
-                    git push origin HEAD:agent/phase15-customer-genome
-                  fi
+                  git diff --exit-code -- packages/sdk/src/generated/admin.d.ts
             - name: Typecheck Phase 15 workspaces
               run: |
                   pnpm --filter @calibra/api run typecheck
