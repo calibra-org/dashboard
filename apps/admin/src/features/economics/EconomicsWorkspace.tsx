@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+
+import { Link } from "#/lib/i18n/navigation";
 import {
     useBackfillEconomics,
     useCreateCostLayer,
@@ -10,7 +12,6 @@ import {
     useReconcileSettlement,
     useWorkingCapital,
 } from "#/lib/queries/economics";
-import { Link } from "#/lib/i18n/navigation";
 
 const tabs = ["overview", "cube", "cash", "capital", "costs", "exceptions", "simulator"] as const;
 type Tab = (typeof tabs)[number];
@@ -33,29 +34,29 @@ function Card({
 }) {
     const bg =
         tone === "good"
-            ? "from-emerald-500/15 to-emerald-500/5"
+            ? "from-success/15 to-success/5"
             : tone === "warn"
-              ? "from-amber-500/15 to-amber-500/5"
-              : "from-sky-500/15 to-violet-500/5";
+              ? "from-warning/15 to-warning/5"
+              : "from-info/15 to-primary/5";
     return (
         <div className={`rounded-3xl border border-border/70 bg-gradient-to-br ${bg} p-5 shadow-sm`}>
-            <div className="text-xs font-semibold text-muted-foreground">{title}</div>
-            <div className="mt-2 text-2xl font-black tracking-tight">{value}</div>
-            <div className="mt-2 text-xs leading-5 text-muted-foreground">{hint}</div>
+            <div className="font-semibold text-muted-foreground text-xs">{title}</div>
+            <div className="mt-2 font-black text-2xl tracking-tight">{value}</div>
+            <div className="mt-2 text-muted-foreground text-xs leading-5">{hint}</div>
         </div>
     );
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
     return (
-        <label className="grid gap-1.5 text-xs font-semibold text-muted-foreground">
+        <div className="grid gap-1.5 font-semibold text-muted-foreground text-xs">
             <span>{label}</span>
             {children}
-        </label>
+        </div>
     );
 }
 const inputClass =
-    "h-10 rounded-xl border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-sky-500";
+    "h-10 rounded-xl border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-ring";
 
 export function EconomicsWorkspace() {
     const [tab, setTab] = useState<Tab>("overview");
@@ -74,22 +75,23 @@ export function EconomicsWorkspace() {
 
     return (
         <div className="mx-auto max-w-[1540px] space-y-6 p-4 md:p-7" dir="rtl">
-            <section className="overflow-hidden rounded-[32px] border border-border/70 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 p-6 text-white shadow-2xl md:p-8">
+            <section className="overflow-hidden rounded-[32px] border border-border/70 bg-gradient-to-br from-sidebar via-sidebar to-primary p-6 text-white shadow-2xl md:p-8">
                 <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
                     <div>
-                        <div className="mb-2 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-bold">
+                        <div className="mb-2 inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 font-bold text-xs">
                             Phase 12 · Economic Truth OS
                         </div>
-                        <h1 className="text-3xl font-black tracking-tight md:text-5xl">سودآوری، نقدینگی و سرمایه در گردش</h1>
-                        <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300">
+                        <h1 className="font-black text-3xl tracking-tight md:text-5xl">سودآوری، نقدینگی و سرمایه در گردش</h1>
+                        <p className="mt-3 max-w-3xl text-slate-300 text-sm leading-7">
                             درآمد، COGS، هزینه‌های مشارکتی، بازپرداخت و تسویه را با lineage قابل حسابرسی و وضعیت‌های Estimated /
                             Realized / Forecast / Incomplete جدا ببینید.
                         </p>
                     </div>
                     <button
+                        type="button"
                         onClick={() => backfill.mutate({ offset: 0, limit: 500 })}
                         disabled={backfill.isPending}
-                        className="rounded-2xl bg-white px-5 py-3 text-sm font-black text-slate-950 transition hover:scale-[1.02] disabled:opacity-50"
+                        className="rounded-2xl bg-white px-5 py-3 font-black text-slate-950 text-sm transition hover:scale-[1.02] disabled:opacity-50"
                     >
                         {backfill.isPending ? "در حال بازسازی…" : "بازسازی projection"}
                     </button>
@@ -99,9 +101,10 @@ export function EconomicsWorkspace() {
             <div className="flex gap-2 overflow-x-auto pb-1">
                 {tabs.map((item) => (
                     <button
+                        type="button"
                         key={item}
                         onClick={() => setTab(item)}
-                        className={`whitespace-nowrap rounded-2xl px-4 py-2.5 text-sm font-bold transition ${tab === item ? "bg-foreground text-background shadow-lg" : "border border-border bg-card hover:bg-muted"}`}
+                        className={`whitespace-nowrap rounded-2xl px-4 py-2.5 font-bold text-sm transition ${tab === item ? "bg-foreground text-background shadow-lg" : "border border-border bg-card hover:bg-muted"}`}
                     >
                         {
                             (
@@ -150,8 +153,8 @@ export function EconomicsWorkspace() {
                         <div className="rounded-3xl border border-border bg-card p-5">
                             <div className="mb-5 flex items-center justify-between">
                                 <div>
-                                    <h2 className="text-lg font-black">Top economics by product</h2>
-                                    <p className="text-xs text-muted-foreground">Drill-down مستقیم تا محصول و ledger</p>
+                                    <h2 className="font-black text-lg">Top economics by product</h2>
+                                    <p className="text-muted-foreground text-xs">Drill-down مستقیم تا محصول و ledger</p>
                                 </div>
                             </div>
                             <div className="space-y-3">
@@ -161,16 +164,16 @@ export function EconomicsWorkspace() {
                                         href={`/economics/products/${row.id}`}
                                         className="grid grid-cols-[minmax(120px,1fr)_2fr_auto] items-center gap-3 rounded-2xl border border-border/60 p-3 hover:bg-muted/50"
                                     >
-                                        <div className="truncate text-sm font-bold">{row.label || `#${row.id}`}</div>
+                                        <div className="truncate font-bold text-sm">{row.label || `#${row.id}`}</div>
                                         <div className="h-2 overflow-hidden rounded-full bg-muted">
                                             <div
-                                                className="h-full rounded-full bg-gradient-to-l from-sky-500 to-violet-500"
+                                                className="h-full rounded-full bg-gradient-to-l from-info to-primary"
                                                 style={{
                                                     width: `${Math.max(3, (Math.abs(Number(row.contribution_minor)) / maxAbs) * 100)}%`,
                                                 }}
                                             />
                                         </div>
-                                        <div className="text-xs font-black tabular-nums">
+                                        <div className="font-black text-xs tabular-nums">
                                             {money(row.contribution_minor, row.currency)}
                                         </div>
                                     </Link>
@@ -178,15 +181,15 @@ export function EconomicsWorkspace() {
                             </div>
                         </div>
                         <div className="rounded-3xl border border-border bg-card p-5">
-                            <h2 className="text-lg font-black">Settlement pulse</h2>
+                            <h2 className="font-black text-lg">Settlement pulse</h2>
                             <div className="mt-4 space-y-3">
-                                {(overview.data?.settlements ?? []).map((s, i) => (
-                                    <div key={i} className="rounded-2xl bg-muted/50 p-4">
+                                {(overview.data?.settlements ?? []).map((s) => (
+                                    <div key={`${s.currency}-${s.status}`} className="rounded-2xl bg-muted/50 p-4">
                                         <div className="flex justify-between text-xs">
                                             <span className="font-bold">{s.status}</span>
                                             <span>{s.currency}</span>
                                         </div>
-                                        <div className="mt-2 text-xl font-black">{money(s.net_minor, s.currency)}</div>
+                                        <div className="mt-2 font-black text-xl">{money(s.net_minor, s.currency)}</div>
                                     </div>
                                 ))}
                             </div>
@@ -197,14 +200,14 @@ export function EconomicsWorkspace() {
 
             {tab === "cube" && (
                 <section className="rounded-3xl border border-border bg-card p-5">
-                    <h2 className="text-xl font-black">Profitability Cube</h2>
-                    <p className="mt-1 text-xs text-muted-foreground">
+                    <h2 className="font-black text-xl">Profitability Cube</h2>
+                    <p className="mt-1 text-muted-foreground text-xs">
                         Projection قابل rebuild از ledger؛ رتبه‌بندی محصول بر اساس contribution واقعی/ثبت‌شده.
                     </p>
                     <div className="mt-5 overflow-x-auto">
                         <table className="w-full text-sm">
                             <thead>
-                                <tr className="border-b text-right text-xs text-muted-foreground">
+                                <tr className="border-b text-right text-muted-foreground text-xs">
                                     <th className="p-3">محصول</th>
                                     <th className="p-3">Contribution</th>
                                     <th className="p-3">Incomplete</th>
@@ -213,12 +216,12 @@ export function EconomicsWorkspace() {
                             </thead>
                             <tbody>
                                 {(cube.data ?? []).map((row) => (
-                                    <tr key={`${row.id}-${row.currency}`} className="border-b border-border/50">
+                                    <tr key={`${row.id}-${row.currency}`} className="border-border/50 border-b">
                                         <td className="p-3 font-bold">{row.label || `#${row.id}`}</td>
                                         <td className="p-3 font-black">{money(row.contribution_minor, row.currency)}</td>
                                         <td className="p-3">{row.incomplete_entries}</td>
                                         <td className="p-3">
-                                            <Link className="font-bold text-sky-600" href={`/economics/products/${row.id}`}>
+                                            <Link className="font-bold text-primary" href={`/economics/products/${row.id}`}>
                                                 باز کردن
                                             </Link>
                                         </td>
@@ -233,13 +236,16 @@ export function EconomicsWorkspace() {
             {tab === "cash" && (
                 <div className="grid gap-4 xl:grid-cols-2">
                     <section className="rounded-3xl border border-border bg-card p-5">
-                        <h2 className="text-xl font-black">Cash & Reconciliation</h2>
-                        <p className="mt-1 text-xs text-muted-foreground">
+                        <h2 className="font-black text-xl">Cash & Reconciliation</h2>
+                        <p className="mt-1 text-muted-foreground text-xs">
                             Payment verified با Cash Available یکی نیست؛ settlement جدا reconcile می‌شود.
                         </p>
                         <div className="mt-4 space-y-3">
-                            {(overview.data?.settlements ?? []).map((s, i) => (
-                                <div key={i} className="flex items-center justify-between rounded-2xl border p-4">
+                            {(overview.data?.settlements ?? []).map((s) => (
+                                <div
+                                    key={`${s.currency}-${s.status}`}
+                                    className="flex items-center justify-between rounded-2xl border p-4"
+                                >
                                     <span className="font-bold">{s.status}</span>
                                     <span className="font-black">{money(s.net_minor, s.currency)}</span>
                                 </div>
@@ -281,7 +287,7 @@ export function EconomicsWorkspace() {
 
             {tab === "exceptions" && (
                 <section className="rounded-3xl border border-border bg-card p-5">
-                    <h2 className="text-xl font-black">Leakage & Exceptions</h2>
+                    <h2 className="font-black text-xl">Leakage & Exceptions</h2>
                     <div className="mt-5 grid gap-3 md:grid-cols-3">
                         <Card
                             title="Incomplete economics"
@@ -336,8 +342,8 @@ function PolicyForm({ onSubmit, pending }: { onSubmit: (b: Record<string, unknow
             }}
             className="rounded-3xl border border-border bg-card p-5"
         >
-            <h2 className="text-xl font-black">Cost Policy</h2>
-            <p className="mt-1 text-xs text-muted-foreground">نسخه جدید بسازید؛ نسخه تاریخی هرگز overwrite نمی‌شود.</p>
+            <h2 className="font-black text-xl">Cost Policy</h2>
+            <p className="mt-1 text-muted-foreground text-xs">نسخه جدید بسازید؛ نسخه تاریخی هرگز overwrite نمی‌شود.</p>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 <Field label="روش موجودی">
                     <select
@@ -399,8 +405,9 @@ function PolicyForm({ onSubmit, pending }: { onSubmit: (b: Record<string, unknow
                 </Field>
             </div>
             <button
+                type="button"
                 disabled={pending}
-                className="mt-5 rounded-2xl bg-foreground px-5 py-2.5 text-sm font-bold text-background disabled:opacity-50"
+                className="mt-5 rounded-2xl bg-foreground px-5 py-2.5 font-bold text-background text-sm disabled:opacity-50"
             >
                 ثبت نسخه Policy
             </button>
@@ -438,8 +445,8 @@ function LayerForm({ onSubmit, pending }: { onSubmit: (b: Record<string, unknown
             }}
             className="rounded-3xl border border-border bg-card p-5"
         >
-            <h2 className="text-xl font-black">Cost Layer</h2>
-            <p className="mt-1 text-xs text-muted-foreground">Unknown landed cost را خالی بگذارید؛ صفر یعنی هزینه واقعی صفر.</p>
+            <h2 className="font-black text-xl">Cost Layer</h2>
+            <p className="mt-1 text-muted-foreground text-xs">Unknown landed cost را خالی بگذارید؛ صفر یعنی هزینه واقعی صفر.</p>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 <Field label="Product ID">
                     <input
@@ -489,8 +496,9 @@ function LayerForm({ onSubmit, pending }: { onSubmit: (b: Record<string, unknown
                 </Field>
             </div>
             <button
+                type="button"
                 disabled={pending}
-                className="mt-5 rounded-2xl bg-foreground px-5 py-2.5 text-sm font-bold text-background disabled:opacity-50"
+                className="mt-5 rounded-2xl bg-foreground px-5 py-2.5 font-bold text-background text-sm disabled:opacity-50"
             >
                 ثبت Cost Layer
             </button>
@@ -526,7 +534,7 @@ function SettlementForm({ onSubmit, pending }: { onSubmit: (b: Record<string, un
             }}
             className="rounded-3xl border border-border bg-card p-5"
         >
-            <h2 className="text-xl font-black">Reconcile settlement</h2>
+            <h2 className="font-black text-xl">Reconcile settlement</h2>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 <Field label="Provider">
                     <input className={inputClass} value={s.provider} onChange={(e) => setS({ ...s, provider: e.target.value })} />
@@ -569,8 +577,9 @@ function SettlementForm({ onSubmit, pending }: { onSubmit: (b: Record<string, un
                 </Field>
             </div>
             <button
+                type="button"
                 disabled={pending}
-                className="mt-5 rounded-2xl bg-foreground px-5 py-2.5 text-sm font-bold text-background disabled:opacity-50"
+                className="mt-5 rounded-2xl bg-foreground px-5 py-2.5 font-bold text-background text-sm disabled:opacity-50"
             >
                 ثبت reconciliation
             </button>
@@ -586,8 +595,8 @@ function CapitalSimulator({ currency }: { currency: string }) {
     const gain = Math.round((release * margin) / 100);
     return (
         <section className="rounded-3xl border border-border bg-card p-5">
-            <h2 className="text-xl font-black">Capital Simulator</h2>
-            <p className="mt-1 text-xs text-muted-foreground">سناریوی تصمیم‌یار؛ fact مالی یا ledger entry ایجاد نمی‌کند.</p>
+            <h2 className="font-black text-xl">Capital Simulator</h2>
+            <p className="mt-1 text-muted-foreground text-xs">سناریوی تصمیم‌یار؛ fact مالی یا ledger entry ایجاد نمی‌کند.</p>
             <div className="mt-6 grid gap-5 md:grid-cols-3">
                 <Field label="Inventory capital">
                     <input

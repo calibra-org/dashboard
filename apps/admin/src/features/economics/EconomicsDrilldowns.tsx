@@ -1,5 +1,7 @@
 "use client";
+
 import { useOrderEconomics, useProductEconomics } from "#/lib/queries/economics";
+
 function money(v: unknown, c: string) {
     return new Intl.NumberFormat("fa-IR").format(Number(v ?? 0)) + ` ${c}`;
 }
@@ -8,7 +10,7 @@ export function EconomicsOrderDrilldown({ orderId }: { orderId: number }) {
     const d = q.data;
     return (
         <div className="mx-auto max-w-6xl space-y-5 p-6" dir="rtl">
-            <h1 className="text-3xl font-black">اقتصاد سفارش #{d?.order?.order_number ?? orderId}</h1>
+            <h1 className="font-black text-3xl">اقتصاد سفارش #{d?.order?.order_number ?? orderId}</h1>
             <div className="rounded-3xl border bg-card p-5">
                 <div className="space-y-2">
                     {(d?.ledger ?? []).map((e: any) => (
@@ -31,7 +33,7 @@ export function EconomicsProductDrilldown({ productId }: { productId: number }) 
     const d = q.data;
     return (
         <div className="mx-auto max-w-6xl space-y-5 p-6" dir="rtl">
-            <h1 className="text-3xl font-black">اقتصاد محصول {d?.product?.name ?? `#${productId}`}</h1>
+            <h1 className="font-black text-3xl">اقتصاد محصول {d?.product?.name ?? `#${productId}`}</h1>
             <div className="grid gap-4 md:grid-cols-2">
                 <section className="rounded-3xl border bg-card p-5">
                     <h2 className="font-black">Ledger</h2>
@@ -42,7 +44,7 @@ export function EconomicsProductDrilldown({ productId }: { productId: number }) 
                                     <b>{e.entry_kind}</b>
                                     <b>{money(e.amount_minor, e.currency)}</b>
                                 </div>
-                                <div className="mt-1 text-xs text-muted-foreground">{e.quality}</div>
+                                <div className="mt-1 text-muted-foreground text-xs">{e.quality}</div>
                             </div>
                         ))}
                     </div>
@@ -56,7 +58,7 @@ export function EconomicsProductDrilldown({ productId }: { productId: number }) 
                                     <b>Layer #{l.id}</b>
                                     <span>{l.quantity_initial} واحد</span>
                                 </div>
-                                <div className="mt-1 text-xs text-muted-foreground">
+                                <div className="mt-1 text-muted-foreground text-xs">
                                     Landed:{" "}
                                     {l.unit_landed_cost_minor === null ? "نامشخص" : money(l.unit_landed_cost_minor, l.currency)}
                                 </div>
