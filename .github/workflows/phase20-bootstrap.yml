@@ -64,6 +64,24 @@ jobs:
         run: node scripts/verify-phase20-trust-risk-integration.mjs
       - name: Build API test specification once
         run: pnpm --filter @calibra/api-docs run build:test-spec
+      - name: Diagnose merged OpenAPI 3.0 contract
+        run: |
+          VALIDATOR_DIR="$(find node_modules/.pnpm -type d -path '*/node_modules/openapi-schema-validator' | head -1)"
+          test -n "$VALIDATOR_DIR" || { echo 'openapi-schema-validator not found'; exit 1; }
+          node - "$VALIDATOR_DIR" <<'NODE'
+          const fs = require('node:fs')
+          const validatorDir = process.argv[2]
+          const loaded = require(validatorDir)
+          const OpenAPISchemaValidator = loaded.default || loaded
+          const spec = JSON.parse(fs.readFileSync('docs/api/dist/_merged.test.json', 'utf8'))
+          const validator = new OpenAPISchemaValidator({ version: 3 })
+          const result = validator.validate(spec)
+          if (result.errors?.length) {
+            console.error(JSON.stringify(result.errors, null, 2))
+            process.exit(1)
+          }
+          console.log('Merged OpenAPI 3.0 schema validator: PASS')
+          NODE
       - name: Phase 20 legacy unit tests
         working-directory: apps/api
         run: timeout 180s node ace test --files=tests/unit/trust/phase20_trust_risk.spec.ts
