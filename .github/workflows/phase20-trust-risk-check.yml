@@ -65,6 +65,11 @@ jobs:
         run: pnpm test --files=tests/unit/trust/phase20_trust_risk.spec.ts
       - name: API typecheck
         run: pnpm --filter @calibra/api run typecheck
+      - name: Build typed Admin SDK
+        run: |
+          pnpm --filter @calibra/api-docs run build:json:admin
+          pnpm --filter @calibra/sdk run codegen:admin
+          pnpm --filter @calibra/sdk run build
       - name: Admin typecheck
         run: pnpm --filter @calibra/admin run typecheck
       - name: Admin production build
