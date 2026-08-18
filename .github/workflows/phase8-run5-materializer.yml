@@ -19,6 +19,9 @@ concurrency:
   group: phase8-run5-materializer
   cancel-in-progress: false
 
+env:
+  PHASE8_BASE_SHA: bbe7cdc10c6d19dde084c0a0567d8e69d44ad2c2
+
 jobs:
   materialize:
     runs-on: ubuntu-latest
@@ -47,10 +50,10 @@ jobs:
           --health-timeout 3s
           --health-retries 10
     steps:
-      - name: Checkout exact live main
+      - name: Checkout pinned Phase 9 main
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ env.PHASE8_BASE_SHA }}
           fetch-depth: 0
           persist-credentials: true
 
@@ -71,44 +74,143 @@ jobs:
           test "$(grep -c '^diff --git ' /tmp/phase8.patch)" -eq 57
           git apply --stat /tmp/phase8.patch
 
-      - name: Apply Run5 onto live main and compose Phase 13 docs
+      - name: Apply Run5 and compose Phase 9 integration points
         shell: bash
         run: |
           set -euo pipefail
-          git switch -C agent/phase8-run5-final origin/main
+          test "$(git rev-parse HEAD)" = "$PHASE8_BASE_SHA"
+          git switch -C agent/phase8-run5-final "$PHASE8_BASE_SHA"
           if ! git apply --3way --index /tmp/phase8.patch; then
-            mapfile -t conflicts < <(git diff --name-only --diff-filter=U)
-            printf 'Three-way conflicts: %s\n' "${conflicts[*]}"
-            test "${#conflicts[@]}" -eq 1
-            test "${conflicts[0]}" = 'docs/api/package.json'
-            git checkout --ours -- docs/api/package.json
+            actual="$(git diff --name-only --diff-filter=U | sort)"
+            expected="$(printf '%s\n' \
+              'apps/web/src/app/[locale]/page.tsx' \
+              'docs/api/package.json' \
+              'docs/api/scripts/merge-admin-spec.js' \
+              'docs/api/scripts/merge-storefront-spec.js' \
+              'package.json' | sort)"
+            printf 'Three-way conflicts:\n%s\n' "$actual"
+            test "$actual" = "$expected"
+            while IFS= read -r path; do git checkout --ours -- "$path"; done <<< "$actual"
+
             node <<'NODE'
           const fs = require('node:fs')
-          const path = 'docs/api/package.json'
-          const pkg = JSON.parse(fs.readFileSync(path, 'utf8'))
-          const scripts = pkg.scripts
-          const storefrontNeedle = 'pnpm build:json:storefront-identity && pnpm build:json:storefront-merge'
-          const storefrontComposed = 'pnpm build:json:storefront-identity && pnpm build:json:storefront-phase8 && pnpm build:json:storefront-merge'
-          if (!scripts['build:json:storefront'].includes('build:json:storefront-phase8')) {
-            if (!scripts['build:json:storefront'].includes(storefrontNeedle)) throw new Error('storefront chain drifted')
-            scripts['build:json:storefront'] = scripts['build:json:storefront'].replace(storefrontNeedle, storefrontComposed)
+
+          // Compose Phase 8 Story Rail with the Phase 9 Amazing Deals homepage.
+          {
+            const path = 'apps/web/src/app/[locale]/page.tsx'
+            let text = fs.readFileSync(path, 'utf8')
+            const addAfter = (needle, addition) => {
+              if (!text.includes(addition.trim())) {
+                if (!text.includes(needle)) throw new Error(`homepage compose drifted: ${needle}`)
+                text = text.replace(needle, `${needle}${addition}`)
+              }
+            }
+            addAfter('import { AmazingDealsSection } from "#/components/amazing-deals-section";\n', 'import { StoryRail } from "#/components/social/story-rail";\n')
+            addAfter('import { formatPrice, getMoneyFormatConfig } from "#/lib/money";\n', 'import { getStoryRail } from "#/lib/social-api";\n')
+            if (!text.includes('moneyConfig, storyRail')) {
+              const needle = 'const [{ data }, moneyConfig] = await Promise.all(['
+              if (!text.includes(needle)) throw new Error('homepage Promise.all drifted')
+              text = text.replace(needle, 'const [{ data }, moneyConfig, storyRail] = await Promise.all([')
+            }
+            if (!text.includes('getStoryRail(locale),')) {
+              const needle = '        getMoneyFormatConfig(),\n'
+              if (!text.includes(needle)) throw new Error('homepage money config drifted')
+              text = text.replace(needle, `${needle}        getStoryRail(locale),\n`)
+            }
+            if (!text.includes('<StoryRail items={storyRail.data} locale={locale} />')) {
+              const needle = '            <AmazingDealsSection />\n'
+              if (!text.includes(needle)) throw new Error('Phase 9 AmazingDealsSection missing')
+              text = text.replace(needle, `            <StoryRail items={storyRail.data} locale={locale} />\n\n${needle}`)
+            }
+            fs.writeFileSync(path, text)
           }
-          const adminNeedle = 'pnpm build:json:admin-identity && pnpm build:json:admin-phase10'
-          const adminComposed = 'pnpm build:json:admin-identity && pnpm build:json:admin-phase8 && pnpm build:json:admin-phase10'
-          if (!scripts['build:json:admin'].includes('build:json:admin-phase8')) {
-            if (!scripts['build:json:admin'].includes(adminNeedle)) throw new Error('admin chain drifted')
-            scripts['build:json:admin'] = scripts['build:json:admin'].replace(adminNeedle, adminComposed)
+
+          // Compose both Phase 8 and Phase 9/13 OpenAPI build chains.
+          {
+            const path = 'docs/api/package.json'
+            const pkg = JSON.parse(fs.readFileSync(path, 'utf8'))
+            const scripts = pkg.scripts
+            if (!scripts['build:json:storefront'].includes('build:json:storefront-phase8')) {
+              const needle = 'pnpm build:json:storefront-identity && pnpm build:json:storefront-phase9'
+              if (!scripts['build:json:storefront'].includes(needle)) throw new Error('storefront docs chain drifted')
+              scripts['build:json:storefront'] = scripts['build:json:storefront'].replace(needle, 'pnpm build:json:storefront-identity && pnpm build:json:storefront-phase8 && pnpm build:json:storefront-phase9')
+            }
+            if (!scripts['build:json:admin'].includes('build:json:admin-phase8')) {
+              const needle = 'pnpm build:json:admin-identity && pnpm build:json:admin-phase9'
+              if (!scripts['build:json:admin'].includes(needle)) throw new Error('admin docs chain drifted')
+              scripts['build:json:admin'] = scripts['build:json:admin'].replace(needle, 'pnpm build:json:admin-identity && pnpm build:json:admin-phase8 && pnpm build:json:admin-phase9')
+            }
+            scripts['build:json:storefront-phase8'] = 'redocly bundle reference/openapi/storefront.phase8.v1.yaml -o dist/storefront.phase8.v1.json --ext json'
+            scripts['build:json:admin-phase8'] = 'redocly bundle reference/openapi/admin.phase8.v1.yaml -o dist/admin.phase8.v1.json --ext json'
+            fs.writeFileSync(path, `${JSON.stringify(pkg, null, 4)}\n`)
           }
-          scripts['build:json:storefront-phase8'] = 'redocly bundle reference/openapi/storefront.phase8.v1.yaml -o dist/storefront.phase8.v1.json --ext json'
-          scripts['build:json:admin-phase8'] = 'redocly bundle reference/openapi/admin.phase8.v1.yaml -o dist/admin.phase8.v1.json --ext json'
-          fs.writeFileSync(path, `${JSON.stringify(pkg, null, 4)}\n`)
+
+          // Compose Phase 8 into the current Phase 9-aware admin OpenAPI merger.
+          {
+            const path = 'docs/api/scripts/merge-admin-spec.js'
+            let text = fs.readFileSync(path, 'utf8')
+            if (!text.includes('const phase8 =')) {
+              const needle = 'const identity = JSON.parse(readFileSync(resolve(root, "dist/admin.identity.v1.json"), "utf8"));\n'
+              if (!text.includes(needle)) throw new Error('admin merger imports drifted')
+              text = text.replace(needle, `${needle}const phase8 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase8.v1.json"), "utf8"));\n`)
+            }
+            if (!text.includes('[phase8, "Phase8Overlay"]')) {
+              const needle = '    [identity, "IdentityOverlay"],\n'
+              if (!text.includes(needle)) throw new Error('admin merger overlays drifted')
+              text = text.replace(needle, `${needle}    [phase8, "Phase8Overlay"],\n`)
+            }
+            fs.writeFileSync(path, text)
+          }
+
+          // Compose Phase 8 into the current Phase 9-aware storefront OpenAPI merger.
+          {
+            const path = 'docs/api/scripts/merge-storefront-spec.js'
+            let text = fs.readFileSync(path, 'utf8')
+            if (!text.includes('const phase8 =')) {
+              const needle = 'const identity = JSON.parse(readFileSync(resolve(root, "dist/storefront.identity.v1.json"), "utf8"));\n'
+              if (!text.includes(needle)) throw new Error('storefront merger imports drifted')
+              text = text.replace(needle, `${needle}const phase8 = JSON.parse(readFileSync(resolve(root, "dist/storefront.phase8.v1.json"), "utf8"));\n`)
+            }
+            if (!text.includes('[completion, identity, phase8, phase9]')) {
+              const needle = '[completion, identity, phase9]'
+              if (!text.includes(needle)) throw new Error('storefront merger overlays drifted')
+              text = text.replace(needle, '[completion, identity, phase8, phase9]')
+            }
+            fs.writeFileSync(path, text)
+          }
+
+          // Preserve Phase 9 root verification while adding Phase 8 operational commands.
+          {
+            const path = 'package.json'
+            const pkg = JSON.parse(fs.readFileSync(path, 'utf8'))
+            pkg.scripts['social:publish-due'] = 'pnpm --filter @calibra/api exec node ace social:publish-due'
+            pkg.scripts['social:privacy-retention'] = 'pnpm --filter @calibra/api exec node ace social:privacy-retention'
+            pkg.scripts['verify:phase8'] = 'node scripts/verify-phase8-social-commerce.mjs'
+            if (!pkg.scripts['verify:phase9']) throw new Error('Phase 9 root verifier lost')
+            fs.writeFileSync(path, `${JSON.stringify(pkg, null, 4)}\n`)
+          }
           NODE
-            git add docs/api/package.json
+
+            git add \
+              'apps/web/src/app/[locale]/page.tsx' \
+              docs/api/package.json \
+              docs/api/scripts/merge-admin-spec.js \
+              docs/api/scripts/merge-storefront-spec.js \
+              package.json
           fi
+
           test -z "$(git ls-files -u)"
           git diff --cached --check
           node scripts/verify-phase8-social-commerce.mjs
-          node -e "const p=require('./docs/api/package.json'); if(!p.scripts['build:json:admin'].includes('admin-phase13')) throw new Error('Phase 13 docs chain lost'); if(!p.scripts['build:json:admin'].includes('admin-phase8')) throw new Error('Phase 8 docs chain missing')"
+          node scripts/verify-phase9.mjs
+          node - <<'NODE'
+          const fs = require('node:fs')
+          const docs = JSON.parse(fs.readFileSync('docs/api/package.json', 'utf8')).scripts
+          for (const token of ['storefront-phase8', 'storefront-phase9']) if (!docs['build:json:storefront'].includes(token)) throw new Error(`storefront lost ${token}`)
+          for (const token of ['admin-phase8', 'admin-phase9', 'admin-phase13']) if (!docs['build:json:admin'].includes(token)) throw new Error(`admin lost ${token}`)
+          const home = fs.readFileSync('apps/web/src/app/[locale]/page.tsx', 'utf8')
+          if (!home.includes('AmazingDealsSection') || !home.includes('StoryRail')) throw new Error('homepage Phase 8/9 composition incomplete')
+          NODE
           git config user.name 'calibra-dev'
           git config user.email 'keshavarz20.com@gmail.com'
           git commit -m 'feat(social): Phase 8 Social Commerce, Stories, Video & Community OS'
