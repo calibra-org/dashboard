@@ -1,0 +1,237 @@
+diff --git a/apps/api/app/controllers/account/social_commerce_controller.ts b/apps/api/app/controllers/account/social_commerce_controller.ts
+index 39ffa30..ea1dc19 100644
+--- a/apps/api/app/controllers/account/social_commerce_controller.ts
++++ b/apps/api/app/controllers/account/social_commerce_controller.ts
+@@ -15,7 +15,7 @@ export default class AccountSocialCommerceController {
+     async interaction(ctx: HttpContext) { const payload = await ctx.request.validateUsing(accountSocialInteractionValidator); return socialCommerceService.recordInteraction({ ...payload, user_id: await userId(ctx) }); }
+     async channels(ctx: HttpContext) { return socialCommerceService.listVisibleChannels(await userId(ctx)); }
+     async threads(ctx: HttpContext) { return socialCommerceService.listMyThreads(await userId(ctx)); }
+-    async threadStore(ctx: HttpContext) { const payload = await ctx.request.validateUsing(accountSocialThreadCreateValidator); ctx.response.status(201); return socialCommerceService.createThread(await userId(ctx), { kind: payload.kind, subject: payload.subject, channel_id: payload.channel_id, message: payload.body }); }
++    async threadStore(ctx: HttpContext) { const payload = await ctx.request.validateUsing(accountSocialThreadCreateValidator); ctx.response.status(201); return socialCommerceService.createThread(await userId(ctx), payload); }
+     async messageStore(ctx: HttpContext) { const payload = await ctx.request.validateUsing(accountSocialMessageValidator); ctx.response.status(201); return socialCommerceService.addCustomerMessage(await userId(ctx), ensureId(ctx.params.threadId), payload.body, payload.media_ids ?? []); }
+     async report(ctx: HttpContext) { const payload = await ctx.request.validateUsing(accountSocialReportValidator); ctx.response.status(201); return socialCommerceService.report(await userId(ctx), payload); }
+     async mediaUploadIntent(ctx: HttpContext) { const actor = await userId(ctx); const customer = await customerForUser(actor); const payload = await ctx.request.validateUsing(accountSocialMediaUploadIntentValidator); const result = await socialMediaPipelineService.createUploadIntent({ filename: payload.filename, mime: payload.mime, sizeBytes: payload.size_bytes, purpose: payload.purpose, ownerActorType: "customer", ownerActorRef: String(customer.id), accessPolicy: payload.access_policy }); ctx.response.status(201); return result; }
+diff --git a/apps/api/database/migrations/1764100000000_extend_phase8_media_reviews_events.ts b/apps/api/database/migrations/1764100000000_extend_phase8_media_reviews_events.ts
+index c605107..bf7ebf7 100644
+--- a/apps/api/database/migrations/1764100000000_extend_phase8_media_reviews_events.ts
++++ b/apps/api/database/migrations/1764100000000_extend_phase8_media_reviews_events.ts
+@@ -223,6 +223,18 @@ export default class extends BaseSchema {
+     }
+ 
+     async down() {
++        // Phase 8 is the migration that makes canonical video/audio media kinds legal.
++        // Remove only Phase 8-owned incompatible rows while social_media_assets still proves
++        // ownership, otherwise restoring the pre-Phase-8 media_kind_check can fail on rollback.
++        this.schema.raw(`
++            DELETE FROM media
++            WHERE kind IN ('video','audio')
++              AND EXISTS (
++                  SELECT 1
++                  FROM social_media_assets
++                  WHERE social_media_assets.media_id = media.id
++              )
++        `);
+         for (const table of [...EXTENSION_TABLES].reverse()) this.schema.dropTable(table);
+         this.schema.raw(`DROP INDEX IF EXISTS social_interaction_dedupe_unique`);
+         this.schema.raw(`DROP INDEX IF EXISTS social_interaction_event_id_unique`);
+diff --git a/apps/api/tests/functional/social/phase8_social_commerce.spec.ts b/apps/api/tests/functional/social/phase8_social_commerce.spec.ts
+index 54575f2..0798d6e 100644
+--- a/apps/api/tests/functional/social/phase8_social_commerce.spec.ts
++++ b/apps/api/tests/functional/social/phase8_social_commerce.spec.ts
+@@ -4,7 +4,9 @@ import db from "@adonisjs/lucid/services/db";
+ import { test } from "@japa/runner";
+ 
+ import Customer from "#models/customer";
++import ProductReview from "#models/product_review";
+ import User from "#models/user";
++import { createProduct } from "../catalog/helpers.js";
+ import { TEST_TENANT_ID } from "#tests/helpers/tenant";
+ 
+ const ADMIN = "/api/v1/admin/social";
+@@ -134,13 +136,20 @@ test.group("Phase 8 Social Commerce OS", (group) => {
+         assert.equal(Number(replay.body().data.ticket_id), Number(first.body().data.ticket_id));
+     });
+ 
+-    test("anonymous interaction persists the Phase 9-ready first-party event envelope", async ({ client, assert }) => {
+-        const anonymousId = `anon-${randomUUID()}`;
+-        const response = await client.post(`${STOREFRONT}/interactions`).json({ event_type: "impression", anonymous_id: anonymousId, source_surface: "story_rail", event_id: randomUUID() });
+-        response.assertStatus(201);
+-        assert.equal(response.body().data.anonymous_id, anonymousId);
+-        assert.equal(response.body().envelope.actor.type, "anonymous");
+-        assert.equal(response.body().envelope.schema_version, 1);
++    test("records first-party anonymous interaction events and exposes analytics", async ({ client, assert }) => {
++        const { user } = await createUser("admin");
++        const interaction = await client.post(`${STOREFRONT}/interactions`).json({
++            anonymous_id: `anon-${randomUUID()}`,
++            event_type: "impression",
++            source_surface: "home_story_rail",
++            watch_ms: 1200,
++        });
++        interaction.assertStatus(201);
++        assert.isAbove(Number(interaction.body().data.id), 0);
++
++        const analytics = await client.get(`${ADMIN}/analytics`).withGuard("api").loginAs(user);
++        analytics.assertStatus(200);
++        assert.equal(Number(analytics.body().data.events.impression), 1);
+     });
+ 
+     test("duration beyond Configuration OS policy is rejected before persistence", async ({ client }) => {
+@@ -151,52 +160,131 @@ test.group("Phase 8 Social Commerce OS", (group) => {
+ 
+     test("blocks video publication until canonical media is publishable", async ({ client, assert }) => {
+         const { user } = await createUser("admin");
+-        const media = await createMedia({ state: "ready", safety: "clean", ownerRef: String(user.id) });
+-        const created = await client.post(`${ADMIN}/contents`).withGuard("api").loginAs(user).json({ kind: "video", title: "Governed video", primary_media_id: Number(media.id) });
++        const created = await client
++            .post(`${ADMIN}/contents`)
++            .withGuard("api")
++            .loginAs(user)
++            .json({ kind: "video", title: "Media gated video", aspect_ratio: "9:16", duration_seconds: 30 });
+         created.assertStatus(201);
+         const contentId = Number(created.body().data.id);
+-        await client.post(`${ADMIN}/contents/${contentId}/transition`).withGuard("api").loginAs(user).json({ expected_version: 1, status: "review" });
+-        await db.connection("postgres_admin").from("social_contents").where("tenant_id", TEST_TENANT_ID).where("id", contentId).update({ moderation_state: "approved" });
+ 
+-        const blocked = await client.post(`${ADMIN}/contents/${contentId}/transition`).withGuard("api").loginAs(user).json({ expected_version: 2, status: "published" });
+-        blocked.assertStatus(422);
+-        await db.connection("postgres_admin").from("media").where("id", media.id).update({ processing_state: "publishable" });
+-        await db.connection("postgres_admin").from("social_media_assets").where("tenant_id", TEST_TENANT_ID).where("media_id", media.id).update({ upload_state: "publishable" });
+-        const published = await client.post(`${ADMIN}/contents/${contentId}/transition`).withGuard("api").loginAs(user).json({ expected_version: 2, status: "published" });
++        const queue = await client.get(`${ADMIN}/moderation`).withGuard("api").loginAs(user);
++        const reviewCase = queue.body().data.find((item: { target_type: string; target_id: number }) => item.target_type === "content" && Number(item.target_id) === contentId);
++        assert.exists(reviewCase);
++        const approved = await client
++            .post(`${ADMIN}/moderation/${reviewCase.id}/actions`)
++            .withGuard("api")
++            .loginAs(user)
++            .json({ expected_version: reviewCase.version, action: "restore" });
++        approved.assertStatus(200);
++
++        const review = await client
++            .post(`${ADMIN}/contents/${contentId}/transition`)
++            .withGuard("api")
++            .loginAs(user)
++            .json({ expected_version: 1, status: "review" });
++        review.assertStatus(200);
++
++        const missingMedia = await client
++            .post(`${ADMIN}/contents/${contentId}/transition`)
++            .withGuard("api")
++            .loginAs(user)
++            .json({ expected_version: 2, status: "published" });
++        missingMedia.assertStatus(422);
++
++        const adminDb = db.connection("postgres_admin");
++        const [media] = await adminDb.table("media").insert({
++            kind: "video",
++            url: "stream://cloudflare_stream/test-media",
++            mime: "video/mp4",
++            size_bytes: 1_024,
++            processing_state: "ready",
++            access_policy: "signed",
++            provider: "cloudflare_stream",
++            provider_ref: `phase8-test-${randomUUID()}`,
++        }).returning("*");
++        await adminDb.table("social_media_assets").insert({
++            tenant_id: TEST_TENANT_ID,
++            media_id: media.id,
++            purpose: "video",
++            owner_actor_type: "user",
++            owner_actor_ref: String(user.id),
++            upload_state: "ready",
++            provider: "cloudflare_stream",
++            provider_ref: media.provider_ref,
++            declared_mime: "video/mp4",
++            declared_size_bytes: 1_024,
++        });
++
++        const attached = await client
++            .patch(`${ADMIN}/contents/${contentId}`)
++            .withGuard("api")
++            .loginAs(user)
++            .json({ expected_version: 2, primary_media_id: Number(media.id) });
++        attached.assertStatus(200);
++
++        const notPublishable = await client
++            .post(`${ADMIN}/contents/${contentId}/transition`)
++            .withGuard("api")
++            .loginAs(user)
++            .json({ expected_version: 3, status: "published" });
++        notPublishable.assertStatus(422);
++
++        await adminDb.from("media").where("id", media.id).update({ processing_state: "publishable" });
++        await adminDb.from("social_media_assets").where("media_id", media.id).update({ upload_state: "publishable" });
++        const published = await client
++            .post(`${ADMIN}/contents/${contentId}/transition`)
++            .withGuard("api")
++            .loginAs(user)
++            .json({ expected_version: 3, status: "published" });
+         published.assertStatus(200);
+         assert.equal(published.body().data.status, "published");
+     });
+ 
+-    test("rejects helpful self-votes", async ({ client, assert }) => {
++    test("rejects helpful self-votes so reputation evidence cannot be self-inflated", async ({ client }) => {
+         const { user, customer } = await createUser("customer");
+-        const product = await db.connection("postgres_admin").from("products").where("tenant_id", TEST_TENANT_ID).where("status", "publish").first();
+-        assert.exists(product, "test tenant requires at least one published product");
+-        const [review] = await db.connection("postgres_admin").table("product_reviews").insert({
+-            tenant_id: TEST_TENANT_ID,
+-            product_id: product.id,
+-            customer_id: customer.id,
+-            reviewer_name: "Phase 8 reviewer",
+-            reviewer_email: user.email,
+-            body: "A verified customer review used for self-vote protection.",
++        const product = await createProduct({
++            fa: { name: "محصول اعتبار", slug: `reputation-fa-${randomUUID()}` },
++            en: { name: "Reputation product", slug: `reputation-en-${randomUUID()}` },
++        });
++        const review = await ProductReview.create({
++            productId: product.id,
++            customerId: customer.id,
++            reviewerName: "Reviewer",
++            reviewerEmail: user.email,
++            body: "A verified review that must not be self-upvoted.",
+             rating: 5,
+             status: "approved",
+             verified: true,
+-            moderation_state: "published",
+-        }).returning("*");
+-        const response = await client.put(`${ACCOUNT}/reviews/${review.id}/helpful`).withGuard("api").loginAs(user).json({ helpful: true });
++        });
++        const response = await client
++            .put(`${ACCOUNT}/reviews/${review.id}/helpful`)
++            .withGuard("api")
++            .loginAs(user)
++            .json({ helpful: true });
+         response.assertStatus(422);
+     });
+ 
+-    test("requires a clean security verdict before media becomes publishable", async ({ client, assert }) => {
++    test("requires a clean security verdict and rights evidence before media becomes publishable", async ({ client, assert }) => {
+         const { user } = await createUser("admin");
+         const media = await createMedia({ state: "scanning", safety: "scanning", ownerRef: String(user.id) });
++
+         const blocked = await client.post(`${ADMIN}/media/${media.id}/publishable`).withGuard("api").loginAs(user);
+-        blocked.assertStatus(422);
++        blocked.assertStatus(409);
++
++        const scan = await client.post(`${ADMIN}/media/${media.id}/security-scan`).withGuard("api").loginAs(user).json({
++            scanner: "test-attestation", scanner_ref: `scan-ref-${randomUUID()}`, verdict: "clean", content_hash: "a".repeat(64), evidence: { fixture: true },
++        });
++        scan.assertStatus(200);
++        assert.equal(scan.body().data.state, "ready");
+ 
+-        const clean = await client.post(`${ADMIN}/media/${media.id}/security-scan`).withGuard("api").loginAs(user).json({ scanner: "phase8-test-scanner", scanner_ref: randomUUID(), verdict: "clean", content_hash: "a".repeat(64), evidence: { fixture: true } });
+-        clean.assertStatus(200);
+-        assert.equal(clean.body().data.safety_state, "clean");
++        const stillBlocked = await client.post(`${ADMIN}/media/${media.id}/publishable`).withGuard("api").loginAs(user);
++        stillBlocked.assertStatus(409);
+ 
++        const rights = await client.post(`${ADMIN}/media/${media.id}/rights`).withGuard("api").loginAs(user).json({
++            rights_basis: "owned", consent_confirmed: true, evidence: { fixture: true },
++        });
++        rights.assertStatus(201);
+         const publishable = await client.post(`${ADMIN}/media/${media.id}/publishable`).withGuard("api").loginAs(user);
+         publishable.assertStatus(200);
+         assert.equal(publishable.body().data.state, "publishable");
