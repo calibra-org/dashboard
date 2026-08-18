@@ -87,6 +87,21 @@ interface VariantRow {
     payload: unknown;
 }
 
+interface AssignmentData {
+    assigned: boolean;
+    reason?: string;
+    assignment_id?: number;
+    experiment_key?: string;
+    variant_key?: string;
+    variant_name?: string;
+    payload?: Record<string, unknown>;
+    sticky?: boolean;
+}
+
+interface AssignmentResponse {
+    data: AssignmentData;
+}
+
 const TRANSITIONS: Record<string, readonly string[]> = {
     draft: ["review", "archived"],
     review: ["scheduled", "running", "draft", "archived"],
@@ -364,7 +379,7 @@ export class Phase17ExperimentationService {
         return this.show(experimentId);
     }
 
-    async assign(input: { experiment_key: string; subject_type: string; subject_key: string }) {
+    async assign(input: { experiment_key: string; subject_type: string; subject_key: string }): Promise<AssignmentResponse> {
         const trx = currentTrx();
         const experiment = (await trx
             .from("experiments")
