@@ -8234,6 +8234,230 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/planning/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminPlanningOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/planning/forecast": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminPlanningForecast"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/planning/forecast/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminPlanningCategoryForecast"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/planning/forecast/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminPlanningForecastRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/planning/replenishment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminPlanningReplenishment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/planning/inventory-risks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminPlanningInventoryRisks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/planning/accuracy/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminPlanningAccuracyRefresh"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/planning/cycles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminPlanningCycles"];
+        put?: never;
+        post: operations["adminPlanningCycleCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/planning/cycles/{id}/transition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminPlanningCycleTransition"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/planning/scenarios": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminPlanningScenarios"];
+        put?: never;
+        post: operations["adminPlanningScenarioCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/planning/scenarios/{id}/result": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminPlanningScenarioResult"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/planning/overrides": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminPlanningOverrides"];
+        put?: never;
+        post: operations["adminPlanningOverrideCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/planning/overrides/{id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminPlanningOverrideReview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/planning/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminPlanningHealth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -11456,6 +11680,213 @@ export interface components {
             };
             policyDigest?: string | null;
         };
+        PlanningRun: {
+            id: number;
+            model_code: string;
+            model_version: string;
+            history_days: number;
+            horizon_days: number;
+            review_period_days: number;
+            default_lead_time_days?: number | null;
+            service_level_target: number;
+            data_cutoff_at: string;
+            source_freshness_at?: string | null;
+            source_hash: string;
+            /** @enum {string} */
+            status: "running" | "completed" | "failed";
+            series_count: number;
+            point_count: number;
+            insufficient_series_count: number;
+            stockout_censored_days: number;
+            wape?: number | null;
+            bias?: number | null;
+            interval_coverage?: number | null;
+            accuracy_evaluated_days: number;
+            accuracy_censored_points?: number;
+            model_parameters: {
+                [key: string]: unknown;
+            };
+            dependency_state: {
+                [key: string]: unknown;
+            };
+            failure_reason?: string | null;
+            created_at?: string;
+            updated_at?: string;
+        };
+        PlanningForecastPoint: {
+            id: number;
+            /** Format: date */
+            date: string;
+            p10: number;
+            p50: number;
+            p90: number;
+            effective_p50: number;
+            actual?: number | null;
+            actual_observed_at?: string | null;
+            actual_censored?: boolean;
+            reason_codes: string[];
+            evidence: {
+                [key: string]: unknown;
+            };
+        };
+        PlanningForecastSeries: {
+            product_id?: number | null;
+            variation_id?: number | null;
+            inventory_item_id?: number | null;
+            location_id?: number | null;
+            location_key: string;
+            sku?: string | null;
+            name: string;
+            /** @enum {string} */
+            quality: "ready" | "limited_history" | "insufficient_data";
+            confidence: number;
+            points: components["schemas"]["PlanningForecastPoint"][];
+        };
+        PlanningForecastEnvelope: {
+            data: {
+                /** @enum {string} */
+                status: "ready" | "not_configured";
+                run: components["schemas"]["PlanningRun"] | null;
+                series: components["schemas"]["PlanningForecastSeries"][];
+            };
+        };
+        PlanningForecastRunInput: {
+            /** @default 84 */
+            history_days: number;
+            /** @default 28 */
+            horizon_days: number;
+            /** @default 7 */
+            review_period_days: number;
+            /** @description Null means no purchase quantity is invented. */
+            default_lead_time_days?: number | null;
+            /**
+             * @default 0.9
+             * @enum {number}
+             */
+            service_level_target: 0.9;
+        };
+        PlanningCategoryForecastEnvelope: {
+            data: {
+                /** @enum {string} */
+                status: "ready" | "not_configured";
+                run?: components["schemas"]["PlanningRun"] | null;
+                /** @enum {string} */
+                basis?: "same_versioned_forecast_points";
+                /** @enum {string} */
+                aggregation: "sum_of_sku_quantiles_not_joint_distribution";
+                /** @enum {string} */
+                classification_mode: "multi_label_taxonomy";
+                categories: {
+                    category_id?: number | null;
+                    name: string;
+                    slug?: string | null;
+                    points: {
+                        /** Format: date */
+                        date: string;
+                        p10: number;
+                        p50: number;
+                        p90: number;
+                        effective_p50: number;
+                        actual?: number | null;
+                        series_count: number;
+                    }[];
+                }[];
+            };
+        };
+        PlanningReplenishmentItem: {
+            id: number;
+            /** @enum {string} */
+            status: "ready" | "needs_input" | "not_managed" | "blocked";
+            location_key: string;
+            sku?: string | null;
+            name: string;
+            on_hand?: number | null;
+            suggested_quantity?: number | null;
+            daily_p50: number;
+            daily_p90: number;
+            safety_stock?: number | null;
+            reorder_point?: number | null;
+            target_stock?: number | null;
+            lead_time_days?: number | null;
+            review_period_days: number;
+            service_level_target: number;
+            /** @enum {string} */
+            economics_status: "available_not_applied";
+            /** @enum {string} */
+            execution_boundary: "phase14_procurement_only";
+            reason_codes: string[];
+            evidence: {
+                [key: string]: unknown;
+            };
+        } & {
+            [key: string]: unknown;
+        };
+        PlanningReplenishmentEnvelope: {
+            data: {
+                status: string;
+                run_id?: number | null;
+                economics_status?: string;
+                execution_boundary?: string;
+                items: components["schemas"]["PlanningReplenishmentItem"][];
+            };
+        };
+        PlanningRiskEnvelope: {
+            data: {
+                status: string;
+                run_id?: number | null;
+                items: (components["schemas"]["PlanningReplenishmentItem"] & {
+                    /** @enum {string} */
+                    risk: "high" | "medium" | "low" | "unavailable";
+                    reason_code: string;
+                })[];
+            };
+        };
+        PlanningOverviewEnvelope: {
+            data: {
+                [key: string]: unknown;
+            };
+        };
+        PlanningHealthEnvelope: {
+            data: {
+                [key: string]: unknown;
+            };
+        };
+        PlanningAccuracyRefreshInput: {
+            run_id?: number | null;
+        };
+        PlanningCycleCreateInput: {
+            title: string;
+            forecast_run_id?: number;
+        };
+        PlanningCycleTransitionInput: {
+            /** @enum {string} */
+            status: "data_ready" | "forecasted" | "under_review" | "approved" | "published" | "superseded" | "cancelled";
+            expected_version: number;
+            note?: string;
+        };
+        PlanningScenarioCreateInput: {
+            title: string;
+            base_forecast_run_id?: number;
+            demand_multiplier: number;
+            lead_time_days?: number | null;
+            /** @default 7 */
+            review_period_days: number;
+            /** @description Retained for future economics integration; not optimized until Phase 12 is landed. */
+            capital_limit_minor?: number;
+            notes?: string;
+        };
+        PlanningOverrideCreateInput: {
+            forecast_point_id: number;
+            override_quantity: number;
+            reason: string;
+            evidence?: {
+                [key: string]: unknown;
+            };
+        };
+        PlanningOverrideReviewInput: {
+            /** @enum {string} */
+            decision: "approved" | "rejected";
+        };
     };
     responses: {
         /** @description Unauthorized (401) — the request did not include a valid bearer token, or the token has been revoked. */
@@ -11543,6 +11974,8 @@ export interface components {
         GovernanceApprovalReference: string;
         EconomicsId: number;
         IdempotencyKey: string;
+        PlanningRunIdQuery: number;
+        PlanningId: number;
     };
     requestBodies: never;
     headers: never;
@@ -25062,6 +25495,471 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    adminPlanningOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Planning control-tower summary */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanningOverviewEnvelope"];
+                };
+            };
+        };
+    };
+    adminPlanningForecast: {
+        parameters: {
+            query?: {
+                run_id?: components["parameters"]["PlanningRunIdQuery"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Versioned SKU/location forecast with P10/P50/P90 and attached actuals */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanningForecastEnvelope"];
+                };
+            };
+            /** @description Forecast run not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPlanningCategoryForecast: {
+        parameters: {
+            query?: {
+                run_id?: components["parameters"]["PlanningRunIdQuery"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Category projection derived from the same versioned forecast points */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanningCategoryForecastEnvelope"];
+                };
+            };
+            /** @description Forecast run not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPlanningForecastRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanningForecastRunInput"];
+            };
+        };
+        responses: {
+            /** @description Forecast run completed and persisted */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanningForecastEnvelope"];
+                };
+            };
+            /** @description Invalid planning parameters */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPlanningReplenishment: {
+        parameters: {
+            query?: {
+                run_id?: components["parameters"]["PlanningRunIdQuery"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Explainable replenishment recommendations; never a purchase-order execution */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanningReplenishmentEnvelope"];
+                };
+            };
+        };
+    };
+    adminPlanningInventoryRisks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Shortage and excess candidates derived from replenishment policy */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanningRiskEnvelope"];
+                };
+            };
+        };
+    };
+    adminPlanningAccuracyRefresh: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PlanningAccuracyRefreshInput"];
+            };
+        };
+        responses: {
+            /** @description Elapsed forecast windows joined to actual demand and aggregate accuracy recomputed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forecast run not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPlanningCycles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Planning cycles */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPlanningCycleCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanningCycleCreateInput"];
+            };
+        };
+        responses: {
+            /** @description Planning cycle created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Completed forecast required */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid cycle input */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPlanningCycleTransition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["PlanningId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanningCycleTransitionInput"];
+            };
+        };
+        responses: {
+            /** @description Cycle transitioned and approval ledger appended when applicable */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Optimistic version conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid lifecycle transition */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPlanningScenarios: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What-if scenarios */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPlanningScenarioCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanningScenarioCreateInput"];
+            };
+        };
+        responses: {
+            /** @description Scenario created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Completed forecast required */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid scenario input */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPlanningScenarioResult: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["PlanningId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Scenario demand totals with explicit economics/procurement dependency status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Scenario not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPlanningOverrides: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Forecast overrides and review state */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPlanningOverrideCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanningOverrideCreateInput"];
+            };
+        };
+        responses: {
+            /** @description Pending override created without mutating the source forecast point */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forecast point not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid override input */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPlanningOverrideReview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["PlanningId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanningOverrideReviewInput"];
+            };
+        };
+        responses: {
+            /** @description Pending override approved or rejected */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Override already reviewed */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid review decision */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPlanningHealth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Data coverage, model registry and dependency readiness */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanningHealthEnvelope"];
+                };
             };
         };
     };
