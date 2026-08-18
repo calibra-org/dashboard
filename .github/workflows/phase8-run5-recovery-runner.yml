@@ -30,7 +30,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Fetch locked Run3 recovery payload
+      - name: Fetch and verify locked Run3 recovery payload
         shell: bash
         run: |
           set -euo pipefail
@@ -41,8 +41,17 @@ jobs:
             git show "$src:.phase8/materialize/part-$n" >> /tmp/phase8-run3.patch.gz.b64
           done
           tr -d '\r\n' < /tmp/phase8-run3.patch.gz.b64 | base64 -d > /tmp/phase8-run3.patch.gz
+          set +e
           gzip -dc /tmp/phase8-run3.patch.gz > /tmp/phase8-run3.patch
-          echo 'cfd53594431022b138352fddea3b091f0009de4f831ed3853500ed327ec9fef2  /tmp/phase8-run3.patch' | sha256sum -c -
+          gzip_rc=$?
+          set -e
+          echo "gzip_rc=$gzip_rc"
+          echo "decoded_patch_bytes=$(wc -c < /tmp/phase8-run3.patch)"
+          actual="$(sha256sum /tmp/phase8-run3.patch | awk '{print $1}')"
+          expected='cfd53594431022b138352fddea3b091f0009de4f831ed3853500ed327ec9fef2'
+          echo "expected=$expected"
+          echo "actual=$actual"
+          test "$actual" = "$expected"
           head -c 96 /tmp/phase8-run3.patch | strings || true
 
       - name: Apply Run3 base onto live main
