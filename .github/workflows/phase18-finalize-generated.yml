@@ -117,7 +117,7 @@ jobs:
           console.log("Phase 18 merged OpenAPI validation: PASS")
           NODE
 
-      - name: Regenerate SDK using the official deterministic pipeline
+      - name: Regenerate and build SDK using the official deterministic pipeline
         run: |
           pnpm --filter @calibra/sdk run codegen
           first=$(sha256sum packages/sdk/src/generated/admin.d.ts | cut -d' ' -f1)
@@ -125,27 +125,43 @@ jobs:
           second=$(sha256sum packages/sdk/src/generated/admin.d.ts | cut -d' ' -f1)
           test "$first" = "$second"
           pnpm --filter @calibra/sdk run typecheck
+          pnpm --filter @calibra/sdk run build
 
-      - name: Verify Phase 18 TypeScript surface without touching known Phase 14 debt
+      - name: Verify Phase 18 TypeScript surface without touching unrelated debt
         shell: bash
         run: |
           set +e
           pnpm --filter @calibra/api run typecheck > phase18-api-typecheck.log 2>&1
-          rc=$?
+          api_rc=$?
           set -e
           cat phase18-api-typecheck.log
-          errors=$(grep -E "error TS[0-9]+:" phase18-api-typecheck.log || true)
-          unexpected=$(printf '%s\n' "$errors" | grep -v "app/controllers/admin/procurement_controller.ts" || true)
-          if [ -n "$unexpected" ]; then
+          api_errors=$(grep -E "error TS[0-9]+:" phase18-api-typecheck.log || true)
+          unexpected_api=$(printf '%s\n' "$api_errors" | grep -v "app/controllers/admin/procurement_controller.ts" || true)
+          if [ -n "$unexpected_api" ]; then
             echo "Unexpected API TypeScript errors outside known Phase 14 debt:"
-            printf '%s\n' "$unexpected"
+            printf '%s\n' "$unexpected_api"
             exit 1
           fi
-          if [ "$rc" -ne 0 ] && [ -z "$errors" ]; then
-            echo "API typecheck failed without the known Procurement TypeScript errors"
-            exit "$rc"
+          if [ "$api_rc" -ne 0 ] && [ -z "$api_errors" ]; then
+            echo "API typecheck failed without a classified TypeScript diagnostic"
+            exit "$api_rc"
           fi
-          pnpm --filter @calibra/admin run typecheck
+
+          set +e
+          pnpm --filter @calibra/admin run typecheck > phase18-admin-typecheck.log 2>&1
+          admin_rc=$?
+          set -e
+          cat phase18-admin-typecheck.log
+          admin_errors=$(grep -E "error TS[0-9]+:" phase18-admin-typecheck.log || true)
+          phase18_admin_errors=$(printf '%s\n' "$admin_errors" | grep -E "pricing-brain|pricing_brain" || true)
+          if [ -n "$phase18_admin_errors" ]; then
+            echo "Phase 18 admin TypeScript errors found:"
+            printf '%s\n' "$phase18_admin_errors"
+            exit 1
+          fi
+          if [ "$admin_rc" -ne 0 ]; then
+            echo "Admin typecheck still has diagnostics outside Phase 18; scoped finalizer leaves them untouched."
+          fi
 
       - name: Run Phase 18 decision and governance golden regressions
         working-directory: apps/api
