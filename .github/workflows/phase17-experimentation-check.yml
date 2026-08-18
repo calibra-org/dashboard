@@ -32,7 +32,9 @@ jobs:
       - run: node scripts/verify-phase17-experimentation-integration.mjs
       - name: Typecheck Phase 17 API surface
         run: pnpm --filter @calibra/api exec tsc --noEmit -p tsconfig.phase17.json
-      - name: Typecheck admin with workspace dependencies
-        run: pnpm exec turbo run typecheck --filter=@calibra/admin
+      - name: Build admin SDK dependency
+        run: pnpm --filter @calibra/sdk build
+      - name: Typecheck Phase 17 admin surface
+        run: pnpm --filter @calibra/admin exec tsc --noEmit -p tsconfig.phase17.json
       - run: pnpm --filter @calibra/api test -- --files "tests/unit/experimentation/phase17_statistics.spec.ts"
       - run: pnpm --filter @calibra/api test -- --files "tests/functional/admin/phase17_experimentation.spec.ts"
