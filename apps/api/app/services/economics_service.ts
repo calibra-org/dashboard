@@ -144,7 +144,7 @@ async function activePolicy(trx: TransactionClientContract, currency: string, ef
 async function layerConsumed(trx: TransactionClientContract, layerId: number): Promise<number> {
     const row = await trx
         .from("economic_line_cost_snapshots as s")
-        .crossJoin(trx.raw("jsonb_array_elements(s.layer_breakdown) AS elem"))
+        .joinRaw("CROSS JOIN jsonb_array_elements(s.layer_breakdown) AS elem")
         .whereRaw("(elem->>'layer_id')::bigint = ?", [layerId])
         .whereNot("s.quality", "incomplete")
         .sum(trx.raw("COALESCE((elem->>'quantity')::int, 0) AS consumed"))
@@ -164,17 +164,14 @@ async function resolveLineCost(
     }
     const lockKey = Number(line.variation_id ?? line.product_id) % 2147483647;
     await trx.rawQuery("SELECT pg_advisory_xact_lock(?, ?)", [Number(currentTenantId()) % 2147483647, lockKey]);
-    const layers = await trx
+    const layersQuery = trx
         .from("economic_cost_layers")
         .where("product_id", Number(line.product_id))
         .where("currency", currency)
-        .where("effective_at", "<=", effectiveAt)
-        .modify((q) => {
-            if (line.variation_id) q.where("variation_id", Number(line.variation_id));
-            else q.whereNull("variation_id");
-        })
-        .orderBy("effective_at", "asc")
-        .orderBy("id", "asc");
+        .where("effective_at", "<=", effectiveAt);
+    if (line.variation_id) layersQuery.where("variation_id", Number(line.variation_id));
+    else layersQuery.whereNull("variation_id");
+    const layers = await layersQuery.orderBy("effective_at", "asc").orderBy("id", "asc");
     if (layers.length === 0) return { quality: "incomplete" as const, unitCostMinor: null, totalCostMinor: null, breakdown: [] as any[] };
 
     const candidates: Array<{ row: any; available: number; unit: number | null }> = [];
