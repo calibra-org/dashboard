@@ -14,6 +14,8 @@
         "overview": "Overview",
         "catalog": "Catalog",
         "sales": "Sales",
+        "finance": "Finance & Economics",
+        "economics": "Profitability, cash & capital",
         "customersSection": "Customers",
         "configuration": "Configuration",
         "dashboard": "Dashboard",
@@ -3824,6 +3826,8 @@
         "subtitle": "Sales trends and product performance.",
         "tabs": {
             "sales": "Sales",
+        "finance": "Finance & Economics",
+        "economics": "Profitability, cash & capital",
             "topSellers": "Top sellers"
         },
         "sales": {

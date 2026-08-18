@@ -28,7 +28,8 @@
         "spin": "node scripts/spin.mjs",
         "test": "turbo run test",
         "typecheck": "turbo run typecheck",
-        "verify:phase10": "node scripts/verify-phase10-decision-intelligence-integration.mjs"
+        "verify:phase10": "node scripts/verify-phase10-decision-intelligence-integration.mjs",
+        "verify:phase12": "node scripts/verify-phase12-economics-integration.mjs"
     },
     "devDependencies": {
         "@biomejs/biome": "catalog:",

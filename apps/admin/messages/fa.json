@@ -14,6 +14,8 @@
         "overview": "نمای کلی",
         "catalog": "کاتالوگ",
         "sales": "فروش",
+        "finance": "مالی و اقتصاد",
+        "economics": "سودآوری، نقد و سرمایه",
         "customersSection": "مشتری‌ها",
         "configuration": "پیکربندی",
         "dashboard": "داشبورد",
@@ -3824,6 +3826,8 @@
         "subtitle": "روند فروش و عملکرد محصولات.",
         "tabs": {
             "sales": "فروش",
+        "finance": "مالی و اقتصاد",
+        "economics": "سودآوری، نقد و سرمایه",
             "topSellers": "پرفروش‌ترین‌ها"
         },
         "sales": {

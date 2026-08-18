@@ -55,7 +55,7 @@ interface NavItem {
 }
 
 interface NavGroup {
-    titleKey: "overview" | "catalog" | "sales" | "analytics" | "customersSection" | "configuration";
+    titleKey: "overview" | "catalog" | "sales" | "analytics" | "finance" | "customersSection" | "configuration";
     items: NavItem[];
 }
 
@@ -97,6 +97,10 @@ const groups: NavGroup[] = [
             { href: "/analytics/stock", labelKey: "analyticsStock", icon: Boxes },
             { href: "/analytics/decision-intelligence", label: "هوش تصمیم‌گیری", icon: Sparkles },
         ],
+    },
+    {
+        titleKey: "finance",
+        items: [{ href: "/economics", labelKey: "economics", icon: Wallet }],
     },
     {
         titleKey: "customersSection",
