@@ -1,0 +1,73 @@
+name: Phase 8 Run5 Recovery Runner
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/phase8-run5-recovery-runner.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: read
+  actions: read
+  checks: read
+
+concurrency:
+  group: phase8-run5-recovery
+  cancel-in-progress: false
+
+jobs:
+  recover-run3-base:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout live main with full history
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Fetch locked Run3 recovery payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin '+refs/heads/*:refs/remotes/origin/*'
+          src='origin/agent/phase8-social-commerce-community-os-v2'
+          : > /tmp/phase8-run3.patch.gz.b64
+          for n in 00 01 02 03 04 05; do
+            git show "$src:.phase8/materialize/part-$n" >> /tmp/phase8-run3.patch.gz.b64
+          done
+          tr -d '\r\n' < /tmp/phase8-run3.patch.gz.b64 | base64 -d > /tmp/phase8-run3.patch.gz
+          gzip -dc /tmp/phase8-run3.patch.gz > /tmp/phase8-run3.patch
+          echo 'cfd53594431022b138352fddea3b091f0009de4f831ed3853500ed327ec9fef2  /tmp/phase8-run3.patch' | sha256sum -c -
+          head -c 96 /tmp/phase8-run3.patch | strings || true
+
+      - name: Apply Run3 base onto live main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'calibra-dev'
+          git config user.email 'keshavarz20.com@gmail.com'
+          git switch -C agent/phase8-run5-final origin/main
+          if ! git apply --3way --index /tmp/phase8-run3.patch; then
+            echo 'PHASE8_RUN3_APPLY_CONFLICT=1'
+            git status --short || true
+            echo 'Unmerged paths:'
+            git diff --name-only --diff-filter=U || true
+            exit 1
+          fi
+          test -z "$(git ls-files -u)"
+          git diff --cached --check
+          node scripts/verify-phase8-social-commerce.mjs
+          git status --short
+
+      - name: Commit recovered Run3 base for Run5 hardening
+        shell: bash
+        run: |
+          set -euo pipefail
+          git commit -m 'chore(phase8): recover Run3 base on live main for Run5 hardening'
+          git push --force-with-lease origin HEAD:agent/phase8-run5-final
+          echo "RECOVERED_PHASE8_HEAD=$(git rev-parse HEAD)"
