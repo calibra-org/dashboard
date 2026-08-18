@@ -1,14 +1,17 @@
 import type { HttpContext } from "@adonisjs/core/http";
 
+import { simulatePricing, viewPricingBrain } from "#abilities/main";
 import { pricingBrainOverview, simulatePricingCandidate } from "#services/pricing_brain_service";
 import { simulatePricingCandidateValidator } from "#validators/admin/pricing_brain_validator";
 
 export default class AdminPricingBrainController {
-    async overview() {
+    async overview({ bouncer }: HttpContext) {
+        await bouncer.authorize(viewPricingBrain);
         return { data: await pricingBrainOverview() };
     }
 
-    async simulate({ request }: HttpContext) {
+    async simulate({ request, bouncer }: HttpContext) {
+        await bouncer.authorize(simulatePricing);
         const payload = await request.validateUsing(simulatePricingCandidateValidator);
         const result = await simulatePricingCandidate({
             referencePrice: payload.reference_price,
