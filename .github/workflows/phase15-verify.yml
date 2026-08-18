@@ -7,6 +7,9 @@ on:
             - ".github/workflows/phase15-verify.yml"
             - "apps/api/app/controllers/admin/customer_intelligence_controller.ts"
             - "apps/api/app/controllers/admin/customer_segments_controller.ts"
+            - "apps/api/app/controllers/admin/procurement_controller.ts"
+            - "apps/api/app/controllers/admin/trust_risk_controller.ts"
+            - "apps/api/app/controllers/checkout/submit_controller.ts"
             - "apps/api/app/jobs/refresh_customer_intelligence_job.ts"
             - "apps/api/app/services/customer_intelligence*.ts"
             - "apps/api/app/validators/admin/customer_intelligence_validator.ts"
@@ -17,6 +20,7 @@ on:
             - "apps/api/tests/unit/customer_intelligence.spec.ts"
             - "apps/admin/messages/customer-intelligence/**"
             - "apps/admin/src/app/**/customers/**"
+            - "apps/admin/src/lib/api.ts"
             - "apps/admin/src/lib/i18n/request.ts"
             - "apps/admin/src/lib/queries/customer-intelligence.ts"
             - "apps/admin/src/views/customers/**"
@@ -30,6 +34,9 @@ on:
             - ".github/workflows/phase15-verify.yml"
             - "apps/api/app/controllers/admin/customer_intelligence_controller.ts"
             - "apps/api/app/controllers/admin/customer_segments_controller.ts"
+            - "apps/api/app/controllers/admin/procurement_controller.ts"
+            - "apps/api/app/controllers/admin/trust_risk_controller.ts"
+            - "apps/api/app/controllers/checkout/submit_controller.ts"
             - "apps/api/app/jobs/refresh_customer_intelligence_job.ts"
             - "apps/api/app/services/customer_intelligence*.ts"
             - "apps/api/app/validators/admin/customer_intelligence_validator.ts"
@@ -40,6 +47,7 @@ on:
             - "apps/api/tests/unit/customer_intelligence.spec.ts"
             - "apps/admin/messages/customer-intelligence/**"
             - "apps/admin/src/app/**/customers/**"
+            - "apps/admin/src/lib/api.ts"
             - "apps/admin/src/lib/i18n/request.ts"
             - "apps/admin/src/lib/queries/customer-intelligence.ts"
             - "apps/admin/src/views/customers/**"
@@ -65,7 +73,30 @@ env:
 jobs:
     verify:
         runs-on: ubuntu-latest
-        timeout-minutes: 20
+        timeout-minutes: 25
+        services:
+            postgres:
+                image: postgres:17-alpine
+                env:
+                    POSTGRES_USER: calibra
+                    POSTGRES_PASSWORD: calibra
+                    POSTGRES_DB: calibra
+                ports:
+                    - 5432:5432
+                options: >-
+                    --health-cmd "pg_isready -U calibra -d calibra"
+                    --health-interval 5s
+                    --health-timeout 5s
+                    --health-retries 10
+            redis:
+                image: redis:7-alpine
+                ports:
+                    - 6379:6379
+                options: >-
+                    --health-cmd "redis-cli ping"
+                    --health-interval 5s
+                    --health-timeout 3s
+                    --health-retries 10
         steps:
             - uses: actions/checkout@v4
             - uses: pnpm/action-setup@v4
@@ -92,6 +123,10 @@ jobs:
                   pnpm --filter @calibra/admin run typecheck
             - name: Build Admin production bundle
               run: pnpm --filter @calibra/admin run build
+            - name: Create canonical test database
+              env:
+                  PGPASSWORD: calibra
+              run: psql -h localhost -U calibra -d calibra -c "CREATE DATABASE calibra_test OWNER calibra;"
             - name: Run Phase 15 unit tests
               working-directory: apps/api
               run: pnpm test --files=tests/unit/customer_intelligence.spec.ts
@@ -100,6 +135,9 @@ jobs:
                   pnpm exec biome check
                   apps/api/app/controllers/admin/customer_intelligence_controller.ts
                   apps/api/app/controllers/admin/customer_segments_controller.ts
+                  apps/api/app/controllers/admin/procurement_controller.ts
+                  apps/api/app/controllers/admin/trust_risk_controller.ts
+                  apps/api/app/controllers/checkout/submit_controller.ts
                   apps/api/app/jobs/refresh_customer_intelligence_job.ts
                   apps/api/app/services/customer_intelligence_eligibility_service.ts
                   apps/api/app/services/customer_intelligence_segments_service.ts
@@ -109,6 +147,7 @@ jobs:
                   apps/api/start/routes/admin_customer_intelligence.ts
                   apps/api/start/routes/admin_customer_segments.ts
                   apps/api/tests/unit/customer_intelligence.spec.ts
+                  apps/admin/src/lib/api.ts
                   apps/admin/src/lib/i18n/request.ts
                   apps/admin/src/lib/queries/customer-intelligence.ts
                   apps/admin/src/views/customers/customer-workspace-nav.tsx
