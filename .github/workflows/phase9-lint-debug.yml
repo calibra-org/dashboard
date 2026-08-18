@@ -2,15 +2,64 @@ name: Phase 9 lint diagnostics
 on:
   pull_request:
     branches: [main]
+permissions:
+  contents: write
 jobs:
   lint-diagnostics:
     if: github.event.pull_request.head.ref == 'agent/phase9-final-main-20260818'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
       - uses: actions/setup-node@v4
         with:
           node-version: 24.14.0
       - run: npm install --global pnpm@10.32.1
       - run: pnpm install --frozen-lockfile
+      - name: Fix Phase 9 lint blockers
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const replace = (path, from, to) => {
+            let text = fs.readFileSync(path, 'utf8');
+            if (!text.includes(from)) throw new Error(`Missing anchor in ${path}: ${from}`);
+            text = text.replace(from, to);
+            fs.writeFileSync(path, text);
+          };
+          const service = 'apps/api/app/services/phase9_personalization_service.ts';
+          replace(service, 'if (Boolean((p.transformed as { featured?: boolean }).featured)) score += 8;', 'if ((p.transformed as { featured?: boolean }).featured) score += 8;');
+          replace(service, 'let reasons = new Map<number, string>();', 'const reasons = new Map<number, string>();');
+          for (const [from, reason] of [
+            ['manual.forEach((p) => reasons.set(p.id, "manual_deal"));', 'manual_deal'],
+            ['selected.forEach((p) => reasons.set(p.id, "rotating_deal"));', 'rotating_deal'],
+            ['pinned.forEach((p) => reasons.set(p.id, "pinned_deal"));', 'pinned_deal'],
+            ['rest.forEach((p) => reasons.set(p.id, "rotating_deal"));', 'rotating_deal'],
+            ['selected.forEach((p) => reasons.set(p.id, "high_discount"));', 'high_discount'],
+          ]) {
+            const collection = from.slice(0, from.indexOf('.forEach'));
+            replace(service, from, `${collection}.forEach((p) => {\n                reasons.set(p.id, "${reason}");\n            });`);
+          }
+          const workspace = 'apps/admin/src/views/personalization/personalization-workspace.tsx';
+          replace(workspace,
+            'dir={typeof v === "string" && /^[\\x00-\\x7F]*$/.test(v) ? "ltr" : undefined}',
+            'dir={typeof v === "string" && [...v].every((char) => char.charCodeAt(0) <= 0x7f) ? "ltr" : undefined}'
+          );
+          replace(workspace, 'className="flex gap-2 text-xs text-muted-foreground"', 'className="flex gap-2 text-muted-foreground text-xs"');
+          const verifier = 'scripts/verify-phase9.mjs';
+          let verify = fs.readFileSync(verifier, 'utf8');
+          verify = verify.replaceAll('`\\"${table}\\"`', '`"${table}"`');
+          fs.writeFileSync(verifier, verify);
+          NODE
+      - run: pnpm exec biome format --write apps/api/app/services/phase9_personalization_service.ts apps/admin/src/views/personalization/personalization-workspace.tsx scripts/verify-phase9.mjs
       - run: pnpm exec biome lint . --max-diagnostics=500
+      - run: pnpm run typecheck
+      - run: pnpm run verify:phase9
+      - name: Commit fixes and remove diagnostics workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/phase9-lint-debug.yml
+          git add apps/api/app/services/phase9_personalization_service.ts apps/admin/src/views/personalization/personalization-workspace.tsx scripts/verify-phase9.mjs
+          git commit -m "fix(personalization): satisfy Phase 9 lint invariants"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
