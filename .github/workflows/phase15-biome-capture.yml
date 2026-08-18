@@ -1,0 +1,67 @@
+name: Phase 15 Biome Capture
+
+on:
+    push:
+        branches: [agent/phase15-customer-genome]
+
+permissions:
+    contents: read
+
+env:
+    NODE_VERSION: "24.14.0"
+    PNPM_VERSION: "10.32.1"
+    TURBO_TELEMETRY_DISABLED: 1
+    DO_NOT_TRACK: 1
+
+jobs:
+    capture:
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        steps:
+            - uses: actions/checkout@v4
+            - uses: pnpm/action-setup@v4
+              with:
+                  version: ${{ env.PNPM_VERSION }}
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: pnpm
+            - run: pnpm install --frozen-lockfile
+            - name: Apply canonical Biome fixes in runner workspace
+              run: >-
+                  pnpm exec biome check --write
+                  apps/api/app/controllers/admin/customer_intelligence_controller.ts
+                  apps/api/app/controllers/admin/customer_segments_controller.ts
+                  apps/api/app/controllers/admin/procurement_controller.ts
+                  apps/api/app/controllers/admin/trust_risk_controller.ts
+                  apps/api/app/controllers/checkout/submit_controller.ts
+                  apps/api/app/jobs/refresh_customer_intelligence_job.ts
+                  apps/api/app/services/customer_intelligence_eligibility_service.ts
+                  apps/api/app/services/customer_intelligence_segments_service.ts
+                  apps/api/app/services/customer_intelligence_service.ts
+                  apps/api/app/validators/admin/customer_intelligence_validator.ts
+                  apps/api/database/migrations/1768000000000_create_phase15_customer_intelligence.ts
+                  apps/api/start/routes/admin_customer_intelligence.ts
+                  apps/api/start/routes/admin_customer_segments.ts
+                  apps/api/tests/unit/customer_intelligence.spec.ts
+                  apps/admin/src/lib/api.ts
+                  apps/admin/src/lib/i18n/request.ts
+                  apps/admin/src/lib/queries/customer-intelligence.ts
+                  apps/admin/src/views/customers/customer-workspace-nav.tsx
+                  apps/admin/src/views/customers/cohorts/cohorts-lifecycle.tsx
+                  apps/admin/src/views/customers/detail/customers-detail.tsx
+                  apps/admin/src/views/customers/detail/intelligence-card.tsx
+                  apps/admin/src/views/customers/intelligence/intelligence-overview.tsx
+                  apps/admin/src/views/customers/segments/segment-studio.tsx
+                  apps/admin/messages/customer-intelligence/en.json
+                  apps/admin/messages/customer-intelligence/fa.json
+                  docs/api/reference/openapi/admin.customer-intelligence.v1.yaml
+                  docs/api/scripts/merge-admin-spec.js
+            - name: Capture patch
+              run: git diff --binary > phase15-biome.patch
+            - name: Upload patch
+              uses: actions/upload-artifact@v4
+              with:
+                  name: phase15-biome-patch
+                  path: phase15-biome.patch
+                  if-no-files-found: error
