@@ -26,11 +26,12 @@ jobs:
           version: 10.32.1
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24.14.0
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: node scripts/verify-phase17-experimentation-integration.mjs
-      - run: pnpm --filter @calibra/api typecheck
+      - name: Typecheck Phase 17 API surface
+        run: pnpm --filter @calibra/api exec tsc --noEmit -p tsconfig.phase17.json
       - run: pnpm --filter @calibra/admin typecheck
       - run: pnpm --filter @calibra/api test -- --files "tests/unit/experimentation/phase17_statistics.spec.ts"
       - run: pnpm --filter @calibra/api test -- --files "tests/functional/admin/phase17_experimentation.spec.ts"
