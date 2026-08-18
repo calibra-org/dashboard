@@ -1,0 +1,40 @@
+name: Phase9 SDK Sync
+
+on:
+  push:
+    branches: ["agent/phase9-final-main-20260818"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: phase9-sdk-sync
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/phase9-final-main-20260818
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+      - run: npm install --global pnpm@10.32.1
+      - run: pnpm install --frozen-lockfile
+      - name: Generate canonical SDK declarations
+        run: pnpm --filter @calibra/sdk run codegen
+      - name: Commit generated declarations and remove temporary workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/phase9-sdk-sync.yml
+          git add packages/sdk/src/generated/admin.d.ts packages/sdk/src/generated/storefront.d.ts packages/sdk/src/generated/platform.d.ts
+          git diff --cached --check
+          git commit -m "chore(personalization): sync Phase 9 generated SDK"
+          git push origin HEAD:agent/phase9-final-main-20260818
