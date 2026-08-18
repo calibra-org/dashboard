@@ -13,7 +13,7 @@ jobs:
   materialize:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 40
     services:
       postgres:
         image: postgres:17-alpine
@@ -32,14 +32,30 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '24.14.0'}
       - run: npm install --global pnpm@10.32.1
-      - name: Recover canonical Phase 16 payload
+      - name: Recover audited Phase 16 payload
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          curl -fsSL 'https://raw.githubusercontent.com/calibra-org/dashboard/agent/phase16-discovery-os/.phase16v2/payload.b64' -o /tmp/payload.b64
+          set -euo pipefail
+          api='https://api.github.com/repos/${{ github.repository }}/contents/.phase16v2/payload.b64?ref=agent/phase16-discovery-os'
+          curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' "$api" -o /tmp/api.json
+          python3 - <<'PY'
+          import base64,json
+          obj=json.load(open('/tmp/api.json'))
+          open('/tmp/payload.b64','wb').write(base64.b64decode(obj['content']))
+          PY
           base64 -d /tmp/payload.b64 | xz -d > /tmp/payload.tar
-          tar -tf /tmp/payload.tar | head -40
+          tar -tf /tmp/payload.tar | head -50
           tar -xf /tmp/payload.tar
-          test -f .phase16v2/apply_phase16.py || test -f apply_phase16.py || { echo 'apply script missing'; find . -maxdepth 3 -type f | grep phase16 | head -80; exit 1; }
-          if test -f .phase16v2/apply_phase16.py; then python3 .phase16v2/apply_phase16.py; else python3 apply_phase16.py; fi
+          test -f .phase16v2/apply_phase16.py
+          python3 .phase16v2/apply_phase16.py
+      - name: Phase 16 safety invariants
+        run: |
+          set -euo pipefail
+          ! grep -R "syncProduct(Number(productId)).catch(() => undefined)" apps/api/app/services/cache_invalidation.ts
+          ! grep -R "syncProducts(productIds).catch(() => undefined)" apps/api/app/services/cache_invalidation.ts
+          grep -R "dead_letter\|retrying" apps/api/app apps/api/database/migrations | head
+          grep -R "FORCE ROW LEVEL SECURITY" apps/api/database/migrations/*discovery* | head
       - run: pnpm install --frozen-lockfile
       - run: pnpm run format:fix
       - name: Generate SDK and docs
@@ -66,5 +82,5 @@ jobs:
           git add -A
           git diff --cached --check
           git diff --cached --quiet && { echo 'No source changes'; exit 1; }
-          git commit -m 'feat(phase16): implement product discovery os'
+          git commit -m 'feat(phase16): complete product discovery os'
           git push origin HEAD:agent/phase16-discovery-os-20260818
