@@ -58,10 +58,10 @@ function date(value: string | null | undefined, locale: string) {
 
 function metricTone(tone: "violet" | "sky" | "amber" | "emerald") {
     return {
-        violet: "from-violet-500/15 to-fuchsia-500/5 ring-violet-500/20",
-        sky: "from-sky-500/15 to-cyan-500/5 ring-sky-500/20",
-        amber: "from-amber-500/15 to-orange-500/5 ring-amber-500/20",
-        emerald: "from-emerald-500/15 to-teal-500/5 ring-emerald-500/20",
+        violet: "from-primary/15 to-accent/5 ring-primary/20",
+        sky: "from-info/15 to-info/5 ring-info/20",
+        amber: "from-warning/15 to-warning/5 ring-warning/20",
+        emerald: "from-success/15 to-success/5 ring-success/20",
     }[tone];
 }
 
@@ -97,29 +97,29 @@ function MetricCard({
 function DependencyBanner({ economics, procurement, location }: { economics?: string; procurement?: string; location?: string }) {
     return (
         <div className="grid gap-3 lg:grid-cols-3">
-            <div className="rounded-2xl border border-amber-500/25 bg-amber-500/8 p-4">
+            <div className="rounded-2xl border border-warning/25 bg-warning/8 p-4">
                 <div className="flex items-center gap-2 font-semibold text-sm">
                     <ShieldCheck className="size-4" /> اقتصاد و حاشیه سود
                 </div>
                 <p className="mt-2 text-muted-foreground text-xs leading-5">
                     Phase 12 هنوز روی main فرود نیامده است. Cost/Margin بهینه‌سازی نمی‌شود و صفر به‌عنوان هزینه واقعی تفسیر نمی‌شود.
                 </p>
-                <code className="mt-2 block text-[11px] text-amber-700 dark:text-amber-300">
+                <code className="mt-2 block text-[11px] text-warning dark:text-warning">
                     {economics ?? "dependency_not_landed"}
                 </code>
             </div>
-            <div className="rounded-2xl border border-sky-500/25 bg-sky-500/8 p-4">
+            <div className="rounded-2xl border border-info/25 bg-info/8 p-4">
                 <div className="flex items-center gap-2 font-semibold text-sm">
                     <Package className="size-4" /> مرز اجرای تأمین
                 </div>
                 <p className="mt-2 text-muted-foreground text-xs leading-5">
                     این فاز فقط پیشنهاد قابل‌ممیزی می‌سازد. سفارش خرید، انتقال موجودی یا اجرای تأمین عمداً در Phase 14 انجام می‌شود.
                 </p>
-                <code className="mt-2 block text-[11px] text-sky-700 dark:text-sky-300">
+                <code className="mt-2 block text-[11px] text-info dark:text-info">
                     {procurement ?? "phase14_procurement_only"}
                 </code>
             </div>
-            <div className="rounded-2xl border border-violet-500/25 bg-violet-500/8 p-4">
+            <div className="rounded-2xl border border-primary/25 bg-primary/8 p-4">
                 <div className="flex items-center gap-2 font-semibold text-sm">
                     <Boxes className="size-4" /> ابعاد مکانی
                 </div>
@@ -127,7 +127,7 @@ function DependencyBanner({ economics, procurement, location }: { economics?: st
                     location_id فعلی حفظ شده ولی Warehouse Master رسمی نداریم. سری‌های چندمکانه بدون attribution واقعی به‌صورت
                     needs_input متوقف می‌شوند.
                 </p>
-                <code className="mt-2 block text-[11px] text-violet-700 dark:text-violet-300">
+                <code className="mt-2 block text-[11px] text-primary dark:text-primary">
                     {location ?? "location_id_advisory"}
                 </code>
             </div>
@@ -361,9 +361,9 @@ function ReplenishmentTable() {
                                         className={cn(
                                             "rounded-full px-2 py-1 text-[11px]",
                                             row.status === "ready"
-                                                ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                                                ? "bg-success/10 text-success dark:text-success"
                                                 : row.status === "needs_input"
-                                                  ? "bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                                                  ? "bg-warning/10 text-warning dark:text-warning"
                                                   : "bg-muted text-muted-foreground",
                                         )}
                                     >
@@ -412,11 +412,11 @@ function RiskTable() {
                             className={cn(
                                 "rounded-full px-2.5 py-1 font-bold text-[10px] uppercase",
                                 row.risk === "high"
-                                    ? "bg-rose-500/10 text-rose-700 dark:text-rose-300"
+                                    ? "bg-danger/10 text-danger dark:text-danger"
                                     : row.risk === "medium"
-                                      ? "bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                                      ? "bg-warning/10 text-warning dark:text-warning"
                                       : row.risk === "low"
-                                        ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                                        ? "bg-success/10 text-success dark:text-success"
                                         : "bg-muted text-muted-foreground",
                             )}
                         >
@@ -512,7 +512,7 @@ function CategoryPanel() {
                         <span className="text-muted-foreground">Taxonomy</span>
                         <code className="mt-1 block break-all">{query.data?.data.classification_mode ?? "—"}</code>
                     </div>
-                    <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-muted-foreground leading-5">
+                    <div className="rounded-xl border border-warning/20 bg-warning/5 p-3 text-muted-foreground leading-5">
                         محصول چنددسته‌ای در هر دسته خودش دیده می‌شود؛ این نمودار برای مقایسه دسته‌هاست، نه جمع کل بدون double-count.
                     </div>
                 </CardContent>
@@ -686,9 +686,9 @@ export function PlanningWorkspace() {
 
     return (
         <div dir="rtl" className="space-y-5 pb-12">
-            <section className="relative overflow-hidden rounded-3xl border bg-gradient-to-br from-violet-500/10 via-background to-sky-500/10 p-6 shadow-sm md:p-8">
-                <div className="pointer-events-none absolute -top-28 -left-24 size-72 rounded-full bg-fuchsia-500/10 blur-3xl" />
-                <div className="pointer-events-none absolute -right-16 -bottom-32 size-80 rounded-full bg-cyan-500/10 blur-3xl" />
+            <section className="relative overflow-hidden rounded-3xl border bg-gradient-to-br from-primary/10 via-background to-info/10 p-6 shadow-sm md:p-8">
+                <div className="pointer-events-none absolute -top-28 -left-24 size-72 rounded-full bg-accent/10 blur-3xl" />
+                <div className="pointer-events-none absolute -right-16 -bottom-32 size-80 rounded-full bg-info/10 blur-3xl" />
                 <div className="relative flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
                     <div className="max-w-3xl">
                         <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -699,7 +699,7 @@ export function PlanningWorkspace() {
                                 Demand & Supply Planning OS
                             </span>
                             {run ? (
-                                <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-[10px] text-emerald-700 dark:text-emerald-300">
+                                <span className="rounded-full bg-success/10 px-2.5 py-1 text-[10px] text-success dark:text-success">
                                     {run.model_code} · v{run.model_version}
                                 </span>
                             ) : null}
@@ -817,10 +817,10 @@ export function PlanningWorkspace() {
                                             className={cn(
                                                 "rounded-full px-2 py-1",
                                                 item.quality === "ready"
-                                                    ? "bg-emerald-500/10 text-emerald-700"
+                                                    ? "bg-success/10 text-success"
                                                     : item.quality === "limited_history"
-                                                      ? "bg-amber-500/10 text-amber-700"
-                                                      : "bg-rose-500/10 text-rose-700",
+                                                      ? "bg-warning/10 text-warning"
+                                                      : "bg-danger/10 text-danger",
                                             )}
                                         >
                                             {item.quality}
