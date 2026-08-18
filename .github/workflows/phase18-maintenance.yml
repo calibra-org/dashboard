@@ -23,30 +23,8 @@ jobs:
       - run: npm install --global pnpm@10.32.1
       - run: pnpm install --frozen-lockfile
       - name: Add one canonical Phase 18 sidebar entry
-        run: |
-          node --input-type=module <<'NODE'
-          import fs from 'node:fs';
-          const path = 'apps/admin/src/components/Sidebar.tsx';
-          let source = fs.readFileSync(path, 'utf8');
-          const before = `    {
-              titleKey: "finance",
-              items: [{ href: "/economics", labelKey: "economics", icon: Wallet }],
-          },`;
-          const after = `    {
-              titleKey: "finance",
-              items: [
-                  { href: "/economics", labelKey: "economics", icon: Wallet },
-                  { href: "/pricing-brain", label: "مغز قیمت‌گذاری", icon: Sparkles },
-              ],
-          },`;
-          if (source.includes(after)) {
-              console.log('Phase 18 sidebar entry already present.');
-          } else {
-              if (!source.includes(before)) throw new Error('Phase 18 sidebar anchor changed; refusing broad edit.');
-              source = source.replace(before, after);
-              fs.writeFileSync(path, source);
-          }
-          NODE
+        run: >-
+          node -e 'const fs=require("node:fs"); const p="apps/admin/src/components/Sidebar.tsx"; let s=fs.readFileSync(p,"utf8"); const old="items: [{ href: \"/economics\", labelKey: \"economics\", icon: Wallet }],"; const next="items: [\n            { href: \"/economics\", labelKey: \"economics\", icon: Wallet },\n            { href: \"/pricing-brain\", label: \"مغز قیمت‌گذاری\", icon: Sparkles },\n        ],"; if(!s.includes(next)){if(!s.includes(old)) throw new Error("Phase18 sidebar anchor changed"); s=s.replace(old,next); fs.writeFileSync(p,s)}'
       - name: Format only Phase 18 source files
         run: |
           pnpm exec biome format --write \
