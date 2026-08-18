@@ -93,7 +93,13 @@ export default class Phase9GovernanceService {
         return currentTrx().from("personalization_rollouts").orderBy("created_at", "desc");
     }
 
-    async activate(kind: "policy" | "model", keyValue: string, versionValue: string, percentage: number, actorUserId?: number | null) {
+    async activate(
+        kind: "policy" | "model",
+        keyValue: string,
+        versionValue: string,
+        percentage: number,
+        actorUserId?: number | null,
+    ) {
         const key = registryKey(keyValue);
         const percentageSafe = Math.max(0, Math.min(100, Math.round(percentage)));
         const trx = currentTrx();
@@ -108,15 +114,23 @@ export default class Phase9GovernanceService {
         if (!target) throw new Phase9ValidationError("registry_version_not_found");
         const active = await trx.from(table).where(keyColumn, key).where("status", "active").first();
         await trx.from(table).where(keyColumn, key).where("status", "active").update({ status: "retired" });
-        await trx.from(table).where("id", target.id).update({
-            status: "active",
-            activated_at: DateTime.utc().toSQL(),
-            ...(kind === "model" ? { rollout_percent: percentageSafe } : {}),
-        });
-        await trx.from("personalization_rollouts").where("kind", kind).where("registry_key", key).where("status", "active").update({
-            status: "completed",
-            ended_at: DateTime.utc().toSQL(),
-        });
+        await trx
+            .from(table)
+            .where("id", target.id)
+            .update({
+                status: "active",
+                activated_at: DateTime.utc().toSQL(),
+                ...(kind === "model" ? { rollout_percent: percentageSafe } : {}),
+            });
+        await trx
+            .from("personalization_rollouts")
+            .where("kind", kind)
+            .where("registry_key", key)
+            .where("status", "active")
+            .update({
+                status: "completed",
+                ended_at: DateTime.utc().toSQL(),
+            });
         await trx.table("personalization_rollouts").insert({
             tenant_id: currentTenantId(),
             kind,
@@ -148,15 +162,23 @@ export default class Phase9GovernanceService {
             .first();
         if (!previous) throw new Phase9ValidationError("rollback_version_not_found");
         await trx.from(table).where("id", active.id).update({ status: "retired" });
-        await trx.from(table).where("id", previous.id).update({
-            status: "active",
-            activated_at: DateTime.utc().toSQL(),
-            ...(kind === "model" ? { rollout_percent: 100 } : {}),
-        });
-        await trx.from("personalization_rollouts").where("kind", kind).where("registry_key", key).where("status", "active").update({
-            status: "rolled_back",
-            ended_at: DateTime.utc().toSQL(),
-        });
+        await trx
+            .from(table)
+            .where("id", previous.id)
+            .update({
+                status: "active",
+                activated_at: DateTime.utc().toSQL(),
+                ...(kind === "model" ? { rollout_percent: 100 } : {}),
+            });
+        await trx
+            .from("personalization_rollouts")
+            .where("kind", kind)
+            .where("registry_key", key)
+            .where("status", "active")
+            .update({
+                status: "rolled_back",
+                ended_at: DateTime.utc().toSQL(),
+            });
         await trx.table("personalization_rollouts").insert({
             tenant_id: currentTenantId(),
             kind,

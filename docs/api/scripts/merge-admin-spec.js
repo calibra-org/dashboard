@@ -12,6 +12,7 @@ const phase6 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase6.v1.json"
 const runtimeSync = JSON.parse(readFileSync(resolve(root, "dist/admin.runtime-sync.v1.json"), "utf8"));
 const completion = JSON.parse(readFileSync(resolve(root, "dist/admin.completion.v1.json"), "utf8"));
 const identity = JSON.parse(readFileSync(resolve(root, "dist/admin.identity.v1.json"), "utf8"));
+const phase9 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase9.v1.json"), "utf8"));
 const phase10 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase10.v1.json"), "utf8"));
 const phase11 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase11.v1.json"), "utf8"));
 const phase12 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase12.v1.json"), "utf8"));
@@ -92,6 +93,7 @@ for (const [overlaySource, namespace] of [
     [runtimeSync, "RuntimeSyncOverlay"],
     [completion, "CompletionOverlay"],
     [identity, "IdentityOverlay"],
+    [phase9, "Phase9Overlay"],
     [phase10, "Phase10Overlay"],
     [phase11, "Phase11GovernanceOverlay"],
     [phase12, "Phase12Overlay"],

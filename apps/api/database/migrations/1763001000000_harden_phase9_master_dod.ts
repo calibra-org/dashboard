@@ -21,7 +21,7 @@ export default class extends BaseSchema {
         });
         this.schema.raw(`ALTER TABLE deal_campaigns DROP CONSTRAINT IF EXISTS deal_campaigns_status_check`);
         this.schema.raw(
-            `ALTER TABLE deal_campaigns ADD CONSTRAINT deal_campaigns_status_check CHECK (status IN ('draft','scheduled','active','paused','cancelled','ended','expired','archived'))`,
+            `ALTER TABLE deal_campaigns ADD CONSTRAINT deal_campaigns_status_check CHECK (status IN ('draft','scheduled','preheat','active','paused','sold_out','cancelled','ended','expired','archived'))`,
         );
         this.schema.raw(
             `ALTER TABLE deal_campaigns ADD CONSTRAINT deal_campaigns_master_bounds_check CHECK (benefit_value >= 0 AND priority BETWEEN -100000 AND 100000 AND (max_applications IS NULL OR max_applications > 0) AND usage_count >= 0 AND (quantity_limit IS NULL OR quantity_limit > 0) AND (min_selling_price IS NULL OR min_selling_price >= 0) AND (max_discount_percent IS NULL OR max_discount_percent BETWEEN 0 AND 100))`,
@@ -94,7 +94,9 @@ export default class extends BaseSchema {
             table.jsonb("hidden_category_ids").notNullable().defaultTo(this.raw("'[]'::jsonb"));
             table.jsonb("show_less_topics").notNullable().defaultTo(this.raw("'[]'::jsonb"));
             table.timestamps(true, true);
-            table.unique(["tenant_id", "subject_type", "subject_id"], { indexName: "personalization_preferences_subject_unique" });
+            table.unique(["tenant_id", "subject_type", "subject_id"], {
+                indexName: "personalization_preferences_subject_unique",
+            });
         });
 
         this.schema.createTable("personalization_identity_merges", (table) => {
@@ -121,7 +123,13 @@ export default class extends BaseSchema {
             table.bigIncrements("id");
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
             table.uuid("reservation_id").notNullable();
-            table.bigInteger("campaign_id").unsigned().notNullable().references("id").inTable("deal_campaigns").onDelete("CASCADE");
+            table
+                .bigInteger("campaign_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("deal_campaigns")
+                .onDelete("CASCADE");
             table.bigInteger("product_id").unsigned().nullable().references("id").inTable("products").onDelete("SET NULL");
             table.bigInteger("order_id").unsigned().nullable().references("id").inTable("orders").onDelete("SET NULL");
             table.string("subject_type", 16).nullable();
@@ -140,7 +148,13 @@ export default class extends BaseSchema {
         this.schema.createTable("deal_redemptions", (table) => {
             table.bigIncrements("id");
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("campaign_id").unsigned().notNullable().references("id").inTable("deal_campaigns").onDelete("RESTRICT");
+            table
+                .bigInteger("campaign_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("deal_campaigns")
+                .onDelete("RESTRICT");
             table.uuid("reservation_id").nullable();
             table.bigInteger("order_id").unsigned().notNullable().references("id").inTable("orders").onDelete("RESTRICT");
             table.bigInteger("product_id").unsigned().nullable().references("id").inTable("products").onDelete("SET NULL");
@@ -154,12 +168,24 @@ export default class extends BaseSchema {
             table.index(["tenant_id", "campaign_id", "created_at"], "deal_redemptions_campaign_idx");
         });
 
-        this.schema.raw(`ALTER TABLE personalization_preferences ADD CONSTRAINT personalization_preferences_subject_type_check CHECK (subject_type IN ('visitor','customer'))`);
-        this.schema.raw(`ALTER TABLE personalization_policies ADD CONSTRAINT personalization_policies_status_check CHECK (status IN ('draft','active','retired'))`);
-        this.schema.raw(`ALTER TABLE personalization_models ADD CONSTRAINT personalization_models_status_check CHECK (status IN ('draft','active','retired') AND rollout_percent BETWEEN 0 AND 100)`);
-        this.schema.raw(`ALTER TABLE personalization_rollouts ADD CONSTRAINT personalization_rollouts_check CHECK (kind IN ('policy','model') AND status IN ('draft','active','rolled_back','completed') AND percentage BETWEEN 0 AND 100)`);
-        this.schema.raw(`ALTER TABLE deal_reservations ADD CONSTRAINT deal_reservations_check CHECK (quantity > 0 AND status IN ('reserved','consumed','released','expired') AND (subject_type IS NULL OR subject_type IN ('visitor','customer')))`);
-        this.schema.raw(`ALTER TABLE deal_redemptions ADD CONSTRAINT deal_redemptions_check CHECK (quantity > 0 AND benefit_minor >= 0 AND campaign_version >= 1)`);
+        this.schema.raw(
+            `ALTER TABLE personalization_preferences ADD CONSTRAINT personalization_preferences_subject_type_check CHECK (subject_type IN ('visitor','customer'))`,
+        );
+        this.schema.raw(
+            `ALTER TABLE personalization_policies ADD CONSTRAINT personalization_policies_status_check CHECK (status IN ('draft','active','retired'))`,
+        );
+        this.schema.raw(
+            `ALTER TABLE personalization_models ADD CONSTRAINT personalization_models_status_check CHECK (status IN ('draft','active','retired') AND rollout_percent BETWEEN 0 AND 100)`,
+        );
+        this.schema.raw(
+            `ALTER TABLE personalization_rollouts ADD CONSTRAINT personalization_rollouts_check CHECK (kind IN ('policy','model') AND status IN ('draft','active','rolled_back','completed') AND percentage BETWEEN 0 AND 100)`,
+        );
+        this.schema.raw(
+            `ALTER TABLE deal_reservations ADD CONSTRAINT deal_reservations_check CHECK (quantity > 0 AND status IN ('reserved','consumed','released','expired') AND (subject_type IS NULL OR subject_type IN ('visitor','customer')))`,
+        );
+        this.schema.raw(
+            `ALTER TABLE deal_redemptions ADD CONSTRAINT deal_redemptions_check CHECK (quantity > 0 AND benefit_minor >= 0 AND campaign_version >= 1)`,
+        );
 
         for (const table of [
             "personalization_feature_registry",
@@ -195,7 +221,9 @@ export default class extends BaseSchema {
         }
         this.schema.raw(`ALTER TABLE deal_campaigns DROP CONSTRAINT IF EXISTS deal_campaigns_master_bounds_check`);
         this.schema.raw(`ALTER TABLE deal_campaigns DROP CONSTRAINT IF EXISTS deal_campaigns_status_check`);
-        this.schema.raw(`ALTER TABLE deal_campaigns ADD CONSTRAINT deal_campaigns_status_check CHECK (status IN ('draft','scheduled','active','paused','expired','archived'))`);
+        this.schema.raw(
+            `ALTER TABLE deal_campaigns ADD CONSTRAINT deal_campaigns_status_check CHECK (status IN ('draft','scheduled','active','paused','expired','archived'))`,
+        );
         this.schema.alterTable("deal_campaigns", (table) => {
             for (const column of [
                 "deal_type",
@@ -211,7 +239,8 @@ export default class extends BaseSchema {
                 "policy_snapshot",
                 "cancelled_at",
                 "ended_at",
-            ]) table.dropColumn(column);
+            ])
+                table.dropColumn(column);
         });
     }
 }

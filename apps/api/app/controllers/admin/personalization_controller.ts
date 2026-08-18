@@ -12,17 +12,39 @@ export default class AdminPersonalizationController {
     private governance = new Phase9GovernanceService();
     private dealGuard = new Phase9DealGuardService();
 
-    async overview() { return { data: await this.service.overview() }; }
-    async health() { return { data: await this.service.health() }; }
-    async campaigns() { return { data: await this.service.listCampaigns() }; }
-    async settings() { return { data: await this.service.runtimeSettings() }; }
-    async placements() { return { data: await this.service.listPlacements() }; }
-    async events(ctx: HttpContext) { return { data: await this.service.recentEvents(Number(ctx.request.input("limit", 50))) }; }
-    async consents(ctx: HttpContext) { return { data: await this.service.recentConsents(Number(ctx.request.input("limit", 50))) }; }
-    async features() { return { data: await this.governance.listFeatures() }; }
-    async policies() { return { data: await this.governance.listPolicies() }; }
-    async models() { return { data: await this.governance.listModels() }; }
-    async rollouts() { return { data: await this.governance.listRollouts() }; }
+    async overview() {
+        return { data: await this.service.overview() };
+    }
+    async health() {
+        return { data: await this.service.health() };
+    }
+    async campaigns() {
+        return { data: await this.service.listCampaigns() };
+    }
+    async settings() {
+        return { data: await this.service.runtimeSettings() };
+    }
+    async placements() {
+        return { data: await this.service.listPlacements() };
+    }
+    async events(ctx: HttpContext) {
+        return { data: await this.service.recentEvents(Number(ctx.request.input("limit", 50))) };
+    }
+    async consents(ctx: HttpContext) {
+        return { data: await this.service.recentConsents(Number(ctx.request.input("limit", 50))) };
+    }
+    async features() {
+        return { data: await this.governance.listFeatures() };
+    }
+    async policies() {
+        return { data: await this.governance.listPolicies() };
+    }
+    async models() {
+        return { data: await this.governance.listModels() };
+    }
+    async rollouts() {
+        return { data: await this.governance.listRollouts() };
+    }
 
     async createCampaign(ctx: HttpContext) {
         try {
@@ -30,9 +52,18 @@ export default class AdminPersonalizationController {
                 ctx.request.body() as Parameters<Phase9PersonalizationService["createCampaign"]>[0],
                 actorId(ctx),
             );
-            await auditPhase9("phase9.campaign.create", "deal_campaign", Number(data?.id ?? 0), actorId(ctx), { name: data?.name }, ctx.request.ip());
+            await auditPhase9(
+                "phase9.campaign.create",
+                "deal_campaign",
+                Number(data?.id ?? 0),
+                actorId(ctx),
+                { name: data?.name },
+                ctx.request.ip(),
+            );
             return ctx.response.status(201).json({ data });
-        } catch (error) { return this.handle(error, ctx); }
+        } catch (error) {
+            return this.handle(error, ctx);
+        }
     }
 
     async updateCampaign(ctx: HttpContext) {
@@ -43,9 +74,18 @@ export default class AdminPersonalizationController {
                 ctx.request.body() as Parameters<Phase9PersonalizationService["updateCampaign"]>[1],
             );
             if (!data) return ctx.response.status(404).json({ error: "campaign_not_found" });
-            await auditPhase9("phase9.campaign.update", "deal_campaign", id, actorId(ctx), { version: data.version }, ctx.request.ip());
+            await auditPhase9(
+                "phase9.campaign.update",
+                "deal_campaign",
+                id,
+                actorId(ctx),
+                { version: data.version },
+                ctx.request.ip(),
+            );
             return { data };
-        } catch (error) { return this.handle(error, ctx); }
+        } catch (error) {
+            return this.handle(error, ctx);
+        }
     }
 
     async publishCampaign(ctx: HttpContext) {
@@ -53,9 +93,18 @@ export default class AdminPersonalizationController {
             const id = positiveId(ctx.params.id);
             const data = await this.service.publishCampaign(id, optionalVersion(ctx.request.input("expected_version")));
             if (!data) return ctx.response.status(404).json({ error: "campaign_not_found" });
-            await auditPhase9("phase9.campaign.publish", "deal_campaign", id, actorId(ctx), { status: data.status, version: data.version }, ctx.request.ip());
+            await auditPhase9(
+                "phase9.campaign.publish",
+                "deal_campaign",
+                id,
+                actorId(ctx),
+                { status: data.status, version: data.version },
+                ctx.request.ip(),
+            );
             return { data };
-        } catch (error) { return this.handle(error, ctx); }
+        } catch (error) {
+            return this.handle(error, ctx);
+        }
     }
 
     async pauseCampaign(ctx: HttpContext) {
@@ -63,26 +112,55 @@ export default class AdminPersonalizationController {
             const id = positiveId(ctx.params.id);
             const data = await this.service.pauseCampaign(id, optionalVersion(ctx.request.input("expected_version")));
             if (!data) return ctx.response.status(404).json({ error: "campaign_not_found" });
-            await auditPhase9("phase9.campaign.pause", "deal_campaign", id, actorId(ctx), { version: data.version }, ctx.request.ip());
+            await auditPhase9(
+                "phase9.campaign.pause",
+                "deal_campaign",
+                id,
+                actorId(ctx),
+                { version: data.version },
+                ctx.request.ip(),
+            );
             return { data };
-        } catch (error) { return this.handle(error, ctx); }
+        } catch (error) {
+            return this.handle(error, ctx);
+        }
     }
 
     async transitionCampaign(ctx: HttpContext) {
         try {
             const id = positiveId(ctx.params.id);
             const target = String(ctx.params.target ?? "");
-            const data = await this.dealGuard.transitionCampaign(id, target, optionalVersion(ctx.request.input("expected_version")));
+            const data = await this.dealGuard.transitionCampaign(
+                id,
+                target,
+                optionalVersion(ctx.request.input("expected_version")),
+            );
             if (!data) return ctx.response.status(404).json({ error: "campaign_not_found" });
-            await auditPhase9("phase9.campaign.transition", "deal_campaign", id, actorId(ctx), { status: data.status, version: data.version }, ctx.request.ip());
+            await auditPhase9(
+                "phase9.campaign.transition",
+                "deal_campaign",
+                id,
+                actorId(ctx),
+                { status: data.status, version: data.version },
+                ctx.request.ip(),
+            );
             return { data };
-        } catch (error) { return this.handle(error, ctx); }
+        } catch (error) {
+            return this.handle(error, ctx);
+        }
     }
 
     async updateSettings(ctx: HttpContext) {
         const before = await this.service.runtimeSettings();
         const data = await this.service.updateRuntimeSettings(ctx.request.body());
-        await auditPhase9("phase9.settings.update", "personalization", null, actorId(ctx), { before, after: data }, ctx.request.ip());
+        await auditPhase9(
+            "phase9.settings.update",
+            "personalization",
+            null,
+            actorId(ctx),
+            { before, after: data },
+            ctx.request.ip(),
+        );
         return { data };
     }
 
@@ -91,38 +169,68 @@ export default class AdminPersonalizationController {
             const placement = String(ctx.params.placement ?? "").slice(0, 64);
             const data = await this.service.updatePlacement(placement, ctx.request.body());
             if (!data) return ctx.response.status(404).json({ error: "placement_not_found" });
-            await auditPhase9("phase9.placement.update", "placement", Number(data.id), actorId(ctx), { placement, version: data.version }, ctx.request.ip());
+            await auditPhase9(
+                "phase9.placement.update",
+                "placement",
+                Number(data.id),
+                actorId(ctx),
+                { placement, version: data.version },
+                ctx.request.ip(),
+            );
             return { data };
-        } catch (error) { return this.handle(error, ctx); }
+        } catch (error) {
+            return this.handle(error, ctx);
+        }
     }
 
     async upsertFeature(ctx: HttpContext) {
-        try { return { data: await this.governance.upsertFeature(ctx.request.body(), actorId(ctx)) }; }
-        catch (error) { return this.handle(error, ctx); }
+        try {
+            return { data: await this.governance.upsertFeature(ctx.request.body(), actorId(ctx)) };
+        } catch (error) {
+            return this.handle(error, ctx);
+        }
     }
 
     async createPolicy(ctx: HttpContext) {
-        try { return ctx.response.status(201).json({ data: await this.governance.createPolicy(ctx.request.body(), actorId(ctx)) }); }
-        catch (error) { return this.handle(error, ctx); }
+        try {
+            return ctx.response.status(201).json({ data: await this.governance.createPolicy(ctx.request.body(), actorId(ctx)) });
+        } catch (error) {
+            return this.handle(error, ctx);
+        }
     }
 
     async createModel(ctx: HttpContext) {
-        try { return ctx.response.status(201).json({ data: await this.governance.createModel(ctx.request.body(), actorId(ctx)) }); }
-        catch (error) { return this.handle(error, ctx); }
+        try {
+            return ctx.response.status(201).json({ data: await this.governance.createModel(ctx.request.body(), actorId(ctx)) });
+        } catch (error) {
+            return this.handle(error, ctx);
+        }
     }
 
     async activateRegistry(ctx: HttpContext) {
         try {
             const kind = registryKind(ctx.params.kind);
-            return { data: await this.governance.activate(kind, String(ctx.params.key), String(ctx.params.version), Number(ctx.request.input("percentage", 100)), actorId(ctx)) };
-        } catch (error) { return this.handle(error, ctx); }
+            return {
+                data: await this.governance.activate(
+                    kind,
+                    String(ctx.params.key),
+                    String(ctx.params.version),
+                    Number(ctx.request.input("percentage", 100)),
+                    actorId(ctx),
+                ),
+            };
+        } catch (error) {
+            return this.handle(error, ctx);
+        }
     }
 
     async rollbackRegistry(ctx: HttpContext) {
         try {
             const kind = registryKind(ctx.params.kind);
             return { data: await this.governance.rollback(kind, String(ctx.params.key), actorId(ctx)) };
-        } catch (error) { return this.handle(error, ctx); }
+        } catch (error) {
+            return this.handle(error, ctx);
+        }
     }
 
     async simulate(ctx: HttpContext) {
@@ -130,7 +238,9 @@ export default class AdminPersonalizationController {
             const body = ctx.request.body() as Record<string, unknown>;
             if (Array.isArray(body.items)) return { data: await this.dealGuard.simulateCommerce(body) };
             return { data: await this.service.simulate(body, ctx.i18n.locale) };
-        } catch (error) { return this.handle(error, ctx); }
+        } catch (error) {
+            return this.handle(error, ctx);
+        }
     }
 
     private handle(error: unknown, ctx: HttpContext) {
@@ -140,7 +250,9 @@ export default class AdminPersonalizationController {
     }
 }
 
-function actorId(ctx: HttpContext) { return ctx.auth.user ? Number(ctx.auth.user.id) : null; }
+function actorId(ctx: HttpContext) {
+    return ctx.auth.user ? Number(ctx.auth.user.id) : null;
+}
 function positiveId(value: unknown) {
     const id = Number(value);
     if (!Number.isInteger(id) || id < 1) throw new Phase9ValidationError("invalid_id");

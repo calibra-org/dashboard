@@ -40,7 +40,8 @@ export default class PersonalizationController {
             const body = ctx.request.body() as Record<string, unknown>;
             const placements = Array.isArray(body.placements) ? body.placements.map(String).slice(0, 12) : ["home"];
             const data: Record<string, unknown> = {};
-            for (const placement of placements) data[placement] = await this.serveRecommendations(ctx, subject, { ...body, placement });
+            for (const placement of placements)
+                data[placement] = await this.serveRecommendations(ctx, subject, { ...body, placement });
             return { data: { page_request_id: randomUUID(), placements: data } };
         } catch (error) {
             return this.handle(error, ctx);

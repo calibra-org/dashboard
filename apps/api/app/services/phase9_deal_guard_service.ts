@@ -4,11 +4,7 @@ import { DateTime } from "luxon";
 import type { DiscounterInput } from "#contracts/discounter";
 import { getDiscounter } from "#services/discounter";
 import { currentTenantId, currentTrx } from "#services/tenant_context";
-import {
-    Phase9ConflictError,
-    Phase9ValidationError,
-    type Subject,
-} from "#services/phase9_personalization_service";
+import { Phase9ConflictError, Phase9ValidationError, type Subject } from "#services/phase9_personalization_service";
 
 const TRANSITIONS: Record<string, ReadonlyArray<string>> = {
     draft: ["scheduled", "preheat", "active", "cancelled"],
@@ -34,14 +30,17 @@ export default class Phase9DealGuardService {
         if (!(TRANSITIONS[String(row.status)] ?? []).includes(target))
             throw new Phase9ConflictError("invalid_campaign_transition");
         const now = DateTime.utc().toSQL();
-        await trx.from("deal_campaigns").where("id", id).update({
-            status: target,
-            version: Number(row.version) + 1,
-            updated_at: now,
-            ...(target === "active" && !row.published_at ? { published_at: now } : {}),
-            ...(target === "cancelled" ? { cancelled_at: now } : {}),
-            ...(target === "ended" ? { ended_at: now } : {}),
-        });
+        await trx
+            .from("deal_campaigns")
+            .where("id", id)
+            .update({
+                status: target,
+                version: Number(row.version) + 1,
+                updated_at: now,
+                ...(target === "active" && !row.published_at ? { published_at: now } : {}),
+                ...(target === "cancelled" ? { cancelled_at: now } : {}),
+                ...(target === "ended" ? { ended_at: now } : {}),
+            });
         return trx.from("deal_campaigns").where("id", id).first();
     }
 
@@ -55,8 +54,7 @@ export default class Phase9DealGuardService {
             throw new Phase9ValidationError("invalid_reservation");
         if (productId !== null && (!Number.isInteger(productId) || productId < 1))
             throw new Phase9ValidationError("invalid_product_id");
-        if (orderId !== null && (!Number.isInteger(orderId) || orderId < 1))
-            throw new Phase9ValidationError("invalid_order_id");
+        if (orderId !== null && (!Number.isInteger(orderId) || orderId < 1)) throw new Phase9ValidationError("invalid_order_id");
 
         const trx = currentTrx();
         const existing = await trx.from("deal_reservations").where("idempotency_key", idempotencyKey).first();
@@ -232,10 +230,7 @@ export default class Phase9DealGuardService {
                 input.customer && typeof input.customer === "object"
                     ? {
                           customerId: Number(object(input.customer).customer_id) || null,
-                          email:
-                              typeof object(input.customer).email === "string"
-                                  ? String(object(input.customer).email)
-                                  : null,
+                          email: typeof object(input.customer).email === "string" ? String(object(input.customer).email) : null,
                       }
                     : null,
         };

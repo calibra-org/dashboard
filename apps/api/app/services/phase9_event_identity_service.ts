@@ -1,10 +1,7 @@
 import { DateTime } from "luxon";
 
 import { currentTenantId, currentTrx } from "#services/tenant_context";
-import Phase9PersonalizationService, {
-    Phase9ValidationError,
-    type Subject,
-} from "#services/phase9_personalization_service";
+import Phase9PersonalizationService, { Phase9ValidationError, type Subject } from "#services/phase9_personalization_service";
 
 export const PHASE9_EVENT_VOCABULARY = new Set([
     "session_started",
@@ -98,7 +95,10 @@ export default class Phase9EventIdentityService {
         const now = DateTime.utc().toSQL();
 
         if (visitorProfile || customerProfile) {
-            const recent = uniqueIds([...ids(customerProfile?.recent_product_ids), ...ids(visitorProfile?.recent_product_ids)]).slice(0, 30);
+            const recent = uniqueIds([
+                ...ids(customerProfile?.recent_product_ids),
+                ...ids(visitorProfile?.recent_product_ids),
+            ]).slice(0, 30);
             const categories = mergeAffinity(customerProfile?.category_affinity, visitorProfile?.category_affinity);
             const brands = mergeAffinity(customerProfile?.brand_affinity, visitorProfile?.brand_affinity);
             await trx
@@ -124,7 +124,11 @@ export default class Phase9EventIdentityService {
                 });
         }
 
-        await trx.from("personalization_events").where("visitor_id", visitorId).whereNull("customer_id").update({ customer_id: customerId });
+        await trx
+            .from("personalization_events")
+            .where("visitor_id", visitorId)
+            .whereNull("customer_id")
+            .update({ customer_id: customerId });
         await trx.table("personalization_identity_merges").insert({
             tenant_id: currentTenantId(),
             visitor_id: visitorId,
@@ -142,13 +146,15 @@ export default class Phase9EventIdentityService {
             .where("subject_type", subject.type)
             .where("subject_id", subject.id)
             .first();
-        return row ?? {
-            subject_type: subject.type,
-            subject_id: subject.id,
-            hidden_product_ids: [],
-            hidden_category_ids: [],
-            show_less_topics: [],
-        };
+        return (
+            row ?? {
+                subject_type: subject.type,
+                subject_id: subject.id,
+                hidden_product_ids: [],
+                hidden_category_ids: [],
+                show_less_topics: [],
+            }
+        );
     }
 
     async updatePreferences(subject: Subject, input: Record<string, unknown>) {
@@ -181,7 +187,11 @@ export default class Phase9EventIdentityService {
     async resetSubject(subject: Subject) {
         const trx = currentTrx();
         await trx.from("personalization_profiles").where("subject_type", subject.type).where("subject_id", subject.id).delete();
-        await trx.from("personalization_preferences").where("subject_type", subject.type).where("subject_id", subject.id).delete();
+        await trx
+            .from("personalization_preferences")
+            .where("subject_type", subject.type)
+            .where("subject_id", subject.id)
+            .delete();
         if (subject.type === "visitor") {
             await trx.from("personalization_events").where("visitor_id", subject.id).delete();
             await trx.from("personalization_identity_merges").where("visitor_id", subject.id).delete();

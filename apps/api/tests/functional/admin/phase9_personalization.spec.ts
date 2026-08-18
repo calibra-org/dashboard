@@ -66,7 +66,12 @@ test.group("Phase 9 personalization and amazing deals", () => {
         consent.assertStatus(200);
         assert.isTrue(consent.body().data.personalization);
         const eventId = randomUUID();
-        const payload = { event_id: eventId, event_type: "view_product", schema_version: 1, occurred_at: new Date().toISOString() };
+        const payload = {
+            event_id: eventId,
+            event_type: "view_product",
+            schema_version: 1,
+            occurred_at: new Date().toISOString(),
+        };
         const first = await client.post("/api/v1/events").headers(headers).json(payload);
         const second = await client.post("/api/v1/events").headers(headers).json(payload);
         first.assertStatus(202);
@@ -81,9 +86,15 @@ test.group("Phase 9 personalization and amazing deals", () => {
             .put("/api/v1/personalization/consent")
             .headers(headers)
             .json({ analytics: true, personalization: true, source: "test", policy_version: "v1" });
-        const unknown = await client.post("/api/v1/events").headers(headers).json({ event_type: "commerce.view_product", schema_version: 1 });
+        const unknown = await client
+            .post("/api/v1/events")
+            .headers(headers)
+            .json({ event_type: "commerce.view_product", schema_version: 1 });
         unknown.assertStatus(422);
-        const wrongVersion = await client.post("/api/v1/events").headers(headers).json({ event_type: "view_product", schema_version: 2 });
+        const wrongVersion = await client
+            .post("/api/v1/events")
+            .headers(headers)
+            .json({ event_type: "view_product", schema_version: 2 });
         wrongVersion.assertStatus(422);
     });
 
@@ -93,12 +104,15 @@ test.group("Phase 9 personalization and amazing deals", () => {
             .put("/api/v1/personalization/consent")
             .headers(headers)
             .json({ analytics: true, personalization: true, source: "test", policy_version: "v1" });
-        const r = await client.post("/api/v1/events/batch").headers(headers).json({
-            events: [
-                { event_id: randomUUID(), event_type: "page_view", schema_version: 1 },
-                { event_id: randomUUID(), event_type: "search", schema_version: 1, payload: { query: "آبیاری" } },
-            ],
-        });
+        const r = await client
+            .post("/api/v1/events/batch")
+            .headers(headers)
+            .json({
+                events: [
+                    { event_id: randomUUID(), event_type: "page_view", schema_version: 1 },
+                    { event_id: randomUUID(), event_type: "search", schema_version: 1, payload: { query: "آبیاری" } },
+                ],
+            });
         r.assertStatus(202);
         assert.equal(r.body().data.total, 2);
         assert.equal(r.body().data.accepted, 2);
@@ -120,7 +134,12 @@ test.group("Phase 9 personalization and amazing deals", () => {
             .put(`${ADMIN}/features`)
             .withGuard("api")
             .loginAs(admin)
-            .json({ feature_key: "recent_products", source: "personalization_events", freshness_seconds: 3600, sensitive: false });
+            .json({
+                feature_key: "recent_products",
+                source: "personalization_events",
+                freshness_seconds: 3600,
+                sensitive: false,
+            });
         feature.assertStatus(200);
         assert.equal(feature.body().data.feature_key, "recent_products");
 
