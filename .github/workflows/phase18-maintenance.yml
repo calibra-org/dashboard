@@ -54,6 +54,7 @@ jobs:
             apps/admin/src/app/'[locale]'/'(authenticated)'/pricing-brain/page.tsx \
             apps/admin/src/features/pricing-brain/actions.ts \
             apps/admin/src/features/pricing-brain/pricing-brain-dashboard.tsx \
+            apps/api/app/abilities/main.ts \
             apps/api/app/controllers/admin/pricing_brain_controller.ts \
             apps/api/app/services/pricing_brain_service.ts \
             apps/api/app/services/pricing_decision_engine.ts \
@@ -73,6 +74,7 @@ jobs:
             apps/admin/src/app/'[locale]'/'(authenticated)'/pricing-brain/page.tsx \
             apps/admin/src/features/pricing-brain/actions.ts \
             apps/admin/src/features/pricing-brain/pricing-brain-dashboard.tsx \
+            apps/api/app/abilities/main.ts \
             apps/api/app/controllers/admin/pricing_brain_controller.ts \
             apps/api/app/services/pricing_brain_service.ts \
             apps/api/app/services/pricing_decision_engine.ts \
