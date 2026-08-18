@@ -110,6 +110,6 @@ paths:
       tags: [Personalization]
       security: []
       requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
-      responses: { "200": { description: Updated hide, show-less and interest controls } }
+      responses: { "200": { description: "Updated hide, show-less and interest controls" } }
   /api/v1/personalization/reset:
-    post: { operationId: resetPersonalizationProfile, tags: [Personalization], security: [], responses: { "200": { description: Profile, preferences and linked behavior reset }, "400": { description: Subject unavailable } } }
+    post: { operationId: resetPersonalizationProfile, tags: [Personalization], security: [], responses: { "200": { description: "Profile, preferences and linked behavior reset" }, "400": { description: Subject unavailable } } }
