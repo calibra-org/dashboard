@@ -13,6 +13,7 @@ test.group("Phase 18 pricing decision engine", () => {
         assert.isTrue(result.accepted);
         assert.equal(result.effectivePrice, 900_000);
         assert.equal(result.grossRevenue, 1_800_000);
+        assert.equal(result.candidateNetRevenue, 1_800_000);
         assert.equal(result.netRevenue, 1_800_000);
         assert.equal(result.promotionDiscount, 0);
         assert.equal(result.estimatedGrossProfit, 600_000);
@@ -82,7 +83,8 @@ test.group("Phase 18 pricing decision engine", () => {
         });
         assert.isFalse(result.accepted);
         assert.equal(result.candidateGrossRevenue, 1_800);
-        assert.equal(result.netRevenue, 2_000);
+        assert.equal(result.candidateNetRevenue, 1_500);
+        assert.equal(result.netRevenue, 1_500);
         assert.equal(result.promotionDiscount, 300);
         assert.equal(result.discountPercent, 25);
         assert.include(
@@ -101,6 +103,7 @@ test.group("Phase 18 pricing decision engine", () => {
         });
         assert.isFalse(result.accepted);
         assert.equal(result.candidateGrossRevenue, 1_900);
+        assert.equal(result.candidateNetRevenue, 1_600);
         assert.equal(result.promotionDiscount, 300);
         assert.include(
             result.violations.map((item) => item.code),
