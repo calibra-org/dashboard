@@ -116,8 +116,17 @@ jobs:
             - name: Regenerate typed Admin SDK
               run: pnpm --filter @calibra/sdk run codegen:admin
             - name: One-shot commit generated Admin SDK
-              if: github.event_name == 'push' && github.ref == 'refs/heads/agent/phase15-customer-genome'
+              if: >-
+                  (github.event_name == 'pull_request' &&
+                   github.event.pull_request.head.repo.full_name == github.repository &&
+                   github.event.pull_request.head.ref == 'agent/phase15-customer-genome') ||
+                  (github.event_name == 'push' && github.ref == 'refs/heads/agent/phase15-customer-genome')
               run: |
+                  git reset --hard
+                  git fetch origin agent/phase15-customer-genome
+                  git checkout -B agent/phase15-customer-genome origin/agent/phase15-customer-genome
+                  pnpm --filter @calibra/api-docs run build:json:admin
+                  pnpm --filter @calibra/sdk run codegen:admin
                   if ! git diff --quiet -- packages/sdk/src/generated/admin.d.ts; then
                     git config user.name "github-actions[bot]"
                     git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
