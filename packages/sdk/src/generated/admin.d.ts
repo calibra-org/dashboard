@@ -8780,6 +8780,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/pricing-brain/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminPricingBrainOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pricing-brain/simulate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminPricingBrainSimulate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -12211,6 +12243,90 @@ export interface components {
         PlanningOverrideReviewInput: {
             /** @enum {string} */
             decision: "approved" | "rejected";
+        };
+        PricingBrainOverview: {
+            catalog: {
+                products: number;
+                priced_products: number;
+                sale_products: number;
+                pricing_coverage_percent: number;
+            };
+            promotions: {
+                coupons: number;
+                active_coupons: number;
+                /** @constant */
+                authority: "shared_discounter";
+            };
+            economics: {
+                covered_products: number;
+                coverage_percent: number;
+                latest_cost_evidence_at: string | null;
+                /** @enum {string} */
+                status: "available" | "unavailable";
+                /** @constant */
+                authority: "phase12_economics";
+            };
+            evidence: {
+                elasticity: components["schemas"]["PricingEvidenceState"];
+                experimentation: components["schemas"]["PricingEvidenceState"];
+            };
+            runtime: {
+                base_price_resolver: string;
+                promotion_engine: string;
+                economics_source: string;
+                simulation_engine: string;
+                autonomy_level: number;
+                activation_enabled: boolean;
+            };
+        };
+        PricingEvidenceState: {
+            /** @enum {string} */
+            status: "available" | "unavailable" | "insufficient_evidence" | "stale";
+            reason: string;
+        };
+        PricingSimulationRequest: {
+            reference_price: number;
+            candidate_price: number;
+            quantity?: number;
+            product_id?: number;
+            variation_id?: number | null;
+            floor_price?: number | null;
+            cogs?: number | null;
+            minimum_margin_percent?: number | null;
+            maximum_discount_percent?: number | null;
+        };
+        PricingSimulationResponse: {
+            decision: components["schemas"]["PricingDecision"];
+            economics: components["schemas"]["PricingCogsEvidence"];
+        };
+        PricingDecision: {
+            accepted: boolean;
+            referencePrice: number;
+            candidatePrice: number;
+            effectivePrice: number;
+            quantity: number;
+            grossRevenue: number;
+            estimatedGrossProfit: number | null;
+            discountPercent: number;
+            marginPercent: number | null;
+            /** @enum {string} */
+            economicsState: "available" | "not_required" | "unavailable";
+            violations: components["schemas"]["PricingGuardrailViolation"][];
+        };
+        PricingGuardrailViolation: {
+            /** @enum {string} */
+            code: "below_floor" | "below_margin" | "discount_too_deep" | "invalid_price" | "missing_economics";
+            message: string;
+            actual: number | null;
+            required: number;
+        };
+        PricingCogsEvidence: {
+            value: number | null;
+            /** @enum {string} */
+            source: "explicit" | "realized_snapshot" | "cost_layer" | "unavailable";
+            /** @enum {string} */
+            quality: "operator_input" | "realized" | "inventory_evidence" | "unavailable";
+            observedAt: string | null;
         };
     };
     responses: {
@@ -26883,6 +26999,61 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PlanningHealthEnvelope"];
                 };
+            };
+        };
+    };
+    adminPricingBrainOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Phase 18 catalog, promotion, economics, evidence and runtime status. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PricingBrainOverview"];
+                    };
+                };
+            };
+        };
+    };
+    adminPricingBrainSimulate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PricingSimulationRequest"];
+            };
+        };
+        responses: {
+            /** @description Deterministic pricing candidate simulation using Phase 18 guardrails and Phase 12 cost evidence when available. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PricingSimulationResponse"];
+                    };
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

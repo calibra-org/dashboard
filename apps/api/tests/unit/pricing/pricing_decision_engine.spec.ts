@@ -25,7 +25,10 @@ test.group("Phase 18 pricing decision engine", () => {
         });
         assert.isFalse(result.accepted);
         assert.equal(result.effectivePrice, 1_000);
-        assert.include(result.violations.map((item) => item.code), "below_floor");
+        assert.include(
+            result.violations.map((item) => item.code),
+            "below_floor",
+        );
     });
 
     test("rejects a discount deeper than policy allows", ({ assert }) => {
@@ -34,7 +37,10 @@ test.group("Phase 18 pricing decision engine", () => {
             candidatePrice: 700,
             guardrails: { floorPrice: null, cogs: null, minimumMarginPercent: null, maximumDiscountPercent: 20 },
         });
-        assert.include(result.violations.map((item) => item.code), "discount_too_deep");
+        assert.include(
+            result.violations.map((item) => item.code),
+            "discount_too_deep",
+        );
     });
 
     test("fails closed when minimum margin is requested without COGS evidence", ({ assert }) => {
@@ -45,7 +51,10 @@ test.group("Phase 18 pricing decision engine", () => {
         });
         assert.isFalse(result.accepted);
         assert.equal(result.economicsState, "unavailable");
-        assert.include(result.violations.map((item) => item.code), "missing_economics");
+        assert.include(
+            result.violations.map((item) => item.code),
+            "missing_economics",
+        );
     });
 
     test("rejects a candidate that breaches the minimum gross margin", ({ assert }) => {
@@ -55,7 +64,10 @@ test.group("Phase 18 pricing decision engine", () => {
             guardrails: { floorPrice: null, cogs: 700, minimumMarginPercent: 20, maximumDiscountPercent: null },
         });
         assert.isFalse(result.accepted);
-        assert.include(result.violations.map((item) => item.code), "below_margin");
+        assert.include(
+            result.violations.map((item) => item.code),
+            "below_margin",
+        );
     });
 
     test("same context returns exactly the same result", ({ assert }) => {

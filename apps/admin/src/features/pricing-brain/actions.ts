@@ -42,17 +42,20 @@ export async function simulatePricingAction(
 
     const api = await apiServer();
     try {
-        const result = await api.http.post<{ data: NonNullable<PricingSimulationState["data"]> }>("/admin/pricing-brain/simulate", {
-            reference_price: referencePrice,
-            candidate_price: candidatePrice,
-            quantity: integerFromForm(formData, "quantity") ?? 1,
-            product_id: integerFromForm(formData, "product_id"),
-            variation_id: integerFromForm(formData, "variation_id"),
-            floor_price: integerFromForm(formData, "floor_price"),
-            cogs: integerFromForm(formData, "cogs"),
-            minimum_margin_percent: numberFromForm(formData, "minimum_margin_percent"),
-            maximum_discount_percent: numberFromForm(formData, "maximum_discount_percent"),
-        });
+        const result = await api.http.post<{ data: NonNullable<PricingSimulationState["data"]> }>(
+            "/admin/pricing-brain/simulate",
+            {
+                reference_price: referencePrice,
+                candidate_price: candidatePrice,
+                quantity: integerFromForm(formData, "quantity") ?? 1,
+                product_id: integerFromForm(formData, "product_id"),
+                variation_id: integerFromForm(formData, "variation_id"),
+                floor_price: integerFromForm(formData, "floor_price"),
+                cogs: integerFromForm(formData, "cogs"),
+                minimum_margin_percent: numberFromForm(formData, "minimum_margin_percent"),
+                maximum_discount_percent: numberFromForm(formData, "maximum_discount_percent"),
+            },
+        );
         return { ok: true, error: null, data: result.data };
     } catch {
         return { ok: false, error: "شبیه‌سازی در API انجام نشد. ورودی‌ها، دسترسی و وضعیت Economics را بررسی کنید.", data: null };

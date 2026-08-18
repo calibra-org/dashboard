@@ -25,8 +25,18 @@ export async function pricingBrainOverview() {
     const [productsRow, pricedProductsRow, saleProductsRow, couponsRow, activeCouponsRow, costCoverageRow, latestCostRow] =
         await Promise.all([
             trx.from("products").whereNull("deleted_at").count<{ count: string }>("id as count").first(),
-            trx.from("products").whereNull("deleted_at").whereNotNull("regular_price").count<{ count: string }>("id as count").first(),
-            trx.from("products").whereNull("deleted_at").whereNotNull("sale_price").count<{ count: string }>("id as count").first(),
+            trx
+                .from("products")
+                .whereNull("deleted_at")
+                .whereNotNull("regular_price")
+                .count<{ count: string }>("id as count")
+                .first(),
+            trx
+                .from("products")
+                .whereNull("deleted_at")
+                .whereNotNull("sale_price")
+                .count<{ count: string }>("id as count")
+                .first(),
             trx.from("coupons").whereNull("deleted_at").count<{ count: string }>("id as count").first(),
             trx.from("coupons").whereNull("deleted_at").where("status", "active").count<{ count: string }>("id as count").first(),
             trx
