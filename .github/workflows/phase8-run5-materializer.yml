@@ -73,6 +73,8 @@ jobs:
           echo '4266e5bd13bffaf37284069f560058ad4276e6c36acb59d69326095c32caea8f  /tmp/phase8.patch' | sha256sum -c -
           test "$(grep -c '^diff --git ' /tmp/phase8.patch)" -eq 57
           git apply --stat /tmp/phase8.patch
+          git show "$src:.phase8/run5/route-names.patch" > /tmp/phase8-route-names.patch
+          echo 'a25aae3e3b94668be8decc31b240e3b0a22acee546148bcb608933796d5fe8b4  /tmp/phase8-route-names.patch' | sha256sum -c -
 
       - name: Apply Run5 and compose Phase 9 integration points
         shell: bash
@@ -95,7 +97,6 @@ jobs:
             node <<'NODE'
           const fs = require('node:fs')
 
-          // Compose Phase 8 Story Rail with the Phase 9 Amazing Deals homepage.
           {
             const path = 'apps/web/src/app/[locale]/page.tsx'
             let text = fs.readFileSync(path, 'utf8')
@@ -125,7 +126,6 @@ jobs:
             fs.writeFileSync(path, text)
           }
 
-          // Compose both Phase 8 and Phase 9/13 OpenAPI build chains.
           {
             const path = 'docs/api/package.json'
             const pkg = JSON.parse(fs.readFileSync(path, 'utf8'))
@@ -145,7 +145,6 @@ jobs:
             fs.writeFileSync(path, `${JSON.stringify(pkg, null, 4)}\n`)
           }
 
-          // Compose Phase 8 into the current Phase 9-aware admin OpenAPI merger.
           {
             const path = 'docs/api/scripts/merge-admin-spec.js'
             let text = fs.readFileSync(path, 'utf8')
@@ -162,7 +161,6 @@ jobs:
             fs.writeFileSync(path, text)
           }
 
-          // Compose Phase 8 into the current Phase 9-aware storefront OpenAPI merger.
           {
             const path = 'docs/api/scripts/merge-storefront-spec.js'
             let text = fs.readFileSync(path, 'utf8')
@@ -179,7 +177,6 @@ jobs:
             fs.writeFileSync(path, text)
           }
 
-          // Preserve Phase 9 root verification while adding Phase 8 operational commands.
           {
             const path = 'package.json'
             const pkg = JSON.parse(fs.readFileSync(path, 'utf8'))
@@ -200,6 +197,8 @@ jobs:
           fi
 
           test -z "$(git ls-files -u)"
+          git apply --index /tmp/phase8-route-names.patch
+          test "$(grep -h -o '\.as("[^"]*social[^"]*")' apps/api/start/routes/*social_commerce.ts | wc -l)" -eq 60
           git diff --cached --check
           node scripts/verify-phase8-social-commerce.mjs
           node scripts/verify-phase9.mjs
