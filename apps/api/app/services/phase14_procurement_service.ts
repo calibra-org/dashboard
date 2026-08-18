@@ -1,12 +1,12 @@
 import { Exception } from "@adonisjs/core/exceptions";
-import db from "@adonisjs/lucid/services/db";
 
 import InventoryService from "#services/inventory_service";
-import { withTenantTransaction } from "#services/tenant_context";
+import { currentTrx, withTenantTransaction } from "#services/tenant_context";
 
 type Actor = { id?: number | string };
 const n = (value: unknown) => Number(value ?? 0);
 const inventory = new InventoryService();
+const tenantDb = () => currentTrx();
 
 function supplierScore(row: any) {
     const parts = {
@@ -28,9 +28,9 @@ function supplierScore(row: any) {
 class Phase14ProcurementService {
     async overview() {
         const [suppliers, purchaseOrders, incidents] = await Promise.all([
-            db.from("suppliers").select("*").orderBy("updated_at", "desc"),
-            db.from("purchase_orders as po").leftJoin("suppliers as s", "s.id", "po.supplier_id").select("po.*", "s.display_name as supplier_name").orderBy("po.updated_at", "desc").limit(50),
-            db.from("supplier_incidents").where("status", "open").count("id as total").first(),
+            tenantDb().from("suppliers").select("*").orderBy("updated_at", "desc"),
+            tenantDb().from("purchase_orders as po").leftJoin("suppliers as s", "s.id", "po.supplier_id").select("po.*", "s.display_name as supplier_name").orderBy("po.updated_at", "desc").limit(50),
+            tenantDb().from("supplier_incidents").where("status", "open").count("id as total").first(),
         ]);
         const scored = suppliers.map((supplier: any) => ({ ...supplier, score: supplierScore(supplier) }));
         const open = purchaseOrders.filter((po: any) => !["closed", "cancelled", "received"].includes(po.status));
@@ -39,17 +39,17 @@ class Phase14ProcurementService {
     }
 
     async suppliers() {
-        const rows = await db.from("suppliers").select("*").orderBy("display_name");
+        const rows = await tenantDb().from("suppliers").select("*").orderBy("display_name");
         return { data: rows.map((row: any) => ({ ...row, score: supplierScore(row) })) };
     }
 
     async createSupplier(payload: any) {
-        const [row] = await db.table("suppliers").insert({ ...payload, currency: payload.currency ?? "IRR", criticality: payload.criticality ?? "normal" }).returning("*");
+        const [row] = await tenantDb().table("suppliers").insert({ ...payload, currency: payload.currency ?? "IRR", criticality: payload.criticality ?? "normal" }).returning("*");
         return { data: row };
     }
 
     async purchaseOrders() {
-        return { data: await db.from("purchase_orders as po").join("suppliers as s", "s.id", "po.supplier_id").select("po.*", "s.display_name as supplier_name").orderBy("po.updated_at", "desc") };
+        return { data: await tenantDb().from("purchase_orders as po").join("suppliers as s", "s.id", "po.supplier_id").select("po.*", "s.display_name as supplier_name").orderBy("po.updated_at", "desc") };
     }
 
     async createPurchaseOrder(payload: any, actor: Actor, idempotencyKey: string | null) {
@@ -115,7 +115,7 @@ class Phase14ProcurementService {
     }
 
     async recommendations() {
-        const rows = await db.from("planning_replenishment_recommendations as r").leftJoin("supplier_products as sp", (join) => join.on("sp.product_id", "=", "r.product_id").andOnVal("sp.active", "=", true)).leftJoin("suppliers as s", "s.id", "sp.supplier_id").where("r.status", "ready").select("r.*", "s.id as supplier_id", "s.display_name as supplier_name", "sp.unit_cost", "sp.moq", "sp.order_multiple", "sp.lead_time_days", "s.on_time_rate", "s.fill_rate", "s.dependency_risk").orderBy("r.suggested_quantity", "desc").limit(100);
+        const rows = await tenantDb().from("planning_replenishment_recommendations as r").leftJoin("supplier_products as sp", (join) => join.on("sp.product_id", "=", "r.product_id").andOnVal("sp.active", "=", true)).leftJoin("suppliers as s", "s.id", "sp.supplier_id").where("r.status", "ready").select("r.*", "s.id as supplier_id", "s.display_name as supplier_name", "sp.unit_cost", "sp.moq", "sp.order_multiple", "sp.lead_time_days", "s.on_time_rate", "s.fill_rate", "s.dependency_risk").orderBy("r.suggested_quantity", "desc").limit(100);
         return { data: rows.map((row: any) => {
             const quantity = n(row.suggested_quantity), moq = row.moq == null ? 1 : Math.max(1, n(row.moq)), multiple = row.order_multiple == null ? 1 : Math.max(1, n(row.order_multiple));
             const proposed = Math.max(moq, Math.ceil(quantity / multiple) * multiple);
@@ -125,7 +125,7 @@ class Phase14ProcurementService {
     }
 
     async health() {
-        const result = await db.rawQuery(`SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('suppliers','purchase_orders','purchase_order_receipts','supplier_incidents')`);
+        const result = await tenantDb().rawQuery(`SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('suppliers','purchase_orders','purchase_order_receipts','supplier_incidents')`);
         return { data: { status: result.rows.length === 4 ? "ready" : "degraded", tables: result.rows.map((row: any) => row.table_name) } };
     }
 }
