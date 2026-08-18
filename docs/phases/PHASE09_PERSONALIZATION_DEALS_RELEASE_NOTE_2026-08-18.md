@@ -18,4 +18,4 @@ Phase 9 adds the tenant-safe personalization and deals foundation to Calibra whi
 
 Phase-specific finalization validates formatting/lint, TypeScript typechecking, fresh database migrations, SDK generation and the Phase 9 integration verifier. Standard repository Check and SEO workflows remain the merge gates for the final PR head.
 
-The release candidate is reconciled with the current main line before those final merge gates run.
+The release candidate is reconciled with the current main line before those final merge gates run. Generated SDK declarations are synchronized from the final merged OpenAPI contracts before release.
