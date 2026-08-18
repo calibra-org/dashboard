@@ -11,8 +11,6 @@ on:
 permissions:
   contents: read
 
-tasks: {}
-
 jobs:
   snapshot:
     runs-on: ubuntu-latest
