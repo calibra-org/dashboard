@@ -102,7 +102,10 @@ const groups: NavGroup[] = [
     },
     {
         titleKey: "finance",
-        items: [{ href: "/economics", labelKey: "economics", icon: Wallet }],
+        items: [
+            { href: "/economics", labelKey: "economics", icon: Wallet },
+            { href: "/pricing-brain", label: "مغز قیمت‌گذاری", icon: Sparkles },
+        ],
     },
     {
         titleKey: "customersSection",
