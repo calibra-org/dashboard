@@ -40,7 +40,7 @@ export interface PricingDecision {
     quantity: number;
     promotionDiscount: number;
     candidateGrossRevenue: number;
-    netRevenue: number;
+    candidateNetRevenue: number;
     grossRevenue: number;
     estimatedGrossProfit: number | null;
     discountPercent: number;
@@ -125,9 +125,8 @@ export function evaluatePricingCandidate(input: PricingCandidateInput): PricingD
 
     const accepted = violations.length === 0;
     const effectivePrice = accepted ? candidatePrice : referencePrice;
-    const netRevenue = accepted ? candidateNetRevenue : referenceGrossRevenue;
-    const grossRevenue = netRevenue;
-    const estimatedGrossProfit = totalCogs === null || totalCogs < 0 ? null : netRevenue - totalCogs;
+    const grossRevenue = accepted ? candidateNetRevenue : referenceGrossRevenue;
+    const estimatedGrossProfit = totalCogs === null || totalCogs < 0 ? null : grossRevenue - totalCogs;
     const economicsState = cogs !== null ? "available" : minimumMarginPercent === null ? "not_required" : "unavailable";
 
     return {
@@ -138,7 +137,7 @@ export function evaluatePricingCandidate(input: PricingCandidateInput): PricingD
         quantity,
         promotionDiscount,
         candidateGrossRevenue,
-        netRevenue,
+        candidateNetRevenue,
         grossRevenue,
         estimatedGrossProfit,
         discountPercent: roundMetric(discountPercent),
