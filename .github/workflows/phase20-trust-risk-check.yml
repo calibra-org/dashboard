@@ -56,6 +56,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Phase 20 static contract
         run: node scripts/verify-phase20-trust-risk-integration.mjs
+      - name: Create canonical test database
+        env:
+          PGPASSWORD: calibra
+        run: psql -h localhost -U calibra -d calibra -c "CREATE DATABASE calibra_test OWNER calibra;"
       - name: Phase 20 unit tests
         working-directory: apps/api
         run: pnpm test --files=tests/unit/trust/phase20_trust_risk.spec.ts
