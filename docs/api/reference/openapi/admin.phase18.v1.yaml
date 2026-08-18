@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
   title: Calibra Admin Phase 18 Pricing and Promotion Brain
-  version: 1.1.0
-  description: Evidence-aware pricing simulation, governed policy lifecycle, and checkout trace without replacing canonical product pricing or promotion resolution.
+  version: 1.2.0
+  description: Evidence-aware pricing simulation, governed policy lifecycle, promotion-aware guardrails, and checkout trace without replacing canonical product pricing or promotion resolution.
 paths:
   /api/v1/admin/pricing-brain/overview:
     get:
@@ -162,7 +162,7 @@ paths:
             schema: { $ref: '#/components/schemas/PricingSimulationRequest' }
       responses:
         '200':
-          description: Deterministic pricing candidate simulation using Phase 18 guardrails and Phase 12 cost evidence when available.
+          description: Deterministic pricing candidate simulation using Phase 18 guardrails, optional canonical promotion allocation, and Phase 12 cost evidence when available.
           content:
             application/json:
               schema:
@@ -429,6 +429,7 @@ components:
         reference_price: { type: integer, minimum: 1 }
         candidate_price: { type: integer, minimum: 0 }
         quantity: { type: integer, minimum: 1 }
+        promotion_discount: { type: integer, minimum: 0 }
         product_id: { type: integer, minimum: 1 }
         variation_id: { type: [integer, 'null'], minimum: 1 }
         floor_price: { type: [integer, 'null'], minimum: 0 }
@@ -443,14 +444,18 @@ components:
         economics: { $ref: '#/components/schemas/PricingCogsEvidence' }
     PricingDecision:
       type: object
-      required: [accepted, referencePrice, candidatePrice, effectivePrice, quantity, grossRevenue, estimatedGrossProfit, discountPercent, marginPercent, economicsState, violations]
+      required: [accepted, referencePrice, candidatePrice, effectivePrice, quantity, promotionDiscount, candidateGrossRevenue, candidateNetRevenue, netRevenue, grossRevenue, estimatedGrossProfit, discountPercent, marginPercent, economicsState, violations]
       properties:
         accepted: { type: boolean }
         referencePrice: { type: integer }
         candidatePrice: { type: integer }
         effectivePrice: { type: integer }
         quantity: { type: integer, minimum: 1 }
-        grossRevenue: { type: integer }
+        promotionDiscount: { type: integer, minimum: 0 }
+        candidateGrossRevenue: { type: integer, minimum: 0 }
+        candidateNetRevenue: { type: integer, minimum: 0 }
+        netRevenue: { type: integer, minimum: 0 }
+        grossRevenue: { type: integer, minimum: 0 }
         estimatedGrossProfit: { type: [integer, 'null'] }
         discountPercent: { type: number }
         marginPercent: { type: [number, 'null'] }
