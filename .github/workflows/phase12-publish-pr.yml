@@ -1,0 +1,44 @@
+name: Phase 12 Publisher
+
+on:
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    if: github.head_ref == 'agent/phase12-runner-20260818'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+      - name: Recover and publish exact Phase 12
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin '+refs/heads/*:refs/remotes/origin/*'
+          {
+            git show origin/agent/phase12-publisher2-20260818:.phase12-recovery/chunk-00.b64
+            git show origin/agent/phase12-publisher2-20260818:.phase12-recovery/chunk-01.b64
+            git show origin/agent/phase12-publisher2-20260818:.phase12-recovery/chunk-02.b64
+          } > /tmp/phase12.patch.gz.b64
+          test "$(wc -c < /tmp/phase12.patch.gz.b64 | tr -d ' ')" = "26212"
+          echo '722c8a8b13c8fb37518014fcb37624a86670f073871ef660d54e8070a4296fc0  /tmp/phase12.patch.gz.b64' | sha256sum -c -
+          base64 -d /tmp/phase12.patch.gz.b64 | gzip -d > /tmp/phase12.patch
+          echo '6e5c7cb9d1d6d299dcbe7823060e7fc860871d8f05db2d1295d1865d26890aff  /tmp/phase12.patch' | sha256sum -c -
+          git config user.name 'calibra-dev'
+          git config user.email 'keshavarz20.com@gmail.com'
+          git switch -C agent/phase12-profitability-cash-os origin/main
+          git apply --3way /tmp/phase12.patch
+          git diff --check
+          test -f apps/api/app/services/economics_service.ts
+          test -f apps/admin/src/features/economics/EconomicsWorkspace.tsx
+          test -f apps/api/database/migrations/1765000000000_create_economics_os.ts
+          git add .
+          git commit -m 'feat(economics): Phase 12 Profitability, Cash & Working Capital OS'
+          git push --force origin HEAD:agent/phase12-profitability-cash-os
