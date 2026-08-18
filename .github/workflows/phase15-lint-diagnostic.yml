@@ -1,0 +1,31 @@
+name: Phase 15 Lint Diagnostic
+
+on:
+    pull_request:
+        branches: [main]
+        paths:
+            - ".github/workflows/phase15-lint-diagnostic.yml"
+
+permissions:
+    contents: read
+
+env:
+    NODE_VERSION: "24.14.0"
+    PNPM_VERSION: "10.32.1"
+
+jobs:
+    diagnose:
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        steps:
+            - uses: actions/checkout@v4
+            - uses: pnpm/action-setup@v4
+              with:
+                  version: ${{ env.PNPM_VERSION }}
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: pnpm
+            - run: pnpm install --frozen-lockfile
+            - name: Print full Biome diagnostics
+              run: pnpm exec biome check . --max-diagnostics=400 || true
