@@ -130,16 +130,12 @@ test.group("Phase 9 personalization and amazing deals", () => {
 
     test("exposes policy, model, feature and rollout governance", async ({ client, assert }) => {
         const admin = await adminUser();
-        const feature = await client
-            .put(`${ADMIN}/features`)
-            .withGuard("api")
-            .loginAs(admin)
-            .json({
-                feature_key: "recent_products",
-                source: "personalization_events",
-                freshness_seconds: 3600,
-                sensitive: false,
-            });
+        const feature = await client.put(`${ADMIN}/features`).withGuard("api").loginAs(admin).json({
+            feature_key: "recent_products",
+            source: "personalization_events",
+            freshness_seconds: 3600,
+            sensitive: false,
+        });
         feature.assertStatus(200);
         assert.equal(feature.body().data.feature_key, "recent_products");
 
