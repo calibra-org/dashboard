@@ -16,7 +16,7 @@ permissions:
   checks: read
 
 concurrency:
-  group: phase8-run5-materializer
+  group: phase8-run5-materializer-force-exit
   cancel-in-progress: false
 
 env:
@@ -231,9 +231,15 @@ jobs:
           PGPASSWORD: calibra
         run: psql -h localhost -U calibra -d calibra -c "CREATE DATABASE calibra_test OWNER calibra;"
 
-      - name: Run Phase 8 functional test
+      - name: Run Phase 8 functional test with diagnostic force-exit
         working-directory: apps/api
-        run: pnpm test --files=tests/functional/social/phase8_social_commerce.spec.ts
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp adonisrc.ts /tmp/phase8-adonisrc.ts
+          trap 'cp /tmp/phase8-adonisrc.ts adonisrc.ts' EXIT
+          node -e "const fs=require('node:fs'); const p='adonisrc.ts'; const s=fs.readFileSync(p,'utf8'); if(!s.includes('forceExit: false')) throw new Error('adonis forceExit config drifted'); fs.writeFileSync(p,s.replace('forceExit: false','forceExit: true'))"
+          pnpm test --files=tests/functional/social/phase8_social_commerce.spec.ts
 
       - name: Typecheck workspace
         run: pnpm run typecheck
@@ -245,5 +251,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          test -z "$(git status --porcelain)"
           git push --force-with-lease origin HEAD:agent/phase8-run5-final
           echo "PHASE8_FINAL_HEAD=$(git rev-parse HEAD)"
