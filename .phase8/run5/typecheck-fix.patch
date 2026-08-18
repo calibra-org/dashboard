@@ -1,0 +1,10 @@
+diff --git a/apps/api/app/services/social/social_media_pipeline_service.ts b/apps/api/app/services/social/social_media_pipeline_service.ts
+index 7f4cc1a..723eaba 100644
+--- a/apps/api/app/services/social/social_media_pipeline_service.ts
++++ b/apps/api/app/services/social/social_media_pipeline_service.ts
+@@ -1,4 +1,4 @@
+-import { createHash, randomUUID } from "node:crypto";
++import { createHash } from "node:crypto";
+ import { Exception } from "@adonisjs/core/exceptions";
+ import db from "@adonisjs/lucid/services/db";
+ import { resolveTenantConnection } from "#config/database";
