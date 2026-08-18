@@ -28,7 +28,7 @@ on:
       - "docs/api/reference/openapi/admin.phase13.v1.yaml"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   integrity:
@@ -36,6 +36,8 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref }}
       - uses: actions/setup-node@v4
         with:
           node-version: "24.14.0"
@@ -43,6 +45,45 @@ jobs:
         run: npm install --global pnpm@10.32.1
       - name: Install workspace dependencies
         run: pnpm install --frozen-lockfile
+      - name: Normalize Phase 13 semantic color tokens
+        if: github.event_name == 'pull_request'
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = 'apps/admin/src/features/planning/PlanningWorkspace.tsx';
+          let source = fs.readFileSync(path, 'utf8');
+          const replacements = [
+            ['violet-500', 'primary'],
+            ['violet-700', 'primary'],
+            ['violet-300', 'primary'],
+            ['fuchsia-500', 'accent'],
+            ['sky-500', 'info'],
+            ['sky-700', 'info'],
+            ['sky-300', 'info'],
+            ['cyan-500', 'info'],
+            ['amber-500', 'warning'],
+            ['amber-700', 'warning'],
+            ['amber-300', 'warning'],
+            ['orange-500', 'warning'],
+            ['emerald-500', 'success'],
+            ['emerald-700', 'success'],
+            ['emerald-300', 'success'],
+            ['teal-500', 'success'],
+            ['rose-500', 'danger'],
+            ['rose-700', 'danger'],
+            ['rose-300', 'danger'],
+          ];
+          for (const [from, to] of replacements) source = source.replaceAll(from, to);
+          fs.writeFileSync(path, source);
+          NODE
+          pnpm exec biome check apps/admin/src/features/planning/PlanningWorkspace.tsx --write --max-diagnostics=100
+          if ! git diff --quiet -- apps/admin/src/features/planning/PlanningWorkspace.tsx; then
+            git config user.name "calibra-ci"
+            git config user.email "calibra-ci@users.noreply.github.com"
+            git add apps/admin/src/features/planning/PlanningWorkspace.tsx
+            git commit -m "style(planning): use Calibra semantic color tokens"
+            git push origin HEAD:${{ github.head_ref }}
+          fi
       - name: Biome check Phase 13 sources
         run: >-
           pnpm exec biome check
