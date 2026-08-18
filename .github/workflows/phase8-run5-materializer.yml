@@ -71,15 +71,44 @@ jobs:
           test "$(grep -c '^diff --git ' /tmp/phase8.patch)" -eq 57
           git apply --stat /tmp/phase8.patch
 
-      - name: Apply Run5 onto live main and verify invariants
+      - name: Apply Run5 onto live main and compose Phase 13 docs
         shell: bash
         run: |
           set -euo pipefail
           git switch -C agent/phase8-run5-final origin/main
-          git apply --3way --index /tmp/phase8.patch
+          if ! git apply --3way --index /tmp/phase8.patch; then
+            mapfile -t conflicts < <(git diff --name-only --diff-filter=U)
+            printf 'Three-way conflicts: %s\n' "${conflicts[*]}"
+            test "${#conflicts[@]}" -eq 1
+            test "${conflicts[0]}" = 'docs/api/package.json'
+            git checkout --ours -- docs/api/package.json
+            node <<'NODE'
+          const fs = require('node:fs')
+          const path = 'docs/api/package.json'
+          const pkg = JSON.parse(fs.readFileSync(path, 'utf8'))
+          const scripts = pkg.scripts
+          const storefrontNeedle = 'pnpm build:json:storefront-identity && pnpm build:json:storefront-merge'
+          const storefrontComposed = 'pnpm build:json:storefront-identity && pnpm build:json:storefront-phase8 && pnpm build:json:storefront-merge'
+          if (!scripts['build:json:storefront'].includes('build:json:storefront-phase8')) {
+            if (!scripts['build:json:storefront'].includes(storefrontNeedle)) throw new Error('storefront chain drifted')
+            scripts['build:json:storefront'] = scripts['build:json:storefront'].replace(storefrontNeedle, storefrontComposed)
+          }
+          const adminNeedle = 'pnpm build:json:admin-identity && pnpm build:json:admin-phase10'
+          const adminComposed = 'pnpm build:json:admin-identity && pnpm build:json:admin-phase8 && pnpm build:json:admin-phase10'
+          if (!scripts['build:json:admin'].includes('build:json:admin-phase8')) {
+            if (!scripts['build:json:admin'].includes(adminNeedle)) throw new Error('admin chain drifted')
+            scripts['build:json:admin'] = scripts['build:json:admin'].replace(adminNeedle, adminComposed)
+          }
+          scripts['build:json:storefront-phase8'] = 'redocly bundle reference/openapi/storefront.phase8.v1.yaml -o dist/storefront.phase8.v1.json --ext json'
+          scripts['build:json:admin-phase8'] = 'redocly bundle reference/openapi/admin.phase8.v1.yaml -o dist/admin.phase8.v1.json --ext json'
+          fs.writeFileSync(path, `${JSON.stringify(pkg, null, 4)}\n`)
+          NODE
+            git add docs/api/package.json
+          fi
           test -z "$(git ls-files -u)"
           git diff --cached --check
           node scripts/verify-phase8-social-commerce.mjs
+          node -e "const p=require('./docs/api/package.json'); if(!p.scripts['build:json:admin'].includes('admin-phase13')) throw new Error('Phase 13 docs chain lost'); if(!p.scripts['build:json:admin'].includes('admin-phase8')) throw new Error('Phase 8 docs chain missing')"
           git config user.name 'calibra-dev'
           git config user.email 'keshavarz20.com@gmail.com'
           git commit -m 'feat(social): Phase 8 Social Commerce, Stories, Video & Community OS'
