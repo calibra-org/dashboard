@@ -95,9 +95,8 @@ jobs:
 
           replace(
             'docs/api/reference/openapi/admin.phase13.v1.yaml',
-            'Phase 12 economics degrades explicitly when unavailable.',
-            'Phase 12 economics is landed; Phase 13 reports cost-aware optimization as not applied until economic objectives are explicitly used.',
-            false
+            "        '200': { description: Data coverage, model registry and dependency readiness, content: { application/json: { schema: { $ref: '#/components/schemas/PlanningHealthEnvelope' } } } }",
+            "        '200': { description: 'Data coverage, model registry and dependency readiness', content: { application/json: { schema: { $ref: '#/components/schemas/PlanningHealthEnvelope' } } } }"
           );
           NODE
           pnpm exec biome check --write \
@@ -122,7 +121,7 @@ jobs:
             scripts/verify-phase13-planning-integration.mjs \
             scripts/smoke-phase13-forecast.mjs
           if ! git diff --cached --quiet; then
-            git commit -m "fix(planning): compose Phase 13 with landed Phase 12"
+            git commit -m "fix(planning): finalize Phase 13 OpenAPI contract"
             git push origin "HEAD:${GITHUB_HEAD_REF}"
           fi
       - name: Biome check Phase 13 sources
