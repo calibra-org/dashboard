@@ -25,7 +25,9 @@ function nullableMinor(value: unknown): number | null {
 }
 
 function normalizedCurrency(value: unknown): string {
-    const currency = String(value ?? "").trim().toUpperCase();
+    const currency = String(value ?? "")
+        .trim()
+        .toUpperCase();
     if (!/^[A-Z]{3}$/.test(currency)) throw new Error("currency must be a 3-letter ISO-style code");
     return currency;
 }
@@ -172,20 +174,30 @@ async function resolveLineCost(
     if (line.variation_id) layersQuery.where("variation_id", Number(line.variation_id));
     else layersQuery.whereNull("variation_id");
     const layers = await layersQuery.orderBy("effective_at", "asc").orderBy("id", "asc");
-    if (layers.length === 0) return { quality: "incomplete" as const, unitCostMinor: null, totalCostMinor: null, breakdown: [] as any[] };
+    if (layers.length === 0)
+        return { quality: "incomplete" as const, unitCostMinor: null, totalCostMinor: null, breakdown: [] as any[] };
 
     const candidates: Array<{ row: any; available: number; unit: number | null }> = [];
     for (const layer of layers) {
         const consumed = await layerConsumed(trx, Number(layer.id));
         const available = Math.max(0, Number(layer.quantity_initial) - consumed);
-        candidates.push({ row: layer, available, unit: layer.unit_landed_cost_minor === null ? null : number(layer.unit_landed_cost_minor) });
+        candidates.push({
+            row: layer,
+            available,
+            unit: layer.unit_landed_cost_minor === null ? null : number(layer.unit_landed_cost_minor),
+        });
     }
     const quantity = Number(line.quantity);
     if (method === "weighted_average") {
         const usable = candidates.filter((c) => c.available > 0);
         const available = usable.reduce((sum, c) => sum + c.available, 0);
         if (available < quantity || usable.some((c) => c.unit === null)) {
-            return { quality: "incomplete" as const, unitCostMinor: null, totalCostMinor: null, breakdown: usable.map((c) => ({ layer_id: Number(c.row.id), quantity: 0, unit_cost_minor: c.unit })) };
+            return {
+                quality: "incomplete" as const,
+                unitCostMinor: null,
+                totalCostMinor: null,
+                breakdown: usable.map((c) => ({ layer_id: Number(c.row.id), quantity: 0, unit_cost_minor: c.unit })),
+            };
         }
         const weighted = Math.round(usable.reduce((sum, c) => sum + c.available * (c.unit ?? 0), 0) / available);
         return {
@@ -202,7 +214,8 @@ async function resolveLineCost(
     for (const candidate of candidates) {
         if (remaining <= 0) break;
         if (candidate.available <= 0) continue;
-        if (candidate.unit === null) return { quality: "incomplete" as const, unitCostMinor: null, totalCostMinor: null, breakdown };
+        if (candidate.unit === null)
+            return { quality: "incomplete" as const, unitCostMinor: null, totalCostMinor: null, breakdown };
         const take = Math.min(remaining, candidate.available);
         breakdown.push({ layer_id: Number(candidate.row.id), quantity: take, unit_cost_minor: candidate.unit });
         total += take * candidate.unit;
@@ -213,7 +226,11 @@ async function resolveLineCost(
 }
 
 async function insertLedger(trx: TransactionClientContract, row: Record<string, unknown>) {
-    await trx.table("economic_ledger_entries").insert(row).onConflict(["tenant_id", "entry_kind", "source_kind", "source_id", "order_line_item_id"]).ignore();
+    await trx
+        .table("economic_ledger_entries")
+        .insert(row)
+        .onConflict(["tenant_id", "entry_kind", "source_kind", "source_id", "order_line_item_id"])
+        .ignore();
 }
 
 function allocate(total: number | null, lineTotals: number[]): number[] {
@@ -241,15 +258,31 @@ export async function captureOrderEconomics(input: { orderId: number; effectiveA
     const method: InventoryCostMethod = (policy?.inventory_method as InventoryCostMethod | undefined) ?? "fifo";
     const lineTotals = lines.map((line) => number(line.total));
     const shippingShares = allocate(number(order.shipping_total ?? 0), lineTotals);
-    const packagingShares = allocate(policy?.packaging_minor === null || policy?.packaging_minor === undefined ? null : number(policy.packaging_minor), lineTotals);
-    const fulfillmentShares = allocate(policy?.fulfillment_minor === null || policy?.fulfillment_minor === undefined ? null : number(policy.fulfillment_minor), lineTotals);
-    const promotionShares = allocate(policy?.promotion_minor === null || policy?.promotion_minor === undefined ? null : number(policy.promotion_minor), lineTotals);
-    const affiliateShares = allocate(policy?.affiliate_minor === null || policy?.affiliate_minor === undefined ? null : number(policy.affiliate_minor), lineTotals);
+    const packagingShares = allocate(
+        policy?.packaging_minor === null || policy?.packaging_minor === undefined ? null : number(policy.packaging_minor),
+        lineTotals,
+    );
+    const fulfillmentShares = allocate(
+        policy?.fulfillment_minor === null || policy?.fulfillment_minor === undefined ? null : number(policy.fulfillment_minor),
+        lineTotals,
+    );
+    const promotionShares = allocate(
+        policy?.promotion_minor === null || policy?.promotion_minor === undefined ? null : number(policy.promotion_minor),
+        lineTotals,
+    );
+    const affiliateShares = allocate(
+        policy?.affiliate_minor === null || policy?.affiliate_minor === undefined ? null : number(policy.affiliate_minor),
+        lineTotals,
+    );
 
     let captured = 0;
     for (let index = 0; index < lines.length; index += 1) {
         const line = lines[index];
-        const existing = await trx.from("economic_line_cost_snapshots").where("order_line_item_id", Number(line.id)).orderBy("version", "desc").first();
+        const existing = await trx
+            .from("economic_line_cost_snapshots")
+            .where("order_line_item_id", Number(line.id))
+            .orderBy("version", "desc")
+            .first();
         if (existing) continue;
         const resolved = await resolveLineCost(trx, line, currency, String(effectiveAt), method);
         const [snapshot] = await trx
@@ -323,9 +356,14 @@ export async function captureOrderEconomics(input: { orderId: number; effectiveA
                 effective_at: effectiveAt,
             });
         }
-        const paymentFeeBps = policy?.payment_fee_bps === null || policy?.payment_fee_bps === undefined ? null : number(policy.payment_fee_bps);
-        const channelFeeBps = policy?.channel_fee_bps === null || policy?.channel_fee_bps === undefined ? null : number(policy.channel_fee_bps);
-        for (const [kind, bps] of [["payment_fee", paymentFeeBps], ["channel_fee", channelFeeBps]] as const) {
+        const paymentFeeBps =
+            policy?.payment_fee_bps === null || policy?.payment_fee_bps === undefined ? null : number(policy.payment_fee_bps);
+        const channelFeeBps =
+            policy?.channel_fee_bps === null || policy?.channel_fee_bps === undefined ? null : number(policy.channel_fee_bps);
+        for (const [kind, bps] of [
+            ["payment_fee", paymentFeeBps],
+            ["channel_fee", channelFeeBps],
+        ] as const) {
             const fee = bps === null ? null : Math.round((number(line.total) * bps) / 10000);
             await insertLedger(trx, {
                 order_id: input.orderId,
@@ -357,7 +395,11 @@ export async function captureRefundEconomics(refundId: number, trx: TransactionC
     for (const refundLine of lines) {
         const sourceLine = await trx.from("order_line_items").where("id", Number(refundLine.order_line_item_id)).first();
         if (!sourceLine) continue;
-        const snapshot = await trx.from("economic_line_cost_snapshots").where("order_line_item_id", Number(sourceLine.id)).orderBy("version", "desc").first();
+        const snapshot = await trx
+            .from("economic_line_cost_snapshots")
+            .where("order_line_item_id", Number(sourceLine.id))
+            .orderBy("version", "desc")
+            .first();
         await insertLedger(trx, {
             order_id: Number(refund.order_id),
             order_line_item_id: Number(sourceLine.id),
@@ -372,7 +414,10 @@ export async function captureRefundEconomics(refundId: number, trx: TransactionC
             metadata: JSON.stringify({ refund_id: refundId }),
             effective_at: refund.processed_at ?? refund.created_at,
         });
-        const recovered = snapshot?.total_cost_minor === null || !snapshot ? null : Math.round((number(snapshot.total_cost_minor) * Number(refundLine.quantity)) / Number(snapshot.quantity));
+        const recovered =
+            snapshot?.total_cost_minor === null || !snapshot
+                ? null
+                : Math.round((number(snapshot.total_cost_minor) * Number(refundLine.quantity)) / Number(snapshot.quantity));
         await insertLedger(trx, {
             order_id: Number(refund.order_id),
             order_line_item_id: Number(sourceLine.id),
@@ -400,44 +445,76 @@ export async function correctLineCost(input: {
 }) {
     return idempotent("line_cost.correct", input.idempotencyKey, input, async () => {
         const trx = currentTrx();
-        await trx.rawQuery("SELECT pg_advisory_xact_lock(?, ?)", [Number(currentTenantId()) % 2147483647, input.orderLineItemId % 2147483647]);
+        await trx.rawQuery("SELECT pg_advisory_xact_lock(?, ?)", [
+            Number(currentTenantId()) % 2147483647,
+            input.orderLineItemId % 2147483647,
+        ]);
         const line = await trx.from("order_line_items").where("id", input.orderLineItemId).first();
         if (!line) throw new Error("Order line not found");
-        const previous = await trx.from("economic_line_cost_snapshots").where("order_line_item_id", input.orderLineItemId).orderBy("version", "desc").first();
+        const previous = await trx
+            .from("economic_line_cost_snapshots")
+            .where("order_line_item_id", input.orderLineItemId)
+            .orderBy("version", "desc")
+            .first();
         if (!previous) throw new Error("No economic snapshot exists for this line");
         const total = positiveInt(input.unitCostMinor, "unitCostMinor") * Number(line.quantity);
         const version = Number(previous.version) + 1;
-        const [snapshot] = await trx.table("economic_line_cost_snapshots").insert({
+        const [snapshot] = await trx
+            .table("economic_line_cost_snapshots")
+            .insert({
+                order_id: Number(line.order_id),
+                order_line_item_id: input.orderLineItemId,
+                product_id: line.product_id ?? null,
+                variation_id: line.variation_id ?? null,
+                version,
+                quantity: Number(line.quantity),
+                unit_cost_minor: input.unitCostMinor,
+                total_cost_minor: total,
+                currency: previous.currency,
+                quality: "realized",
+                method: "manual",
+                policy_id: previous.policy_id ?? null,
+                layer_breakdown: JSON.stringify([]),
+                reason: String(input.reason).slice(0, 500),
+                replaces_snapshot_id: Number(previous.id),
+                effective_at: DateTime.utc().toSQL(),
+                created_by_user_id: input.userId ?? null,
+            })
+            .returning("*");
+        const oldLedger = await trx
+            .from("economic_ledger_entries")
+            .where({ entry_kind: "cogs", source_kind: "cost_snapshot", source_id: String(previous.id) })
+            .first();
+        if (oldLedger && oldLedger.amount_minor !== null) {
+            await insertLedger(trx, {
+                order_id: Number(line.order_id),
+                order_line_item_id: input.orderLineItemId,
+                product_id: line.product_id ?? null,
+                variation_id: line.variation_id ?? null,
+                entry_kind: "cogs_reversal",
+                quality: "realized",
+                amount_minor: -number(oldLedger.amount_minor),
+                currency: previous.currency,
+                source_kind: "cost_correction",
+                source_id: `${snapshot.id}:reversal`,
+                reversal_of_id: Number(oldLedger.id),
+                metadata: JSON.stringify({ reason: input.reason }),
+                effective_at: DateTime.utc().toSQL(),
+            });
+        }
+        await insertLedger(trx, {
             order_id: Number(line.order_id),
             order_line_item_id: input.orderLineItemId,
             product_id: line.product_id ?? null,
             variation_id: line.variation_id ?? null,
-            version,
-            quantity: Number(line.quantity),
-            unit_cost_minor: input.unitCostMinor,
-            total_cost_minor: total,
-            currency: previous.currency,
+            entry_kind: "cogs",
             quality: "realized",
-            method: "manual",
-            policy_id: previous.policy_id ?? null,
-            layer_breakdown: JSON.stringify([]),
-            reason: String(input.reason).slice(0, 500),
-            replaces_snapshot_id: Number(previous.id),
+            amount_minor: -total,
+            currency: previous.currency,
+            source_kind: "cost_snapshot",
+            source_id: String(snapshot.id),
+            metadata: JSON.stringify({ corrected: true, reason: input.reason }),
             effective_at: DateTime.utc().toSQL(),
-            created_by_user_id: input.userId ?? null,
-        }).returning("*");
-        const oldLedger = await trx.from("economic_ledger_entries").where({ entry_kind: "cogs", source_kind: "cost_snapshot", source_id: String(previous.id) }).first();
-        if (oldLedger && oldLedger.amount_minor !== null) {
-            await insertLedger(trx, {
-                order_id: Number(line.order_id), order_line_item_id: input.orderLineItemId, product_id: line.product_id ?? null, variation_id: line.variation_id ?? null,
-                entry_kind: "cogs_reversal", quality: "realized", amount_minor: -number(oldLedger.amount_minor), currency: previous.currency,
-                source_kind: "cost_correction", source_id: `${snapshot.id}:reversal`, reversal_of_id: Number(oldLedger.id), metadata: JSON.stringify({ reason: input.reason }), effective_at: DateTime.utc().toSQL(),
-            });
-        }
-        await insertLedger(trx, {
-            order_id: Number(line.order_id), order_line_item_id: input.orderLineItemId, product_id: line.product_id ?? null, variation_id: line.variation_id ?? null,
-            entry_kind: "cogs", quality: "realized", amount_minor: -total, currency: previous.currency,
-            source_kind: "cost_snapshot", source_id: String(snapshot.id), metadata: JSON.stringify({ corrected: true, reason: input.reason }), effective_at: DateTime.utc().toSQL(),
         });
         return snapshot;
     });
@@ -461,19 +538,38 @@ export async function reconcileSettlement(input: {
         const trx = currentTrx();
         const provider = String(input.provider).slice(0, 80);
         const key = String(input.settlementKey).slice(0, 190);
-        await trx.rawQuery("SELECT pg_advisory_xact_lock(?, hashtext(?))", [Number(currentTenantId()) % 2147483647, `${provider}:${key}`]);
-        const previous = await trx.from("economic_settlements").where({ provider, settlement_key: key }).orderBy("revision", "desc").first();
+        await trx.rawQuery("SELECT pg_advisory_xact_lock(?, hashtext(?))", [
+            Number(currentTenantId()) % 2147483647,
+            `${provider}:${key}`,
+        ]);
+        const previous = await trx
+            .from("economic_settlements")
+            .where({ provider, settlement_key: key })
+            .orderBy("revision", "desc")
+            .first();
         const revision = Number(previous?.revision ?? 0) + 1;
         const gross = number(input.grossMinor);
         const fee = number(input.feeMinor);
         const refund = number(input.refundMinor);
-        const [row] = await trx.table("economic_settlements").insert({
-            provider, settlement_key: key, revision, status: input.status, currency: normalizedCurrency(input.currency), gross_minor: gross,
-            fee_minor: fee, refund_minor: refund, net_minor: gross - fee - refund,
-            expected_at: input.expectedAt ? DateTime.fromISO(input.expectedAt).toUTC().toSQL() : null,
-            settled_at: input.settledAt ? DateTime.fromISO(input.settledAt).toUTC().toSQL() : null,
-            evidence: JSON.stringify(input.evidence ?? {}), replaces_settlement_id: previous?.id ?? null, created_by_user_id: input.userId ?? null,
-        }).returning("*");
+        const [row] = await trx
+            .table("economic_settlements")
+            .insert({
+                provider,
+                settlement_key: key,
+                revision,
+                status: input.status,
+                currency: normalizedCurrency(input.currency),
+                gross_minor: gross,
+                fee_minor: fee,
+                refund_minor: refund,
+                net_minor: gross - fee - refund,
+                expected_at: input.expectedAt ? DateTime.fromISO(input.expectedAt).toUTC().toSQL() : null,
+                settled_at: input.settledAt ? DateTime.fromISO(input.settledAt).toUTC().toSQL() : null,
+                evidence: JSON.stringify(input.evidence ?? {}),
+                replaces_settlement_id: previous?.id ?? null,
+                created_by_user_id: input.userId ?? null,
+            })
+            .returning("*");
         return row;
     });
 }
@@ -488,12 +584,20 @@ export async function profitabilityOverview(input: { from?: string; to?: string;
         .select("currency")
         .sum(trx.raw("CASE WHEN amount_minor IS NOT NULL THEN amount_minor ELSE 0 END AS contribution_minor"))
         .sum(trx.raw("CASE WHEN entry_kind='revenue' THEN COALESCE(amount_minor,0) ELSE 0 END AS revenue_minor"))
-        .sum(trx.raw("CASE WHEN entry_kind IN ('cogs','cogs_reversal','refund_cogs_recovery') THEN COALESCE(amount_minor,0) ELSE 0 END AS cogs_minor"))
+        .sum(
+            trx.raw(
+                "CASE WHEN entry_kind IN ('cogs','cogs_reversal','refund_cogs_recovery') THEN COALESCE(amount_minor,0) ELSE 0 END AS cogs_minor",
+            ),
+        )
         .sum(trx.raw("CASE WHEN entry_kind LIKE 'refund_%' THEN COALESCE(amount_minor,0) ELSE 0 END AS refunds_minor"))
         .count(trx.raw("DISTINCT order_id AS orders"))
         .sum(trx.raw("CASE WHEN quality='incomplete' THEN 1 ELSE 0 END AS incomplete_entries"))
         .groupBy("currency");
-    const settlements = await trx.from("economic_settlements").select("currency", "status").sum("net_minor as net_minor").groupBy("currency", "status");
+    const settlements = await trx
+        .from("economic_settlements")
+        .select("currency", "status")
+        .sum("net_minor as net_minor")
+        .groupBy("currency", "status");
     return { currencies: rows, settlements };
 }
 
@@ -501,20 +605,44 @@ export async function profitabilityCube(input: { dimension?: "product" | "order"
     const trx = currentTrx();
     const dimension = input.dimension ?? "product";
     const limit = Math.min(200, Math.max(1, Number(input.limit ?? 50)));
-    const q = trx.from("economic_ledger_entries as e").leftJoin("products as p", "p.id", "e.product_id").leftJoin("orders as o", "o.id", "e.order_id");
+    const q = trx
+        .from("economic_ledger_entries as e")
+        .leftJoin("products as p", "p.id", "e.product_id")
+        .leftJoin("orders as o", "o.id", "e.order_id");
     if (input.currency) q.where("e.currency", normalizedCurrency(input.currency));
     if (dimension === "order") {
-        return q.select("e.order_id as id", "o.order_number as label", "e.currency").sum("e.amount_minor as contribution_minor").sum(trx.raw("CASE WHEN e.quality='incomplete' THEN 1 ELSE 0 END AS incomplete_entries")).groupBy("e.order_id", "o.order_number", "e.currency").orderBy("contribution_minor", "desc").limit(limit);
+        return q
+            .select("e.order_id as id", "o.order_number as label", "e.currency")
+            .sum("e.amount_minor as contribution_minor")
+            .sum(trx.raw("CASE WHEN e.quality='incomplete' THEN 1 ELSE 0 END AS incomplete_entries"))
+            .groupBy("e.order_id", "o.order_number", "e.currency")
+            .orderBy("contribution_minor", "desc")
+            .limit(limit);
     }
-    return q.select("e.product_id as id", "p.name as label", "e.currency").sum("e.amount_minor as contribution_minor").sum(trx.raw("CASE WHEN e.quality='incomplete' THEN 1 ELSE 0 END AS incomplete_entries")).whereNotNull("e.product_id").groupBy("e.product_id", "p.name", "e.currency").orderBy("contribution_minor", "desc").limit(limit);
+    return q
+        .select("e.product_id as id", "p.name as label", "e.currency")
+        .sum("e.amount_minor as contribution_minor")
+        .sum(trx.raw("CASE WHEN e.quality='incomplete' THEN 1 ELSE 0 END AS incomplete_entries"))
+        .whereNotNull("e.product_id")
+        .groupBy("e.product_id", "p.name", "e.currency")
+        .orderBy("contribution_minor", "desc")
+        .limit(limit);
 }
 
 export async function orderEconomics(orderId: number) {
     const trx = currentTrx();
     const order = await trx.from("orders").where("id", orderId).first();
     if (!order) return null;
-    const ledger = await trx.from("economic_ledger_entries").where("order_id", orderId).orderBy("effective_at", "asc").orderBy("id", "asc");
-    const snapshots = await trx.from("economic_line_cost_snapshots").where("order_id", orderId).orderBy("order_line_item_id", "asc").orderBy("version", "asc");
+    const ledger = await trx
+        .from("economic_ledger_entries")
+        .where("order_id", orderId)
+        .orderBy("effective_at", "asc")
+        .orderBy("id", "asc");
+    const snapshots = await trx
+        .from("economic_line_cost_snapshots")
+        .where("order_id", orderId)
+        .orderBy("order_line_item_id", "asc")
+        .orderBy("version", "asc");
     return { order, ledger, snapshots };
 }
 
@@ -522,8 +650,16 @@ export async function productEconomics(productId: number) {
     const trx = currentTrx();
     const product = await trx.from("products").where("id", productId).first();
     if (!product) return null;
-    const ledger = await trx.from("economic_ledger_entries").where("product_id", productId).orderBy("effective_at", "desc").limit(500);
-    const layers = await trx.from("economic_cost_layers").where("product_id", productId).orderBy("effective_at", "desc").limit(100);
+    const ledger = await trx
+        .from("economic_ledger_entries")
+        .where("product_id", productId)
+        .orderBy("effective_at", "desc")
+        .limit(500);
+    const layers = await trx
+        .from("economic_cost_layers")
+        .where("product_id", productId)
+        .orderBy("effective_at", "desc")
+        .limit(100);
     return { product, ledger, layers };
 }
 
@@ -540,18 +676,38 @@ export async function workingCapital() {
         if (layer.unit_landed_cost_minor === null) unvaluedUnits += remaining;
         else inventoryCapitalMinor += remaining * number(layer.unit_landed_cost_minor);
     }
-    const pending = await trx.from("economic_settlements").whereIn("status", ["forecast", "pending"]).where("currency", currency).sum("net_minor as amount").first();
-    return { currency, inventory_capital_minor: inventoryCapitalMinor, unvalued_units: unvaluedUnits, expected_cash_minor: Number(pending?.amount ?? 0) };
+    const pending = await trx
+        .from("economic_settlements")
+        .whereIn("status", ["forecast", "pending"])
+        .where("currency", currency)
+        .sum("net_minor as amount")
+        .first();
+    return {
+        currency,
+        inventory_capital_minor: inventoryCapitalMinor,
+        unvalued_units: unvaluedUnits,
+        expected_cash_minor: Number(pending?.amount ?? 0),
+    };
 }
 
 export async function backfillEconomics(input: { offset?: number; limit?: number }) {
     const trx = currentTrx();
     const limit = Math.min(5000, Math.max(1, Number(input.limit ?? 500)));
     const offset = Math.max(0, Number(input.offset ?? 0));
-    const orders = await trx.from("orders").whereNot("status", "draft").orderByRaw("COALESCE(date_paid_at, created_at) ASC").orderBy("id", "asc").offset(offset).limit(limit);
+    const orders = await trx
+        .from("orders")
+        .whereNot("status", "draft")
+        .orderByRaw("COALESCE(date_paid_at, created_at) ASC")
+        .orderBy("id", "asc")
+        .offset(offset)
+        .limit(limit);
     let captured = 0;
     for (const order of orders) {
-        const result = await captureOrderEconomics({ orderId: Number(order.id), effectiveAt: order.date_paid_at ?? order.created_at, trx });
+        const result = await captureOrderEconomics({
+            orderId: Number(order.id),
+            effectiveAt: order.date_paid_at ?? order.created_at,
+            trx,
+        });
         captured += Number(result?.captured ?? 0);
     }
     return { offset, limit, orders: orders.length, lines_captured: captured, next_offset: offset + orders.length };

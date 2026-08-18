@@ -6,7 +6,9 @@ import { useLocale } from "next-intl";
 
 import { apiGet, apiMutate } from "#/lib/queries/api-client";
 
-interface Envelope<T> { data: T }
+interface Envelope<T> {
+    data: T;
+}
 export interface EconomicsOverviewRow {
     currency: string;
     contribution_minor: string;
@@ -52,7 +54,8 @@ export function useEconomicsCube(dimension: "product" | "order", currency?: stri
     const locale = useLocale() as Locale;
     return useQuery<Envelope<EconomicsCubeRow[]>, Error, EconomicsCubeRow[]>({
         queryKey: ["admin", "economics", "cube", dimension, currency, locale],
-        queryFn: () => apiGet<Envelope<EconomicsCubeRow[]>>("economics/cube", { locale, query: { dimension, currency, limit: 100 } }),
+        queryFn: () =>
+            apiGet<Envelope<EconomicsCubeRow[]>>("economics/cube", { locale, query: { dimension, currency, limit: 100 } }),
         select: (payload) => payload.data,
         staleTime: 15_000,
     });
@@ -95,10 +98,18 @@ function useEconomicMutation(path: string) {
     });
 }
 
-export function useCreateCostPolicy() { return useEconomicMutation("economics/cost-policies"); }
-export function useCreateCostLayer() { return useEconomicMutation("economics/cost-layers"); }
-export function useReconcileSettlement() { return useEconomicMutation("economics/settlements/reconcile"); }
-export function useBackfillEconomics() { return useEconomicMutation("economics/backfill"); }
+export function useCreateCostPolicy() {
+    return useEconomicMutation("economics/cost-policies");
+}
+export function useCreateCostLayer() {
+    return useEconomicMutation("economics/cost-layers");
+}
+export function useReconcileSettlement() {
+    return useEconomicMutation("economics/settlements/reconcile");
+}
+export function useBackfillEconomics() {
+    return useEconomicMutation("economics/backfill");
+}
 
 export function useCorrectLineCost(lineId: number | null) {
     const locale = useLocale() as Locale;
@@ -106,7 +117,11 @@ export function useCorrectLineCost(lineId: number | null) {
     return useMutation<Envelope<any>, Error, Record<string, unknown>>({
         mutationFn: (body) => {
             if (!lineId) throw new Error("line id is required");
-            return apiMutate<Envelope<any>>("POST", `economics/line-costs/${lineId}/corrections`, { locale, body, idempotencyKey: operationKey() });
+            return apiMutate<Envelope<any>>("POST", `economics/line-costs/${lineId}/corrections`, {
+                locale,
+                body,
+                idempotencyKey: operationKey(),
+            });
         },
         onSuccess: () => client.invalidateQueries({ queryKey: ["admin", "economics"] }),
     });

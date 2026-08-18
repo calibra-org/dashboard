@@ -35,7 +35,13 @@ export default class extends BaseSchema {
             table.bigIncrements("id").primary();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
             table.bigInteger("product_id").unsigned().notNullable().references("id").inTable("products").onDelete("RESTRICT");
-            table.bigInteger("variation_id").unsigned().nullable().references("id").inTable("product_variations").onDelete("RESTRICT");
+            table
+                .bigInteger("variation_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("product_variations")
+                .onDelete("RESTRICT");
             table.integer("quantity_initial").notNullable();
             table.integer("quantity_remaining").notNullable();
             table.bigInteger("unit_purchase_cost_minor").nullable();
@@ -53,9 +59,21 @@ export default class extends BaseSchema {
             table.bigIncrements("id").primary();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
             table.bigInteger("order_id").unsigned().notNullable().references("id").inTable("orders").onDelete("RESTRICT");
-            table.bigInteger("order_line_item_id").unsigned().notNullable().references("id").inTable("order_line_items").onDelete("RESTRICT");
+            table
+                .bigInteger("order_line_item_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("order_line_items")
+                .onDelete("RESTRICT");
             table.bigInteger("product_id").unsigned().nullable().references("id").inTable("products").onDelete("RESTRICT");
-            table.bigInteger("variation_id").unsigned().nullable().references("id").inTable("product_variations").onDelete("RESTRICT");
+            table
+                .bigInteger("variation_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("product_variations")
+                .onDelete("RESTRICT");
             table.integer("version").notNullable();
             table.integer("quantity").notNullable();
             table.bigInteger("unit_cost_minor").nullable();
@@ -63,14 +81,28 @@ export default class extends BaseSchema {
             table.string("currency", 3).notNullable();
             table.string("quality", 24).notNullable();
             table.string("method", 24).notNullable();
-            table.bigInteger("policy_id").unsigned().nullable().references("id").inTable("economic_cost_policies").onDelete("RESTRICT");
+            table
+                .bigInteger("policy_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("economic_cost_policies")
+                .onDelete("RESTRICT");
             table.jsonb("layer_breakdown").notNullable().defaultTo(this.raw("'[]'::jsonb"));
             table.string("reason", 500).nullable();
-            table.bigInteger("replaces_snapshot_id").unsigned().nullable().references("id").inTable("economic_line_cost_snapshots").onDelete("RESTRICT");
+            table
+                .bigInteger("replaces_snapshot_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("economic_line_cost_snapshots")
+                .onDelete("RESTRICT");
             table.timestamp("effective_at", { useTz: true }).notNullable();
             table.bigInteger("created_by_user_id").unsigned().nullable().references("id").inTable("users").onDelete("SET NULL");
             table.timestamp("created_at", { useTz: true }).notNullable().defaultTo(this.now());
-            table.unique(["tenant_id", "order_line_item_id", "version"], { indexName: "economic_line_cost_snapshots_version_uq" });
+            table.unique(["tenant_id", "order_line_item_id", "version"], {
+                indexName: "economic_line_cost_snapshots_version_uq",
+            });
             table.index(["tenant_id", "order_id"], "economic_line_cost_snapshots_order_idx");
         });
 
@@ -78,20 +110,40 @@ export default class extends BaseSchema {
             table.bigIncrements("id").primary();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
             table.bigInteger("order_id").unsigned().nullable().references("id").inTable("orders").onDelete("RESTRICT");
-            table.bigInteger("order_line_item_id").unsigned().nullable().references("id").inTable("order_line_items").onDelete("RESTRICT");
+            table
+                .bigInteger("order_line_item_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("order_line_items")
+                .onDelete("RESTRICT");
             table.bigInteger("product_id").unsigned().nullable().references("id").inTable("products").onDelete("RESTRICT");
-            table.bigInteger("variation_id").unsigned().nullable().references("id").inTable("product_variations").onDelete("RESTRICT");
+            table
+                .bigInteger("variation_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("product_variations")
+                .onDelete("RESTRICT");
             table.string("entry_kind", 48).notNullable();
             table.string("quality", 24).notNullable();
             table.bigInteger("amount_minor").nullable();
             table.string("currency", 3).notNullable();
             table.string("source_kind", 48).notNullable();
             table.string("source_id", 190).notNullable();
-            table.bigInteger("reversal_of_id").unsigned().nullable().references("id").inTable("economic_ledger_entries").onDelete("RESTRICT");
+            table
+                .bigInteger("reversal_of_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("economic_ledger_entries")
+                .onDelete("RESTRICT");
             table.jsonb("metadata").notNullable().defaultTo(this.raw("'{}'::jsonb"));
             table.timestamp("effective_at", { useTz: true }).notNullable();
             table.timestamp("created_at", { useTz: true }).notNullable().defaultTo(this.now());
-            table.unique(["tenant_id", "entry_kind", "source_kind", "source_id", "order_line_item_id"], { indexName: "economic_ledger_source_uq" });
+            table.unique(["tenant_id", "entry_kind", "source_kind", "source_id", "order_line_item_id"], {
+                indexName: "economic_ledger_source_uq",
+            });
             table.index(["tenant_id", "currency", "effective_at"], "economic_ledger_time_idx");
             table.index(["tenant_id", "order_id"], "economic_ledger_order_idx");
             table.index(["tenant_id", "product_id", "variation_id"], "economic_ledger_product_idx");
@@ -112,10 +164,18 @@ export default class extends BaseSchema {
             table.timestamp("expected_at", { useTz: true }).nullable();
             table.timestamp("settled_at", { useTz: true }).nullable();
             table.jsonb("evidence").notNullable().defaultTo(this.raw("'{}'::jsonb"));
-            table.bigInteger("replaces_settlement_id").unsigned().nullable().references("id").inTable("economic_settlements").onDelete("RESTRICT");
+            table
+                .bigInteger("replaces_settlement_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("economic_settlements")
+                .onDelete("RESTRICT");
             table.bigInteger("created_by_user_id").unsigned().nullable().references("id").inTable("users").onDelete("SET NULL");
             table.timestamp("created_at", { useTz: true }).notNullable().defaultTo(this.now());
-            table.unique(["tenant_id", "provider", "settlement_key", "revision"], { indexName: "economic_settlements_revision_uq" });
+            table.unique(["tenant_id", "provider", "settlement_key", "revision"], {
+                indexName: "economic_settlements_revision_uq",
+            });
             table.index(["tenant_id", "status", "expected_at"], "economic_settlements_forecast_idx");
         });
 
@@ -141,20 +201,38 @@ export default class extends BaseSchema {
         for (const sql of checks) this.schema.raw(sql);
 
         for (const table of TABLES) {
-            this.schema.raw(`ALTER TABLE ${table} ALTER COLUMN tenant_id SET DEFAULT NULLIF(current_setting('app.current_tenant', true), '')::bigint`);
+            this.schema.raw(
+                `ALTER TABLE ${table} ALTER COLUMN tenant_id SET DEFAULT NULLIF(current_setting('app.current_tenant', true), '')::bigint`,
+            );
             this.schema.raw(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`);
             this.schema.raw(`ALTER TABLE ${table} FORCE ROW LEVEL SECURITY`);
             this.schema.raw(`CREATE POLICY tenant_isolation ON ${table} USING (${TENANT}) WITH CHECK (${TENANT})`);
         }
 
-        for (const table of ["economic_cost_policies", "economic_cost_layers", "economic_line_cost_snapshots", "economic_ledger_entries", "economic_settlements"]) {
-            this.schema.raw(`CREATE OR REPLACE FUNCTION ${table}_immutable_guard() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION '${table} is append-only'; END; $$`);
-            this.schema.raw(`CREATE TRIGGER ${table}_immutable BEFORE UPDATE OR DELETE ON ${table} FOR EACH ROW EXECUTE FUNCTION ${table}_immutable_guard()`);
+        for (const table of [
+            "economic_cost_policies",
+            "economic_cost_layers",
+            "economic_line_cost_snapshots",
+            "economic_ledger_entries",
+            "economic_settlements",
+        ]) {
+            this.schema.raw(
+                `CREATE OR REPLACE FUNCTION ${table}_immutable_guard() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION '${table} is append-only'; END; $$`,
+            );
+            this.schema.raw(
+                `CREATE TRIGGER ${table}_immutable BEFORE UPDATE OR DELETE ON ${table} FOR EACH ROW EXECUTE FUNCTION ${table}_immutable_guard()`,
+            );
         }
     }
 
     async down() {
-        for (const table of ["economic_settlements", "economic_ledger_entries", "economic_line_cost_snapshots", "economic_cost_layers", "economic_cost_policies"]) {
+        for (const table of [
+            "economic_settlements",
+            "economic_ledger_entries",
+            "economic_line_cost_snapshots",
+            "economic_cost_layers",
+            "economic_cost_policies",
+        ]) {
             this.schema.raw(`DROP FUNCTION IF EXISTS ${table}_immutable_guard() CASCADE`);
         }
         this.schema.dropTable("economic_mutation_receipts");

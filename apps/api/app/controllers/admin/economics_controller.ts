@@ -29,11 +29,23 @@ function conflictAware(ctx: HttpContext, error: unknown) {
 
 export default class AdminEconomicsController {
     async overview({ request }: HttpContext) {
-        return { data: await profitabilityOverview({ from: request.input("from"), to: request.input("to"), currency: request.input("currency") }) };
+        return {
+            data: await profitabilityOverview({
+                from: request.input("from"),
+                to: request.input("to"),
+                currency: request.input("currency"),
+            }),
+        };
     }
 
     async cube({ request }: HttpContext) {
-        return { data: await profitabilityCube({ dimension: request.input("dimension"), currency: request.input("currency"), limit: request.input("limit") }) };
+        return {
+            data: await profitabilityCube({
+                dimension: request.input("dimension"),
+                currency: request.input("currency"),
+                limit: request.input("limit"),
+            }),
+        };
     }
 
     async workingCapital() {

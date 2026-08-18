@@ -3826,8 +3826,8 @@
         "subtitle": "Sales trends and product performance.",
         "tabs": {
             "sales": "Sales",
-        "finance": "Finance & Economics",
-        "economics": "Profitability, cash & capital",
+            "finance": "Finance & Economics",
+            "economics": "Profitability, cash & capital",
             "topSellers": "Top sellers"
         },
         "sales": {
