@@ -1,4 +1,4 @@
-name: Phase 12 Publisher
+name: Phase 12 Fixer
 
 on:
   pull_request:
@@ -8,71 +8,67 @@ permissions:
   contents: write
 
 jobs:
-  publish:
+  fix:
     if: github.head_ref == 'agent/phase12-runner-20260818'
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: main
-      - name: Recover and publish exact Phase 12
+          ref: agent/phase12-profitability-cash-os
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+      - run: npm install --global pnpm@10.32.1
+      - run: pnpm install --frozen-lockfile
+      - name: Fix Phase 12 typing and regenerate SDK
         shell: bash
         run: |
           set -euo pipefail
-          git fetch origin '+refs/heads/*:refs/remotes/origin/*'
-          {
-            git show origin/agent/phase12-publisher2-20260818:.phase12-recovery/chunk-00.b64
-            git show origin/agent/phase12-publisher2-20260818:.phase12-recovery/chunk-01.b64
-            git show origin/agent/phase12-publisher2-20260818:.phase12-recovery/chunk-02.b64
-          } > /tmp/phase12.patch.gz.b64
-          test "$(wc -c < /tmp/phase12.patch.gz.b64 | tr -d ' ')" = "26212"
-          echo '722c8a8b13c8fb37518014fcb37624a86670f073871ef660d54e8070a4296fc0  /tmp/phase12.patch.gz.b64' | sha256sum -c -
-          base64 -d /tmp/phase12.patch.gz.b64 | gzip -d > /tmp/phase12.patch
-          echo '6e5c7cb9d1d6d299dcbe7823060e7fc860871d8f05db2d1295d1865d26890aff  /tmp/phase12.patch' | sha256sum -c -
           git config user.name 'calibra-dev'
           git config user.email 'keshavarz20.com@gmail.com'
-          git switch -C agent/phase12-profitability-cash-os origin/main
-          set +e
-          git apply --3way /tmp/phase12.patch
-          apply_rc=$?
-          set -e
-          conflicts=$(git diff --name-only --diff-filter=U || true)
-          unexpected=$(printf '%s\n' "$conflicts" | grep -v -E '^(docs/api/package.json|docs/api/scripts/merge-admin-spec.js)$' || true)
-          if [ -n "$unexpected" ]; then
-            echo "Unexpected Phase 12 conflicts:" >&2
-            printf '%s\n' "$unexpected" >&2
-            exit 1
-          fi
-          if [ "$apply_rc" -ne 0 ] && [ -z "$conflicts" ]; then
-            echo 'Patch apply failed without resolvable conflicts.' >&2
-            exit 1
-          fi
-          git checkout origin/main -- .github/workflows/check.yml
-          if printf '%s\n' "$conflicts" | grep -qx 'docs/api/package.json'; then git checkout --ours docs/api/package.json; fi
-          if printf '%s\n' "$conflicts" | grep -qx 'docs/api/scripts/merge-admin-spec.js'; then git checkout --ours docs/api/scripts/merge-admin-spec.js; fi
-          node <<'NODE'
-          const fs = require('node:fs');
-          const p = 'docs/api/package.json';
-          const pkg = JSON.parse(fs.readFileSync(p, 'utf8'));
-          pkg.scripts['build:json:admin-phase12'] = 'redocly bundle reference/openapi/admin.phase12.v1.yaml -o dist/admin.phase12.v1.json --ext json';
-          if (!pkg.scripts['build:json:admin'].includes('build:json:admin-phase12')) pkg.scripts['build:json:admin'] = pkg.scripts['build:json:admin'].replace('pnpm build:json:admin-phase11 && ', 'pnpm build:json:admin-phase11 && pnpm build:json:admin-phase12 && ');
-          fs.writeFileSync(p, JSON.stringify(pkg, null, 4) + '\n');
-          const m = 'docs/api/scripts/merge-admin-spec.js';
-          let text = fs.readFileSync(m, 'utf8');
-          if (!text.includes('const phase12 =')) text = text.replace('const phase11 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase11.v1.json"), "utf8"));', 'const phase11 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase11.v1.json"), "utf8"));\nconst phase12 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase12.v1.json"), "utf8"));');
-          if (!text.includes('[phase12, "Phase12Overlay"]')) text = text.replace('    [phase11, "Phase11GovernanceOverlay"],', '    [phase11, "Phase11GovernanceOverlay"],\n    [phase12, "Phase12Overlay"],');
-          fs.writeFileSync(m, text);
-          NODE
-          sed -i 's/[[:space:]]\+$//' apps/admin/src/features/economics/EconomicsWorkspace.tsx
-          git add docs/api/package.json docs/api/scripts/merge-admin-spec.js apps/admin/src/features/economics/EconomicsWorkspace.tsx .github/workflows/check.yml
-          test -z "$(git diff --name-only --diff-filter=U)"
-          git diff --check
+          python3 <<'PY'
+          from pathlib import Path
+          p=Path('apps/api/app/services/economics_service.ts')
+          s=p.read_text()
+          s=s.replace('.crossJoin(trx.raw("jsonb_array_elements(s.layer_breakdown) AS elem"))', '.joinRaw("CROSS JOIN jsonb_array_elements(s.layer_breakdown) AS elem")')
+          old='''    const layers = await trx
+        .from("economic_cost_layers")
+        .where("product_id", Number(line.product_id))
+        .where("currency", currency)
+        .where("effective_at", "<=", effectiveAt)
+        .modify((q) => {
+            if (line.variation_id) q.where("variation_id", Number(line.variation_id));
+            else q.whereNull("variation_id");
+        })
+        .orderBy("effective_at", "asc")
+        .orderBy("id", "asc");'''
+          new='''    const layersQuery = trx
+        .from("economic_cost_layers")
+        .where("product_id", Number(line.product_id))
+        .where("currency", currency)
+        .where("effective_at", "<=", effectiveAt);
+    if (line.variation_id) layersQuery.where("variation_id", Number(line.variation_id));
+    else layersQuery.whereNull("variation_id");
+    const layers = await layersQuery.orderBy("effective_at", "asc").orderBy("id", "asc");'''
+          if old not in s: raise SystemExit('layers block not found')
+          p.write_text(s.replace(old,new))
+          p=Path('apps/api/app/services/order_state_machine.ts')
+          s=p.read_text()
+          old='effectiveAt: order.datePaidAt?.toUTC().toSQL() ?? order.createdAt.toUTC().toSQL(),'
+          new='effectiveAt: order.datePaidAt?.toUTC().toSQL() ?? order.createdAt.toUTC().toSQL() ?? undefined,'
+          if old not in s: raise SystemExit('effectiveAt line not found')
+          p.write_text(s.replace(old,new))
+          PY
+          pnpm --filter @calibra/sdk run codegen
           node scripts/verify-phase12-economics-integration.mjs
-          test -f apps/api/app/services/economics_service.ts
-          test -f apps/admin/src/features/economics/EconomicsWorkspace.tsx
-          test -f apps/api/database/migrations/1765000000000_create_economics_os.ts
-          git add .
-          git commit -m 'feat(economics): Phase 12 Profitability, Cash & Working Capital OS'
-          git push --force origin HEAD:agent/phase12-profitability-cash-os
+          pnpm run typecheck
+          pnpm run build
+          pnpm --filter @calibra/sdk run codegen:check
+          git diff --check
+          git add apps/api/app/services/economics_service.ts apps/api/app/services/order_state_machine.ts packages/sdk/src/generated/admin.d.ts
+          if ! git diff --cached --quiet; then
+            git commit -m 'fix(economics): pass Phase 12 type and SDK gates'
+            git push origin HEAD:agent/phase12-profitability-cash-os
+          fi
