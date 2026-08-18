@@ -24974,7 +24974,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Event */
+            /** @description Event, recommendation and deal health */
             200: {
                 headers: {
                     [name: string]: unknown;

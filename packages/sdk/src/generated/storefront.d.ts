@@ -6303,7 +6303,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Updated hide */
+            /** @description Updated hide, show-less and interest controls */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -6321,7 +6321,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Profile */
+            /** @description Profile, preferences and linked behavior reset */
             200: {
                 headers: {
                     [name: string]: unknown;
