@@ -63,6 +63,7 @@ await import("./routes/admin_decision_intelligence.js");
 await import("./routes/admin_economics.js");
 await import("./routes/admin_planning.js");
 await import("./routes/admin_procurement.js");
+await import("./routes/admin_trust_risk.js");
 await import("./routes/admin_settings.js");
 await import("./routes/admin_personalization.js");
 await import("./routes/admin_media.js");
