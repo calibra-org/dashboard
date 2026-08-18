@@ -3,6 +3,8 @@ name: Phase 20 Completion Materialize
 on:
   push:
     branches: [agent/phase20-trust-risk-completion-20260818]
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: write
