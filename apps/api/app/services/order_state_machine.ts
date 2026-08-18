@@ -65,7 +65,7 @@ export class OrderStateMachine {
             if (to === "processing") {
                 await captureOrderEconomics({
                     orderId: Number(order.id),
-                    effectiveAt: order.datePaidAt?.toUTC().toSQL() ?? order.createdAt.toUTC().toSQL(),
+                    effectiveAt: order.datePaidAt?.toUTC().toSQL() ?? order.createdAt.toUTC().toSQL() ?? undefined,
                     trx,
                 });
             }
