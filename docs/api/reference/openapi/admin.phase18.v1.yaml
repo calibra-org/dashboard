@@ -1,0 +1,152 @@
+openapi: 3.1.0
+info:
+  title: Calibra Admin Phase 18 Pricing and Promotion Brain
+  version: 1.0.0
+  description: Evidence-aware pricing simulation and runtime health without replacing canonical product pricing or promotion resolution.
+paths:
+  /api/v1/admin/pricing-brain/overview:
+    get:
+      operationId: adminPricingBrainOverview
+      tags: [Pricing Brain]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Phase 18 catalog, promotion, economics, evidence and runtime status.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: '#/components/schemas/PricingBrainOverview' }
+  /api/v1/admin/pricing-brain/simulate:
+    post:
+      operationId: adminPricingBrainSimulate
+      tags: [Pricing Brain]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PricingSimulationRequest' }
+      responses:
+        '200':
+          description: Deterministic pricing candidate simulation using Phase 18 guardrails and Phase 12 cost evidence when available.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: '#/components/schemas/PricingSimulationResponse' }
+        '422': { description: Validation failed }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer }
+  schemas:
+    PricingBrainOverview:
+      type: object
+      required: [catalog, promotions, economics, evidence, runtime]
+      properties:
+        catalog:
+          type: object
+          required: [products, priced_products, sale_products, pricing_coverage_percent]
+          properties:
+            products: { type: integer, minimum: 0 }
+            priced_products: { type: integer, minimum: 0 }
+            sale_products: { type: integer, minimum: 0 }
+            pricing_coverage_percent: { type: number, minimum: 0, maximum: 100 }
+        promotions:
+          type: object
+          required: [coupons, active_coupons, authority]
+          properties:
+            coupons: { type: integer, minimum: 0 }
+            active_coupons: { type: integer, minimum: 0 }
+            authority: { type: string, const: shared_discounter }
+        economics:
+          type: object
+          required: [covered_products, coverage_percent, latest_cost_evidence_at, status, authority]
+          properties:
+            covered_products: { type: integer, minimum: 0 }
+            coverage_percent: { type: number, minimum: 0, maximum: 100 }
+            latest_cost_evidence_at: { type: [string, 'null'] }
+            status: { type: string, enum: [available, unavailable] }
+            authority: { type: string, const: phase12_economics }
+        evidence:
+          type: object
+          required: [elasticity, experimentation]
+          properties:
+            elasticity: { $ref: '#/components/schemas/PricingEvidenceState' }
+            experimentation: { $ref: '#/components/schemas/PricingEvidenceState' }
+        runtime:
+          type: object
+          required: [base_price_resolver, promotion_engine, economics_source, simulation_engine, autonomy_level, activation_enabled]
+          properties:
+            base_price_resolver: { type: string }
+            promotion_engine: { type: string }
+            economics_source: { type: string }
+            simulation_engine: { type: string }
+            autonomy_level: { type: integer, minimum: 0, maximum: 5 }
+            activation_enabled: { type: boolean }
+    PricingEvidenceState:
+      type: object
+      required: [status, reason]
+      properties:
+        status: { type: string, enum: [available, unavailable, insufficient_evidence, stale] }
+        reason: { type: string }
+    PricingSimulationRequest:
+      type: object
+      additionalProperties: false
+      required: [reference_price, candidate_price]
+      properties:
+        reference_price: { type: integer, minimum: 1 }
+        candidate_price: { type: integer, minimum: 0 }
+        quantity: { type: integer, minimum: 1 }
+        product_id: { type: integer, minimum: 1 }
+        variation_id: { type: [integer, 'null'], minimum: 1 }
+        floor_price: { type: [integer, 'null'], minimum: 0 }
+        cogs: { type: [integer, 'null'], minimum: 0 }
+        minimum_margin_percent: { type: [number, 'null'], minimum: 0, maximum: 100 }
+        maximum_discount_percent: { type: [number, 'null'], minimum: 0, maximum: 100 }
+    PricingSimulationResponse:
+      type: object
+      required: [decision, economics]
+      properties:
+        decision: { $ref: '#/components/schemas/PricingDecision' }
+        economics: { $ref: '#/components/schemas/PricingCogsEvidence' }
+    PricingDecision:
+      type: object
+      required: [accepted, referencePrice, candidatePrice, effectivePrice, quantity, grossRevenue, estimatedGrossProfit, discountPercent, marginPercent, economicsState, violations]
+      properties:
+        accepted: { type: boolean }
+        referencePrice: { type: integer }
+        candidatePrice: { type: integer }
+        effectivePrice: { type: integer }
+        quantity: { type: integer, minimum: 1 }
+        grossRevenue: { type: integer }
+        estimatedGrossProfit: { type: [integer, 'null'] }
+        discountPercent: { type: number }
+        marginPercent: { type: [number, 'null'] }
+        economicsState: { type: string, enum: [available, not_required, unavailable] }
+        violations:
+          type: array
+          items: { $ref: '#/components/schemas/PricingGuardrailViolation' }
+    PricingGuardrailViolation:
+      type: object
+      required: [code, message, actual, required]
+      properties:
+        code: { type: string, enum: [below_floor, below_margin, discount_too_deep, invalid_price, missing_economics] }
+        message: { type: string }
+        actual: { type: [number, 'null'] }
+        required: { type: number }
+    PricingCogsEvidence:
+      type: object
+      required: [value, source, quality, observedAt]
+      properties:
+        value: { type: [integer, 'null'] }
+        source: { type: string, enum: [explicit, realized_snapshot, cost_layer, unavailable] }
+        quality: { type: string, enum: [operator_input, realized, inventory_evidence, unavailable] }
+        observedAt: { type: [string, 'null'] }
+tags:
+  - name: Pricing Brain
+    description: Phase 18 evidence-aware pricing and promotion decision support.
