@@ -12,25 +12,18 @@ index 39ffa30..ea1dc19 100644
      async report(ctx: HttpContext) { const payload = await ctx.request.validateUsing(accountSocialReportValidator); ctx.response.status(201); return socialCommerceService.report(await userId(ctx), payload); }
      async mediaUploadIntent(ctx: HttpContext) { const actor = await userId(ctx); const customer = await customerForUser(actor); const payload = await ctx.request.validateUsing(accountSocialMediaUploadIntentValidator); const result = await socialMediaPipelineService.createUploadIntent({ filename: payload.filename, mime: payload.mime, sizeBytes: payload.size_bytes, purpose: payload.purpose, ownerActorType: "customer", ownerActorRef: String(customer.id), accessPolicy: payload.access_policy }); ctx.response.status(201); return result; }
 diff --git a/apps/api/database/migrations/1764100000000_extend_phase8_media_reviews_events.ts b/apps/api/database/migrations/1764100000000_extend_phase8_media_reviews_events.ts
-index c605107..bf7ebf7 100644
+index c605107..dc91d90 100644
 --- a/apps/api/database/migrations/1764100000000_extend_phase8_media_reviews_events.ts
 +++ b/apps/api/database/migrations/1764100000000_extend_phase8_media_reviews_events.ts
-@@ -223,6 +223,18 @@ export default class extends BaseSchema {
+@@ -223,6 +223,11 @@ export default class extends BaseSchema {
      }
  
      async down() {
 +        // Phase 8 is the migration that makes canonical video/audio media kinds legal.
-+        // Remove only Phase 8-owned incompatible rows while social_media_assets still proves
-+        // ownership, otherwise restoring the pre-Phase-8 media_kind_check can fail on rollback.
-+        this.schema.raw(`
-+            DELETE FROM media
-+            WHERE kind IN ('video','audio')
-+              AND EXISTS (
-+                  SELECT 1
-+                  FROM social_media_assets
-+                  WHERE social_media_assets.media_id = media.id
-+              )
-+        `);
++        // A downgrade cannot preserve rows that violate the pre-Phase-8 schema; remove all
++        // incompatible media kinds before restoring the old media_kind_check. This also covers
++        // rows whose social_media_assets projection was already removed by retention/test reset.
++        this.schema.raw(`DELETE FROM media WHERE kind IN ('video','audio')`);
          for (const table of [...EXTENSION_TABLES].reverse()) this.schema.dropTable(table);
          this.schema.raw(`DROP INDEX IF EXISTS social_interaction_dedupe_unique`);
          this.schema.raw(`DROP INDEX IF EXISTS social_interaction_event_id_unique`);
