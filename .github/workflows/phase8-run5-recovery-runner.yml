@@ -19,6 +19,30 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  snapshot-main:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact live main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+      - name: Record baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rev-parse HEAD | tee PHASE8_BASELINE_SHA.txt
+      - name: Upload source snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase8-main-snapshot
+          path: |
+            .
+            !.git
+          include-hidden-files: true
+          retention-days: 1
+
   recover-run3-base:
     runs-on: ubuntu-latest
     timeout-minutes: 25
