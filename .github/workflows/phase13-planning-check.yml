@@ -32,7 +32,7 @@ on:
       - "docs/api/reference/openapi/admin.phase13.v1.yaml"
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   integrity:
@@ -40,8 +40,6 @@ jobs:
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref }}
       - uses: actions/setup-node@v4
         with:
           node-version: "24.14.0"
@@ -49,81 +47,6 @@ jobs:
         run: npm install --global pnpm@10.32.1
       - name: Install workspace dependencies
         run: pnpm install --frozen-lockfile
-      - name: Finalize Phase 12 and Phase 13 composition
-        if: github.event_name == 'pull_request'
-        run: |
-          node <<'NODE'
-          const fs = require('node:fs');
-
-          const replace = (path, from, to, required = true) => {
-            let text = fs.readFileSync(path, 'utf8');
-            if (text.includes(to)) return;
-            if (!text.includes(from)) {
-              if (required) throw new Error(`Expected patch anchor missing in ${path}: ${from}`);
-              return;
-            }
-            text = text.replace(from, to);
-            fs.writeFileSync(path, text);
-          };
-
-          replace(
-            'apps/admin/src/components/Sidebar.tsx',
-            '            { href: "/analytics/decision-intelligence", label: "هوش تصمیم‌گیری", icon: Sparkles },\n',
-            '            { href: "/analytics/decision-intelligence", label: "هوش تصمیم‌گیری", icon: Sparkles },\n            { href: "/planning", label: "Planning OS", icon: CalendarClock },\n'
-          );
-
-          const economicsFiles = [
-            'apps/api/app/services/phase13_planning_service.ts',
-            'apps/api/database/migrations/1766000000000_create_phase13_planning_os.ts',
-            'apps/admin/src/features/planning/PlanningWorkspace.tsx',
-            'apps/api/tests/functional/admin/planning.spec.ts',
-            'docs/api/reference/openapi/admin.phase13.v1.yaml',
-            'scripts/verify-phase13-planning-integration.mjs',
-            'scripts/smoke-phase13-forecast.mjs',
-          ];
-          for (const path of economicsFiles) {
-            let text = fs.readFileSync(path, 'utf8');
-            text = text.replaceAll('dependency_not_landed', 'available_not_applied');
-            fs.writeFileSync(path, text);
-          }
-
-          replace(
-            'apps/api/app/services/phase13_planning_service.ts',
-            '                    phase12_economics: ECONOMICS_STATUS,',
-            '                    phase12_economics: "landed",'
-          );
-
-          replace(
-            'docs/api/reference/openapi/admin.phase13.v1.yaml',
-            "        '200': { description: Data coverage, model registry and dependency readiness, content: { application/json: { schema: { $ref: '#/components/schemas/PlanningHealthEnvelope' } } } }",
-            "        '200': { description: 'Data coverage, model registry and dependency readiness', content: { application/json: { schema: { $ref: '#/components/schemas/PlanningHealthEnvelope' } } } }"
-          );
-          NODE
-          pnpm exec biome check --write \
-            apps/admin/src/components/Sidebar.tsx \
-            apps/admin/src/features/planning/PlanningWorkspace.tsx \
-            apps/api/app/services/phase13_planning_service.ts \
-            apps/api/database/migrations/1766000000000_create_phase13_planning_os.ts \
-            apps/api/tests/functional/admin/planning.spec.ts \
-            scripts/verify-phase13-planning-integration.mjs \
-            scripts/smoke-phase13-forecast.mjs
-          pnpm --filter @calibra/sdk run codegen
-          git config user.name "calibra-dev"
-          git config user.email "keshavarz20.com@gmail.com"
-          git add \
-            apps/admin/src/components/Sidebar.tsx \
-            apps/admin/src/features/planning/PlanningWorkspace.tsx \
-            apps/api/app/services/phase13_planning_service.ts \
-            apps/api/database/migrations/1766000000000_create_phase13_planning_os.ts \
-            apps/api/tests/functional/admin/planning.spec.ts \
-            docs/api/reference/openapi/admin.phase13.v1.yaml \
-            packages/sdk/src/generated/admin.d.ts \
-            scripts/verify-phase13-planning-integration.mjs \
-            scripts/smoke-phase13-forecast.mjs
-          if ! git diff --cached --quiet; then
-            git commit -m "fix(planning): finalize Phase 13 OpenAPI contract"
-            git push origin "HEAD:${GITHUB_HEAD_REF}"
-          fi
       - name: Biome check Phase 13 sources
         run: >-
           pnpm exec biome check
