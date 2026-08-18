@@ -17,7 +17,7 @@ permissions:
 
 concurrency:
   group: phase8-run5-materializer-runtime-source-fixes
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 env:
   PHASE8_BASE_SHA: bbe7cdc10c6d19dde084c0a0567d8e69d44ad2c2
@@ -76,7 +76,7 @@ jobs:
           git show "$src:.phase8/run5/route-names.patch" > /tmp/phase8-route-names.patch
           echo 'a25aae3e3b94668be8decc31b240e3b0a22acee546148bcb608933796d5fe8b4  /tmp/phase8-route-names.patch' | sha256sum -c -
           git show "$src:.phase8/run5/runtime-source-fixes.patch" > /tmp/phase8-runtime-source-fixes.patch
-          echo '25182e1a5e79cd514fb9fbe6d1e0d87be02b7b2c97633dabc69d5306565d7eeb  /tmp/phase8-runtime-source-fixes.patch' | sha256sum -c -
+          echo '1e489fba3ae44078f4539c20ce2a740879d795506dd85fbf2182a72266a087d7  /tmp/phase8-runtime-source-fixes.patch' | sha256sum -c -
           test "$(grep -c '^diff --git ' /tmp/phase8-runtime-source-fixes.patch)" -eq 3
 
       - name: Apply Run5 and compose Phase 9 integration points
