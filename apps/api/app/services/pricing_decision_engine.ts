@@ -41,6 +41,9 @@ export interface PricingDecision {
     promotionDiscount: number;
     candidateGrossRevenue: number;
     candidateNetRevenue: number;
+    /** Alias of candidateNetRevenue kept explicit for API/UI readability. */
+    netRevenue: number;
+    /** Revenue of the effective fallback path; rejected candidates fall back to reference revenue. */
     grossRevenue: number;
     estimatedGrossProfit: number | null;
     discountPercent: number;
@@ -138,6 +141,7 @@ export function evaluatePricingCandidate(input: PricingCandidateInput): PricingD
         promotionDiscount,
         candidateGrossRevenue,
         candidateNetRevenue,
+        netRevenue: candidateNetRevenue,
         grossRevenue,
         estimatedGrossProfit,
         discountPercent: roundMetric(discountPercent),
