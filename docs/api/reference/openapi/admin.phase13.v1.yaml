@@ -160,7 +160,7 @@ paths:
       operationId: adminPlanningHealth
       security: [{ bearerAuth: [] }]
       responses:
-        '200': { description: Data coverage, model registry and dependency readiness, content: { application/json: { schema: { $ref: '#/components/schemas/PlanningHealthEnvelope' } } } }
+        '200': { description: 'Data coverage, model registry and dependency readiness', content: { application/json: { schema: { $ref: '#/components/schemas/PlanningHealthEnvelope' } } } }
 components:
   securitySchemes:
     bearerAuth: { type: http, scheme: bearer }

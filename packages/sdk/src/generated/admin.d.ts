@@ -25952,7 +25952,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Data coverage */
+            /** @description Data coverage, model registry and dependency readiness */
             200: {
                 headers: {
                     [name: string]: unknown;
