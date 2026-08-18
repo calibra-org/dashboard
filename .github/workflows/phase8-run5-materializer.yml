@@ -1,0 +1,119 @@
+name: Phase 8 Run5 Materializer
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".phase8/run5/**"
+      - ".github/workflows/phase8-run5-materializer.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: read
+  actions: read
+  checks: read
+
+concurrency:
+  group: phase8-run5-materializer
+  cancel-in-progress: false
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: calibra
+          POSTGRES_PASSWORD: calibra
+          POSTGRES_DB: calibra
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U calibra -d calibra"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - name: Checkout exact live main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Reconstruct and verify locked Run5 patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin '+refs/heads/*:refs/remotes/origin/*'
+          src='origin/agent/phase8-run5-materializer'
+          : > /tmp/phase8.patch.gz
+          for n in $(seq -w 0 12); do
+            git show "$src:.phase8/run5/part-$n" >> /tmp/phase8.patch.gz
+          done
+          test "$(wc -c < /tmp/phase8.patch.gz)" -eq 59367
+          gzip -t /tmp/phase8.patch.gz
+          gzip -dc /tmp/phase8.patch.gz > /tmp/phase8.patch
+          echo '4266e5bd13bffaf37284069f560058ad4276e6c36acb59d69326095c32caea8f  /tmp/phase8.patch' | sha256sum -c -
+          test "$(grep -c '^diff --git ' /tmp/phase8.patch)" -eq 57
+          git apply --stat /tmp/phase8.patch
+
+      - name: Apply Run5 onto live main and verify invariants
+        shell: bash
+        run: |
+          set -euo pipefail
+          git switch -C agent/phase8-run5-final origin/main
+          git apply --3way --index /tmp/phase8.patch
+          test -z "$(git ls-files -u)"
+          git diff --cached --check
+          node scripts/verify-phase8-social-commerce.mjs
+          git config user.name 'calibra-dev'
+          git config user.email 'keshavarz20.com@gmail.com'
+          git commit -m 'feat(social): Phase 8 Social Commerce, Stories, Video & Community OS'
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.14.0'
+
+      - name: Install pnpm and dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --global pnpm@10.32.1
+          pnpm install --frozen-lockfile
+
+      - name: Create test database
+        env:
+          PGPASSWORD: calibra
+        run: psql -h localhost -U calibra -d calibra -c "CREATE DATABASE calibra_test OWNER calibra;"
+
+      - name: Run Phase 8 functional test
+        working-directory: apps/api
+        run: pnpm test --files=tests/functional/social/phase8_social_commerce.spec.ts
+
+      - name: Typecheck workspace
+        run: pnpm run typecheck
+
+      - name: Build workspace
+        run: pnpm run build
+
+      - name: Publish validated Phase 8 branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git push --force-with-lease origin HEAD:agent/phase8-run5-final
+          echo "PHASE8_FINAL_HEAD=$(git rev-parse HEAD)"
