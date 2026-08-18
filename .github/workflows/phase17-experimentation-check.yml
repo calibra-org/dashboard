@@ -1,0 +1,36 @@
+name: Phase 17 Experimentation Integrity
+
+on:
+  pull_request:
+    paths:
+      - "apps/api/**"
+      - "apps/admin/**"
+      - "docs/api/**"
+      - "scripts/verify-phase17-experimentation-integration.mjs"
+      - ".github/workflows/phase17-experimentation-check.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/api/**"
+      - "apps/admin/**"
+      - "docs/api/**"
+      - "scripts/verify-phase17-experimentation-integration.mjs"
+
+jobs:
+  phase17:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: node scripts/verify-phase17-experimentation-integration.mjs
+      - run: pnpm --filter @calibra/api typecheck
+      - run: pnpm --filter @calibra/admin typecheck
+      - run: pnpm --filter @calibra/api test -- --files "tests/unit/experimentation/phase17_statistics.spec.ts"
+      - run: pnpm --filter @calibra/api test -- --files "tests/functional/admin/phase17_experimentation.spec.ts"

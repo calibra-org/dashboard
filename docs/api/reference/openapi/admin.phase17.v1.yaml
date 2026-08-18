@@ -1,0 +1,110 @@
+openapi: 3.1.0
+info:
+  title: Calibra Admin Phase 17 Experimentation API
+  version: 1.0.0
+paths:
+  /api/v1/admin/experiments/overview:
+    get:
+      tags: [Phase17Experimentation]
+      operationId: phase17ExperimentOverview
+      responses:
+        "200": { description: Experiment portfolio overview }
+  /api/v1/admin/experiments:
+    get:
+      tags: [Phase17Experimentation]
+      operationId: phase17ExperimentList
+      responses:
+        "200": { description: Experiment registry }
+    post:
+      tags: [Phase17Experimentation]
+      operationId: phase17ExperimentCreate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Phase17ExperimentCreate" }
+      responses:
+        "201": { description: Experiment created }
+        "422": { description: Contract or layer validation failed }
+  /api/v1/admin/experiments/{id}:
+    get:
+      tags: [Phase17Experimentation]
+      operationId: phase17ExperimentShow
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        "200": { description: Experiment detail }
+        "404": { description: Experiment not found }
+  /api/v1/admin/experiments/{id}/transition:
+    post:
+      tags: [Phase17Experimentation]
+      operationId: phase17ExperimentTransition
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        "200": { description: State transition applied }
+        "422": { description: Invalid transition, stale version, collision, or missing approval }
+  /api/v1/admin/experiments/{id}/analyze:
+    post:
+      tags: [Phase17Experimentation]
+      operationId: phase17ExperimentAnalyze
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        "200": { description: Fixed-horizon analysis with SRM and guardrails }
+  /api/v1/admin/experiments/holdouts:
+    get:
+      tags: [Phase17Experimentation]
+      operationId: phase17HoldoutList
+      responses:
+        "200": { description: Persistent holdouts }
+    post:
+      tags: [Phase17Experimentation]
+      operationId: phase17HoldoutCreate
+      responses:
+        "201": { description: Persistent holdout created }
+  /api/v1/admin/experiments/collisions:
+    get:
+      tags: [Phase17Experimentation]
+      operationId: phase17ExperimentCollisions
+      responses:
+        "200": { description: Active namespace/layer overlaps }
+  /api/v1/admin/experiments/knowledge:
+    get:
+      tags: [Phase17Experimentation]
+      operationId: phase17CausalKnowledge
+      responses:
+        "200": { description: Evidence-graded causal knowledge }
+components:
+  schemas:
+    Phase17VariantCreate:
+      type: object
+      required: [key, name, weight_bps]
+      properties:
+        key: { type: string }
+        name: { type: string }
+        weight_bps: { type: integer, minimum: 1, maximum: 10000 }
+        is_control: { type: boolean, default: false }
+        payload: { type: object, additionalProperties: true }
+    Phase17ExperimentCreate:
+      type: object
+      required: [experiment_key, name, hypothesis, surface, randomization_unit, primary_metric_key, variants]
+      properties:
+        experiment_key: { type: string }
+        name: { type: string }
+        hypothesis: { type: string }
+        surface: { type: string }
+        risk_level: { type: string, enum: [low, medium, high, critical] }
+        randomization_unit: { type: string, enum: [visitor, customer, session, account, order, product, request] }
+        layer_key: { type: string }
+        layer_start_bps: { type: integer, minimum: 0, maximum: 9999 }
+        layer_end_bps: { type: integer, minimum: 1, maximum: 10000 }
+        primary_metric_key: { type: string }
+        primary_metric_kind: { type: string, enum: [binary, continuous, count, money] }
+        guardrails: { type: array, items: { type: object, additionalProperties: true } }
+        sample_plan: { type: object, additionalProperties: true }
+        approval_reference: { type: [string, "null"] }
+        variants: { type: array, minItems: 2, maxItems: 8, items: { $ref: "#/components/schemas/Phase17VariantCreate" } }
+tags:
+  - name: Phase17Experimentation
+    description: Experiment registry, deterministic assignment integrity, SRM, guardrails, holdouts, and causal memory.
