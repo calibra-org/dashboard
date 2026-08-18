@@ -1,0 +1,13 @@
+{
+    "extends": "./tsconfig.json",
+    "include": [
+        "app/services/phase17_experimentation_service.ts",
+        "app/services/phase17_statistics.ts",
+        "app/controllers/experimentation_controller.ts",
+        "app/controllers/admin/experimentation_controller.ts",
+        "app/validators/admin/phase17_experiment_validator.ts",
+        "start/routes/experiments.ts",
+        "start/routes/admin_experiments.ts"
+    ],
+    "exclude": ["node_modules", "build", ".cache", "tmp"]
+}
