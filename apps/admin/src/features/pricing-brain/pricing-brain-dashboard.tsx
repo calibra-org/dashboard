@@ -17,7 +17,7 @@ import {
 } from "@calibra/panel-kit";
 import { useActionState, type ReactNode } from "react";
 
-import { BadgePercent, BarChart3, Package, ShieldCheck, Sparkles, TrendingUp, Wallet } from "#/icons";
+import { BadgePercent, BarChart3, Package, ShieldCheck, Sparkles, Wallet } from "#/icons";
 import { Link } from "#/lib/i18n/navigation";
 
 import { initialPricingSimulationState, simulatePricingAction } from "./actions";
@@ -143,8 +143,8 @@ function OverviewTab({ overview, fa }: { overview: PricingBrainOverview; fa: boo
                         </div>
                         <div className="mt-5 rounded-xl border bg-muted/10 p-4 text-muted-foreground text-sm leading-7">
                             {fa
-                                ? "Phase 18 قیمت کاتالوگ را مستقیم بازنویسی نمی‌کند. Price Resolver و Discounter تنها مسیر serving باقی می‌مانند؛ Policy فعال صرفاً candidate را در همان transaction checkout کنترل می‌کند و ردپای immutable ثبت می‌شود."
-                                : "Phase 18 does not directly rewrite catalog pricing. Price Resolver and Discounter remain the sole serving path; an active policy only validates the candidate inside the checkout transaction and records an immutable trace."}
+                                ? "Phase 18 قیمت کاتالوگ را مستقیم بازنویسی نمی‌کند. Price Resolver و Discounter تنها مسیر serving باقی می‌مانند؛ Policy فعال candidate را بعد از allocation واقعی Promotion در همان transaction checkout کنترل می‌کند و ردپای immutable ثبت می‌شود."
+                                : "Phase 18 does not directly rewrite catalog pricing. Price Resolver and Discounter remain the sole serving path; an active policy validates the candidate after the canonical promotion allocation inside the checkout transaction and records an immutable trace."}
                         </div>
                     </CardContent>
                 </Card>
@@ -179,22 +179,23 @@ function SimulationLab({ fa }: { fa: boolean }) {
                     {fa ? "آزمایشگاه تصمیم قیمت" : "Pricing decision lab"}
                     <HelperTooltip side="bottom">
                         {fa
-                            ? "Simulation و checkout guardrail از همان pricing decision core استفاده می‌کنند. Simulation هیچ قیمت محصولی را ذخیره یا فعال نمی‌کند."
-                            : "Simulation and checkout guardrails use the same pricing decision core. Simulation never saves or activates product pricing."}
+                            ? "Simulation و checkout guardrail از همان pricing decision core استفاده می‌کنند. Promotion Discount در Simulation یک allocation سناریویی است؛ در checkout مقدار واقعی از Discounter خوانده می‌شود."
+                            : "Simulation and checkout guardrails use the same pricing decision core. Promotion Discount is a scenario allocation here; checkout reads the exact allocation from the Discounter."}
                     </HelperTooltip>
                 </CardTitle>
             </CardHeader>
             <CardContent className="pt-5">
                 <form action={formAction} className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     <Field name="reference_price" label={fa ? "قیمت مرجع" : "Reference price"} required help={fa ? "قیمت مرجع در integer minor units." : "Reference price in integer minor units."} />
-                    <Field name="candidate_price" label={fa ? "قیمت پیشنهادی" : "Candidate price"} required help={fa ? "Candidate برای ارزیابی؛ صفر یا بیشتر." : "Candidate to evaluate; zero or greater."} />
+                    <Field name="candidate_price" label={fa ? "قیمت پیشنهادی" : "Candidate price"} required help={fa ? "Candidate قبل از تخفیف‌های Discounter؛ صفر یا بیشتر." : "Candidate before Discounter promotions; zero or greater."} />
                     <Field name="quantity" label={fa ? "تعداد" : "Quantity"} defaultValue="1" help={fa ? "برای درآمد و سود سناریو." : "Used for scenario revenue and profit."} />
+                    <Field name="promotion_discount" label={fa ? "Allocation پروموشن" : "Promotion allocation"} defaultValue="0" help={fa ? "مجموع تخفیف سناریویی line در minor units. در checkout این مقدار از Discounter canonical می‌آید." : "Scenario line discount in minor units. Checkout receives this exact value from the canonical Discounter."} />
                     <Field name="product_id" label="Product ID" help={fa ? "برای بازیابی COGS از Phase 12 وقتی COGS دستی خالی است." : "Used to resolve Phase 12 COGS when manual COGS is empty."} />
                     <Field name="variation_id" label="Variation ID" help={fa ? "برای Cost Evidence سطح واریانت." : "For variation-level cost evidence."} />
-                    <Field name="floor_price" label={fa ? "کف قیمت" : "Price floor"} help={fa ? "Candidate پایین‌تر از این مقدار رد می‌شود." : "Candidates below this amount are rejected."} />
+                    <Field name="floor_price" label={fa ? "کف قیمت" : "Price floor"} help={fa ? "در checkout روی درآمد line بعد از Promotion کنترل می‌شود." : "Checked against line revenue after promotions at checkout."} />
                     <Field name="cogs" label={fa ? "COGS دستی" : "Manual COGS"} help={fa ? "اختیاری؛ در غیر این صورت Snapshot و Cost Layer بررسی می‌شوند." : "Optional; otherwise realized snapshots and cost layers are checked."} />
-                    <Field name="minimum_margin_percent" label={fa ? "حداقل Margin (%)" : "Minimum margin (%)"} help={fa ? "بدون COGS، Guardrail با missing_economics fail-closed می‌شود." : "Without COGS this guardrail fails closed with missing_economics."} />
-                    <Field name="maximum_discount_percent" label={fa ? "حداکثر تخفیف (%)" : "Maximum discount (%)"} help={fa ? "حداکثر افت مجاز نسبت به قیمت مرجع." : "Maximum permitted drop from reference price."} />
+                    <Field name="minimum_margin_percent" label={fa ? "حداقل Margin (%)" : "Minimum margin (%)"} help={fa ? "Margin بعد از Promotion محاسبه می‌شود؛ بدون COGS، Guardrail با missing_economics fail-closed می‌شود." : "Margin is calculated after promotions; without COGS the guardrail fails closed with missing_economics."} />
+                    <Field name="maximum_discount_percent" label={fa ? "حداکثر تخفیف ترکیبی (%)" : "Maximum combined discount (%)"} help={fa ? "افت base/sale و allocation پروموشن با هم نسبت به قیمت مرجع سنجیده می‌شوند." : "Base/sale reduction and promotion allocation are measured together against the reference price."} />
                     <div className="flex items-end md:col-span-2 xl:col-span-3">
                         <Button type="submit" className="w-full" disabled={pending}>
                             {pending ? (fa ? "در حال شبیه‌سازی…" : "Simulating…") : fa ? "شبیه‌سازی و کنترل Guardrail" : "Simulate and validate guardrails"}
@@ -305,11 +306,13 @@ function SimulationResult({ data, fa }: { data: NonNullable<import("./actions").
                     <Badge variant="outline" tone={data.economics.value === null ? "warning" : "info"}>{economicsLabel(data.economics.source, fa)}</Badge>
                 </div>
             </div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <ResultMetric label={fa ? "قیمت مؤثر" : "Effective price"} value={decision.effectivePrice} />
-                <ResultMetric label={fa ? "تخفیف" : "Discount"} value={`${decision.discountPercent}%`} />
-                <ResultMetric label={fa ? "درآمد ناخالص" : "Gross revenue"} value={decision.grossRevenue} />
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+                <ResultMetric label={fa ? "Candidate × Qty" : "Candidate × qty"} value={decision.candidateGrossRevenue} />
+                <ResultMetric label={fa ? "تخفیف پروموشن" : "Promotion discount"} value={decision.promotionDiscount} />
+                <ResultMetric label={fa ? "درآمد خالص Candidate" : "Candidate net revenue"} value={decision.candidateNetRevenue} />
+                <ResultMetric label={fa ? "تخفیف ترکیبی" : "Combined discount"} value={`${decision.discountPercent}%`} />
                 <ResultMetric label="Margin" value={decision.marginPercent === null ? (fa ? "ناموجود" : "Unavailable") : `${decision.marginPercent}%`} />
+                <ResultMetric label={fa ? "مسیر مؤثر" : "Effective fallback"} value={decision.grossRevenue} />
             </div>
             {decision.violations.length > 0 ? (
                 <div className="mt-4 flex flex-col gap-2">
@@ -321,7 +324,7 @@ function SimulationResult({ data, fa }: { data: NonNullable<import("./actions").
                     ))}
                 </div>
             ) : (
-                <div className="mt-4 rounded-lg border border-success/20 bg-success/5 px-3 py-2 text-success text-sm">{fa ? "Candidate از Guardrailهای واردشده عبور کرد." : "The candidate passed the supplied guardrails."}</div>
+                <div className="mt-4 rounded-lg border border-success/20 bg-success/5 px-3 py-2 text-success text-sm">{fa ? "Candidate پس از لحاظ Allocation پروموشن از Guardrailها عبور کرد." : "The candidate passed all guardrails after the promotion allocation was applied."}</div>
             )}
         </div>
     );
