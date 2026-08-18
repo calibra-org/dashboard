@@ -1,6 +1,8 @@
 name: Phase 15 Biome Capture
 
 on:
+    pull_request:
+        branches: [main]
     push:
         branches: [agent/phase15-customer-genome]
 
