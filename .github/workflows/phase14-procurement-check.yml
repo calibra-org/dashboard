@@ -1,0 +1,64 @@
+name: Phase 14 Procurement Integrity
+
+on:
+  pull_request:
+    paths:
+      - "apps/api/app/services/phase14_procurement_service.ts"
+      - "apps/api/app/controllers/admin/procurement_controller.ts"
+      - "apps/api/app/validators/admin/phase14_procurement_validator.ts"
+      - "apps/api/database/migrations/1767000000000_create_phase14_procurement_os.ts"
+      - "apps/api/start/routes/admin_procurement.ts"
+      - "apps/api/start/routes.ts"
+      - "apps/api/tests/unit/procurement/phase14_procurement.spec.ts"
+      - "apps/admin/src/features/procurement/**"
+      - "apps/admin/src/lib/queries/procurement.ts"
+      - "apps/admin/src/app/**/procurement/**"
+      - "scripts/verify-phase14-procurement-integration.mjs"
+      - ".github/workflows/phase14-procurement-check.yml"
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: calibra
+          POSTGRES_PASSWORD: calibra
+          POSTGRES_DB: calibra
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U calibra -d calibra"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.14.0"
+      - run: npm install --global pnpm@10.32.1
+      - run: pnpm install --frozen-lockfile
+      - name: Phase 14 static contract
+        run: node scripts/verify-phase14-procurement-integration.mjs
+      - name: Phase 14 unit tests
+        working-directory: apps/api
+        run: pnpm test --files=tests/unit/procurement/phase14_procurement.spec.ts
+      - name: API typecheck
+        run: pnpm --filter @calibra/api run typecheck
+      - name: Admin build
+        run: pnpm --filter @calibra/admin run build
