@@ -50,7 +50,7 @@ interface SeriesBucket {
 
 const MODEL_CODE = "calibra_weighted_seasonal_v2";
 const MODEL_VERSION = "2.0.0";
-const ECONOMICS_STATUS = "dependency_not_landed";
+const ECONOMICS_STATUS = "available_not_applied";
 const EXECUTION_BOUNDARY = "phase14_procurement_only";
 
 const CYCLE_TRANSITIONS: Record<string, readonly string[]> = {
@@ -344,7 +344,7 @@ export class Phase13PlanningService {
                 dependency_state: JSON.stringify({
                     phase10_decision_intelligence: "landed",
                     phase11_governance: "landed",
-                    phase12_economics: ECONOMICS_STATUS,
+                    phase12_economics: "landed",
                     phase14_procurement: EXECUTION_BOUNDARY,
                 }),
                 created_by_user_id: actor.id,

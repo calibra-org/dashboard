@@ -39,7 +39,7 @@ test.group("Phase 13 planning OS", (group) => {
         const admin = await createAdmin();
         const response = await client.get("/api/v1/admin/planning/health").withGuard("api").loginAs(admin);
         response.assertStatus(200);
-        assert.equal(response.body().data.economics, "dependency_not_landed");
+        assert.equal(response.body().data.economics, "available_not_applied");
         assert.equal(response.body().data.procurement, "phase14_procurement_only");
         assert.equal(response.body().data.source_contract.category, "derived_from_product_category_links_same_forecast_points");
     });
@@ -59,7 +59,7 @@ test.group("Phase 13 planning OS", (group) => {
         assert.equal(run.model_version, "2.0.0");
         assert.isNull(run.default_lead_time_days);
         assert.lengthOf(run.source_hash, 64);
-        assert.equal(run.dependency_state.phase12_economics, "dependency_not_landed");
+        assert.equal(run.dependency_state.phase12_economics, "available_not_applied");
         assert.equal(run.dependency_state.phase14_procurement, "phase14_procurement_only");
 
         const categories = await client

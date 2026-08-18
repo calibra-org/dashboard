@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: Calibra Admin Phase 13 Planning OS Overlay
   version: 2.0.0
-  description: Versioned probabilistic demand forecasting, stockout censoring, explainable replenishment and auditable planning workflows. Procurement execution remains a Phase 14 boundary and Phase 12 economics degrades explicitly when unavailable.
+  description: Versioned probabilistic demand forecasting, stockout censoring, explainable replenishment and auditable planning workflows. Procurement execution remains a Phase 14 boundary and Phase 12 economics is landed; Phase 13 reports cost-aware optimization as not applied until economic objectives are explicitly used.
 tags:
   - name: Planning OS
     description: Demand and supply planning control plane.
@@ -311,7 +311,7 @@ components:
         lead_time_days: { type: [integer, 'null'] }
         review_period_days: { type: integer }
         service_level_target: { type: number }
-        economics_status: { type: string, enum: [dependency_not_landed] }
+        economics_status: { type: string, enum: [available_not_applied] }
         execution_boundary: { type: string, enum: [phase14_procurement_only] }
         reason_codes: { type: array, items: { type: string } }
         evidence: { type: object, additionalProperties: true }

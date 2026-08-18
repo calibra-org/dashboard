@@ -105,7 +105,7 @@ function DependencyBanner({ economics, procurement, location }: { economics?: st
                     Phase 12 هنوز روی main فرود نیامده است. Cost/Margin بهینه‌سازی نمی‌شود و صفر به‌عنوان هزینه واقعی تفسیر نمی‌شود.
                 </p>
                 <code className="mt-2 block text-[11px] text-warning dark:text-warning">
-                    {economics ?? "dependency_not_landed"}
+                    {economics ?? "available_not_applied"}
                 </code>
             </div>
             <div className="rounded-2xl border border-info/25 bg-info/8 p-4">
