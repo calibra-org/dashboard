@@ -1,0 +1,73 @@
+name: Phase 15 Format Artifact
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/phase15-format-artifact.yml"
+      - "apps/admin/src/app/**/procurement/**"
+      - "apps/admin/src/features/procurement/**"
+      - "apps/admin/src/features/trust/**"
+      - "apps/admin/src/lib/queries/procurement.ts"
+      - "apps/admin/src/lib/queries/trust-risk.ts"
+      - "apps/api/app/controllers/admin/procurement_controller.ts"
+      - "apps/api/app/controllers/admin/trust_risk_controller.ts"
+      - "apps/api/app/services/phase14_procurement_service.ts"
+      - "apps/api/app/services/phase20_trust_risk_service.ts"
+      - "apps/api/app/validators/admin/phase14_procurement_validator.ts"
+      - "apps/api/app/validators/admin/phase20_trust_risk_validator.ts"
+      - "apps/api/database/migrations/1767000000000_create_phase14_procurement_os.ts"
+      - "apps/api/database/migrations/1767600000000_create_phase20_trust_risk_os.ts"
+      - "apps/api/start/routes/admin_procurement.ts"
+      - "apps/api/start/routes/admin_trust_risk.ts"
+      - "apps/api/tests/unit/procurement/phase14_procurement.spec.ts"
+      - "apps/api/tests/unit/trust/phase20_trust_risk.spec.ts"
+      - "scripts/verify-phase14-procurement-integration.mjs"
+      - "scripts/verify-phase20-trust-risk-integration.mjs"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phase15-format-artifact-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "24.14.0"
+  PNPM_VERSION: "10.32.1"
+
+jobs:
+  format-artifact:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Apply repository formatter in workspace only
+        run: pnpm exec biome format --write .
+      - name: Package formatter output
+        run: |
+          git diff --name-only -z > /tmp/formatted-files.zlist
+          changed=$(tr -cd '\0' < /tmp/formatted-files.zlist | wc -c | tr -d ' ')
+          echo "Biome changed ${changed} files"
+          if [ "$changed" -eq 0 ] || [ "$changed" -gt 25 ]; then
+            echo "Unexpected formatter scope"
+            git diff --name-only
+            exit 1
+          fi
+          tar --null -T /tmp/formatted-files.zlist -czf /tmp/phase15-formatted-files.tar.gz
+          git diff --name-only > /tmp/phase15-formatted-files.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: phase15-formatted-files
+          path: |
+            /tmp/phase15-formatted-files.tar.gz
+            /tmp/phase15-formatted-files.txt
+          if-no-files-found: error
