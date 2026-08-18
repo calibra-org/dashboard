@@ -12,12 +12,12 @@ export interface VariantAggregate {
     sumSquares: number;
 }
 
-export function deterministicBucket(parts: Array<string | number>): number {
+export function deterministicBucket(parts: Array<string | number | bigint>): number {
     const digest = createHash("sha256").update(parts.join("|")).digest();
     return digest.readUInt32BE(0) % 10000;
 }
 
-export function subjectHash(tenantId: number, subjectType: string, subjectKey: string): string {
+export function subjectHash(tenantId: string | number | bigint, subjectType: string, subjectKey: string): string {
     return createHash("sha256").update(`${tenantId}|${subjectType}|${subjectKey}`).digest("hex");
 }
 
@@ -48,15 +48,24 @@ function variance(row: VariantAggregate): number | null {
 
 export function variantEffect(row: VariantAggregate, control: VariantAggregate | null) {
     const mean = row.observations > 0 ? row.sum / row.observations : null;
-    const controlMean = control && control.observations > 0 ? control.sum / control.observations : null;
-    if (mean === null || controlMean === null || row.variantId === control?.variantId) {
+    const isControl = row.variantId === control?.variantId;
+    if (isControl) {
         return {
             mean,
-            absoluteLift: row.variantId === control?.variantId ? 0 : null,
-            relativeLift: row.variantId === control?.variantId ? 0 : null,
+            absoluteLift: 0,
+            relativeLift: 0,
             ci95: null,
         };
     }
+    if (mean === null || !control || control.observations <= 0) {
+        return {
+            mean,
+            absoluteLift: null,
+            relativeLift: null,
+            ci95: null,
+        };
+    }
+    const controlMean = control.sum / control.observations;
     const absoluteLift = mean - controlMean;
     const relativeLift = controlMean === 0 ? null : absoluteLift / Math.abs(controlMean);
     const rowVariance = variance(row);
