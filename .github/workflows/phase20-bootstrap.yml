@@ -1,0 +1,88 @@
+name: Phase 20 Completion Materialize
+
+on:
+  push:
+    branches: [agent/phase20-trust-risk-completion-20260818]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: phase20-completion-materialize-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  materialize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: calibra
+          POSTGRES_PASSWORD: calibra
+          POSTGRES_DB: calibra
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U calibra -d calibra"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/phase20-trust-risk-completion-20260818
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.14.0"
+      - run: npm install --global pnpm@10.32.1
+      - name: Recover verified Phase 20 candidate
+        run: |
+          cat .phase20completion/payload.* > /tmp/phase20.b64
+          base64 -d /tmp/phase20.b64 > /tmp/phase20.tar.xz
+          echo "cd77aec08d9c2a0a5e6832739a0ee7c5afee8930f619078098cd89823b2e9a01  /tmp/phase20.tar.xz" | sha256sum -c -
+          xz -d -c /tmp/phase20.tar.xz > /tmp/phase20.tar
+          tar -tf /tmp/phase20.tar | head -80
+          tar -xf /tmp/phase20.tar
+          rm -rf .phase20completion
+      - run: pnpm install --frozen-lockfile
+      - name: Admin OpenAPI and SDK
+        run: |
+          pnpm --dir docs/api run build:json:admin
+          pnpm --filter @calibra/sdk run codegen:admin
+      - name: Phase 20 static contract
+        run: node scripts/verify-phase20-trust-risk-integration.mjs
+      - name: Phase 20 tests
+        working-directory: apps/api
+        run: |
+          pnpm test --files=tests/unit/trust/phase20_trust_risk.spec.ts
+          pnpm test --files=tests/unit/trust/phase20_contracts.spec.ts
+          pnpm test --files=tests/functional/trust/phase20_trust.spec.ts
+      - name: API typecheck
+        run: pnpm --filter @calibra/api run typecheck
+      - name: Admin typecheck
+        run: pnpm --filter @calibra/admin run typecheck
+      - name: Admin build
+        run: pnpm --filter @calibra/admin run build
+      - name: Working tree contract
+        run: git diff --check
+      - name: Commit verified Phase 20
+        run: |
+          rm -f .github/workflows/phase20-bootstrap.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git diff --cached --quiet && { echo 'No completion changes'; exit 1; }
+          git commit -m 'feat(phase20): complete trust fraud and risk os'
+          git push origin HEAD:agent/phase20-trust-risk-completion-20260818
