@@ -13,7 +13,7 @@ paths:
   /api/v1/admin/personalization/overview:
     get: { operationId: adminPhase9Overview, tags: [Admin / Personalization], responses: { "200": { description: Phase 9 overview }, "401": { description: Authentication required }, "403": { description: Admin required } } }
   /api/v1/admin/personalization/health:
-    get: { operationId: adminPhase9Health, tags: [Admin / Personalization], responses: { "200": { description: Event, recommendation and deal health } } }
+    get: { operationId: adminPhase9Health, tags: [Admin / Personalization], responses: { "200": { description: "Event, recommendation and deal health" } } }
   /api/v1/admin/personalization/campaigns:
     get: { operationId: adminPhase9Campaigns, tags: [Admin / Personalization], responses: { "200": { description: Deal campaigns } } }
     post: { operationId: adminPhase9CampaignCreate, tags: [Admin / Personalization], requestBody: { required: true, content: { application/json: { schema: { type: object, required: [name], additionalProperties: true } } } }, responses: { "201": { description: Draft campaign created }, "422": { description: Invalid campaign } } }
