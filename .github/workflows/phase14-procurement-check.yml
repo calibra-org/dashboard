@@ -55,6 +55,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Phase 14 static contract
         run: node scripts/verify-phase14-procurement-integration.mjs
+      - name: Create canonical test database
+        env:
+          PGPASSWORD: calibra
+        run: psql -h localhost -U calibra -d calibra -c "CREATE DATABASE calibra_test OWNER calibra;"
       - name: Phase 14 unit tests
         working-directory: apps/api
         run: pnpm test --files=tests/unit/procurement/phase14_procurement.spec.ts
