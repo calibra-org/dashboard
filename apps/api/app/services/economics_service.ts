@@ -160,12 +160,13 @@ async function resolveLineCost(
     currency: string,
     effectiveAt: string,
     method: InventoryCostMethod,
+    tenantId: number,
 ) {
     if (!line.product_id) {
         return { quality: "incomplete" as const, unitCostMinor: null, totalCostMinor: null, breakdown: [] as any[] };
     }
     const lockKey = Number(line.variation_id ?? line.product_id) % 2147483647;
-    await trx.rawQuery("SELECT pg_advisory_xact_lock(?, ?)", [Number(currentTenantId()) % 2147483647, lockKey]);
+    await trx.rawQuery("SELECT pg_advisory_xact_lock(?, ?)", [tenantId % 2147483647, lockKey]);
     const layersQuery = trx
         .from("economic_cost_layers")
         .where("product_id", Number(line.product_id))
@@ -284,7 +285,7 @@ export async function captureOrderEconomics(input: { orderId: number; effectiveA
             .orderBy("version", "desc")
             .first();
         if (existing) continue;
-        const resolved = await resolveLineCost(trx, line, currency, String(effectiveAt), method);
+        const resolved = await resolveLineCost(trx, line, currency, String(effectiveAt), method, Number(order.tenant_id));
         const [snapshot] = await trx
             .table("economic_line_cost_snapshots")
             .insert({
