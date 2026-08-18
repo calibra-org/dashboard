@@ -37,7 +37,10 @@ expect(
     "planning must retain the current advisory location dimension",
 );
 expect(migration.includes('defaultTo("phase14_procurement_only")'), "replenishment must not execute procurement before Phase 14");
-expect(migration.includes('defaultTo("available_not_applied")'), "economics must fail closed until Phase 12 lands");
+expect(
+    migration.includes('defaultTo("available_not_applied")'),
+    "Phase 13 must record that landed Phase 12 economics is available but not yet applied to planning optimization",
+);
 expect(migration.includes('table.boolean("actual_censored")'), "actual evaluation must retain stockout censoring evidence");
 expect(migration.includes('table.integer("accuracy_censored_points")'), "run diagnostics must count censored evaluation points");
 
@@ -55,7 +58,8 @@ expect(
     service.includes("product_category_links") && service.includes("same_versioned_forecast_points"),
     "category forecast must derive from the same versioned point truth",
 );
-expect(service.includes('const ECONOMICS_STATUS = "available_not_applied"'), "Phase 12 dependency must be explicit");
+expect(service.includes('const ECONOMICS_STATUS = "available_not_applied"'), "Phase 12 planning status must be explicit");
+expect(service.includes('phase12_economics: "landed"'), "Phase 12 dependency state must reflect the landed Economics OS");
 expect(service.includes('const EXECUTION_BOUNDARY = "phase14_procurement_only"'), "Phase 14 execution boundary must be explicit");
 expect(
     route.includes('middleware.auth({ guards: ["api"] })') && route.includes("middleware.admin()"),
