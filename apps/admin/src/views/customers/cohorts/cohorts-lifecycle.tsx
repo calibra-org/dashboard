@@ -13,6 +13,15 @@ import { useLifecycleCohorts } from "#/lib/queries/customer-intelligence";
 
 import { CustomerWorkspaceNav } from "../customer-workspace-nav";
 
+const COHORT_SKELETON_KEYS = [
+    "cohort-skeleton-a",
+    "cohort-skeleton-b",
+    "cohort-skeleton-c",
+    "cohort-skeleton-d",
+    "cohort-skeleton-e",
+    "cohort-skeleton-f",
+] as const;
+
 export function CohortsLifecycle() {
     const t = useTranslations("CustomerIntelligence");
     const locale = useLocale() as Locale;
@@ -44,8 +53,8 @@ export function CohortsLifecycle() {
                 <CardContent className="p-0">
                     {cohorts.isPending ? (
                         <div className="space-y-2 p-4">
-                            {Array.from({ length: 6 }, (_, index) => (
-                                <Skeleton key={index} className="h-10" />
+                            {COHORT_SKELETON_KEYS.map((key) => (
+                                <Skeleton key={key} className="h-10" />
                             ))}
                         </div>
                     ) : null}

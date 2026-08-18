@@ -95,7 +95,7 @@ export interface LifecycleCohortRow {
     lifecycle_state: LifecycleState;
     customers: number;
     revenue_ltv_minor: number;
-    contribution_ltv_minor: number;
+    contribution_ltv_minor: number | null;
 }
 
 export type SegmentFeature =

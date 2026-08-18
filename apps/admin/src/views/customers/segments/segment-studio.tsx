@@ -2,9 +2,9 @@
 
 import { HelperTooltip } from "@calibra/panel-kit/helper-tooltip";
 import type { Locale } from "@calibra/shared/i18n";
-import type { ReactNode } from "react";
-import { useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import type { ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
@@ -124,6 +124,16 @@ export function SegmentStudio() {
     const [conditions, setConditions] = useState<SegmentCondition[]>([
         { feature: "lifecycle.state", operator: "eq", value: "active_repeat" },
     ]);
+    const conditionKeys = useRef(new WeakMap<SegmentCondition, string>());
+    const conditionKeySequence = useRef(0);
+    const getConditionKey = (condition: SegmentCondition) => {
+        const existing = conditionKeys.current.get(condition);
+        if (existing) return existing;
+        conditionKeySequence.current += 1;
+        const created = `condition-${conditionKeySequence.current}`;
+        conditionKeys.current.set(condition, created);
+        return created;
+    };
     const saveDefinition = useSaveSegmentIntelligenceDefinition(selectedId ?? 0);
     const preview = usePreviewCustomerSegment(selectedId ?? 0);
     const evaluate = useEvaluateCustomerSegment(selectedId ?? 0);
@@ -353,7 +363,7 @@ export function SegmentStudio() {
                                     <div className="flex flex-col gap-2">
                                         {conditions.map((condition, index) => (
                                             <div
-                                                key={`${index}-${condition.feature}`}
+                                                key={getConditionKey(condition)}
                                                 className="grid gap-2 rounded-lg border bg-muted/20 p-3 md:grid-cols-[1.4fr_1fr_1.2fr_auto]"
                                             >
                                                 <Select
@@ -500,13 +510,13 @@ export function SegmentStudio() {
 
 function Field({ label, help, children }: { label: string; help: string; children: ReactNode }) {
     return (
-        <label className="flex flex-col gap-1.5 text-sm">
+        <div className="flex flex-col gap-1.5 text-sm">
             <span className="flex items-center gap-1 font-medium">
                 {label}
                 <HelperTooltip>{help}</HelperTooltip>
             </span>
             {children}
-        </label>
+        </div>
     );
 }
 

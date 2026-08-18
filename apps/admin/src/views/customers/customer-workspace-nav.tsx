@@ -21,9 +21,10 @@ export function CustomerWorkspaceNav() {
         <nav aria-label={t("customers")} className="flex max-w-full gap-1 overflow-x-auto rounded-lg border bg-card p-1 text-sm">
             {items.map((item) => {
                 const Icon = item.icon;
-                const active = "exact" in item && item.exact
-                    ? pathname === item.href
-                    : pathname === item.href || pathname.startsWith(`${item.href}/`);
+                const active =
+                    "exact" in item && item.exact
+                        ? pathname === item.href
+                        : pathname === item.href || pathname.startsWith(`${item.href}/`);
                 return (
                     <Link
                         key={item.href}

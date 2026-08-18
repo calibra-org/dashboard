@@ -2,8 +2,8 @@
 
 import { HelperTooltip } from "@calibra/panel-kit/helper-tooltip";
 import type { Locale } from "@calibra/shared/i18n";
-import type { ReactNode } from "react";
 import { useTranslations } from "next-intl";
+import type { ReactNode } from "react";
 
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
@@ -139,7 +139,7 @@ export function IntelligenceCard({ customerId, locale }: IntelligenceCardProps) 
 
             <div className="grid gap-3 lg:grid-cols-[1fr_1fr_1.25fr]">
                 <div className="rounded-lg border p-3">
-                    <div className="flex items-center gap-2 text-sm font-medium">
+                    <div className="flex items-center gap-2 font-medium text-sm">
                         <ShieldCheck className="size-4 text-info" aria-hidden="true" />
                         {t("detail.support")}
                         <HelperTooltip>{t("detail.supportHelp")}</HelperTooltip>
@@ -162,7 +162,7 @@ export function IntelligenceCard({ customerId, locale }: IntelligenceCardProps) 
                     </div>
                 </div>
                 <div className="rounded-lg border p-3">
-                    <div className="flex items-center gap-2 text-sm font-medium">
+                    <div className="flex items-center gap-2 font-medium text-sm">
                         <ShieldCheck className="size-4 text-success" aria-hidden="true" />
                         {t("detail.consent")}
                         <HelperTooltip>{t("detail.consentHelp")}</HelperTooltip>
@@ -175,15 +175,21 @@ export function IntelligenceCard({ customerId, locale }: IntelligenceCardProps) 
                     </div>
                 </div>
                 <div className="rounded-lg border bg-primary/5 p-3">
-                    <div className="flex items-center gap-2 text-sm font-medium">
+                    <div className="flex items-center gap-2 font-medium text-sm">
                         <Sparkles className="size-4 text-primary" aria-hidden="true" />
                         {t("detail.nba")}
                         <HelperTooltip>{t("detail.nbaHelp")}</HelperTooltip>
                     </div>
                     <div className="mt-3 flex flex-col gap-2">
-                        {data.nba_candidates.map((candidate, index) => (
+                        {data.nba_candidates.map((candidate) => (
                             <div
-                                key={`${candidate.action_type ?? "candidate"}-${index}`}
+                                key={[
+                                    candidate.action_type ?? "candidate",
+                                    candidate.eligibility ?? "unknown",
+                                    candidate.consent_requirement ?? "none",
+                                    ...(candidate.reason_codes ?? []),
+                                    ...(candidate.evidence_refs ?? []),
+                                ].join(":")}
                                 className="flex items-center justify-between gap-3 rounded-md border bg-card px-3 py-2 text-sm"
                             >
                                 <span>{nbaLabel(candidate.action_type, t)}</span>

@@ -12,7 +12,8 @@ import {
 
 function id(value: unknown): number {
     const parsed = Number(value);
-    if (!Number.isSafeInteger(parsed) || parsed < 1) throw new Exception("Invalid identifier", { status: 422, code: "E_PROCUREMENT_ID" });
+    if (!Number.isSafeInteger(parsed) || parsed < 1)
+        throw new Exception("Invalid identifier", { status: 422, code: "E_PROCUREMENT_ID" });
     return parsed;
 }
 
@@ -26,25 +27,52 @@ function idempotencyKey(ctx: HttpContext): string | null {
 }
 
 export default class ProcurementController {
-    overview() { return phase14ProcurementService.overview(); }
-    suppliers() { return phase14ProcurementService.suppliers(); }
-    purchaseOrders() { return phase14ProcurementService.purchaseOrders(); }
-    recommendations() { return phase14ProcurementService.recommendations(); }
-    health() { return phase14ProcurementService.health(); }
+    overview() {
+        return phase14ProcurementService.overview();
+    }
+    suppliers() {
+        return phase14ProcurementService.suppliers();
+    }
+    purchaseOrders() {
+        return phase14ProcurementService.purchaseOrders();
+    }
+    recommendations() {
+        return phase14ProcurementService.recommendations();
+    }
+    health() {
+        return phase14ProcurementService.health();
+    }
 
     async createSupplier(ctx: HttpContext) {
         const payload = await ctx.request.validateUsing(createSupplierValidator);
         const result = await phase14ProcurementService.createSupplier(payload);
         ctx.response.status(201);
-        await recordAudit({ ctx, action: "procurement.supplier.create", entityKind: "supplier", entityId: result.data.id, payload: { code: payload.code } });
+        await recordAudit({
+            ctx,
+            action: "procurement.supplier.create",
+            entityKind: "supplier",
+            entityId: result.data.id,
+            payload: { code: payload.code },
+        });
         return result;
     }
 
     async createPurchaseOrder(ctx: HttpContext) {
         const payload = await ctx.request.validateUsing(createPurchaseOrderValidator);
-        const result = await phase14ProcurementService.createPurchaseOrder(payload, actor(await ctx.auth.authenticate()), idempotencyKey(ctx));
+        const result = await phase14ProcurementService.createPurchaseOrder(
+            payload,
+            actor(await ctx.auth.authenticate()),
+            idempotencyKey(ctx),
+        );
         ctx.response.status(result.replayed ? 200 : 201);
-        if (!result.replayed) await recordAudit({ ctx, action: "procurement.po.create", entityKind: "purchase_order", entityId: result.data.id, payload: { supplier_id: payload.supplier_id, line_count: payload.lines.length } });
+        if (!result.replayed)
+            await recordAudit({
+                ctx,
+                action: "procurement.po.create",
+                entityKind: "purchase_order",
+                entityId: result.data.id,
+                payload: { supplier_id: payload.supplier_id, line_count: payload.lines.length },
+            });
         return result;
     }
 
@@ -52,16 +80,34 @@ export default class ProcurementController {
         const purchaseOrderId = id(ctx.params.id);
         const payload = await ctx.request.validateUsing(transitionPurchaseOrderValidator);
         const result = await phase14ProcurementService.transition(purchaseOrderId, payload, actor(await ctx.auth.authenticate()));
-        await recordAudit({ ctx, action: `procurement.po.${payload.status}`, entityKind: "purchase_order", entityId: purchaseOrderId, payload: { expected_version: payload.expected_version } });
+        await recordAudit({
+            ctx,
+            action: `procurement.po.${payload.status}`,
+            entityKind: "purchase_order",
+            entityId: purchaseOrderId,
+            payload: { expected_version: payload.expected_version },
+        });
         return result;
     }
 
     async receive(ctx: HttpContext) {
         const purchaseOrderId = id(ctx.params.id);
         const payload = await ctx.request.validateUsing(receivePurchaseOrderValidator);
-        const result = await phase14ProcurementService.receive(purchaseOrderId, payload, actor(await ctx.auth.authenticate()), idempotencyKey(ctx));
+        const result = await phase14ProcurementService.receive(
+            purchaseOrderId,
+            payload,
+            actor(await ctx.auth.authenticate()),
+            idempotencyKey(ctx),
+        );
         ctx.response.status(result.replayed ? 200 : 201);
-        if (!result.replayed) await recordAudit({ ctx, action: "procurement.po.receive", entityKind: "purchase_order_receipt", entityId: result.data.id, payload: { purchase_order_id: purchaseOrderId, line_count: payload.lines.length } });
+        if (!result.replayed)
+            await recordAudit({
+                ctx,
+                action: "procurement.po.receive",
+                entityKind: "purchase_order_receipt",
+                entityId: result.data.id,
+                payload: { purchase_order_id: purchaseOrderId, line_count: payload.lines.length },
+            });
         return result;
     }
 }

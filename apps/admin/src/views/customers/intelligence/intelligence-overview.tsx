@@ -14,6 +14,15 @@ import { useCustomerIntelligenceSummary, useRefreshAllCustomerIntelligence } fro
 
 import { CustomerWorkspaceNav } from "../customer-workspace-nav";
 
+const INTELLIGENCE_SKELETON_KEYS = [
+    "intelligence-skeleton-a",
+    "intelligence-skeleton-b",
+    "intelligence-skeleton-c",
+    "intelligence-skeleton-d",
+    "intelligence-skeleton-e",
+    "intelligence-skeleton-f",
+] as const;
+
 interface MetricCardProps {
     icon: typeof Users;
     label: string;
@@ -54,8 +63,8 @@ export function IntelligenceOverview() {
                 <CustomerWorkspaceNav />
                 <Skeleton className="h-28 w-full" />
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-                    {Array.from({ length: 6 }, (_, index) => (
-                        <Skeleton key={index} className="h-36" />
+                    {INTELLIGENCE_SKELETON_KEYS.map((key) => (
+                        <Skeleton key={key} className="h-36" />
                     ))}
                 </div>
                 <Skeleton className="h-80" />
@@ -231,7 +240,7 @@ export function IntelligenceOverview() {
                     </CardHeader>
                     <CardContent className="flex flex-col gap-3">
                         <div className="rounded-xl border bg-muted/30 p-3.5">
-                            <div className="flex items-center gap-2 text-sm font-medium">
+                            <div className="flex items-center gap-2 font-medium text-sm">
                                 <BrainCircuit className="size-4 text-warning" aria-hidden="true" />
                                 {t("overview.prediction")}
                             </div>
@@ -239,7 +248,7 @@ export function IntelligenceOverview() {
                         </div>
                         <div className="rounded-xl border bg-muted/30 p-3.5">
                             <div className="flex items-center justify-between gap-3">
-                                <div className="flex items-center gap-2 text-sm font-medium">
+                                <div className="flex items-center gap-2 font-medium text-sm">
                                     <BarChart3 className="size-4 text-info" aria-hidden="true" />
                                     {t("overview.contribution")}
                                 </div>
@@ -256,7 +265,7 @@ export function IntelligenceOverview() {
                             <p className="mt-2 text-muted-foreground text-xs">{contributionDetail}</p>
                         </div>
                         <div className="rounded-xl border bg-primary/5 p-3.5">
-                            <div className="flex items-center gap-2 text-sm font-medium">
+                            <div className="flex items-center gap-2 font-medium text-sm">
                                 <Sparkles className="size-4 text-primary" aria-hidden="true" />
                                 {t("overview.nextAction")}
                                 <HelperTooltip>{t("overview.nextActionHelp")}</HelperTooltip>
@@ -269,7 +278,7 @@ export function IntelligenceOverview() {
 
             {refresh.isError ? <p className="text-danger text-sm">{refresh.error.message}</p> : null}
             {refresh.isSuccess ? (
-                <p className="text-success text-sm">
+                <p className="text-sm text-success">
                     {formatNumber(refresh.data.data.refreshed, locale)} {t("common.customers")}
                 </p>
             ) : null}

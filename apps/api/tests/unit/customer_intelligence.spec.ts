@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { test } from "@japa/runner";
 
-import { deriveLifecycle, deriveRiskBand, deriveValueBand } from "#services/customer_intelligence_service";
+import { deriveLifecycle, deriveQualityStatus, deriveRiskBand, deriveValueBand } from "#services/customer_intelligence_service";
 
 const rootPath = (...parts: string[]) => resolve(import.meta.dirname, "../../../..", ...parts);
 
@@ -40,6 +40,12 @@ test.group("customer intelligence lifecycle", () => {
         assert.equal(deriveValueBand(12), "core");
         assert.equal(deriveValueBand(13), "high_value");
         assert.equal(deriveValueBand(15), "high_value");
+
+        assert.equal(deriveQualityStatus(0, 0, "unavailable"), "limited_history");
+        assert.equal(deriveQualityStatus(1, 0, "unavailable"), "limited_history");
+        assert.equal(deriveQualityStatus(2, 2, "available"), "ready");
+        assert.equal(deriveQualityStatus(2, 2, "partial"), "partial_economic_coverage");
+        assert.equal(deriveQualityStatus(2, 2, "unavailable"), "missing_economic_coverage");
     });
 
     test("keeps prediction and contribution contracts explicit", ({ assert }) => {
@@ -52,6 +58,7 @@ test.group("customer intelligence lifecycle", () => {
         assert.include(contract, "economics.historical_contribution_ltv_minor");
         assert.include(contract, "enum: [not_calibrated]");
         assert.include(contract, "enum: [available, partial, unavailable]");
+        assert.include(contract, 'contribution_ltv_minor: { type: [integer, "null"], format: int64 }');
     });
 
     test("keeps the Phase 15 projection tenant-isolated and deletion-aware", ({ assert }) => {
@@ -59,10 +66,7 @@ test.group("customer intelligence lifecycle", () => {
             rootPath("apps/api/database/migrations/1768000000000_create_phase15_customer_intelligence.ts"),
             "utf8",
         );
-        const eligibility = readFileSync(
-            rootPath("apps/api/app/services/customer_intelligence_eligibility_service.ts"),
-            "utf8",
-        );
+        const eligibility = readFileSync(rootPath("apps/api/app/services/customer_intelligence_eligibility_service.ts"), "utf8");
         const refreshJob = readFileSync(rootPath("apps/api/app/jobs/refresh_customer_intelligence_job.ts"), "utf8");
 
         assert.include(migration, 'createTable("customer_intelligence_profiles"');

@@ -175,6 +175,13 @@ function contributionFor(row: PopulationRow): ContributionResult {
     };
 }
 
+export function deriveQualityStatus(orderCount: number, expectedOrders: number, contributionStatus: ContributionStatus): string {
+    if (orderCount === 0 || expectedOrders === 0) return "limited_history";
+    if (contributionStatus === "available") return "ready";
+    if (contributionStatus === "partial") return "partial_economic_coverage";
+    return "missing_economic_coverage";
+}
+
 function buildNbaCandidates(lifecycle: LifecycleState, openTickets: number, emailOptIn: boolean, smsOptIn: boolean) {
     if (openTickets > 0) {
         return [
@@ -430,8 +437,7 @@ async function persist(row: ScoredPopulationRow): Promise<CustomerIntelligenceRo
             model_version: null,
         },
     };
-    const qualityStatus =
-        orderCount === 0 ? "limited_history" : contribution.status === "partial" ? "partial_economic_coverage" : "ready";
+    const qualityStatus = deriveQualityStatus(orderCount, contribution.expectedOrders, contribution.status);
     const now = DateTime.utc().toISO()!;
     const historicalContribution = contribution.status === "available" ? contribution.valueMinor : null;
     const nbaCandidates = buildNbaCandidates(lifecycle.state, openTickets, Boolean(row.email_opt_in), Boolean(row.sms_opt_in));
@@ -556,10 +562,16 @@ export async function getCustomerIntelligenceSummary() {
                 "COUNT(*) FILTER (WHERE historical_contribution_ltv_minor IS NOT NULL)::bigint AS contribution_customer_count",
             ),
         )
+        .select(
+            currentTrx().raw(
+                "COUNT(*) FILTER (WHERE COALESCE((signals->'economics'->>'expected_orders')::int, 0) > 0)::bigint AS contribution_eligible_customer_count",
+            ),
+        )
         .first();
     const latest = await currentTrx().from("customer_intelligence_profiles").max("calculated_at as calculated_at").first();
     const total = Number(row?.total ?? 0);
     const contributionCustomers = Number(row?.contribution_customer_count ?? 0);
+    const contributionEligibleCustomers = Number(row?.contribution_eligible_customer_count ?? 0);
     return {
         total,
         active_repeat: Number(row?.active_repeat ?? 0),
@@ -570,22 +582,33 @@ export async function getCustomerIntelligenceSummary() {
         historical_revenue_ltv_minor: Number(row?.historical_revenue_ltv_minor ?? 0),
         historical_contribution_ltv_minor: Number(row?.historical_contribution_ltv_minor ?? 0),
         contribution_customer_count: contributionCustomers,
-        contribution_coverage_ratio: total === 0 ? 0 : contributionCustomers / total,
+        contribution_coverage_ratio:
+            contributionEligibleCustomers === 0 ? 0 : contributionCustomers / contributionEligibleCustomers,
         generated_at: latest?.calculated_at ? new Date(String(latest.calculated_at)).toISOString() : null,
         engine_version: CUSTOMER_INTELLIGENCE_ENGINE_VERSION,
         predictive_status: "not_calibrated",
         contribution_status:
-            contributionCustomers === 0 ? "unavailable" : contributionCustomers < total ? "partial" : "available",
+            contributionEligibleCustomers === 0
+                ? "unavailable"
+                : contributionCustomers < contributionEligibleCustomers
+                  ? "partial"
+                  : "available",
     };
 }
 
 export async function getLifecycleCohorts() {
-    const { rows } = await currentTrx().rawQuery<{ rows: Array<Record<string, string | number>> }>(
+    const { rows } = await currentTrx().rawQuery<{ rows: Array<Record<string, string | number | null>> }>(
         `SELECT TO_CHAR(date_trunc('month', COALESCE(first_order.first_order_at, c.created_at)), 'YYYY-MM') AS cohort,
                 cip.lifecycle_state,
                 COUNT(*)::bigint AS customers,
                 COALESCE(SUM(cip.historical_revenue_ltv_minor), 0)::bigint AS revenue_ltv_minor,
-                COALESCE(SUM(cip.historical_contribution_ltv_minor), 0)::bigint AS contribution_ltv_minor
+                CASE
+                    WHEN COUNT(*) FILTER (WHERE COALESCE((cip.signals->'economics'->>'expected_orders')::int, 0) > 0) = 0 THEN NULL
+                    WHEN COUNT(*) FILTER (WHERE cip.historical_contribution_ltv_minor IS NOT NULL) =
+                         COUNT(*) FILTER (WHERE COALESCE((cip.signals->'economics'->>'expected_orders')::int, 0) > 0)
+                    THEN SUM(cip.historical_contribution_ltv_minor)::bigint
+                    ELSE NULL
+                END AS contribution_ltv_minor
            FROM customer_intelligence_profiles cip
            JOIN customers c ON c.id = cip.customer_id
            LEFT JOIN LATERAL (
@@ -601,6 +624,6 @@ export async function getLifecycleCohorts() {
         lifecycle_state: String(row.lifecycle_state),
         customers: Number(row.customers),
         revenue_ltv_minor: Number(row.revenue_ltv_minor),
-        contribution_ltv_minor: Number(row.contribution_ltv_minor),
+        contribution_ltv_minor: row.contribution_ltv_minor === null ? null : Number(row.contribution_ltv_minor),
     }));
 }

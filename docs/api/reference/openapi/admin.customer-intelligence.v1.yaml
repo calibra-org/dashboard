@@ -103,7 +103,7 @@ components:
                 lifecycle_state: { type: string }
                 customers: { type: integer, minimum: 0 }
                 revenue_ltv_minor: { type: integer, format: int64, minimum: 0 }
-                contribution_ltv_minor: { type: integer, format: int64 }
+                contribution_ltv_minor: { type: [integer, "null"], format: int64 }
         SegmentCondition:
             type: object
             required: [feature, operator, value]
