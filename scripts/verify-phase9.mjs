@@ -19,7 +19,7 @@ for (const table of [
     "deal_campaign_products",
     "personalization_placements",
 ])
-    check(migration.includes(`\"${table}\"`), `migration missing ${table}`);
+    check(migration.includes(`"${table}"`), `migration missing ${table}`);
 for (const table of [
     "personalization_feature_registry",
     "personalization_policies",
@@ -31,7 +31,7 @@ for (const table of [
     "deal_reservations",
     "deal_redemptions",
 ])
-    check(hardening.includes(`\"${table}\"`), `hardening migration missing ${table}`);
+    check(hardening.includes(`"${table}"`), `hardening migration missing ${table}`);
 for (const source of [migration, hardening]) {
     for (const needle of ["ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY", "app.current_tenant", "tenant_isolation"])
         check(source.includes(needle), `tenant isolation missing ${needle}`);

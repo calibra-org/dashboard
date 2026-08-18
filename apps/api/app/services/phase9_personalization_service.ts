@@ -247,7 +247,7 @@ export default class Phase9PersonalizationService {
                         score -= 35;
                     }
                 }
-                if (Boolean((p.transformed as { featured?: boolean }).featured)) score += 8;
+                if ((p.transformed as { featured?: boolean }).featured) score += 8;
                 return { ...p, score, reasonCode };
             })
             .sort((a, b) => b.score - a.score || a.id - b.id)
@@ -523,24 +523,34 @@ export default class Phase9PersonalizationService {
             .filter((p): p is EligibleProduct => Boolean(p));
         const mode = String(campaign.selection_mode) as SelectionMode;
         let selected: EligibleProduct[];
-        let reasons = new Map<number, string>();
+        const reasons = new Map<number, string>();
         if (mode === "manual") {
             selected = manual;
-            manual.forEach((p) => reasons.set(p.id, "manual_deal"));
+            manual.forEach((p) => {
+                reasons.set(p.id, "manual_deal");
+            });
         } else if (mode === "controlled_random") {
             selected = deterministicRotate(eligible, campaign);
-            selected.forEach((p) => reasons.set(p.id, "rotating_deal"));
+            selected.forEach((p) => {
+                reasons.set(p.id, "rotating_deal");
+            });
         } else if (mode === "hybrid") {
             const rest = deterministicRotate(
                 eligible.filter((p) => !pinned.some((x) => x.id === p.id)),
                 campaign,
             );
             selected = [...pinned, ...rest];
-            pinned.forEach((p) => reasons.set(p.id, "pinned_deal"));
-            rest.forEach((p) => reasons.set(p.id, "rotating_deal"));
+            pinned.forEach((p) => {
+                reasons.set(p.id, "pinned_deal");
+            });
+            rest.forEach((p) => {
+                reasons.set(p.id, "rotating_deal");
+            });
         } else {
             selected = [...eligible].sort((a, b) => b.discountPercent - a.discountPercent || a.id - b.id);
-            selected.forEach((p) => reasons.set(p.id, "high_discount"));
+            selected.forEach((p) => {
+                reasons.set(p.id, "high_discount");
+            });
         }
         return selected
             .slice(0, clamp(Number(campaign.max_items ?? 8), 1, 48))

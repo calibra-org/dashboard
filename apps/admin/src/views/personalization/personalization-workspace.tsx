@@ -454,7 +454,7 @@ function Placements() {
                                     }
                                 />
                             </div>
-                            <div className="flex gap-2 text-xs text-muted-foreground">
+                            <div className="flex gap-2 text-muted-foreground text-xs">
                                 <Badge variant="outline">{p.strategy}</Badge>
                                 <span>{t("placement.max", { value: p.max_items })}</span>
                                 <span>{t("placement.explore", { value: p.exploration_percent })}</span>
@@ -587,7 +587,11 @@ function RecordList({ title, rows }: { title: string; rows: Record<string, unkno
                                         <span className="min-w-28 text-muted-foreground">{k}</span>
                                         <span
                                             className="break-all"
-                                            dir={typeof v === "string" && /^[\x00-\x7F]*$/.test(v) ? "ltr" : undefined}
+                                            dir={
+                                                typeof v === "string" && [...v].every((char) => char.charCodeAt(0) <= 0x7f)
+                                                    ? "ltr"
+                                                    : undefined
+                                            }
                                         >
                                             {typeof v === "object" ? JSON.stringify(v) : String(v ?? "—")}
                                         </span>
