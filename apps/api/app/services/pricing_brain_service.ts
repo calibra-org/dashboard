@@ -5,6 +5,7 @@ export interface PricingSimulationInput {
     referencePrice: number;
     candidatePrice: number;
     quantity?: number;
+    promotionDiscount?: number;
     productId?: number;
     variationId?: number | null;
     floorPrice?: number | null;
@@ -94,6 +95,7 @@ export async function simulatePricingCandidate(input: PricingSimulationInput): P
             referencePrice: input.referencePrice,
             candidatePrice: input.candidatePrice,
             quantity: input.quantity,
+            promotionDiscount: input.promotionDiscount,
             guardrails,
         }),
         economics,
