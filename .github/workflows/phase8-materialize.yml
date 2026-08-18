@@ -1,11 +1,11 @@
-name: Phase 8 Reconcile Probe
+name: Phase 8 Integration Materializer
 
-# trigger: reconcile-probe-v2
 on:
   push:
     branches:
-      - agent/phase8-run2-reconcile-probe
+      - agent/phase8-integration-reconcile
     paths:
+      - ".phase8/materialize/**"
       - ".github/workflows/phase8-materialize.yml"
   workflow_dispatch:
 
@@ -13,11 +13,11 @@ permissions:
   contents: write
 
 concurrency:
-  group: phase8-run2-reconcile-probe
+  group: phase8-integration-reconcile
   cancel-in-progress: false
 
 jobs:
-  reconcile:
+  materialize:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -41,14 +41,12 @@ jobs:
           echo "actual=$actual"
           test "$actual" = "$expected"
 
-      - name: Rebase probe onto current main and three-way apply
+      - name: Three-way apply onto current integration baseline
         shell: bash
         run: |
           set -euo pipefail
-          git fetch origin main
-          main_sha="$(git rev-parse origin/main)"
-          echo "current_main=$main_sha"
-          git reset --hard origin/main
+          baseline="$(git rev-parse HEAD)"
+          echo "integration_baseline=$baseline"
           if ! git apply --3way --index /tmp/phase8.patch; then
             echo "PHASE8_RECONCILE_CONFLICT=1"
             git status --short || true
@@ -58,8 +56,16 @@ jobs:
           fi
           test -z "$(git ls-files -u)"
           git diff --cached --check
-          echo "Changed files against current main:"
-          git diff --cached --name-status
+
+      - name: Remove one-shot transport helpers
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm -r .phase8/materialize
+          git rm .github/workflows/phase8-materialize.yml
+          git diff --cached --check
+          test -z "$(git diff --cached --name-only | grep '^\.phase8/' || true)"
+          test -z "$(git diff --cached --name-only | grep '^\.github/workflows/phase8-materialize\.yml$' || true)"
 
       - name: Verify Phase 8 static release invariants
         shell: bash
@@ -67,11 +73,12 @@ jobs:
           set -euo pipefail
           node scripts/verify-phase8-social-commerce.mjs
 
-      - name: Commit probe result only
+      - name: Commit materialized source to integration branch
         shell: bash
         run: |
           set -euo pipefail
-          git config user.name "Calibra Phase 8 Reconcile Probe"
-          git config user.email "phase8-reconcile@users.noreply.github.com"
-          git commit -m "test(phase8): reconcile locked Phase 8 payload onto current main"
-          git push --force-with-lease origin HEAD:agent/phase8-run2-reconcile-probe
+          git config user.name "Calibra Phase 8 Materializer"
+          git config user.email "phase8-materializer@users.noreply.github.com"
+          git status --short
+          git commit -m "feat(social): materialize Phase 8 Social Commerce & Community OS"
+          git push origin HEAD:agent/phase8-integration-reconcile
