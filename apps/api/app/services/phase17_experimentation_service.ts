@@ -364,7 +364,7 @@ export class Phase17ExperimentationService {
         return this.show(experimentId);
     }
 
-    async assign(input: { experiment_key: string; subject_type: string; subject_key: string }) {
+    async assign(input: { experiment_key: string; subject_type: string; subject_key: string }): Promise<{ data: Record<string, unknown> }> {
         const trx = currentTrx();
         const experiment = (await trx
             .from("experiments")

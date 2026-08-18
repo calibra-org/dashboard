@@ -7,7 +7,7 @@ type Severity = "low" | "medium" | "high" | "critical";
 type RiskBand = Severity;
 type Decision = "allow" | "review" | "challenge" | "hold" | "block";
 type SignalInput = { code: string; severity?: Severity; value?: number; evidence?: Record<string, unknown>; dedupe_key?: string };
-type Actor = { id?: number | string };
+type Actor = { id?: number | string | bigint };
 
 const BASE_BY_SEVERITY: Record<Severity, number> = { low: 60, medium: 150, high: 280, critical: 480 };
 const SIGNAL_MULTIPLIERS: Record<string, number> = {
@@ -102,7 +102,7 @@ class Phase20TrustRiskService {
         });
     }
 
-    async checkoutGuard(input: { orderId: number | string; customerId?: number | string | null; idempotencyKey?: string | null; amountMinor?: number | null }) {
+    async checkoutGuard(input: { orderId: number | string; customerId?: number | string | bigint | null; idempotencyKey?: string | null; amountMinor?: number | null }) {
         const signals: SignalInput[] = [];
         if (input.customerId == null) signals.push({ code: "account.new", severity: "low", value: 0.5, evidence: { source: "guest_checkout" } });
         if (numberValue(input.amountMinor) >= 50_000_000) signals.push({ code: "velocity.checkout", severity: "medium", value: 0.5, evidence: { amount_bucket: "high" } });

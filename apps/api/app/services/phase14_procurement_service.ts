@@ -4,7 +4,7 @@ import db from "@adonisjs/lucid/services/db";
 import InventoryService from "#services/inventory_service";
 import { withTenantTransaction } from "#services/tenant_context";
 
-type Actor = { id?: number | string };
+type Actor = { id?: number | string | bigint };
 const n = (value: unknown) => Number(value ?? 0);
 const inventory = new InventoryService();
 
