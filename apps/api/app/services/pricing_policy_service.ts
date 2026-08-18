@@ -1,11 +1,13 @@
 import { Exception } from "@adonisjs/core/exceptions";
 import type { TransactionClientContract } from "@adonisjs/lucid/types/database";
 
+import type { DiscounterItem } from "#contracts/discounter";
 import OrderCouponLine from "#models/order_coupon_line";
 import OrderLineItem from "#models/order_line_item";
 import Product from "#models/product";
 import ProductVariation from "#models/product_variation";
 import { recordAudit } from "#services/admin_audit_log_service";
+import { getDiscounter } from "#services/discounter";
 import { evaluatePricingCandidate, type PricingGuardrails } from "#services/pricing_decision_engine";
 import { resolvePrice } from "#services/price_resolver";
 import { currentTenantId, currentTrx, withTenantTransaction } from "#services/tenant_context";
@@ -71,6 +73,12 @@ function fail(message: string, status: number, code: string): never {
 
 function safeMinor(value: unknown, label: string): number {
     const result = Number(value);
+    if (!Number.isSafeInteger(result) || result < 0) fail(`${label} is outside the supported minor-unit range`, 422, "E_PRICING_MONEY_RANGE");
+    return result;
+}
+
+function safeLineMinor(unitAmount: number, quantity: number, label: string): number {
+    const result = unitAmount * quantity;
     if (!Number.isSafeInteger(result) || result < 0) fail(`${label} is outside the supported minor-unit range`, 422, "E_PRICING_MONEY_RANGE");
     return result;
 }
@@ -402,32 +410,118 @@ export class PricingPolicyService {
         const lines = await OrderLineItem.query({ client: trx }).where("order_id", orderId).orderBy("id", "asc");
         if (lines.length === 0) return;
         const couponLines = await OrderCouponLine.query({ client: trx }).where("order_id", orderId).orderBy("id", "asc");
-        const couponIds = couponLines.map((row) => Number(row.couponId));
+        const appliedCoupons = couponLines
+            .filter((row) => row.couponId !== null && row.couponId !== undefined)
+            .map((row) => ({ id: Number(row.couponId), code: row.codeSnapshot }));
+        const couponIds = appliedCoupons.map((row) => row.id);
+        const order = await trx.from("orders").where("id", orderId).select("customer_id", "billing_email").first();
+        if (!order) fail("Pricing snapshot order is unavailable", 422, "E_PRICING_ORDER_UNAVAILABLE");
 
-        for (const line of lines) {
+        const productIds = [...new Set(lines.map((line) => Number(line.productId)).filter((id) => id > 0))];
+        const products = await Product.query({ client: trx })
+            .whereIn("id", productIds)
+            .preload("categories")
+            .preload("tags")
+            .preload("brands");
+        const productById = new Map(products.map((product) => [Number(product.id), product]));
+        const variationIds = [
+            ...new Set(
+                lines
+                    .map((line) => (line.variationId == null ? null : Number(line.variationId)))
+                    .filter((id): id is number => id !== null),
+            ),
+        ];
+        const variations =
+            variationIds.length === 0
+                ? ([] as ProductVariation[])
+                : await ProductVariation.query({ client: trx }).whereIn("id", variationIds);
+        const variationById = new Map(variations.map((variation) => [Number(variation.id), variation]));
+
+        const runtimeLines = lines.map((line) => {
             const productId = Number(line.productId);
             const variationId = line.variationId == null ? null : Number(line.variationId);
-            const product = await Product.find(productId, { client: trx });
+            const product = productById.get(productId);
             if (!product) fail("Pricing snapshot product is unavailable", 422, "E_PRICING_PRODUCT_UNAVAILABLE");
-            const variation = variationId == null ? null : await ProductVariation.find(variationId, { client: trx });
+            const variation = variationId == null ? null : (variationById.get(variationId) ?? null);
             const resolved = resolvePrice(product, variation);
             const referencePrice = safeMinor(resolved.regularPrice, "reference_price_minor");
             const resolvedPrice = safeMinor(resolved.effectivePrice, "resolved_price_minor");
-            const active = await this.resolveActiveGuardrail(productId, variationId, trx);
-            const guardrails = guardrailsFrom(active?.guardrails);
-            const cogs = guardrails.minimumMarginPercent == null ? null : await this.resolveCogs(productId, variationId, trx);
-            guardrails.cogs = cogs;
-            const decision = evaluatePricingCandidate({
-                referencePrice,
-                candidatePrice: resolvedPrice,
+            const lineSubtotal = safeLineMinor(resolvedPrice, line.quantity, "candidate_line_subtotal_minor");
+            const discountItem: DiscounterItem = {
+                lineKey: String(line.id),
+                productId,
+                variationId,
                 quantity: line.quantity,
+                priceSnapshot: resolvedPrice,
+                lineSubtotal,
+                categoryIds: (product.categories ?? []).map((category) => Number(category.id)),
+                tagIds: (product.tags ?? []).map((tag) => Number(tag.id)),
+                brandIds: (product.brands ?? []).map((brand) => Number(brand.id)),
+                onSale: resolved.onSale,
+            };
+            return { line, productId, variationId, referencePrice, resolvedPrice, discountItem };
+        });
+
+        const discountItems = runtimeLines.map((row) => row.discountItem);
+        const itemsTotal = discountItems.reduce((sum, item) => {
+            const total = sum + item.lineSubtotal;
+            if (!Number.isSafeInteger(total) || total < 0) fail("Promotion subtotal exceeds supported money range", 422, "E_PRICING_MONEY_RANGE");
+            return total;
+        }, 0);
+        const discountResult = await getDiscounter().calculate({
+            items: discountItems,
+            itemsTotal,
+            appliedCoupons,
+            customer: {
+                customerId: order.customer_id == null ? null : Number(order.customer_id),
+                email: order.billing_email ?? null,
+            },
+        });
+
+        for (const couponLine of couponLines) {
+            const current = discountResult.perCouponDiscounts.get(couponLine.codeSnapshot)?.discount ?? 0;
+            const snapshotted = safeMinor(couponLine.discount ?? 0, "coupon_discount_snapshot_minor");
+            if (current !== snapshotted) {
+                throw new Exception("Promotion allocation changed since the draft was created", {
+                    status: 409,
+                    code: "E_PROMOTION_CHANGED",
+                    cause: {
+                        coupon_id: couponLine.couponId == null ? null : Number(couponLine.couponId),
+                        code: couponLine.codeSnapshot,
+                        old: snapshotted,
+                        new: current,
+                    } as unknown as Error,
+                });
+            }
+        }
+
+        for (const runtime of runtimeLines) {
+            const active = await this.resolveActiveGuardrail(runtime.productId, runtime.variationId, trx);
+            const guardrails = guardrailsFrom(active?.guardrails);
+            const cogs =
+                guardrails.minimumMarginPercent == null
+                    ? null
+                    : await this.resolveCogs(runtime.productId, runtime.variationId, trx);
+            guardrails.cogs = cogs;
+            const promotionDiscount = discountResult.perLineDiscounts.get(String(runtime.line.id)) ?? 0;
+            const decision = evaluatePricingCandidate({
+                referencePrice: runtime.referencePrice,
+                candidatePrice: runtime.resolvedPrice,
+                quantity: runtime.line.quantity,
+                promotionDiscount,
                 guardrails,
             });
             if (active && !decision.accepted) {
                 throw new Exception("Checkout price violates an active pricing policy", {
                     status: 409,
                     code: "E_PRICING_POLICY_VIOLATION",
-                    cause: { policy_id: active.policy_id, policy_version_id: active.id, violations: decision.violations } as unknown as Error,
+                    cause: {
+                        policy_id: active.policy_id,
+                        policy_version_id: active.id,
+                        promotion_discount_minor: promotionDiscount,
+                        net_revenue_minor: decision.netRevenue,
+                        violations: decision.violations,
+                    } as unknown as Error,
                 });
             }
             await trx
@@ -435,11 +529,11 @@ export class PricingPolicyService {
                 .insert({
                     tenant_id: tenantId(),
                     order_id: orderId,
-                    line_item_id: Number(line.id),
-                    product_id: productId,
-                    variation_id: variationId,
-                    reference_price_minor: referencePrice,
-                    resolved_price_minor: resolvedPrice,
+                    line_item_id: Number(runtime.line.id),
+                    product_id: runtime.productId,
+                    variation_id: runtime.variationId,
+                    reference_price_minor: runtime.referencePrice,
+                    resolved_price_minor: runtime.resolvedPrice,
                     currency,
                     policy_id: active?.policy_id ?? null,
                     policy_version_id: active?.id ?? null,
@@ -448,6 +542,11 @@ export class PricingPolicyService {
                         accepted: decision.accepted,
                         violations: decision.violations,
                         economics: cogs == null ? "unavailable" : "available",
+                        promotion_engine: "shared_discounter",
+                        promotion_discount_minor: promotionDiscount,
+                        candidate_gross_revenue_minor: decision.candidateGrossRevenue,
+                        net_revenue_minor: decision.netRevenue,
+                        free_shipping: discountResult.freeShipping,
                     },
                 })
                 .onConflict(["tenant_id", "order_id", "line_item_id"])
