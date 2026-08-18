@@ -39,6 +39,27 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "24.14.0"
+      - name: Install pnpm
+        run: npm install --global pnpm@10.32.1
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Biome check Phase 13 sources
+        run: >-
+          pnpm exec biome check
+          apps/api/app/services/planning_forecast_engine.ts
+          apps/api/app/services/phase13_planning_service.ts
+          apps/api/app/controllers/admin/planning_controller.ts
+          apps/api/app/validators/admin/phase13_planning_validator.ts
+          apps/api/database/migrations/1766000000000_create_phase13_planning_os.ts
+          apps/api/start/routes/admin_planning.ts
+          apps/admin/src/features/planning/PlanningWorkspace.tsx
+          apps/admin/src/lib/queries/planning.ts
+          'apps/admin/src/app/[locale]/(authenticated)/planning/page.tsx'
+          apps/api/tests/functional/admin/planning.spec.ts
+          apps/api/tests/unit/planning/phase13_forecast.spec.ts
+          scripts/verify-phase13-planning-integration.mjs
+          scripts/smoke-phase13-forecast.mjs
+          --max-diagnostics=100
       - name: Verify Phase 13 integration contracts
         run: node scripts/verify-phase13-planning-integration.mjs
       - name: Smoke forecast and replenishment math
