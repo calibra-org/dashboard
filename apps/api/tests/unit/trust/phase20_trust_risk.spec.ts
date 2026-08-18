@@ -33,7 +33,9 @@ test.group("Phase20 trust risk invariants", () => {
     });
 
     test("risk score is capped at 1000", ({ assert }) => {
-        const result = calculateRiskDecision(Array.from({ length: 20 }, () => ({ code: "geo.impossible_travel", severity: "critical" as const, value: 4 })));
+        const result = calculateRiskDecision(
+            Array.from({ length: 20 }, () => ({ code: "geo.impossible_travel", severity: "critical" as const, value: 4 })),
+        );
         assert.equal(result.score, 1000);
     });
 });

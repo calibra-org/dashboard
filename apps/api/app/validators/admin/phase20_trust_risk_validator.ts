@@ -1,11 +1,61 @@
 import vine from "@vinejs/vine";
 
-const signal = vine.object({ code: vine.string().trim().minLength(2).maxLength(120), severity: vine.enum(["low", "medium", "high", "critical"] as const).optional(), value: vine.number().min(0).max(4).optional(), evidence: vine.record(vine.any()).optional(), dedupe_key: vine.string().trim().maxLength(180).optional() });
-export const evaluateRiskValidator = vine.compile(vine.object({ subject_type: vine.enum(["order", "customer", "session", "payment", "coupon", "refund", "account"] as const), subject_id: vine.string().trim().minLength(1).maxLength(160), signals: vine.array(signal).maxLength(100).optional(), idempotency_key: vine.string().trim().maxLength(180).optional() }));
-export const createRiskModelValidator = vine.compile(vine.object({ model_id: vine.string().trim().minLength(2).maxLength(120), purpose: vine.string().trim().maxLength(160).optional(), owner: vine.string().trim().maxLength(160).optional(), description: vine.string().trim().maxLength(2000).optional() }));
-export const createRiskModelVersionValidator = vine.compile(vine.object({ version: vine.string().trim().minLength(1).maxLength(80), deployment_state: vine.enum(["draft", "shadow", "candidate"] as const).optional(), thresholds: vine.record(vine.any()).optional(), weights: vine.record(vine.any()).optional(), validation_metrics: vine.record(vine.any()).optional(), known_limitations: vine.string().trim().maxLength(4000).optional(), validated: vine.boolean().optional() }));
-export const createFraudCaseValidator = vine.compile(vine.object({ subject_type: vine.string().trim().minLength(1).maxLength(40), subject_id: vine.string().trim().minLength(1).maxLength(160), priority: vine.enum(["low", "medium", "high", "critical"] as const).optional(), summary: vine.string().trim().maxLength(2000).optional() }));
+const signal = vine.object({
+    code: vine.string().trim().minLength(2).maxLength(120),
+    severity: vine.enum(["low", "medium", "high", "critical"] as const).optional(),
+    value: vine.number().min(0).max(4).optional(),
+    evidence: vine.record(vine.any()).optional(),
+    dedupe_key: vine.string().trim().maxLength(180).optional(),
+});
+export const evaluateRiskValidator = vine.compile(
+    vine.object({
+        subject_type: vine.enum(["order", "customer", "session", "payment", "coupon", "refund", "account"] as const),
+        subject_id: vine.string().trim().minLength(1).maxLength(160),
+        signals: vine.array(signal).maxLength(100).optional(),
+        idempotency_key: vine.string().trim().maxLength(180).optional(),
+    }),
+);
+export const createRiskModelValidator = vine.compile(
+    vine.object({
+        model_id: vine.string().trim().minLength(2).maxLength(120),
+        purpose: vine.string().trim().maxLength(160).optional(),
+        owner: vine.string().trim().maxLength(160).optional(),
+        description: vine.string().trim().maxLength(2000).optional(),
+    }),
+);
+export const createRiskModelVersionValidator = vine.compile(
+    vine.object({
+        version: vine.string().trim().minLength(1).maxLength(80),
+        deployment_state: vine.enum(["draft", "shadow", "candidate"] as const).optional(),
+        thresholds: vine.record(vine.any()).optional(),
+        weights: vine.record(vine.any()).optional(),
+        validation_metrics: vine.record(vine.any()).optional(),
+        known_limitations: vine.string().trim().maxLength(4000).optional(),
+        validated: vine.boolean().optional(),
+    }),
+);
+export const createFraudCaseValidator = vine.compile(
+    vine.object({
+        subject_type: vine.string().trim().minLength(1).maxLength(40),
+        subject_id: vine.string().trim().minLength(1).maxLength(160),
+        priority: vine.enum(["low", "medium", "high", "critical"] as const).optional(),
+        summary: vine.string().trim().maxLength(2000).optional(),
+    }),
+);
 export const assignFraudCaseValidator = vine.compile(vine.object({ assignee_user_id: vine.number().positive().optional() }));
-export const updateFraudCaseStatusValidator = vine.compile(vine.object({ status: vine.enum(["open", "investigating", "waiting", "resolved", "closed"] as const), resolution: vine.string().trim().maxLength(4000).optional() }));
+export const updateFraudCaseStatusValidator = vine.compile(
+    vine.object({
+        status: vine.enum(["open", "investigating", "waiting", "resolved", "closed"] as const),
+        resolution: vine.string().trim().maxLength(4000).optional(),
+    }),
+);
 export const addFraudCaseNoteValidator = vine.compile(vine.object({ note: vine.string().trim().minLength(2).maxLength(4000) }));
-export const createSubjectControlValidator = vine.compile(vine.object({ subject_type: vine.string().trim().minLength(1).maxLength(40), subject_id: vine.string().trim().minLength(1).maxLength(160), control: vine.enum(["block", "challenge", "review", "allow_override"] as const), reason: vine.string().trim().minLength(3).maxLength(2000), expires_at: vine.string().trim().optional() }));
+export const createSubjectControlValidator = vine.compile(
+    vine.object({
+        subject_type: vine.string().trim().minLength(1).maxLength(40),
+        subject_id: vine.string().trim().minLength(1).maxLength(160),
+        control: vine.enum(["block", "challenge", "review", "allow_override"] as const),
+        reason: vine.string().trim().minLength(3).maxLength(2000),
+        expires_at: vine.string().trim().optional(),
+    }),
+);
