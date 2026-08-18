@@ -13,6 +13,7 @@ import OrderNote from "#models/order_note";
 import OrderRefund from "#models/order_refund";
 import OrderRefundLineItem from "#models/order_refund_line_item";
 import type User from "#models/user";
+import { captureRefundEconomics } from "#services/economics_service";
 import InventoryService from "#services/inventory_service";
 import { orderStateMachine } from "#services/order_state_machine";
 import { paymentService } from "#services/payment_service";
@@ -241,6 +242,7 @@ export class RefundService {
             }
 
             await this.writeAuditNote(trx, order, refund);
+            await captureRefundEconomics(Number(refund.id), trx);
 
             return {
                 refund,

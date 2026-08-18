@@ -8,6 +8,7 @@ import type Order from "#models/order";
 import OrderLineItem from "#models/order_line_item";
 import OrderStatusHistory from "#models/order_status_history";
 import type User from "#models/user";
+import { captureOrderEconomics } from "#services/economics_service";
 import InventoryService, { type InventoryTarget } from "#services/inventory_service";
 import { recordOrderTransition } from "#services/metrics/domain_metrics";
 import { withTenantTransaction } from "#services/tenant_context";
@@ -60,6 +61,14 @@ export class OrderStateMachine {
 
             order.status = to;
             await order.save();
+
+            if (to === "processing") {
+                await captureOrderEconomics({
+                    orderId: Number(order.id),
+                    effectiveAt: order.datePaidAt?.toUTC().toSQL() ?? order.createdAt.toUTC().toSQL() ?? undefined,
+                    trx,
+                });
+            }
 
             const history = new OrderStatusHistory();
             history.useTransaction(trx);
