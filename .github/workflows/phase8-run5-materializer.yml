@@ -16,7 +16,7 @@ permissions:
   checks: read
 
 concurrency:
-  group: phase8-run5-materializer-force-exit
+  group: phase8-run5-materializer-runtime-source-fixes
   cancel-in-progress: false
 
 env:
@@ -75,6 +75,9 @@ jobs:
           git apply --stat /tmp/phase8.patch
           git show "$src:.phase8/run5/route-names.patch" > /tmp/phase8-route-names.patch
           echo 'a25aae3e3b94668be8decc31b240e3b0a22acee546148bcb608933796d5fe8b4  /tmp/phase8-route-names.patch' | sha256sum -c -
+          git show "$src:.phase8/run5/runtime-source-fixes.patch" > /tmp/phase8-runtime-source-fixes.patch
+          echo '25182e1a5e79cd514fb9fbe6d1e0d87be02b7b2c97633dabc69d5306565d7eeb  /tmp/phase8-runtime-source-fixes.patch' | sha256sum -c -
+          test "$(grep -c '^diff --git ' /tmp/phase8-runtime-source-fixes.patch)" -eq 3
 
       - name: Apply Run5 and compose Phase 9 integration points
         shell: bash
@@ -198,6 +201,7 @@ jobs:
 
           test -z "$(git ls-files -u)"
           git apply --index /tmp/phase8-route-names.patch
+          git apply --index /tmp/phase8-runtime-source-fixes.patch
           test "$(grep -h -o '\.as("[^"]*social[^"]*")' apps/api/start/routes/*social_commerce.ts | wc -l)" -eq 60
           git diff --cached --check
           node scripts/verify-phase8-social-commerce.mjs
