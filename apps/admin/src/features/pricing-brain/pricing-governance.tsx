@@ -30,7 +30,7 @@ function PolicyWorkspace({ policies, locale, fa }: { policies: PricingPolicySumm
         <div className="flex flex-col gap-5">
             <section className="grid gap-3 sm:grid-cols-3" aria-label={fa ? "خلاصه حاکمیت قیمت" : "Pricing governance summary"}>
                 <GovernanceMetric label={fa ? "سیاست فعال" : "Active policies"} value={active} detail={fa ? "در مسیر checkout قابل اعمال" : "Eligible in checkout guardrails"} />
-                <GovernanceMetric label={fa ? "در انتظار تصمیم" : "Awaiting decision"} value={review} detail={fa ? "Review / Approved / Scheduled" : "Review / Approved / Scheduled"} />
+                <GovernanceMetric label={fa ? "در انتظار تصمیم" : "Awaiting decision"} value={review} detail="Review / Approved / Scheduled" />
                 <GovernanceMetric label={fa ? "Freeze اضطراری" : "Emergency freezes"} value={frozen} detail={fa ? "Activation جدید مسدود است" : "New activation is blocked"} />
             </section>
 
@@ -64,15 +64,15 @@ function CreatePolicyForm({ locale, fa }: { locale: string; fa: boolean }) {
                 <form action={action} className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                     <input type="hidden" name="operation" value="create_policy" />
                     <input type="hidden" name="locale" value={locale} />
-                    <GovernanceField name="policy_key" label={fa ? "کلید Policy" : "Policy key"} placeholder="margin-protection" required />
-                    <GovernanceField name="name" label={fa ? "نام" : "Name"} placeholder={fa ? "محافظ حاشیه سود" : "Margin protection"} required />
-                    <GovernanceField name="objective" label={fa ? "هدف" : "Objective"} placeholder="margin_protection" />
-                    <GovernanceField name="currency" label={fa ? "ارز" : "Currency"} defaultValue="IRR" required />
-                    <GovernanceField name="product_id" label={fa ? "Product ID" : "Product ID"} inputMode="numeric" />
-                    <GovernanceField name="variation_id" label={fa ? "Variation ID" : "Variation ID"} inputMode="numeric" />
-                    <GovernanceField name="floor_price_minor" label={fa ? "کف قیمت (minor)" : "Price floor (minor)"} inputMode="numeric" />
-                    <GovernanceField name="minimum_margin_percent" label={fa ? "حداقل Margin %" : "Minimum margin %"} inputMode="decimal" />
-                    <GovernanceField name="maximum_discount_percent" label={fa ? "حداکثر تخفیف %" : "Maximum discount %"} inputMode="decimal" />
+                    <GovernanceField id="create-policy-key" name="policy_key" label={fa ? "کلید Policy" : "Policy key"} placeholder="margin-protection" required />
+                    <GovernanceField id="create-policy-name" name="name" label={fa ? "نام" : "Name"} placeholder={fa ? "محافظ حاشیه سود" : "Margin protection"} required />
+                    <GovernanceField id="create-policy-objective" name="objective" label={fa ? "هدف" : "Objective"} placeholder="margin_protection" />
+                    <GovernanceField id="create-policy-currency" name="currency" label={fa ? "ارز" : "Currency"} defaultValue="IRR" required />
+                    <GovernanceField id="create-policy-product" name="product_id" label="Product ID" inputMode="numeric" />
+                    <GovernanceField id="create-policy-variation" name="variation_id" label="Variation ID" inputMode="numeric" />
+                    <GovernanceField id="create-policy-floor" name="floor_price_minor" label={fa ? "کف قیمت (minor)" : "Price floor (minor)"} inputMode="numeric" />
+                    <GovernanceField id="create-policy-margin" name="minimum_margin_percent" label={fa ? "حداقل Margin %" : "Minimum margin %"} inputMode="decimal" />
+                    <GovernanceField id="create-policy-discount" name="maximum_discount_percent" label={fa ? "حداکثر تخفیف %" : "Maximum discount %"} inputMode="decimal" />
                     <div className="md:col-span-2 xl:col-span-3">
                         <Label htmlFor="create-policy-reason">{fa ? "دلیل و زمینه تصمیم" : "Decision rationale"}</Label>
                         <Textarea id="create-policy-reason" name="reason" className="mt-2 min-h-20" placeholder={fa ? "چرا این Guardrail لازم است و به چه شواهدی تکیه دارد؟" : "Why is this guardrail needed and what evidence supports it?"} />
@@ -140,27 +140,18 @@ function PolicyCard({ policy, locale, fa }: { policy: PricingPolicySummary; loca
     );
 }
 
-function LifecycleActionForm({
-    policy,
-    version,
-    locale,
-    fa,
-}: {
-    policy: PricingPolicySummary;
-    version: PricingPolicyVersion;
-    locale: string;
-    fa: boolean;
-}) {
+function LifecycleActionForm({ policy, version, locale, fa }: { policy: PricingPolicySummary; version: PricingPolicyVersion; locale: string; fa: boolean }) {
     const [state, action, pending] = useActionState(mutatePricingGovernanceAction, initialPricingMutationState);
     const [scheduledLocal, setScheduledLocal] = useState("");
-    const scheduledAt = scheduledLocal ? new Date(scheduledLocal).toISOString() : "";
+    const scheduledAt = isoFromLocalInput(scheduledLocal);
     const actions = lifecycleActions(version.state, fa);
+    const prefix = `policy-${policy.id}-transition`;
 
     return (
         <div className="rounded-xl border p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="font-medium text-sm">{fa ? "Approval / Rollout / Rollback" : "Approval / rollout / rollback"}</div>
-                <span className="text-muted-foreground text-xs">{fa ? "expected_version" : "expected_version"}: {version.version}</span>
+                <span className="text-muted-foreground text-xs">expected_version: {version.version}</span>
             </div>
             {actions.length === 0 ? (
                 <p className="mt-3 text-muted-foreground text-xs">{fa ? "برای این state اقدام مستقیمی وجود ندارد؛ نسخه جدید بسازید." : "No direct transition is available from this state; create a new version."}</p>
@@ -171,15 +162,15 @@ function LifecycleActionForm({
                     <input type="hidden" name="policy_id" value={policy.id} />
                     <input type="hidden" name="expected_version" value={version.version} />
                     <input type="hidden" name="scheduled_at" value={scheduledAt} />
-                    <GovernanceField name="reason" label={fa ? "دلیل اقدام" : "Action rationale"} placeholder={fa ? "دلیل قابل ممیزی برای این تغییر state" : "Auditable reason for this state change"} required />
+                    <GovernanceField id={`${prefix}-reason`} name="reason" label={fa ? "دلیل اقدام" : "Action rationale"} placeholder={fa ? "دلیل قابل ممیزی برای این تغییر state" : "Auditable reason for this state change"} required />
                     {version.state === "approved" ? (
                         <div className="flex flex-col gap-2">
-                            <Label htmlFor={`schedule-${policy.id}`}>{fa ? "زمان Schedule (اختیاری)" : "Schedule time (optional)"}</Label>
-                            <Input id={`schedule-${policy.id}`} type="datetime-local" value={scheduledLocal} onChange={(event) => setScheduledLocal(event.target.value)} dir="ltr" />
+                            <Label htmlFor={`${prefix}-schedule`}>{fa ? "زمان Schedule (اختیاری)" : "Schedule time (optional)"}</Label>
+                            <Input id={`${prefix}-schedule`} type="datetime-local" value={scheduledLocal} onChange={(event) => setScheduledLocal(event.target.value)} dir="ltr" />
                         </div>
                     ) : null}
                     {version.state === "active" ? (
-                        <GovernanceField name="rollback_to_version" label={fa ? "نسخه مقصد Rollback" : "Rollback target version"} inputMode="numeric" />
+                        <GovernanceField id={`${prefix}-rollback`} name="rollback_to_version" label={fa ? "نسخه مقصد Rollback" : "Rollback target version"} inputMode="numeric" />
                     ) : null}
                     <div className="flex flex-wrap gap-2">
                         {actions.map((item) => (
@@ -207,6 +198,7 @@ function LifecycleActionForm({
 function CreateVersionForm({ policy, locale, fa }: { policy: PricingPolicySummary; locale: string; fa: boolean }) {
     const [state, action, pending] = useActionState(mutatePricingGovernanceAction, initialPricingMutationState);
     if (policy.status === "frozen") return null;
+    const prefix = `policy-${policy.id}-version`;
     return (
         <form action={action} className="rounded-xl border border-dashed p-4">
             <input type="hidden" name="operation" value="create_version" />
@@ -215,12 +207,15 @@ function CreateVersionForm({ policy, locale, fa }: { policy: PricingPolicySummar
             <div className="font-medium text-sm">{fa ? "نسخه بعدی" : "Next version"}</div>
             <p className="mt-1 text-muted-foreground text-xs">{fa ? "اگر Guardrail خالی بماند، scope و currency از آخرین نسخه به ارث می‌رسند؛ Guardrailهای واردشده جایگزین نسخه جدید می‌شوند." : "Scope and currency inherit from the latest version when omitted; entered guardrails become the new version guardrails."}</p>
             <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                <GovernanceField name="floor_price_minor" label={fa ? "کف قیمت" : "Price floor"} inputMode="numeric" />
-                <GovernanceField name="minimum_margin_percent" label={fa ? "Margin %" : "Margin %"} inputMode="decimal" />
-                <GovernanceField name="maximum_discount_percent" label={fa ? "تخفیف %" : "Discount %"} inputMode="decimal" />
+                <GovernanceField id={`${prefix}-floor`} name="floor_price_minor" label={fa ? "کف قیمت" : "Price floor"} inputMode="numeric" />
+                <GovernanceField id={`${prefix}-margin`} name="minimum_margin_percent" label="Margin %" inputMode="decimal" />
+                <GovernanceField id={`${prefix}-discount`} name="maximum_discount_percent" label={fa ? "تخفیف %" : "Discount %"} inputMode="decimal" />
             </div>
-            <div className="mt-3 flex gap-2">
-                <Input name="reason" placeholder={fa ? "دلیل ساخت نسخه جدید" : "Reason for the new version"} required />
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
+                <div className="flex-1">
+                    <Label htmlFor={`${prefix}-reason`}>{fa ? "دلیل نسخه جدید" : "New version rationale"}</Label>
+                    <Input id={`${prefix}-reason`} name="reason" className="mt-2" placeholder={fa ? "دلیل ساخت نسخه جدید" : "Reason for the new version"} required />
+                </div>
                 <Button type="submit" variant="outline" size="sm" disabled={pending}>
                     {fa ? "ساخت Draft جدید" : "Create new draft"}
                 </Button>
@@ -233,6 +228,7 @@ function CreateVersionForm({ policy, locale, fa }: { policy: PricingPolicySummar
 function FreezeForm({ policy, locale, fa }: { policy: PricingPolicySummary; locale: string; fa: boolean }) {
     const [state, action, pending] = useActionState(mutatePricingGovernanceAction, initialPricingMutationState);
     const frozen = policy.status === "frozen";
+    const reasonId = `policy-${policy.id}-freeze-reason`;
     return (
         <form action={action} className="rounded-xl border p-4">
             <input type="hidden" name="operation" value="freeze" />
@@ -242,7 +238,8 @@ function FreezeForm({ policy, locale, fa }: { policy: PricingPolicySummary; loca
             <div className="font-medium text-sm">{fa ? "Emergency Control" : "Emergency control"}</div>
             <p className="mt-1 text-muted-foreground text-xs">{fa ? "Freeze جلوی transitionهای عادی activation را می‌گیرد؛ rollback/stop همچنان برای خروج امن باقی می‌ماند." : "Freeze blocks normal activation transitions while rollback/stop remain available for a safe exit."}</p>
             <div className="mt-3 flex flex-col gap-2">
-                <Input name="reason" placeholder={fa ? "دلیل Freeze / Unfreeze" : "Freeze / unfreeze reason"} required />
+                <Label htmlFor={reasonId}>{fa ? "دلیل Freeze / Unfreeze" : "Freeze / unfreeze reason"}</Label>
+                <Input id={reasonId} name="reason" placeholder={fa ? "دلیل Freeze / Unfreeze" : "Freeze / unfreeze reason"} required />
                 <Button type="submit" variant="outline" tone={frozen ? "success" : "danger"} size="sm" disabled={pending}>
                     {frozen ? (fa ? "Unfreeze Policy" : "Unfreeze policy") : fa ? "Freeze فوری" : "Emergency freeze"}
                 </Button>
@@ -252,17 +249,7 @@ function FreezeForm({ policy, locale, fa }: { policy: PricingPolicySummary; loca
     );
 }
 
-function ProposalWorkspace({
-    policies,
-    proposals,
-    locale,
-    fa,
-}: {
-    policies: PricingPolicySummary[];
-    proposals: PricingProposal[];
-    locale: string;
-    fa: boolean;
-}) {
+function ProposalWorkspace({ policies, proposals, locale, fa }: { policies: PricingPolicySummary[]; proposals: PricingProposal[]; locale: string; fa: boolean }) {
     return (
         <div className="grid gap-5 xl:grid-cols-[0.85fr_1.15fr]">
             <CreateProposalForm policies={policies} locale={locale} fa={fa} />
@@ -300,7 +287,7 @@ function CreateProposalForm({ policies, locale, fa }: { policies: PricingPolicyS
                         <input type="hidden" name="operation" value="create_proposal" />
                         <input type="hidden" name="locale" value={locale} />
                         <div className="flex flex-col gap-2 sm:col-span-2">
-                            <Label htmlFor="proposal-policy">{fa ? "Policy" : "Policy"}</Label>
+                            <Label htmlFor="proposal-policy">Policy</Label>
                             <select id="proposal-policy" name="policy_id" className="h-9 rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring" required>
                                 {policies.map((policy) => (
                                     <option key={policy.id} value={policy.id}>
@@ -309,12 +296,12 @@ function CreateProposalForm({ policies, locale, fa }: { policies: PricingPolicyS
                                 ))}
                             </select>
                         </div>
-                        <GovernanceField name="product_id" label={fa ? "Product ID" : "Product ID"} inputMode="numeric" required />
-                        <GovernanceField name="variation_id" label={fa ? "Variation ID" : "Variation ID"} inputMode="numeric" />
-                        <GovernanceField name="reference_price_minor" label={fa ? "قیمت مرجع" : "Reference price"} inputMode="numeric" required />
-                        <GovernanceField name="candidate_price_minor" label={fa ? "قیمت Candidate" : "Candidate price"} inputMode="numeric" required />
-                        <GovernanceField name="currency" label={fa ? "ارز" : "Currency"} defaultValue="IRR" required />
-                        <GovernanceField name="objective" label={fa ? "هدف" : "Objective"} placeholder="margin_protection" />
+                        <GovernanceField id="proposal-product" name="product_id" label="Product ID" inputMode="numeric" required />
+                        <GovernanceField id="proposal-variation" name="variation_id" label="Variation ID" inputMode="numeric" />
+                        <GovernanceField id="proposal-reference" name="reference_price_minor" label={fa ? "قیمت مرجع" : "Reference price"} inputMode="numeric" required />
+                        <GovernanceField id="proposal-candidate" name="candidate_price_minor" label={fa ? "قیمت Candidate" : "Candidate price"} inputMode="numeric" required />
+                        <GovernanceField id="proposal-currency" name="currency" label={fa ? "ارز" : "Currency"} defaultValue="IRR" required />
+                        <GovernanceField id="proposal-objective" name="objective" label={fa ? "هدف" : "Objective"} placeholder="margin_protection" />
                         <div className="sm:col-span-2">
                             <Label htmlFor="proposal-rationale">{fa ? "Rationale / Evidence" : "Rationale / evidence"}</Label>
                             <Textarea id="proposal-rationale" name="rationale" className="mt-2 min-h-24" placeholder={fa ? "منطق پیشنهاد، شواهد و محدودیت‌های آن را ثبت کنید." : "Record the proposal rationale, evidence, and limitations."} />
@@ -354,8 +341,8 @@ function ProposalCard({ proposal, fa }: { proposal: PricingProposal; fa: boolean
                 </div>
             </div>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                <RuntimeChip label={fa ? "Reference" : "Reference"} value={`${proposal.reference_price_minor.toLocaleString()} ${proposal.currency}`} />
-                <RuntimeChip label={fa ? "Objective" : "Objective"} value={proposal.objective ?? "—"} />
+                <RuntimeChip label="Reference" value={`${proposal.reference_price_minor.toLocaleString()} ${proposal.currency}`} />
+                <RuntimeChip label="Objective" value={proposal.objective ?? "—"} />
             </div>
             {proposal.rationale ? <p className="mt-3 text-muted-foreground text-xs leading-6">{proposal.rationale}</p> : null}
         </div>
@@ -372,25 +359,11 @@ function GovernanceMetric({ label, value, detail }: { label: string; value: numb
     );
 }
 
-function GovernanceField({
-    name,
-    label,
-    placeholder,
-    defaultValue,
-    inputMode = "text",
-    required,
-}: {
-    name: string;
-    label: string;
-    placeholder?: string;
-    defaultValue?: string;
-    inputMode?: "text" | "numeric" | "decimal";
-    required?: boolean;
-}) {
+function GovernanceField({ id, name, label, placeholder, defaultValue, inputMode = "text", required }: { id: string; name: string; label: string; placeholder?: string; defaultValue?: string; inputMode?: "text" | "numeric" | "decimal"; required?: boolean }) {
     return (
         <div className="flex flex-col gap-2">
-            <Label htmlFor={name}>{label}</Label>
-            <Input id={name} name={name} placeholder={placeholder} defaultValue={defaultValue} inputMode={inputMode} required={required} dir={inputMode === "text" ? undefined : "ltr"} />
+            <Label htmlFor={id}>{label}</Label>
+            <Input id={id} name={name} placeholder={placeholder} defaultValue={defaultValue} inputMode={inputMode} required={required} dir={inputMode === "text" ? undefined : "ltr"} />
         </div>
     );
 }
@@ -471,8 +444,8 @@ function lifecycleActions(state: PricingPolicyVersion["state"], fa: boolean) {
     if (state === "review") return [{ value: "approve", label: fa ? "Approve مستقل" : "Independent approval", tone: "success" as const }];
     if (state === "approved")
         return [
-            { value: "activate", label: fa ? "Activate" : "Activate", tone: "success" as const },
-            { value: "schedule", label: fa ? "Schedule" : "Schedule", tone: "warning" as const },
+            { value: "activate", label: "Activate", tone: "success" as const },
+            { value: "schedule", label: "Schedule", tone: "warning" as const },
         ];
     if (state === "scheduled")
         return [
@@ -481,14 +454,20 @@ function lifecycleActions(state: PricingPolicyVersion["state"], fa: boolean) {
         ];
     if (state === "active")
         return [
-            { value: "pause", label: fa ? "Pause" : "Pause", tone: "warning" as const },
-            { value: "stop", label: fa ? "Stop" : "Stop", tone: "danger" as const },
-            { value: "rollback", label: fa ? "Rollback" : "Rollback", tone: "danger" as const },
+            { value: "pause", label: "Pause", tone: "warning" as const },
+            { value: "stop", label: "Stop", tone: "danger" as const },
+            { value: "rollback", label: "Rollback", tone: "danger" as const },
         ];
     if (state === "paused")
         return [
-            { value: "activate", label: fa ? "Resume" : "Resume", tone: "success" as const },
-            { value: "stop", label: fa ? "Stop" : "Stop", tone: "danger" as const },
+            { value: "activate", label: "Resume", tone: "success" as const },
+            { value: "stop", label: "Stop", tone: "danger" as const },
         ];
     return [];
+}
+
+function isoFromLocalInput(value: string): string {
+    if (!value) return "";
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString();
 }
