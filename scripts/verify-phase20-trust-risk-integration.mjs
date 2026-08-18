@@ -37,10 +37,14 @@ for (const token of [
 if (!migration.includes("fraud_model_single_champion_idx")) throw new Error("Phase20 single Champion guard missing");
 
 const routes = fs.readFileSync(required[4], "utf8");
-const writeRoutes = routes.split("\n").filter((line) => line.includes("router.post("));
+const writeRoutes = routes
+    .split(";")
+    .map((statement) => statement.trim())
+    .filter((statement) => statement.includes(".post("));
 if (writeRoutes.length !== 11) throw new Error(`Phase20 expected 11 write routes, found ${writeRoutes.length}`);
-for (const line of writeRoutes)
-    if (!line.includes("adminWriteLimiter")) throw new Error(`Phase20 write route lacks limiter: ${line.trim()}`);
+for (const statement of writeRoutes)
+    if (!statement.includes("adminWriteLimiter"))
+        throw new Error(`Phase20 write route lacks limiter: ${statement.replace(/\s+/g, " ")}`);
 
 const service = fs.readFileSync(required[1], "utf8");
 for (const token of ["calculateRiskDecision", "idempotency_key", "control.block", "model.promote_champion", "[redacted]"])
