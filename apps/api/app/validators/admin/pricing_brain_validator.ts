@@ -8,6 +8,7 @@ export const simulatePricingCandidateValidator = vine.compile(
         reference_price: vine.number().withoutDecimals().positive(),
         candidate_price: vine.number().withoutDecimals().min(0),
         quantity: vine.number().withoutDecimals().positive().optional(),
+        promotion_discount: vine.number().withoutDecimals().min(0).optional(),
         product_id: vine.number().withoutDecimals().positive().optional(),
         variation_id: nullablePositiveId(),
         floor_price: vine.number().withoutDecimals().min(0).nullable().optional(),
