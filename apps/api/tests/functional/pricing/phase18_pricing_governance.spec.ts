@@ -5,6 +5,9 @@ import User from "#models/user";
 import { PRICING_PERMISSIONS } from "#services/pricing_permissions";
 import { TEST_TENANT_ID } from "#tests/helpers/tenant";
 
+type PricingTestContext = Parameters<NonNullable<Parameters<typeof test>[1]>>[0];
+type PricingTestClient = PricingTestContext["client"];
+
 let userSequence = 0;
 
 async function createUser(role: "admin" | "customer" = "admin") {
@@ -28,7 +31,7 @@ async function resetPricingTables() {
     await admin.from("admin_audit_log").where("entity_kind", "pricing_policy").delete();
 }
 
-async function createPolicy(client: Parameters<Parameters<typeof test>[1]>[0]["client"], admin: User, key: string) {
+async function createPolicy(client: PricingTestClient, admin: User, key: string) {
     const response = await client
         .post("/api/v1/admin/pricing-brain/policies")
         .withGuard("api")
@@ -51,7 +54,7 @@ async function createPolicy(client: Parameters<Parameters<typeof test>[1]>[0]["c
 }
 
 async function transition(
-    client: Parameters<Parameters<typeof test>[1]>[0]["client"],
+    client: PricingTestClient,
     admin: User,
     policyId: number,
     action: string,
