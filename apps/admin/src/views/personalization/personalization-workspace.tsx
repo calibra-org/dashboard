@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
+import { type ReactNode, useState } from "react";
+
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "#/components/ui/card";

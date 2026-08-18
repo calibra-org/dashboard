@@ -1,7 +1,7 @@
 import { DateTime } from "luxon";
 
-import { currentTenantId, currentTrx } from "#services/tenant_context";
 import Phase9PersonalizationService, { Phase9ValidationError, type Subject } from "#services/phase9_personalization_service";
+import { currentTenantId, currentTrx } from "#services/tenant_context";
 
 export const PHASE9_EVENT_VOCABULARY = new Set([
     "session_started",

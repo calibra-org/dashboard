@@ -1,4 +1,5 @@
 import { getLocale } from "next-intl/server";
+
 import { apiServer } from "#/lib/api";
 import { Link } from "#/lib/i18n/navigation";
 import { formatPrice, getMoneyFormatConfig } from "#/lib/money";
@@ -30,7 +31,7 @@ export async function AmazingDealsSection() {
             <div className="overflow-hidden rounded-3xl border bg-card">
                 <div className="flex flex-col gap-2 border-b bg-gradient-to-l from-primary/10 via-background to-background px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <p className="text-primary text-xs font-semibold">
+                        <p className="font-semibold text-primary text-xs">
                             {locale === "fa" ? "فرصت‌های واقعی امروز" : "Real offers today"}
                         </p>
                         <h2 id="amazing-deals-title" className="mt-1 font-bold text-xl sm:text-2xl">

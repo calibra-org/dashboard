@@ -21,8 +21,8 @@ import type User from "#models/user";
 import { checkEligibility, countRedemptions, loadSnapshotForUpdate } from "#services/discounter_service";
 import { recordOrderFinalized } from "#services/metrics/domain_metrics";
 import { OrderFactory } from "#services/order_factory";
-import Phase9DealGuardService from "#services/phase9_deal_guard_service";
 import { orderStateMachine } from "#services/order_state_machine";
+import Phase9DealGuardService from "#services/phase9_deal_guard_service";
 import { resolvePrice } from "#services/price_resolver";
 import { withTenantTransaction } from "#services/tenant_context";
 

@@ -1,4 +1,5 @@
 import router from "@adonisjs/core/services/router";
+
 import { contentPublicLimiter } from "#start/limiter";
 
 const PersonalizationController = () => import("#controllers/personalization_controller");

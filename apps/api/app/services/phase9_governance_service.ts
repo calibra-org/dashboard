@@ -1,7 +1,7 @@
 import { DateTime } from "luxon";
 
-import { currentTenantId, currentTrx } from "#services/tenant_context";
 import { Phase9ValidationError } from "#services/phase9_personalization_service";
+import { currentTenantId, currentTrx } from "#services/tenant_context";
 
 export default class Phase9GovernanceService {
     async listFeatures() {

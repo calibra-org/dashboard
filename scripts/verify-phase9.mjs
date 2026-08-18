@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import fs from "node:fs";
+
 const failures = [];
 let checks = 0;
 const read = (p) => fs.readFileSync(p, "utf8");

@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { test } from "@japa/runner";
+
 import User from "#models/user";
 
 const ADMIN = "/api/v1/admin/personalization";

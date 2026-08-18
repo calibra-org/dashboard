@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocale } from "next-intl";
+
 import { apiGet, apiMutate } from "#/lib/queries/api-client";
 
 export interface Campaign {
