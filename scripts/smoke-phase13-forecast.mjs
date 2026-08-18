@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+
 import { computeReplenishment, forecastDemand } from "../apps/api/app/services/planning_forecast_engine.ts";
 
 const start = new Date("2026-05-01T00:00:00Z");
