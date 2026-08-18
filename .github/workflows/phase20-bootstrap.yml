@@ -62,15 +62,17 @@ jobs:
           pnpm --filter @calibra/sdk run codegen:admin
       - name: Phase 20 static contract
         run: node scripts/verify-phase20-trust-risk-integration.mjs
+      - name: Build API test specification once
+        run: pnpm --filter @calibra/api-docs run build:test-spec
       - name: Phase 20 legacy unit tests
         working-directory: apps/api
-        run: timeout 180s pnpm test --files=tests/unit/trust/phase20_trust_risk.spec.ts
+        run: timeout 180s node ace test --files=tests/unit/trust/phase20_trust_risk.spec.ts
       - name: Phase 20 contract unit tests
         working-directory: apps/api
-        run: timeout 180s pnpm test --files=tests/unit/trust/phase20_contracts.spec.ts
+        run: timeout 180s node ace test --files=tests/unit/trust/phase20_contracts.spec.ts
       - name: Phase 20 functional tests
         working-directory: apps/api
-        run: timeout 240s pnpm test --files=tests/functional/trust/phase20_trust.spec.ts
+        run: timeout 240s node ace test --files=tests/functional/trust/phase20_trust.spec.ts
       - name: API typecheck
         run: pnpm --filter @calibra/api run typecheck
       - name: Admin typecheck
