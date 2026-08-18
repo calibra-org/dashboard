@@ -144,7 +144,7 @@ export default class extends BaseSchema {
             table.integer("lead_time_days").nullable();
             table.integer("review_period_days").notNullable();
             table.decimal("service_level_target", 8, 6).notNullable();
-            table.string("economics_status", 40).notNullable().defaultTo("dependency_not_landed");
+            table.string("economics_status", 40).notNullable().defaultTo("available_not_applied");
             table.string("execution_boundary", 40).notNullable().defaultTo("phase14_procurement_only");
             table.jsonb("reason_codes").notNullable().defaultTo(this.raw("'[]'::jsonb"));
             table.jsonb("evidence").notNullable().defaultTo(this.raw("'{}'::jsonb"));
