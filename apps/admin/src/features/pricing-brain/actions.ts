@@ -14,6 +14,9 @@ export interface PricingSimulationState {
             candidatePrice: number;
             effectivePrice: number;
             quantity: number;
+            promotionDiscount: number;
+            candidateGrossRevenue: number;
+            netRevenue: number;
             grossRevenue: number;
             estimatedGrossProfit: number | null;
             discountPercent: number;
@@ -57,6 +60,7 @@ export async function simulatePricingAction(
                 reference_price: referencePrice,
                 candidate_price: candidatePrice,
                 quantity: integerFromForm(formData, "quantity") ?? 1,
+                promotion_discount: integerFromForm(formData, "promotion_discount") ?? 0,
                 product_id: integerFromForm(formData, "product_id"),
                 variation_id: integerFromForm(formData, "variation_id"),
                 floor_price: integerFromForm(formData, "floor_price"),
