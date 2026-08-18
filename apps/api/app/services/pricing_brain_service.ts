@@ -24,26 +24,12 @@ export async function pricingBrainOverview() {
     const trx = currentTrx();
     const [productsRow, pricedProductsRow, saleProductsRow, couponsRow, activeCouponsRow, costCoverageRow, latestCostRow] =
         await Promise.all([
-            trx.from("products").whereNull("deleted_at").count<{ count: string }>("id as count").first(),
-            trx
-                .from("products")
-                .whereNull("deleted_at")
-                .whereNotNull("regular_price")
-                .count<{ count: string }>("id as count")
-                .first(),
-            trx
-                .from("products")
-                .whereNull("deleted_at")
-                .whereNotNull("sale_price")
-                .count<{ count: string }>("id as count")
-                .first(),
-            trx.from("coupons").whereNull("deleted_at").count<{ count: string }>("id as count").first(),
-            trx.from("coupons").whereNull("deleted_at").where("status", "active").count<{ count: string }>("id as count").first(),
-            trx
-                .from("economic_cost_layers")
-                .whereNotNull("unit_landed_cost_minor")
-                .countDistinct<{ count: string }>("product_id as count")
-                .first(),
+            trx.from("products").whereNull("deleted_at").count("id as count").first(),
+            trx.from("products").whereNull("deleted_at").whereNotNull("regular_price").count("id as count").first(),
+            trx.from("products").whereNull("deleted_at").whereNotNull("sale_price").count("id as count").first(),
+            trx.from("coupons").whereNull("deleted_at").count("id as count").first(),
+            trx.from("coupons").whereNull("deleted_at").where("status", "active").count("id as count").first(),
+            trx.from("economic_cost_layers").whereNotNull("unit_landed_cost_minor").countDistinct("product_id as count").first(),
             trx.from("economic_cost_layers").whereNotNull("unit_landed_cost_minor").max("effective_at as effective_at").first(),
         ]);
 
@@ -140,10 +126,7 @@ async function resolveCogsEvidence(input: PricingSimulationInput): Promise<CogsE
         };
     }
 
-    const layerQuery = trx
-        .from("economic_cost_layers")
-        .where("product_id", input.productId)
-        .whereNotNull("unit_landed_cost_minor");
+    const layerQuery = trx.from("economic_cost_layers").where("product_id", input.productId).whereNotNull("unit_landed_cost_minor");
     if (input.variationId === undefined || input.variationId === null) layerQuery.whereNull("variation_id");
     else layerQuery.where("variation_id", input.variationId);
     const layer = await layerQuery.orderBy("effective_at", "desc").orderBy("id", "desc").first();
