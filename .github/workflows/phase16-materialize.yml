@@ -1,0 +1,68 @@
+name: Phase 16 Materialize
+on:
+  push:
+    branches: [agent/phase16-discovery-os-20260818]
+permissions:
+  contents: write
+concurrency:
+  group: phase16-materialize-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  materialize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env: {POSTGRES_USER: calibra, POSTGRES_PASSWORD: calibra, POSTGRES_DB: calibra}
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U calibra -d calibra" --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 3s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: agent/phase16-discovery-os-20260818, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.14.0'}
+      - run: npm install --global pnpm@10.32.1
+      - name: Recover canonical Phase 16 payload
+        run: |
+          curl -fsSL 'https://raw.githubusercontent.com/calibra-org/dashboard/agent/phase16-discovery-os/.phase16v2/payload.b64' -o /tmp/payload.b64
+          base64 -d /tmp/payload.b64 | xz -d > /tmp/payload.tar
+          tar -tf /tmp/payload.tar | head -40
+          tar -xf /tmp/payload.tar
+          test -f .phase16v2/apply_phase16.py || test -f apply_phase16.py || { echo 'apply script missing'; find . -maxdepth 3 -type f | grep phase16 | head -80; exit 1; }
+          if test -f .phase16v2/apply_phase16.py; then python3 .phase16v2/apply_phase16.py; else python3 apply_phase16.py; fi
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run format:fix
+      - name: Generate SDK and docs
+        run: pnpm --filter @calibra/sdk run codegen
+      - name: Focused Phase 16 tests
+        working-directory: apps/api
+        run: pnpm test --files=tests/unit/discovery/normalizer.spec.ts --files=tests/unit/discovery/merchandising_engine.spec.ts --files=tests/functional/storefront/discovery_events.spec.ts
+      - name: API typecheck
+        run: pnpm --filter @calibra/api run typecheck
+      - name: Admin typecheck
+        run: pnpm --filter @calibra/admin run typecheck
+      - name: Admin production build
+        run: pnpm --filter @calibra/admin run build
+      - name: Lint and diff check
+        run: |
+          pnpm run lint
+          git diff --check
+      - name: Commit verified Phase 16
+        run: |
+          rm -rf .phase16 .phase16v2 .phase16next
+          rm -f .github/workflows/phase16-materialize.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git diff --cached --quiet && { echo 'No source changes'; exit 1; }
+          git commit -m 'feat(phase16): implement product discovery os'
+          git push origin HEAD:agent/phase16-discovery-os-20260818
