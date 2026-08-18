@@ -1,8 +1,6 @@
 name: Phase 20 Completion Materialize
 
 on:
-  push:
-    branches: [agent/phase20-trust-risk-completion-20260818]
   pull_request:
     branches: [main]
 
@@ -64,12 +62,15 @@ jobs:
           pnpm --filter @calibra/sdk run codegen:admin
       - name: Phase 20 static contract
         run: node scripts/verify-phase20-trust-risk-integration.mjs
-      - name: Phase 20 tests
+      - name: Phase 20 legacy unit tests
         working-directory: apps/api
-        run: |
-          pnpm test --files=tests/unit/trust/phase20_trust_risk.spec.ts
-          pnpm test --files=tests/unit/trust/phase20_contracts.spec.ts
-          pnpm test --files=tests/functional/trust/phase20_trust.spec.ts
+        run: timeout 180s pnpm test --files=tests/unit/trust/phase20_trust_risk.spec.ts
+      - name: Phase 20 contract unit tests
+        working-directory: apps/api
+        run: timeout 180s pnpm test --files=tests/unit/trust/phase20_contracts.spec.ts
+      - name: Phase 20 functional tests
+        working-directory: apps/api
+        run: timeout 240s pnpm test --files=tests/functional/trust/phase20_trust.spec.ts
       - name: API typecheck
         run: pnpm --filter @calibra/api run typecheck
       - name: Admin typecheck
