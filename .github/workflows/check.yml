@@ -4,11 +4,8 @@ on:
   pull_request:
     branches: ["**"]
 
-permissions:
-  contents: write
-
 jobs:
-  phase12-format:
+  phase12-lint-diagnose:
     if: github.head_ref == 'agent/phase12-runner-20260818'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -22,17 +19,10 @@ jobs:
           node-version: 24.14.0
       - run: npm install --global pnpm@10.32.1
       - run: pnpm install --frozen-lockfile
-      - name: Format only Phase 12 changed files
+      - name: Check Phase 12 changed files only
         shell: bash
         run: |
           set -euo pipefail
-          git config user.name 'calibra-dev'
-          git config user.email 'keshavarz20.com@gmail.com'
           git fetch origin main
-          git diff --name-only origin/main...HEAD -z | xargs -0 pnpm exec biome format --write --files-ignore-unknown=true
-          git diff --check
-          git add -u
-          if ! git diff --cached --quiet; then
-            git commit -m 'style(economics): apply repository formatting'
-            git push origin HEAD:agent/phase12-profitability-cash-os
-          fi
+          mapfile -d '' files < <(git diff --name-only origin/main...HEAD -z)
+          pnpm exec biome check --max-diagnostics=200 "${files[@]}"
