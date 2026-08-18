@@ -1,4 +1,4 @@
-name: Phase 18 Diagnostics
+name: Phase 18 Finalizer
 
 on:
   pull_request:
@@ -20,64 +20,418 @@ on:
       - ".github/workflows/phase18-diagnostics.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  capture:
+  finalize:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: calibra
+          POSTGRES_PASSWORD: calibra
+          POSTGRES_DB: calibra
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U calibra -d calibra"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: "24.14.0"
       - run: npm install --global pnpm@10.32.1
       - run: pnpm install --frozen-lockfile
 
-      - name: Build merged OpenAPI fixture
-        run: pnpm --filter @calibra/api-docs run build:test-spec
+      - name: Create test database
+        env:
+          PGPASSWORD: calibra
+        run: psql -h localhost -U calibra -d calibra -c "CREATE DATABASE calibra_test OWNER calibra;"
 
-      - name: Capture exact OpenAPI 3 validator errors
+      - name: Apply only unresolved Phase 18 source fixes
         shell: bash
         run: |
-          validator=$(find node_modules/.pnpm -path '*/node_modules/openapi-schema-validator/dist/index.js' | head -n 1)
-          if [ -z "$validator" ]; then
-            echo '{"error":"openapi-schema-validator dist entry not found"}' > phase18-openapi-errors.json
-          else
-            VALIDATOR_PATH="$validator" node <<'NODE'
-          const fs = require('node:fs')
-          const path = require('node:path')
-          const validatorPath = path.resolve(process.env.VALIDATOR_PATH)
-          const loaded = require(validatorPath)
-          const OpenAPISchemaValidator = loaded.default ?? loaded
-          const spec = JSON.parse(fs.readFileSync('docs/api/dist/_merged.test.json', 'utf8'))
-          const result = new OpenAPISchemaValidator({ version: 3 }).validate(spec)
-          fs.writeFileSync('phase18-openapi-errors.json', JSON.stringify(result, null, 2) + '\n')
-          console.log(JSON.stringify(result, null, 2))
+          node <<'NODE'
+          const fs = require("node:fs")
+
+          function replaceOnce(source, oldValue, newValue, label) {
+            if (!source.includes(oldValue)) throw new Error(`Phase 18 finalizer could not find ${label}`)
+            return source.replace(oldValue, newValue)
+          }
+
+          const specPath = "docs/api/reference/openapi/admin.phase18.v1.yaml"
+          let spec = fs.readFileSync(specPath, "utf8")
+          spec = replaceOnce(
+            spec,
+            "        '404': { description: Policy, version, action or rollback target not found }",
+            "        '404': { description: 'Policy, version, action or rollback target not found' }",
+            "quoted 404 lifecycle description",
+          )
+          spec = replaceOnce(
+            spec,
+            "        '409': { description: Frozen policy, stale version or invalid lifecycle transition }",
+            "        '409': { description: 'Frozen policy, stale version or invalid lifecycle transition' }",
+            "quoted 409 lifecycle description",
+          )
+          spec = replaceOnce(
+            spec,
+            "        '422': { description: Validation, self-approval, schedule or rollback guard failed }",
+            "        '422': { description: 'Validation, self-approval, schedule or rollback guard failed' }",
+            "quoted 422 lifecycle description",
+          )
+          fs.writeFileSync(specPath, spec)
+
+          const servicePath = "apps/api/app/services/pricing_policy_service.ts"
+          let service = fs.readFileSync(servicePath, "utf8")
+          service = replaceOnce(
+            service,
+            '    async enforceAndSnapshotOrder(orderId: number, currency: string, trx: TransactionClientContract): Promise<void> {\n        const lines = await OrderLineItem.query({ client: trx }).where("order_id", orderId).orderBy("id", "asc");',
+            '    async enforceAndSnapshotOrder(orderId: number, currency: string, trx: TransactionClientContract): Promise<void> {\n        const pricingCurrency = currency.toUpperCase();\n        const lines = await OrderLineItem.query({ client: trx }).where("order_id", orderId).orderBy("id", "asc");',
+            "checkout currency normalization",
+          )
+          service = replaceOnce(
+            service,
+            "            const active = await this.resolveActiveGuardrail(runtime.productId, runtime.variationId, trx);",
+            '            const active = await this.resolveActiveGuardrail(\n                runtime.productId,\n                runtime.variationId,\n                pricingCurrency,\n                trx,\n            );',
+            "currency-aware guardrail lookup",
+          )
+          service = replaceOnce(
+            service,
+            "                    currency,\n                    policy_id: active?.policy_id ?? null,",
+            "                    currency: pricingCurrency,\n                    policy_id: active?.policy_id ?? null,",
+            "normalized snapshot currency",
+          )
+          service = replaceOnce(
+            service,
+            "    private async resolveActiveGuardrail(productId: number, variationId: number | null, trx: TransactionClientContract) {",
+            '    private async resolveActiveGuardrail(\n        productId: number,\n        variationId: number | null,\n        currency: string,\n        trx: TransactionClientContract,\n    ) {',
+            "guardrail resolver signature",
+          )
+          service = replaceOnce(
+            service,
+            '                .where("v.state", "active")\n                .select("v.*", "p.id as policy_id", "p.policy_key")',
+            '                .where("v.state", "active")\n                .where("v.currency", currency)\n                .select("v.*", "p.id as policy_id", "p.policy_key")',
+            "guardrail currency predicate",
+          )
+          fs.writeFileSync(servicePath, service)
+
+          const testPath = "apps/api/tests/functional/pricing/phase18_pricing_governance.spec.ts"
+          let test = fs.readFileSync(testPath, "utf8")
+          test = replaceOnce(
+            test,
+            'import User from "#models/user";\nimport { PRICING_PERMISSIONS } from "#services/pricing_permissions";\nimport { TEST_TENANT_ID } from "#tests/helpers/tenant";',
+            'import { CouponFactory } from "#factories/coupon_factory";\nimport CouponRedemption from "#models/coupon_redemption";\nimport OrderCouponLine from "#models/order_coupon_line";\nimport PaymentGateway from "#models/payment_gateway";\nimport User from "#models/user";\nimport { PRICING_PERMISSIONS } from "#services/pricing_permissions";\nimport { createTaxableProduct } from "#tests/helpers/cart";\nimport { iranRegionId, resetPhase05 } from "#tests/helpers/orders";\nimport { TEST_TENANT_ID } from "#tests/helpers/tenant";',
+            "checkout regression imports",
+          )
+          test = replaceOnce(
+            test,
+            'async function createPolicy(client: PricingTestClient, admin: User, key: string) {\n    const response = await client',
+            'async function createPolicy(\n    client: PricingTestClient,\n    admin: User,\n    key: string,\n    options: {\n        currency?: string;\n        productId?: number;\n        guardrails?: Record<string, number>;\n    } = {},\n) {\n    const response = await client',
+            "policy test options",
+          )
+          test = replaceOnce(
+            test,
+            '            currency: "IRR",\n            guardrails: { floor_price_minor: 90_000, maximum_discount_percent: 20 },',
+            '            currency: options.currency ?? "IRR",\n            product_id: options.productId ?? null,\n            guardrails: options.guardrails ?? { floor_price_minor: 90_000, maximum_discount_percent: 20 },',
+            "policy test scope",
+          )
+
+          const transitionHelper = `async function transition(
+              client: PricingTestClient,
+              admin: User,
+              policyId: number,
+              action: string,
+              body: Record<string, unknown>,
+          ) {
+              return client
+                  .post(\`/api/v1/admin/pricing-brain/policies/\${policyId}/actions/\${action}\`)
+                  .withGuard("api")
+                  .loginAs(admin)
+                  .json(body);
+          }
+          `
+          const checkoutHelpers = `
+          async function activatePolicy(
+              client: PricingTestClient,
+              proposer: User,
+              approver: User,
+              key: string,
+              options: { currency?: string; productId?: number; guardrails?: Record<string, number> } = {},
+          ) {
+              const created = await createPolicy(client, proposer, key, options);
+              const submitted = await transition(client, proposer, created.policy.id, "submit", {
+                  expected_version: created.version.version,
+                  reason: \`submit \${key} for independent review\`,
+              });
+              submitted.assertStatus(200);
+              const approved = await transition(client, approver, created.policy.id, "approve", {
+                  expected_version: created.version.version,
+                  reason: \`approve \${key}\`,
+              });
+              approved.assertStatus(200);
+              const activated = await transition(client, approver, created.policy.id, "activate", {
+                  expected_version: created.version.version,
+                  reason: \`activate \${key}\`,
+              });
+              activated.assertStatus(200);
+              return { created, activated: activated.body().data.version as { id: number; version: number; state: string } };
+          }
+
+          function tokenFromResponse(response: { cookie(name: string): { value: unknown } | undefined }): string {
+              const cookie = response.cookie("cart_token");
+              if (!cookie || typeof cookie.value !== "string") throw new Error("expected cart_token");
+              return cookie.value;
+          }
+
+          async function checkoutProduct(
+              client: PricingTestClient,
+              productId: number,
+              idempotencyKey: string,
+              couponCode?: string,
+          ) {
+              const regionId = await iranRegionId();
+              const gateway = await PaymentGateway.findByOrFail("code", "cod");
+              const seeded = await client.post("/api/v1/cart/items").json({ product_id: productId, quantity: 1 });
+              const token = tokenFromResponse(seeded);
+
+              if (couponCode) {
+                  const applied = await client.post("/api/v1/cart/coupons").cookie("cart_token", token).json({ code: couponCode });
+                  applied.assertStatus(200);
+              }
+
+              const customer = await client
+                  .post("/api/v1/cart/customer")
+                  .cookie("cart_token", token)
+                  .json({ country: "IR", region_id: regionId, postcode: "1234567890" });
+              customer.assertStatus(200);
+
+              const draft = await client
+                  .put("/api/v1/checkout")
+                  .cookie("cart_token", token)
+                  .json({
+                      billing_address: {
+                          first_name: "Phase",
+                          last_name: "Eighteen",
+                          address_line_1: "Vali-Asr 1",
+                          city: "Tehran",
+                          country: "IR",
+                          region_id: regionId,
+                          postcode: "1234567890",
+                          phone: "+989121234567",
+                          email: "phase18-checkout@example.test",
+                      },
+                      payment_gateway_id: Number(gateway.id),
+                  });
+              draft.assertStatus(200);
+
+              const finalize = await client
+                  .post("/api/v1/checkout/submit")
+                  .cookie("cart_token", token)
+                  .header("Idempotency-Key", idempotencyKey);
+              return { token, finalize };
+          }
+          `
+          test = replaceOnce(test, transitionHelper, transitionHelper + checkoutHelpers, "checkout regression helpers")
+
+          const closing = `        assert.exists(audit);
+              });
+          });
+          `
+          const regressions = `        assert.exists(audit);
+              });
+
+              test("active policy preserves canonical coupon redemption and records the exact promotion allocation", async ({
+                  client,
+                  assert,
+              }) => {
+                  await resetPhase05();
+                  await db.rawQuery("TRUNCATE TABLE coupons, coupon_redemptions RESTART IDENTITY CASCADE");
+
+                  const proposer = await createUser();
+                  const approver = await createUser();
+                  const coupon = await CouponFactory.merge({ code: "P18REG10", amountPercent: "10.00" }).create();
+                  const product = await createTaxableProduct({ regularPrice: 1_000_000 });
+                  const policy = await activatePolicy(client, proposer, approver, "coupon-golden-regression", {
+                      productId: Number(product.id),
+                      guardrails: { floor_price_minor: 800_000, maximum_discount_percent: 20 },
+                  });
+
+                  const { finalize } = await checkoutProduct(
+                      client,
+                      Number(product.id),
+                      "phase18-coupon-golden-regression",
+                      "P18REG10",
+                  );
+                  finalize.assertStatus(200);
+                  finalize.assertAgainstApiSpec();
+                  const orderId = Number(finalize.body().data.id);
+
+                  const couponLines = await OrderCouponLine.query().where("order_id", orderId);
+                  assert.lengthOf(couponLines, 1);
+                  assert.equal(couponLines[0]!.codeSnapshot, "P18REG10");
+                  assert.equal(Number(couponLines[0]!.discount), 100_000);
+
+                  const redemptions = await CouponRedemption.query().where("coupon_id", Number(coupon.id));
+                  assert.lengthOf(redemptions, 1);
+                  assert.equal(Number(redemptions[0]!.orderId), orderId);
+
+                  const snapshot = await db
+                      .connection("postgres_admin")
+                      .from("pricing_order_snapshots")
+                      .where("tenant_id", TEST_TENANT_ID)
+                      .where("order_id", orderId)
+                      .where("product_id", Number(product.id))
+                      .first();
+                  assert.exists(snapshot);
+                  assert.equal(Number(snapshot.policy_id), policy.created.policy.id);
+                  assert.equal(Number(snapshot.policy_version_id), policy.activated.id);
+                  assert.equal(snapshot.currency, "IRR");
+                  assert.deepEqual((snapshot.coupon_ids ?? []).map(Number), [Number(coupon.id)]);
+                  const guardrailResult = (snapshot.guardrail_result ?? {}) as Record<string, unknown>;
+                  assert.equal(Number(guardrailResult.promotion_discount_minor), Number(couponLines[0]!.discount));
+                  assert.equal(guardrailResult.promotion_engine, "shared_discounter");
+              });
+
+              test("an active policy for another currency cannot govern an IRR checkout", async ({ client, assert }) => {
+                  await resetPhase05();
+
+                  const proposer = await createUser();
+                  const approver = await createUser();
+                  const product = await createTaxableProduct({ regularPrice: 1_000_000 });
+                  await activatePolicy(client, proposer, approver, "foreign-currency-guardrail", {
+                      currency: "USD",
+                      productId: Number(product.id),
+                      guardrails: { floor_price_minor: 2_000_000 },
+                  });
+
+                  const { finalize } = await checkoutProduct(
+                      client,
+                      Number(product.id),
+                      "phase18-currency-isolation-regression",
+                  );
+                  finalize.assertStatus(200);
+                  finalize.assertAgainstApiSpec();
+                  const orderId = Number(finalize.body().data.id);
+
+                  const snapshot = await db
+                      .connection("postgres_admin")
+                      .from("pricing_order_snapshots")
+                      .where("tenant_id", TEST_TENANT_ID)
+                      .where("order_id", orderId)
+                      .where("product_id", Number(product.id))
+                      .first();
+                  assert.exists(snapshot);
+                  assert.equal(snapshot.currency, "IRR");
+                  assert.isNull(snapshot.policy_id);
+                  assert.isNull(snapshot.policy_version_id);
+              });
+          });
+          `
+          test = replaceOnce(test, closing, regressions, "checkout regression tests")
+          fs.writeFileSync(testPath, test)
           NODE
-          fi
 
-      - name: Regenerate SDK from official OpenAPI pipeline
-        run: pnpm --filter @calibra/sdk run codegen
+      - name: Format and lint only Phase 18 files
+        run: |
+          pnpm exec biome format --write \
+            apps/admin/src/features/pricing-brain/actions.ts \
+            apps/admin/src/features/pricing-brain/pricing-brain-dashboard.tsx \
+            apps/admin/src/features/pricing-brain/pricing-governance.tsx \
+            apps/admin/src/features/pricing-brain/types.ts \
+            apps/api/app/services/pricing_brain_service.ts \
+            apps/api/app/services/pricing_decision_engine.ts \
+            apps/api/app/services/pricing_policy_service.ts \
+            apps/api/start/routes/admin_pricing_brain.ts \
+            apps/api/tests/functional/pricing/phase18_pricing_governance.spec.ts
+          pnpm exec biome check \
+            apps/admin/src/features/pricing-brain/actions.ts \
+            apps/admin/src/features/pricing-brain/pricing-brain-dashboard.tsx \
+            apps/admin/src/features/pricing-brain/pricing-governance.tsx \
+            apps/admin/src/features/pricing-brain/types.ts \
+            apps/api/app/services/pricing_brain_service.ts \
+            apps/api/app/services/pricing_decision_engine.ts \
+            apps/api/app/services/pricing_policy_service.ts \
+            apps/api/start/routes/admin_pricing_brain.ts \
+            apps/api/tests/functional/pricing/phase18_pricing_governance.spec.ts
 
-      - name: Format Phase 18 sources only
-        run: >-
-          pnpm exec biome format --write
-          apps/admin/src/features/pricing-brain/actions.ts
-          apps/admin/src/features/pricing-brain/pricing-brain-dashboard.tsx
-          apps/admin/src/features/pricing-brain/pricing-governance.tsx
-          apps/admin/src/features/pricing-brain/types.ts
-          apps/api/app/services/pricing_brain_service.ts
-          apps/api/app/services/pricing_decision_engine.ts
-          apps/api/app/services/pricing_policy_service.ts
-          apps/api/start/routes/admin_pricing_brain.ts
-          apps/api/tests/functional/pricing/phase18_pricing_governance.spec.ts
+      - name: Validate merged OpenAPI with the exact test validator
+        run: |
+          pnpm --filter @calibra/api-docs run build:test-spec
+          validator=$(find node_modules/.pnpm -path '*/node_modules/openapi-schema-validator/dist/index.js' | head -n 1)
+          test -n "$validator"
+          VALIDATOR_PATH="$validator" node <<'NODE'
+          const fs = require("node:fs")
+          const path = require("node:path")
+          const loaded = require(path.resolve(process.env.VALIDATOR_PATH))
+          const OpenAPISchemaValidator = loaded.default ?? loaded
+          const spec = JSON.parse(fs.readFileSync("docs/api/dist/_merged.test.json", "utf8"))
+          const result = new OpenAPISchemaValidator({ version: 3 }).validate(spec)
+          if (result.errors?.length) {
+            console.error(JSON.stringify(result, null, 2))
+            process.exit(1)
+          }
+          console.log("Phase 18 merged OpenAPI validation: PASS")
+          NODE
 
-      - name: Capture generated and formatted diff
+      - name: Regenerate SDK using the official pipeline
+        run: |
+          pnpm --filter @calibra/sdk run codegen
+          first=$(sha256sum packages/sdk/src/generated/admin.d.ts | cut -d' ' -f1)
+          pnpm --filter @calibra/sdk run codegen
+          second=$(sha256sum packages/sdk/src/generated/admin.d.ts | cut -d' ' -f1)
+          test "$first" = "$second"
+          pnpm --filter @calibra/sdk run typecheck
+
+      - name: Verify Phase 18 TypeScript surface only
         shell: bash
         run: |
-          git diff -- packages/sdk/src/generated/admin.d.ts > phase18-sdk.patch || true
-          git diff -- \
+          set +e
+          pnpm --filter @calibra/api run typecheck > phase18-api-typecheck.log 2>&1
+          rc=$?
+          set -e
+          cat phase18-api-typecheck.log
+          errors=$(grep -E "error TS[0-9]+:" phase18-api-typecheck.log || true)
+          unexpected=$(printf '%s\n' "$errors" | grep -v "app/controllers/admin/procurement_controller.ts" || true)
+          if [ -n "$unexpected" ]; then
+            echo "Unexpected API TypeScript errors outside known Phase 14 debt:"
+            printf '%s\n' "$unexpected"
+            exit 1
+          fi
+          if [ "$rc" -ne 0 ] && [ -z "$errors" ]; then
+            echo "API typecheck failed without the known Procurement TypeScript errors"
+            exit "$rc"
+          fi
+          pnpm --filter @calibra/admin run typecheck
+
+      - name: Run Phase 18 decision and governance regressions
+        working-directory: apps/api
+        run: >-
+          pnpm test
+          --files=tests/unit/pricing/pricing_decision_engine.spec.ts
+          --files=tests/functional/pricing/phase18_pricing_governance.spec.ts
+
+      - name: Commit exact generated and validated Phase 18 output
+        shell: bash
+        run: |
+          git config user.name "calibra-dev"
+          git config user.email "keshavarz20.com@gmail.com"
+          git add \
             apps/admin/src/features/pricing-brain/actions.ts \
             apps/admin/src/features/pricing-brain/pricing-brain-dashboard.tsx \
             apps/admin/src/features/pricing-brain/pricing-governance.tsx \
@@ -87,25 +441,12 @@ jobs:
             apps/api/app/services/pricing_policy_service.ts \
             apps/api/start/routes/admin_pricing_brain.ts \
             apps/api/tests/functional/pricing/phase18_pricing_governance.spec.ts \
-            > phase18-format.patch || true
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: phase18-diagnostic-output
-          if-no-files-found: error
-          retention-days: 1
-          path: |
-            phase18-openapi-errors.json
-            phase18-sdk.patch
-            phase18-format.patch
-            docs/api/dist/_merged.test.json
+            docs/api/reference/openapi/admin.phase18.v1.yaml \
             packages/sdk/src/generated/admin.d.ts
-            apps/admin/src/features/pricing-brain/actions.ts
-            apps/admin/src/features/pricing-brain/pricing-brain-dashboard.tsx
-            apps/admin/src/features/pricing-brain/pricing-governance.tsx
-            apps/admin/src/features/pricing-brain/types.ts
-            apps/api/app/services/pricing_brain_service.ts
-            apps/api/app/services/pricing_decision_engine.ts
-            apps/api/app/services/pricing_policy_service.ts
-            apps/api/start/routes/admin_pricing_brain.ts
-            apps/api/tests/functional/pricing/phase18_pricing_governance.spec.ts
+          git status --short
+          if git diff --cached --quiet; then
+            echo "No Phase 18 finalizer changes to commit"
+            exit 0
+          fi
+          git commit -m "fix(phase18): close pricing release gates"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
