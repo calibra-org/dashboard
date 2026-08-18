@@ -118,7 +118,8 @@ async function resolveCogsEvidence(input: PricingSimulationInput): Promise<CogsE
         .where("product_id", input.productId)
         .whereNotNull("unit_cost_minor")
         .whereNot("quality", "incomplete");
-    applyVariation(snapshotQuery, input.variationId);
+    if (input.variationId === undefined || input.variationId === null) snapshotQuery.whereNull("variation_id");
+    else snapshotQuery.where("variation_id", input.variationId);
     const snapshot = await snapshotQuery.orderBy("effective_at", "desc").orderBy("id", "desc").first();
     if (snapshot?.unit_cost_minor !== null && snapshot?.unit_cost_minor !== undefined) {
         return {
@@ -133,7 +134,8 @@ async function resolveCogsEvidence(input: PricingSimulationInput): Promise<CogsE
         .from("economic_cost_layers")
         .where("product_id", input.productId)
         .whereNotNull("unit_landed_cost_minor");
-    applyVariation(layerQuery, input.variationId);
+    if (input.variationId === undefined || input.variationId === null) layerQuery.whereNull("variation_id");
+    else layerQuery.where("variation_id", input.variationId);
     const layer = await layerQuery.orderBy("effective_at", "desc").orderBy("id", "desc").first();
     if (layer?.unit_landed_cost_minor !== null && layer?.unit_landed_cost_minor !== undefined) {
         return {
@@ -145,11 +147,6 @@ async function resolveCogsEvidence(input: PricingSimulationInput): Promise<CogsE
     }
 
     return { value: null, source: "unavailable", quality: "unavailable", observedAt: null };
-}
-
-function applyVariation(query: any, variationId: number | null | undefined) {
-    if (variationId === undefined || variationId === null) query.whereNull("variation_id");
-    else query.where("variation_id", variationId);
 }
 
 function safeMinor(value: unknown): number {
