@@ -28,7 +28,7 @@ jobs:
       DB_USER: postgres
       DB_PASSWORD: postgres
       DB_DATABASE: calibra_test
-      APP_KEY: 00000000000000000000000000000000
+      APP_KEY: "phase9-integration-test-key-2026"
     steps:
       - uses: actions/checkout@v4
         with:
