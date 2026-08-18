@@ -1,0 +1,244 @@
+openapi: 3.1.0
+info:
+  title: Calibra Admin Phase 20 Trust Risk OS Overlay
+  version: 1.0.0
+  description: Trust, fraud-risk, case-management, model-governance, and subject-control contract for the landed Phase 20 runtime.
+tags:
+  - name: Trust Risk OS
+    description: Fraud-risk evaluation, cases, models, signals, health, and subject controls.
+paths:
+  /api/v1/admin/trust/overview:
+    get:
+      tags: [Trust Risk OS]
+      operationId: adminTrustOverview
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { $ref: '#/components/responses/TrustOk' } }
+  /api/v1/admin/trust/cases:
+    get:
+      tags: [Trust Risk OS]
+      operationId: adminTrustCases
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { $ref: '#/components/responses/TrustOk' } }
+    post:
+      tags: [Trust Risk OS]
+      operationId: adminTrustCaseCreate
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/FraudCaseCreateInput' } } }
+      responses:
+        '201': { $ref: '#/components/responses/TrustOk' }
+        '422': { description: Invalid case payload }
+  /api/v1/admin/trust/signals:
+    get:
+      tags: [Trust Risk OS]
+      operationId: adminTrustSignals
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { $ref: '#/components/responses/TrustOk' } }
+  /api/v1/admin/trust/models:
+    get:
+      tags: [Trust Risk OS]
+      operationId: adminTrustModels
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { $ref: '#/components/responses/TrustOk' } }
+    post:
+      tags: [Trust Risk OS]
+      operationId: adminTrustModelCreate
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/RiskModelCreateInput' } } }
+      responses:
+        '201': { $ref: '#/components/responses/TrustOk' }
+        '422': { description: Invalid risk-model payload }
+  /api/v1/admin/trust/health:
+    get:
+      tags: [Trust Risk OS]
+      operationId: adminTrustHealth
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { $ref: '#/components/responses/TrustOk' } }
+  /api/v1/admin/trust/evaluate:
+    post:
+      tags: [Trust Risk OS]
+      operationId: adminTrustEvaluate
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/RiskEvaluationInput' } } }
+      responses:
+        '200': { $ref: '#/components/responses/TrustOk' }
+        '201': { $ref: '#/components/responses/TrustOk' }
+        '422': { description: Invalid risk-evaluation payload }
+  /api/v1/admin/trust/models/{id}/versions:
+    post:
+      tags: [Trust Risk OS]
+      operationId: adminTrustModelVersionCreate
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/TrustId' }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/RiskModelVersionCreateInput' } } }
+      responses:
+        '201': { $ref: '#/components/responses/TrustOk' }
+        '422': { description: Invalid model-version payload }
+  /api/v1/admin/trust/model-versions/{id}/promote:
+    post:
+      tags: [Trust Risk OS]
+      operationId: adminTrustModelVersionPromote
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/TrustId' }]
+      responses:
+        '200': { $ref: '#/components/responses/TrustOk' }
+        '409': { description: Promotion conflict }
+        '422': { description: Invalid identifier or promotion state }
+  /api/v1/admin/trust/cases/{id}/assign:
+    post:
+      tags: [Trust Risk OS]
+      operationId: adminTrustCaseAssign
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/TrustId' }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/FraudCaseAssignInput' } } }
+      responses: { '200': { $ref: '#/components/responses/TrustOk' }, '422': { description: Invalid assignment payload } }
+  /api/v1/admin/trust/cases/{id}/status:
+    post:
+      tags: [Trust Risk OS]
+      operationId: adminTrustCaseStatusUpdate
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/TrustId' }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/FraudCaseStatusInput' } } }
+      responses: { '200': { $ref: '#/components/responses/TrustOk' }, '422': { description: Invalid case-status payload } }
+  /api/v1/admin/trust/cases/{id}/notes:
+    post:
+      tags: [Trust Risk OS]
+      operationId: adminTrustCaseNoteCreate
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/TrustId' }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/FraudCaseNoteInput' } } }
+      responses: { '200': { $ref: '#/components/responses/TrustOk' }, '201': { $ref: '#/components/responses/TrustOk' }, '422': { description: Invalid case-note payload } }
+  /api/v1/admin/trust/controls:
+    post:
+      tags: [Trust Risk OS]
+      operationId: adminTrustControlCreate
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/SubjectControlCreateInput' } } }
+      responses: { '201': { $ref: '#/components/responses/TrustOk' }, '422': { description: Invalid subject-control payload } }
+  /api/v1/admin/trust/controls/{id}/release:
+    post:
+      tags: [Trust Risk OS]
+      operationId: adminTrustControlRelease
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/TrustId' }]
+      responses: { '200': { $ref: '#/components/responses/TrustOk' }, '422': { description: Invalid identifier } }
+  /api/v1/admin/trust/controls/block:
+    post:
+      tags: [Trust Risk OS]
+      operationId: adminTrustControlBlock
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/SubjectControlCreateInput' } } }
+      responses: { '200': { $ref: '#/components/responses/TrustOk' }, '201': { $ref: '#/components/responses/TrustOk' }, '422': { description: Invalid block payload } }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer }
+  parameters:
+    TrustId:
+      in: path
+      name: id
+      required: true
+      schema: { type: integer, minimum: 1 }
+  responses:
+    TrustOk:
+      description: Trust and risk operation result
+      content:
+        application/json:
+          schema: { type: object, additionalProperties: true }
+  schemas:
+    RiskSignalInput:
+      type: object
+      additionalProperties: false
+      required: [code]
+      properties:
+        code: { type: string, minLength: 2, maxLength: 120 }
+        severity: { type: string, enum: [low, medium, high, critical] }
+        value: { type: number, minimum: 0, maximum: 4 }
+        evidence: { type: object, additionalProperties: true }
+        dedupe_key: { type: string, maxLength: 180 }
+    RiskEvaluationInput:
+      type: object
+      additionalProperties: false
+      required: [subject_type, subject_id]
+      properties:
+        subject_type: { type: string, enum: [order, customer, session, payment, coupon, refund, account] }
+        subject_id: { type: string, minLength: 1, maxLength: 160 }
+        signals:
+          type: array
+          maxItems: 100
+          items: { $ref: '#/components/schemas/RiskSignalInput' }
+        idempotency_key: { type: string, maxLength: 180 }
+    RiskModelCreateInput:
+      type: object
+      additionalProperties: false
+      required: [model_id]
+      properties:
+        model_id: { type: string, minLength: 2, maxLength: 120 }
+        purpose: { type: string, maxLength: 160 }
+        owner: { type: string, maxLength: 160 }
+        description: { type: string, maxLength: 2000 }
+    RiskModelVersionCreateInput:
+      type: object
+      additionalProperties: false
+      required: [version]
+      properties:
+        version: { type: string, minLength: 1, maxLength: 80 }
+        deployment_state: { type: string, enum: [draft, shadow, candidate] }
+        thresholds: { type: object, additionalProperties: true }
+        weights: { type: object, additionalProperties: true }
+        validation_metrics: { type: object, additionalProperties: true }
+        known_limitations: { type: string, maxLength: 4000 }
+        validated: { type: boolean }
+    FraudCaseCreateInput:
+      type: object
+      additionalProperties: false
+      required: [subject_type, subject_id]
+      properties:
+        subject_type: { type: string, minLength: 1, maxLength: 40 }
+        subject_id: { type: string, minLength: 1, maxLength: 160 }
+        priority: { type: string, enum: [low, medium, high, critical] }
+        summary: { type: string, maxLength: 2000 }
+    FraudCaseAssignInput:
+      type: object
+      additionalProperties: false
+      properties:
+        assignee_user_id: { type: number, exclusiveMinimum: 0 }
+    FraudCaseStatusInput:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status: { type: string, enum: [open, investigating, waiting, resolved, closed] }
+        resolution: { type: string, maxLength: 4000 }
+    FraudCaseNoteInput:
+      type: object
+      additionalProperties: false
+      required: [note]
+      properties:
+        note: { type: string, minLength: 2, maxLength: 4000 }
+    SubjectControlCreateInput:
+      type: object
+      additionalProperties: false
+      required: [subject_type, subject_id, control, reason]
+      properties:
+        subject_type: { type: string, minLength: 1, maxLength: 40 }
+        subject_id: { type: string, minLength: 1, maxLength: 160 }
+        control: { type: string, enum: [block, challenge, review, allow_override] }
+        reason: { type: string, minLength: 3, maxLength: 2000 }
+        expires_at: { type: string }
