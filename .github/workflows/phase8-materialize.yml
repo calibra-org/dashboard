@@ -1,29 +1,30 @@
-name: Phase 8 Materialize
+name: Phase 8 Reconcile Probe
 
 on:
   push:
     branches:
-      - agent/phase8-social-commerce-community-os-v2
+      - agent/phase8-run2-reconcile-probe
     paths:
-      - ".phase8/materialize/**"
       - ".github/workflows/phase8-materialize.yml"
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: phase8-materialize-v2
+  group: phase8-run2-reconcile-probe
   cancel-in-progress: false
 
 jobs:
-  materialize:
+  reconcile:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - name: Checkout full history
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: true
 
       - name: Reconstruct and verify locked payload
         shell: bash
@@ -39,19 +40,25 @@ jobs:
           echo "actual=$actual"
           test "$actual" = "$expected"
 
-      - name: Apply Phase 8 as a three-way indexed patch
+      - name: Rebase probe onto current main and three-way apply
         shell: bash
         run: |
           set -euo pipefail
-          git apply --3way --index /tmp/phase8.patch
-          test -z "$(git ls-files -u)"
-          rm -rf .phase8/materialize
-          rm -f .github/workflows/phase8-materialize.yml
-          git add -A
+          git fetch origin main
+          main_sha="$(git rev-parse origin/main)"
+          echo "current_main=$main_sha"
+          git reset --hard origin/main
+          if ! git apply --3way --index /tmp/phase8.patch; then
+            echo "PHASE8_RECONCILE_CONFLICT=1"
+            git status --short || true
+            echo "Unmerged paths:"
+            git diff --name-only --diff-filter=U || true
+            exit 1
+          fi
           test -z "$(git ls-files -u)"
           git diff --cached --check
-          test -z "$(git diff --cached --name-only | grep '^\.phase8/' || true)"
-          test -z "$(git diff --cached --name-only | grep '^\.github/workflows/phase8-materialize\.yml$' || true)"
+          echo "Changed files against current main:"
+          git diff --cached --name-status
 
       - name: Verify Phase 8 static release invariants
         shell: bash
@@ -59,12 +66,11 @@ jobs:
           set -euo pipefail
           node scripts/verify-phase8-social-commerce.mjs
 
-      - name: Commit materialized source
+      - name: Commit probe result only
         shell: bash
         run: |
           set -euo pipefail
-          git config user.name "Calibra Phase 8 Materializer"
-          git config user.email "phase8-materializer@users.noreply.github.com"
-          git status --short
-          git commit -m "feat(social): materialize Phase 8 Social Commerce & Community OS"
-          git push origin HEAD:agent/phase8-social-commerce-community-os-v2
+          git config user.name "Calibra Phase 8 Reconcile Probe"
+          git config user.email "phase8-reconcile@users.noreply.github.com"
+          git commit -m "test(phase8): reconcile locked Phase 8 payload onto current main"
+          git push --force-with-lease origin HEAD:agent/phase8-run2-reconcile-probe
