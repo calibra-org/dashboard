@@ -59,7 +59,7 @@ test.group("Phase 13 planning OS", (group) => {
         assert.equal(run.model_version, "2.0.0");
         assert.isNull(run.default_lead_time_days);
         assert.lengthOf(run.source_hash, 64);
-        assert.equal(run.dependency_state.phase12_economics, "available_not_applied");
+        assert.equal(run.dependency_state.phase12_economics, "landed");
         assert.equal(run.dependency_state.phase14_procurement, "phase14_procurement_only");
 
         const categories = await client
