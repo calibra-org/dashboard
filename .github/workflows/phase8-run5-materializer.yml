@@ -81,6 +81,8 @@ jobs:
           git show "$src:.phase8/run5/runtime-followup-fixes.patch" > /tmp/phase8-runtime-followup-fixes.patch
           echo 'efdd1168a6fe3ae0f8bafe399b64187e922b154d4e0fd308d242aaee6d74a4b1  /tmp/phase8-runtime-followup-fixes.patch' | sha256sum -c -
           git apply --stat /tmp/phase8-runtime-followup-fixes.patch
+          git show "$src:.phase8/run5/typecheck-fix.patch" > /tmp/phase8-typecheck-fix.patch
+          echo '5250f131caefc96a22bd8ae27503d9a5720249d8bc31b7afb8ba10492ca55e7a  /tmp/phase8-typecheck-fix.patch' | sha256sum -c -
 
       - name: Apply Run5 and compose Phase 9 integration points
         shell: bash
@@ -206,6 +208,7 @@ jobs:
           git apply --index /tmp/phase8-route-names.patch
           git apply --index /tmp/phase8-runtime-source-fixes.patch
           git apply --index /tmp/phase8-runtime-followup-fixes.patch
+          git apply --index /tmp/phase8-typecheck-fix.patch
           test "$(grep -h -o '\.as("[^"]*social[^"]*")' apps/api/start/routes/*social_commerce.ts | wc -l)" -eq 60
           git diff --cached --check
           node scripts/verify-phase8-social-commerce.mjs
