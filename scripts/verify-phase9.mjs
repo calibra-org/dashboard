@@ -57,10 +57,13 @@ const identity = read("apps/api/app/services/phase9_event_identity_service.ts");
 for (const needle of [
     "PHASE9_EVENT_VOCABULARY",
     "personalization_identity_merges",
-    "account_switch_guard",
     "mergeAnonymousIntoCustomer",
     "personalization_preferences",
 ]) check(identity.includes(needle), `identity/event service missing ${needle}`);
+check(
+    identity.includes('.whereNot("customer_id", customerId)') && identity.includes("visitor_already_linked_to_another_customer"),
+    "identity/event service missing account-switch guard",
+);
 const governance = read("apps/api/app/services/phase9_governance_service.ts");
 for (const needle of [
     "personalization_feature_registry",
@@ -85,8 +88,12 @@ check(orderFinalizer.includes("Phase9DealGuardService"), "order finalizer missin
 check(orderFinalizer.includes("consumeOrder(Number(draft.id))"), "successful order must consume deal reservation");
 
 const publicRoutes = read("apps/api/start/routes/personalization.ts");
-for (const route of ["/events", "/events/batch", "/recommendations/serve", "/recommendations/serve-page", "/personalization/preferences"])
+for (const route of ["/events", "/events/batch", "/recommendations/serve", "/recommendations/serve-page"])
     check(publicRoutes.includes(route), `canonical public route missing ${route}`);
+check(
+    publicRoutes.includes('.prefix("/api/v1/personalization")') && publicRoutes.includes('router.get("/preferences"'),
+    "canonical public route missing /api/v1/personalization/preferences",
+);
 const adminRoutes = read("apps/api/start/routes/admin_personalization.ts");
 for (const route of ["/features", "/policies", "/models", "/rollouts", "/registry/:kind/:key/:version/activate", "/registry/:kind/:key/rollback", "/campaigns/:id/transition/:target"])
     check(adminRoutes.includes(route), `admin governance route missing ${route}`);
