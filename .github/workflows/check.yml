@@ -8,7 +8,7 @@ permissions:
   contents: write
 
 jobs:
-  phase12-lint-fix:
+  phase12-tenant-lock-fix:
     if: github.head_ref == 'agent/phase12-runner-20260818'
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -22,7 +22,7 @@ jobs:
           node-version: 24.14.0
       - run: npm install --global pnpm@10.32.1
       - run: pnpm install --frozen-lockfile
-      - name: Fix only Phase 12 lint blockers
+      - name: Use persisted tenant for explicit transaction economics capture
         shell: bash
         run: |
           set -euo pipefail
@@ -30,32 +30,33 @@ jobs:
           git config user.email 'keshavarz20.com@gmail.com'
           python3 <<'PY'
           from pathlib import Path
-          p = Path('apps/admin/src/features/economics/EconomicsWorkspace.tsx')
+          p = Path('apps/api/app/services/economics_service.ts')
           s = p.read_text()
-          s = s.replace('<label className="grid gap-1.5 text-xs font-semibold text-muted-foreground">', '<div className="grid gap-1.5 text-xs font-semibold text-muted-foreground">')
-          s = s.replace('</label>', '</div>')
-          s = s.replace('<button\n                        onClick={() => backfill.mutate({ offset: 0, limit: 500 })}', '<button\n                        type="button"\n                        onClick={() => backfill.mutate({ offset: 0, limit: 500 })}')
-          s = s.replace('<button\n                        key={item}', '<button\n                        type="button"\n                        key={item}')
-          s = s.replace('<button\n                disabled={pending}', '<button\n                type="button"\n                disabled={pending}')
-          s = s.replace('(overview.data?.settlements ?? []).map((s, i) => (', '(overview.data?.settlements ?? []).map((s) => (')
-          s = s.replace('<div key={i} className="rounded-2xl bg-muted/50 p-4">', '<div key={`${s.currency}-${s.status}`} className="rounded-2xl bg-muted/50 p-4">')
-          s = s.replace('<div key={i} className="flex items-center justify-between rounded-2xl border p-4">', '<div key={`${s.currency}-${s.status}`} className="flex items-center justify-between rounded-2xl border p-4">')
-          s = s.replace('from-emerald-500/15 to-emerald-500/5', 'from-success/15 to-success/5')
-          s = s.replace('from-amber-500/15 to-amber-500/5', 'from-warning/15 to-warning/5')
-          s = s.replace('from-sky-500/15 to-violet-500/5', 'from-info/15 to-primary/5')
-          s = s.replace('focus:border-sky-500', 'focus:border-ring')
-          s = s.replace('from-slate-950 via-slate-900 to-indigo-950', 'from-sidebar via-sidebar to-primary')
-          s = s.replace('from-sky-500 to-violet-500', 'from-info to-primary')
-          s = s.replace('text-sky-600', 'text-primary')
+          old_sig = '''async function resolveLineCost(\n    trx: TransactionClientContract,\n    line: Record<string, any>,\n    currency: string,\n    effectiveAt: string,\n    method: InventoryCostMethod,\n) {'''
+          new_sig = '''async function resolveLineCost(\n    trx: TransactionClientContract,\n    line: Record<string, any>,\n    currency: string,\n    effectiveAt: string,\n    method: InventoryCostMethod,\n    tenantId: number,\n) {'''
+          if old_sig not in s:
+              raise SystemExit('resolveLineCost signature not found')
+          s = s.replace(old_sig, new_sig, 1)
+          old_lock = 'await trx.rawQuery("SELECT pg_advisory_xact_lock(?, ?)", [Number(currentTenantId()) % 2147483647, lockKey]);'
+          new_lock = 'await trx.rawQuery("SELECT pg_advisory_xact_lock(?, ?)", [tenantId % 2147483647, lockKey]);'
+          if old_lock not in s:
+              raise SystemExit('resolveLineCost advisory lock not found')
+          s = s.replace(old_lock, new_lock, 1)
+          old_call = 'const resolved = await resolveLineCost(trx, line, currency, String(effectiveAt), method);'
+          new_call = 'const resolved = await resolveLineCost(trx, line, currency, String(effectiveAt), method, Number(order.tenant_id));'
+          if old_call not in s:
+              raise SystemExit('resolveLineCost call not found')
+          s = s.replace(old_call, new_call, 1)
           p.write_text(s)
           PY
-          git fetch origin main
-          mapfile -d '' files < <(git diff --name-only origin/main...HEAD -z)
-          pnpm exec biome check --write --max-diagnostics=200 "${files[@]}"
-          pnpm run lint
+          pnpm exec biome format --write apps/api/app/services/economics_service.ts
+          pnpm --filter @calibra/api run typecheck
+          cd apps/api
+          pnpm test --files=tests/unit/orders/order_state_machine.spec.ts --files=tests/functional/refunds/admin_create_partial_refund.spec.ts
+          cd ../..
           git diff --check
-          git add apps/admin/src/features/economics/EconomicsWorkspace.tsx apps/admin/src/features/economics/EconomicsDrilldowns.tsx apps/api/app/services/economics_service.ts
+          git add apps/api/app/services/economics_service.ts
           if ! git diff --cached --quiet; then
-            git commit -m 'fix(economics): satisfy repository lint gates'
+            git commit -m 'fix(economics): preserve tenant scope with explicit transactions'
             git push origin HEAD:agent/phase12-profitability-cash-os
           fi
