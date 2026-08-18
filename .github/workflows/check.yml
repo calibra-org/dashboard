@@ -8,10 +8,10 @@ permissions:
   contents: write
 
 jobs:
-  phase12-fix:
+  phase12-format:
     if: github.head_ref == 'agent/phase12-runner-20260818'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
@@ -22,17 +22,17 @@ jobs:
           node-version: 24.14.0
       - run: npm install --global pnpm@10.32.1
       - run: pnpm install --frozen-lockfile
-      - name: Regenerate exact Phase 12 Admin SDK
+      - name: Format only Phase 12 changed files
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'calibra-dev'
           git config user.email 'keshavarz20.com@gmail.com'
-          pnpm --filter @calibra/api-docs run build:json:admin
-          pnpm --filter @calibra/sdk run codegen:admin
+          git fetch origin main
+          git diff --name-only origin/main...HEAD -z | xargs -0 pnpm exec biome format --write --files-ignore-unknown=true
           git diff --check
-          git add packages/sdk/src/generated/admin.d.ts
+          git add -u
           if ! git diff --cached --quiet; then
-            git commit -m 'fix(sdk): sync Phase 12 Admin contract'
+            git commit -m 'style(economics): apply repository formatting'
             git push origin HEAD:agent/phase12-profitability-cash-os
           fi
