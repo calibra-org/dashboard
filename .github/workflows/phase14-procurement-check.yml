@@ -64,5 +64,10 @@ jobs:
         run: pnpm test --files=tests/unit/procurement/phase14_procurement.spec.ts
       - name: API typecheck
         run: pnpm --filter @calibra/api run typecheck
+      - name: Build typed Admin SDK
+        run: |
+          pnpm --filter @calibra/api-docs run build:json:admin
+          pnpm --filter @calibra/sdk run codegen:admin
+          pnpm --filter @calibra/sdk run build
       - name: Admin build
         run: pnpm --filter @calibra/admin run build
