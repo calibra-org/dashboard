@@ -22,6 +22,7 @@ import { checkEligibility, countRedemptions, loadSnapshotForUpdate } from "#serv
 import { recordOrderFinalized } from "#services/metrics/domain_metrics";
 import { OrderFactory } from "#services/order_factory";
 import { orderStateMachine } from "#services/order_state_machine";
+import Phase9DealGuardService from "#services/phase9_deal_guard_service";
 import { resolvePrice } from "#services/price_resolver";
 import { withTenantTransaction } from "#services/tenant_context";
 
@@ -127,6 +128,7 @@ export class OrderFinalizer {
              * transaction is the race-safe bit — concurrent submits serialise on the coupon row.
              */
             await this.writeRedemptionLedger(draft, trx);
+            await new Phase9DealGuardService().consumeOrder(Number(draft.id));
 
             await orderStateMachine.transition(draft, OrderStatus.Pending, {
                 actor: opts.actor ?? null,

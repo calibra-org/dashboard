@@ -30,6 +30,27 @@ export class AdminAuditLogSchema extends BaseModel {
   declare tenantId: bigint | number
 }
 
+export class AdminPermissionSchema extends BaseModel {
+  static $columns = ['allowed', 'createdAt', 'id', 'permission', 'tenantId', 'updatedAt', 'updatedBy', 'userId'] as const
+  $columns = AdminPermissionSchema.$columns
+  @column()
+  declare allowed: boolean
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare permission: string
+  @column()
+  declare tenantId: bigint | number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare updatedBy: bigint | number | null
+  @column()
+  declare userId: bigint | number
+}
+
 export class AuthAccessTokenSchema extends BaseModel {
   static $columns = ['abilities', 'createdAt', 'expiresAt', 'hash', 'id', 'lastUsedAt', 'name', 'tokenableId', 'type', 'updatedAt'] as const
   $columns = AuthAccessTokenSchema.$columns
@@ -134,6 +155,95 @@ export class CartSchema extends BaseModel {
   declare updatedAt: DateTime
   @column()
   declare userAgent: string | null
+}
+
+export class ConfigurationOverrideSchema extends BaseModel {
+  static $columns = ['approvalReference', 'createdAt', 'createdByUserId', 'definitionKey', 'expiresAt', 'groupKey', 'id', 'isDeleted', 'reason', 'rolloutPercent', 'scopeKey', 'scopeType', 'tenantId', 'updatedAt', 'updatedByUserId', 'value', 'valueType', 'version'] as const
+  $columns = ConfigurationOverrideSchema.$columns
+  @column()
+  declare approvalReference: string | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare createdByUserId: bigint | number | null
+  @column()
+  declare definitionKey: string
+  @column.dateTime()
+  declare expiresAt: DateTime | null
+  @column()
+  declare groupKey: string
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare isDeleted: boolean
+  @column()
+  declare reason: string
+  @column()
+  declare rolloutPercent: number
+  @column()
+  declare scopeKey: string
+  @column()
+  declare scopeType: string
+  @column()
+  declare tenantId: bigint | number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare updatedByUserId: bigint | number | null
+  @column()
+  declare value: any | null
+  @column()
+  declare valueType: string
+  @column()
+  declare version: number
+}
+
+export class ConfigurationRevisionSchema extends BaseModel {
+  static $columns = ['createdAt', 'createdByUserId', 'id', 'revision', 'rollbackOfRevision', 'scopeKey', 'snapshot', 'source', 'tenantId'] as const
+  $columns = ConfigurationRevisionSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare createdByUserId: bigint | number | null
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare revision: number
+  @column()
+  declare rollbackOfRevision: number | null
+  @column()
+  declare scopeKey: string
+  @column()
+  declare snapshot: any
+  @column()
+  declare source: string
+  @column()
+  declare tenantId: bigint | number
+}
+
+export class ConfigurationUrlRedirectHistorySchema extends BaseModel {
+  static $columns = ['actorUserId', 'afterValue', 'beforeValue', 'createdAt', 'definitionKey', 'id', 'reason', 'scopeKey', 'scopeType', 'tenantId'] as const
+  $columns = ConfigurationUrlRedirectHistorySchema.$columns
+  @column()
+  declare actorUserId: bigint | number | null
+  @column()
+  declare afterValue: any | null
+  @column()
+  declare beforeValue: any | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare definitionKey: string
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare reason: string
+  @column()
+  declare scopeKey: string
+  @column()
+  declare scopeType: string
+  @column()
+  declare tenantId: bigint | number
 }
 
 export class ContentAgentRunSchema extends BaseModel {
@@ -1032,6 +1142,358 @@ export class CustomerSchema extends BaseModel {
   declare userId: bigint | number | null
 }
 
+export class DealCampaignProductSchema extends BaseModel {
+  static $columns = ['campaignId', 'createdAt', 'id', 'pinned', 'position', 'productId', 'tenantId', 'updatedAt'] as const
+  $columns = DealCampaignProductSchema.$columns
+  @column()
+  declare campaignId: bigint | number
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare pinned: boolean
+  @column()
+  declare position: number
+  @column()
+  declare productId: bigint | number
+  @column()
+  declare tenantId: bigint | number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+}
+
+export class DealCampaignSchema extends BaseModel {
+  static $columns = ['benefitType', 'benefitValue', 'cancelledAt', 'createdAt', 'createdByUserId', 'dealType', 'endedAt', 'endsAt', 'exclusive', 'id', 'maxApplications', 'maxDiscountPercent', 'maxItems', 'minDiscountPercent', 'minSellingPrice', 'name', 'policySnapshot', 'priority', 'publishedAt', 'quantityLimit', 'rotationMinutes', 'rules', 'selectionMode', 'startsAt', 'status', 'tenantId', 'updatedAt', 'usageCount', 'version'] as const
+  $columns = DealCampaignSchema.$columns
+  @column()
+  declare benefitType: string
+  @column()
+  declare benefitValue: bigint | number
+  @column.dateTime()
+  declare cancelledAt: DateTime | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare createdByUserId: bigint | number | null
+  @column()
+  declare dealType: string
+  @column.dateTime()
+  declare endedAt: DateTime | null
+  @column.dateTime()
+  declare endsAt: DateTime | null
+  @column()
+  declare exclusive: boolean
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare maxApplications: number | null
+  @column()
+  declare maxDiscountPercent: number | null
+  @column()
+  declare maxItems: number
+  @column()
+  declare minDiscountPercent: number
+  @column()
+  declare minSellingPrice: bigint | number | null
+  @column()
+  declare name: string
+  @column()
+  declare policySnapshot: any
+  @column()
+  declare priority: number
+  @column.dateTime()
+  declare publishedAt: DateTime | null
+  @column()
+  declare quantityLimit: number | null
+  @column()
+  declare rotationMinutes: number
+  @column()
+  declare rules: any
+  @column()
+  declare selectionMode: string
+  @column.dateTime()
+  declare startsAt: DateTime | null
+  @column()
+  declare status: string
+  @column()
+  declare tenantId: bigint | number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare usageCount: number
+  @column()
+  declare version: number
+}
+
+export class DealRedemptionSchema extends BaseModel {
+  static $columns = ['benefitMinor', 'campaignId', 'campaignVersion', 'createdAt', 'id', 'idempotencyKey', 'orderId', 'policySnapshot', 'productId', 'quantity', 'reservationId', 'tenantId'] as const
+  $columns = DealRedemptionSchema.$columns
+  @column()
+  declare benefitMinor: bigint | number
+  @column()
+  declare campaignId: bigint | number
+  @column()
+  declare campaignVersion: number
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare idempotencyKey: string
+  @column()
+  declare orderId: bigint | number
+  @column()
+  declare policySnapshot: any
+  @column()
+  declare productId: bigint | number | null
+  @column()
+  declare quantity: number
+  @column()
+  declare reservationId: string | null
+  @column()
+  declare tenantId: bigint | number
+}
+
+export class DealReservationSchema extends BaseModel {
+  static $columns = ['campaignId', 'createdAt', 'expiresAt', 'id', 'idempotencyKey', 'orderId', 'productId', 'quantity', 'reservationId', 'status', 'subjectId', 'subjectType', 'tenantId', 'updatedAt'] as const
+  $columns = DealReservationSchema.$columns
+  @column()
+  declare campaignId: bigint | number
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column.dateTime()
+  declare expiresAt: DateTime
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare idempotencyKey: string
+  @column()
+  declare orderId: bigint | number | null
+  @column()
+  declare productId: bigint | number | null
+  @column()
+  declare quantity: number
+  @column()
+  declare reservationId: string
+  @column()
+  declare status: string
+  @column()
+  declare subjectId: string | null
+  @column()
+  declare subjectType: string | null
+  @column()
+  declare tenantId: bigint | number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+}
+
+export class EconomicCostLayerSchema extends BaseModel {
+  static $columns = ['createdAt', 'createdByUserId', 'currency', 'effectiveAt', 'id', 'productId', 'quantityInitial', 'quantityRemaining', 'sourceKind', 'sourceRef', 'tenantId', 'unitLandedCostMinor', 'unitPurchaseCostMinor', 'variationId'] as const
+  $columns = EconomicCostLayerSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare createdByUserId: bigint | number | null
+  @column()
+  declare currency: string
+  @column.dateTime()
+  declare effectiveAt: DateTime
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare productId: bigint | number
+  @column()
+  declare quantityInitial: number
+  @column()
+  declare quantityRemaining: number
+  @column()
+  declare sourceKind: string
+  @column()
+  declare sourceRef: string | null
+  @column()
+  declare tenantId: bigint | number
+  @column()
+  declare unitLandedCostMinor: bigint | number | null
+  @column()
+  declare unitPurchaseCostMinor: bigint | number | null
+  @column()
+  declare variationId: bigint | number | null
+}
+
+export class EconomicCostPolicySchema extends BaseModel {
+  static $columns = ['affiliateMinor', 'channelFeeBps', 'createdAt', 'createdByUserId', 'currency', 'effectiveFrom', 'fulfillmentMinor', 'id', 'inventoryMethod', 'packagingMinor', 'paymentFeeBps', 'promotionMinor', 'tenantId', 'version'] as const
+  $columns = EconomicCostPolicySchema.$columns
+  @column()
+  declare affiliateMinor: bigint | number | null
+  @column()
+  declare channelFeeBps: bigint | number | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare createdByUserId: bigint | number | null
+  @column()
+  declare currency: string
+  @column.dateTime()
+  declare effectiveFrom: DateTime
+  @column()
+  declare fulfillmentMinor: bigint | number | null
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare inventoryMethod: string
+  @column()
+  declare packagingMinor: bigint | number | null
+  @column()
+  declare paymentFeeBps: bigint | number | null
+  @column()
+  declare promotionMinor: bigint | number | null
+  @column()
+  declare tenantId: bigint | number
+  @column()
+  declare version: number
+}
+
+export class EconomicLedgerEntrySchema extends BaseModel {
+  static $columns = ['amountMinor', 'createdAt', 'currency', 'effectiveAt', 'entryKind', 'id', 'metadata', 'orderId', 'orderLineItemId', 'productId', 'quality', 'reversalOfId', 'sourceId', 'sourceKind', 'tenantId', 'variationId'] as const
+  $columns = EconomicLedgerEntrySchema.$columns
+  @column()
+  declare amountMinor: bigint | number | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare currency: string
+  @column.dateTime()
+  declare effectiveAt: DateTime
+  @column()
+  declare entryKind: string
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare metadata: any
+  @column()
+  declare orderId: bigint | number | null
+  @column()
+  declare orderLineItemId: bigint | number | null
+  @column()
+  declare productId: bigint | number | null
+  @column()
+  declare quality: string
+  @column()
+  declare reversalOfId: bigint | number | null
+  @column()
+  declare sourceId: string
+  @column()
+  declare sourceKind: string
+  @column()
+  declare tenantId: bigint | number
+  @column()
+  declare variationId: bigint | number | null
+}
+
+export class EconomicLineCostSnapshotSchema extends BaseModel {
+  static $columns = ['createdAt', 'createdByUserId', 'currency', 'effectiveAt', 'id', 'layerBreakdown', 'method', 'orderId', 'orderLineItemId', 'policyId', 'productId', 'quality', 'quantity', 'reason', 'replacesSnapshotId', 'tenantId', 'totalCostMinor', 'unitCostMinor', 'variationId', 'version'] as const
+  $columns = EconomicLineCostSnapshotSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare createdByUserId: bigint | number | null
+  @column()
+  declare currency: string
+  @column.dateTime()
+  declare effectiveAt: DateTime
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare layerBreakdown: any
+  @column()
+  declare method: string
+  @column()
+  declare orderId: bigint | number
+  @column()
+  declare orderLineItemId: bigint | number
+  @column()
+  declare policyId: bigint | number | null
+  @column()
+  declare productId: bigint | number | null
+  @column()
+  declare quality: string
+  @column()
+  declare quantity: number
+  @column()
+  declare reason: string | null
+  @column()
+  declare replacesSnapshotId: bigint | number | null
+  @column()
+  declare tenantId: bigint | number
+  @column()
+  declare totalCostMinor: bigint | number | null
+  @column()
+  declare unitCostMinor: bigint | number | null
+  @column()
+  declare variationId: bigint | number | null
+  @column()
+  declare version: number
+}
+
+export class EconomicMutationReceiptSchema extends BaseModel {
+  static $columns = ['createdAt', 'id', 'idempotencyKey', 'requestHash', 'responsePayload', 'scope', 'tenantId'] as const
+  $columns = EconomicMutationReceiptSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare idempotencyKey: string
+  @column()
+  declare requestHash: string
+  @column()
+  declare responsePayload: any | null
+  @column()
+  declare scope: string
+  @column()
+  declare tenantId: bigint | number
+}
+
+export class EconomicSettlementSchema extends BaseModel {
+  static $columns = ['createdAt', 'createdByUserId', 'currency', 'evidence', 'expectedAt', 'feeMinor', 'grossMinor', 'id', 'netMinor', 'provider', 'refundMinor', 'replacesSettlementId', 'revision', 'settledAt', 'settlementKey', 'status', 'tenantId'] as const
+  $columns = EconomicSettlementSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare createdByUserId: bigint | number | null
+  @column()
+  declare currency: string
+  @column()
+  declare evidence: any
+  @column.dateTime()
+  declare expectedAt: DateTime | null
+  @column()
+  declare feeMinor: bigint | number
+  @column()
+  declare grossMinor: bigint | number
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare netMinor: bigint | number
+  @column()
+  declare provider: string
+  @column()
+  declare refundMinor: bigint | number
+  @column()
+  declare replacesSettlementId: bigint | number | null
+  @column()
+  declare revision: number
+  @column.dateTime()
+  declare settledAt: DateTime | null
+  @column()
+  declare settlementKey: string
+  @column()
+  declare status: string
+  @column()
+  declare tenantId: bigint | number
+}
+
 export class FactorDocumentPaymentSchema extends BaseModel {
   static $columns = ['amountMinor', 'attributes', 'createdAt', 'createdByUserId', 'documentId', 'gatewayId', 'id', 'method', 'notes', 'paidAt', 'paymentAttemptId', 'reference', 'status', 'tenantId', 'updatedAt'] as const
   $columns = FactorDocumentPaymentSchema.$columns
@@ -1065,6 +1527,860 @@ export class FactorDocumentPaymentSchema extends BaseModel {
   declare tenantId: bigint | number
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
+}
+
+export class GovernanceActionLedgerSchema extends BaseModel {
+  static $columns = ['actionKey', 'actorAgentId', 'actorType', 'actorUserId', 'afterHash', 'approvalReferences', 'beforeHash', 'causationId', 'compensation', 'correlationId', 'entryHash', 'eventId', 'evidenceRefs', 'externalEvidence', 'hashPayload', 'id', 'occurredAt', 'policyDecision', 'previousHash', 'reason', 'requestId', 'resourceId', 'resourceType', 'result', 'resultStatus', 'sequence', 'tenantId'] as const
+  $columns = GovernanceActionLedgerSchema.$columns
+  @column()
+  declare actionKey: string
+  @column()
+  declare actorAgentId: bigint | number | null
+  @column()
+  declare actorType: string
+  @column()
+  declare actorUserId: bigint | number | null
+  @column()
+  declare afterHash: string | null
+  @column()
+  declare approvalReferences: any
+  @column()
+  declare beforeHash: string | null
+  @column()
+  declare causationId: string | null
+  @column()
+  declare compensation: any
+  @column()
+  declare correlationId: string | null
+  @column()
+  declare entryHash: string
+  @column()
+  declare eventId: string
+  @column()
+  declare evidenceRefs: any
+  @column()
+  declare externalEvidence: any
+  @column()
+  declare hashPayload: string
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column.dateTime()
+  declare occurredAt: DateTime
+  @column()
+  declare policyDecision: any
+  @column()
+  declare previousHash: string
+  @column()
+  declare reason: string
+  @column()
+  declare requestId: string | null
+  @column()
+  declare resourceId: string | null
+  @column()
+  declare resourceType: string | null
+  @column()
+  declare result: any
+  @column()
+  declare resultStatus: string
+  @column()
+  declare sequence: bigint | number
+  @column()
+  declare tenantId: bigint | number
+}
+
+export class GovernanceAgentPrincipalSchema extends BaseModel {
+  static $columns = ['allowedActions', 'attributes', 'autonomyLevel', 'budgetCurrency', 'budgetLimitMinor', 'budgetPeriod', 'budgetResetsAt', 'budgetSpentMinor', 'createdAt', 'createdByUserId', 'dataAccessClasses', 'enabled', 'id', 'killSwitch', 'name', 'ownerUserId', 'principalKey', 'prohibitedActions', 'rowVersion', 'tenantId', 'updatedAt', 'updatedByUserId'] as const
+  $columns = GovernanceAgentPrincipalSchema.$columns
+  @column()
+  declare allowedActions: any
+  @column()
+  declare attributes: any
+  @column()
+  declare autonomyLevel: number
+  @column()
+  declare budgetCurrency: string | null
+  @column()
+  declare budgetLimitMinor: bigint | number | null
+  @column()
+  declare budgetPeriod: string
+  @column.dateTime()
+  declare budgetResetsAt: DateTime | null
+  @column()
+  declare budgetSpentMinor: bigint | number
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare createdByUserId: bigint | number | null
+  @column()
+  declare dataAccessClasses: any
+  @column()
+  declare enabled: boolean
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare killSwitch: boolean
+  @column()
+  declare name: string
+  @column()
+  declare ownerUserId: bigint | number | null
+  @column()
+  declare principalKey: string
+  @column()
+  declare prohibitedActions: any
+  @column()
+  declare rowVersion: number
+  @column()
+  declare tenantId: bigint | number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare updatedByUserId: bigint | number | null
+}
+
+export class GovernanceApprovalDecisionSchema extends BaseModel {
+  static $columns = ['actorUserId', 'createdAt', 'decision', 'delegatedToUserId', 'id', 'metadata', 'reason', 'requestId', 'stepId', 'stepUpReference', 'tenantId'] as const
+  $columns = GovernanceApprovalDecisionSchema.$columns
+  @column()
+  declare actorUserId: bigint | number | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare decision: string
+  @column()
+  declare delegatedToUserId: bigint | number | null
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare metadata: any
+  @column()
+  declare reason: string
+  @column()
+  declare requestId: bigint | number
+  @column()
+  declare stepId: bigint | number | null
+  @column()
+  declare stepUpReference: string | null
+  @column()
+  declare tenantId: bigint | number
+}
+
+export class GovernanceApprovalRequestSchema extends BaseModel {
+  static $columns = ['actionKey', 'approvedAt', 'createdAt', 'currentStep', 'executedAt', 'expiresAt', 'id', 'reason', 'reference', 'rejectedAt', 'requestHash', 'requestedByAgentId', 'requestedByUserId', 'requesterType', 'resourceId', 'resourceType', 'rowVersion', 'safePayload', 'separationOfDuties', 'status', 'tenantId', 'updatedAt', 'workflowKind'] as const
+  $columns = GovernanceApprovalRequestSchema.$columns
+  @column()
+  declare actionKey: string
+  @column.dateTime()
+  declare approvedAt: DateTime | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare currentStep: number
+  @column.dateTime()
+  declare executedAt: DateTime | null
+  @column.dateTime()
+  declare expiresAt: DateTime
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare reason: string
+  @column()
+  declare reference: string
+  @column.dateTime()
+  declare rejectedAt: DateTime | null
+  @column()
+  declare requestHash: string
+  @column()
+  declare requestedByAgentId: bigint | number | null
+  @column()
+  declare requestedByUserId: bigint | number | null
+  @column()
+  declare requesterType: string
+  @column()
+  declare resourceId: string | null
+  @column()
+  declare resourceType: string | null
+  @column()
+  declare rowVersion: number
+  @column()
+  declare safePayload: any
+  @column()
+  declare separationOfDuties: boolean
+  @column()
+  declare status: string
+  @column()
+  declare tenantId: bigint | number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare workflowKind: string
+}
+
+export class GovernanceApprovalStepSchema extends BaseModel {
+  static $columns = ['assignedUserId', 'completedAt', 'createdAt', 'escalateAfterMinutes', 'escalationPermission', 'id', 'label', 'quorum', 'requestId', 'requiredPermission', 'status', 'stepIndex', 'tenantId'] as const
+  $columns = GovernanceApprovalStepSchema.$columns
+  @column()
+  declare assignedUserId: bigint | number | null
+  @column.dateTime()
+  declare completedAt: DateTime | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare escalateAfterMinutes: number | null
+  @column()
+  declare escalationPermission: string | null
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare label: string
+  @column()
+  declare quorum: number
+  @column()
+  declare requestId: bigint | number
+  @column()
+  declare requiredPermission: string | null
+  @column()
+  declare status: string
+  @column()
+  declare stepIndex: number
+  @column()
+  declare tenantId: bigint | number
+}
+
+export class GovernanceLedgerHeadSchema extends BaseModel {
+  static $columns = ['lastHash', 'lastSequence', 'tenantId', 'updatedAt'] as const
+  $columns = GovernanceLedgerHeadSchema.$columns
+  @column()
+  declare lastHash: string
+  @column()
+  declare lastSequence: bigint | number
+  @column({ isPrimary: true })
+  declare tenantId: bigint | number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+}
+
+export class GovernancePolicyVersionSchema extends BaseModel {
+  static $columns = ['actionPattern', 'autonomyCeiling', 'contentHash', 'createdAt', 'createdByUserId', 'description', 'effect', 'effectiveFrom', 'effectiveUntil', 'enabled', 'id', 'limits', 'name', 'ownerUserId', 'policyKey', 'predicate', 'priority', 'reason', 'scope', 'supersedesId', 'tenantId', 'version'] as const
+  $columns = GovernancePolicyVersionSchema.$columns
+  @column()
+  declare actionPattern: string
+  @column()
+  declare autonomyCeiling: number | null
+  @column()
+  declare contentHash: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare createdByUserId: bigint | number | null
+  @column()
+  declare description: string | null
+  @column()
+  declare effect: string
+  @column.dateTime()
+  declare effectiveFrom: DateTime | null
+  @column.dateTime()
+  declare effectiveUntil: DateTime | null
+  @column()
+  declare enabled: boolean
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare limits: any
+  @column()
+  declare name: string
+  @column()
+  declare ownerUserId: bigint | number | null
+  @column()
+  declare policyKey: string
+  @column()
+  declare predicate: any
+  @column()
+  declare priority: number
+  @column()
+  declare reason: string
+  @column()
+  declare scope: any
+  @column()
+  declare supersedesId: bigint | number | null
+  @column()
+  declare tenantId: bigint | number
+  @column()
+  declare version: number
+}
+
+export class GovernanceShadowObservationSchema extends BaseModel {
+  static $columns = ['actionKey', 'agentPrincipalId', 'autonomyStage', 'createdAt', 'humanDecision', 'id', 'outcome', 'policyDecision', 'policyDigest', 'proposalHash', 'reviewedAt', 'reviewedByUserId', 'rowVersion', 'safeProposal', 'tenantId', 'updatedAt'] as const
+  $columns = GovernanceShadowObservationSchema.$columns
+  @column()
+  declare actionKey: string
+  @column()
+  declare agentPrincipalId: bigint | number | null
+  @column()
+  declare autonomyStage: number
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare humanDecision: string | null
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare outcome: any
+  @column()
+  declare policyDecision: any
+  @column()
+  declare policyDigest: string | null
+  @column()
+  declare proposalHash: string
+  @column.dateTime()
+  declare reviewedAt: DateTime | null
+  @column()
+  declare reviewedByUserId: bigint | number | null
+  @column()
+  declare rowVersion: number
+  @column()
+  declare safeProposal: any
+  @column()
+  declare tenantId: bigint | number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+}
+
+export class IdentityCredentialSchema extends BaseModel {
+  static $columns = ['backedUp', 'backupEligible', 'createdAt', 'credentialKey', 'credentialType', 'id', 'label', 'lastUsedAt', 'metadata', 'publicJwk', 'revokedAt', 'secretCiphertext', 'secretHash', 'signCount', 'tenantId', 'updatedAt', 'userId', 'verifiedAt'] as const
+  $columns = IdentityCredentialSchema.$columns
+  @column()
+  declare backedUp: boolean
+  @column()
+  declare backupEligible: boolean
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare credentialKey: string
+  @column()
+  declare credentialType: string
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare label: string | null
+  @column.dateTime()
+  declare lastUsedAt: DateTime | null
+  @column()
+  declare metadata: any
+  @column()
+  declare publicJwk: any | null
+  @column.dateTime()
+  declare revokedAt: DateTime | null
+  @column()
+  declare secretCiphertext: string | null
+  @column()
+  declare secretHash: string | null
+  @column()
+  declare signCount: bigint | number
+  @column()
+  declare tenantId: bigint | number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare userId: bigint | number
+  @column.dateTime()
+  declare verifiedAt: DateTime | null
+}
+
+export class IdentityPolicySchema extends BaseModel {
+  static $columns = ['config', 'createdAt', 'createdBy', 'enabled', 'id', 'methods', 'policyKey', 'purpose', 'tenantId', 'version'] as const
+  $columns = IdentityPolicySchema.$columns
+  @column()
+  declare config: any
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare createdBy: bigint | number | null
+  @column()
+  declare enabled: boolean
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare methods: any
+  @column()
+  declare policyKey: string
+  @column()
+  declare purpose: string
+  @column()
+  declare tenantId: bigint | number
+  @column()
+  declare version: number
+}
+
+export class IdentityProviderAttemptSchema extends BaseModel {
+  static $columns = ['acceptedAt', 'channel', 'costMinor', 'createdAt', 'deliveredAt', 'errorCode', 'errorMessage', 'evidence', 'failedAt', 'generation', 'id', 'idempotencyKey', 'latencyMs', 'providerKey', 'providerMessageId', 'state', 'tenantId', 'updatedAt', 'verificationId'] as const
+  $columns = IdentityProviderAttemptSchema.$columns
+  @column.dateTime()
+  declare acceptedAt: DateTime | null
+  @column()
+  declare channel: string
+  @column()
+  declare costMinor: bigint | number | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column.dateTime()
+  declare deliveredAt: DateTime | null
+  @column()
+  declare errorCode: string | null
+  @column()
+  declare errorMessage: string | null
+  @column()
+  declare evidence: any
+  @column.dateTime()
+  declare failedAt: DateTime | null
+  @column()
+  declare generation: number
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare idempotencyKey: string
+  @column()
+  declare latencyMs: number | null
+  @column()
+  declare providerKey: string
+  @column()
+  declare providerMessageId: string | null
+  @column()
+  declare state: string
+  @column()
+  declare tenantId: bigint | number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare verificationId: bigint | number
+}
+
+export class IdentityProviderConfigSchema extends BaseModel {
+  static $columns = ['baseUrl', 'capabilities', 'channel', 'circuitOpenUntil', 'configuration', 'consecutiveFailures', 'createdAt', 'driver', 'enabled', 'healthState', 'id', 'isPrimary', 'lastError', 'lastHealthCheckedAt', 'lastSuccessAt', 'priority', 'providerKey', 'secretCiphertext', 'senderId', 'tenantId', 'updatedAt'] as const
+  $columns = IdentityProviderConfigSchema.$columns
+  @column()
+  declare baseUrl: string | null
+  @column()
+  declare capabilities: any
+  @column()
+  declare channel: string
+  @column.dateTime()
+  declare circuitOpenUntil: DateTime | null
+  @column()
+  declare configuration: any
+  @column()
+  declare consecutiveFailures: number
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare driver: string
+  @column()
+  declare enabled: boolean
+  @column()
+  declare healthState: string
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare isPrimary: boolean
+  @column()
+  declare lastError: string | null
+  @column.dateTime()
+  declare lastHealthCheckedAt: DateTime | null
+  @column.dateTime()
+  declare lastSuccessAt: DateTime | null
+  @column()
+  declare priority: number
+  @column()
+  declare providerKey: string
+  @column()
+  declare secretCiphertext: string | null
+  @column()
+  declare senderId: string | null
+  @column()
+  declare tenantId: bigint | number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+}
+
+export class IdentityRiskEventSchema extends BaseModel {
+  static $columns = ['createdAt', 'decision', 'eventType', 'id', 'reasons', 'score', 'subjectHash', 'tenantId', 'userId', 'verificationId'] as const
+  $columns = IdentityRiskEventSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare decision: string
+  @column()
+  declare eventType: string
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare reasons: any
+  @column()
+  declare score: number
+  @column()
+  declare subjectHash: string | null
+  @column()
+  declare tenantId: bigint | number
+  @column()
+  declare userId: bigint | number | null
+  @column()
+  declare verificationId: bigint | number | null
+}
+
+export class IdentitySecurityEventSchema extends BaseModel {
+  static $columns = ['actorUserId', 'createdAt', 'eventType', 'id', 'ipMasked', 'metadata', 'outcome', 'requestId', 'severity', 'tenantId', 'userId', 'verificationId'] as const
+  $columns = IdentitySecurityEventSchema.$columns
+  @column()
+  declare actorUserId: bigint | number | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare eventType: string
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare ipMasked: string | null
+  @column()
+  declare metadata: any
+  @column()
+  declare outcome: string
+  @column()
+  declare requestId: string | null
+  @column()
+  declare severity: string
+  @column()
+  declare tenantId: bigint | number
+  @column()
+  declare userId: bigint | number | null
+  @column()
+  declare verificationId: bigint | number | null
+}
+
+export class IdentitySessionSchema extends BaseModel {
+  static $columns = ['authMethod', 'createdAt', 'deviceHash', 'deviceLabel', 'expiresAt', 'id', 'ipHash', 'ipMasked', 'lastSeenAt', 'revokedAt', 'riskScore', 'tenantId', 'tokenIdentifier', 'updatedAt', 'userAgent', 'userId'] as const
+  $columns = IdentitySessionSchema.$columns
+  @column()
+  declare authMethod: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare deviceHash: string | null
+  @column()
+  declare deviceLabel: string | null
+  @column.dateTime()
+  declare expiresAt: DateTime | null
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare ipHash: string | null
+  @column()
+  declare ipMasked: string | null
+  @column.dateTime()
+  declare lastSeenAt: DateTime
+  @column.dateTime()
+  declare revokedAt: DateTime | null
+  @column()
+  declare riskScore: number
+  @column()
+  declare tenantId: bigint | number
+  @column()
+  declare tokenIdentifier: bigint | number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare userAgent: string | null
+  @column()
+  declare userId: bigint | number
+}
+
+export class IdentityVerificationChallengeSchema extends BaseModel {
+  static $columns = ['attempts', 'challengeType', 'consumedAt', 'createdAt', 'expiresAt', 'generation', 'id', 'maxAttempts', 'payloadCiphertext', 'secretHash', 'state', 'tenantId', 'verificationId'] as const
+  $columns = IdentityVerificationChallengeSchema.$columns
+  @column()
+  declare attempts: number
+  @column()
+  declare challengeType: string
+  @column.dateTime()
+  declare consumedAt: DateTime | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column.dateTime()
+  declare expiresAt: DateTime
+  @column()
+  declare generation: number
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare maxAttempts: number
+  @column()
+  declare payloadCiphertext: string | null
+  @column()
+  declare secretHash: string | null
+  @column()
+  declare state: string
+  @column()
+  declare tenantId: bigint | number
+  @column()
+  declare verificationId: bigint | number
+}
+
+export class IdentityVerificationSchema extends BaseModel {
+  static $columns = ['actionScope', 'blockedAt', 'channel', 'consumedAt', 'createdAt', 'deviceHash', 'expiresAt', 'id', 'identifierHash', 'identifierMasked', 'method', 'policyKey', 'policyVersion', 'publicId', 'purpose', 'requestIpHash', 'requestIpMasked', 'riskReasons', 'riskScore', 'status', 'tenantId', 'updatedAt', 'userId', 'verifiedAt'] as const
+  $columns = IdentityVerificationSchema.$columns
+  @column()
+  declare actionScope: string | null
+  @column.dateTime()
+  declare blockedAt: DateTime | null
+  @column()
+  declare channel: string | null
+  @column.dateTime()
+  declare consumedAt: DateTime | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare deviceHash: string | null
+  @column.dateTime()
+  declare expiresAt: DateTime
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare identifierHash: string | null
+  @column()
+  declare identifierMasked: string | null
+  @column()
+  declare method: string
+  @column()
+  declare policyKey: string | null
+  @column()
+  declare policyVersion: number | null
+  @column()
+  declare publicId: string
+  @column()
+  declare purpose: string
+  @column()
+  declare requestIpHash: string | null
+  @column()
+  declare requestIpMasked: string | null
+  @column()
+  declare riskReasons: any
+  @column()
+  declare riskScore: number
+  @column()
+  declare status: string
+  @column()
+  declare tenantId: bigint | number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare userId: bigint | number | null
+  @column.dateTime()
+  declare verifiedAt: DateTime | null
+}
+
+export class IntelligenceActionRecordSchema extends BaseModel {
+  static $columns = ['actionKind', 'actionRoute', 'caseId', 'completedAt', 'createdAt', 'decisionId', 'externalRef', 'id', 'result', 'startedAt', 'status', 'tenantId', 'updatedAt'] as const
+  $columns = IntelligenceActionRecordSchema.$columns
+  @column()
+  declare actionKind: string
+  @column()
+  declare actionRoute: string | null
+  @column()
+  declare caseId: bigint | number
+  @column.dateTime()
+  declare completedAt: DateTime | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare decisionId: bigint | number | null
+  @column()
+  declare externalRef: string | null
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare result: any
+  @column.dateTime()
+  declare startedAt: DateTime | null
+  @column()
+  declare status: string
+  @column()
+  declare tenantId: bigint | number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+}
+
+export class IntelligenceCaseSchema extends BaseModel {
+  static $columns = ['actionRoute', 'anomalySnapshot', 'capitalEfficiency', 'clearedAt', 'confidence', 'confidenceSource', 'createdAt', 'customerHarmPenalty', 'domain', 'expectedValueCurrency', 'expectedValueMinor', 'firstSeenAt', 'freshnessAt', 'id', 'kind', 'lastSeenAt', 'lifecycleStage', 'missingComponents', 'observationSnapshot', 'priorityScore', 'rankingPolicyVersion', 'recommendedActionEn', 'recommendedActionFa', 'reversibilityWeight', 'scoreComponents', 'scoreMode', 'severity', 'signalSnapshot', 'signalState', 'stableKey', 'strategicAlignment', 'summaryEn', 'summaryFa', 'tenantId', 'timeToValueWeight', 'titleEn', 'titleFa', 'updatedAt', 'urgency', 'version'] as const
+  $columns = IntelligenceCaseSchema.$columns
+  @column()
+  declare actionRoute: string | null
+  @column()
+  declare anomalySnapshot: any
+  @column()
+  declare capitalEfficiency: string | null
+  @column.dateTime()
+  declare clearedAt: DateTime | null
+  @column()
+  declare confidence: string | null
+  @column()
+  declare confidenceSource: string | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare customerHarmPenalty: string | null
+  @column()
+  declare domain: string
+  @column()
+  declare expectedValueCurrency: string | null
+  @column()
+  declare expectedValueMinor: bigint | number | null
+  @column.dateTime()
+  declare firstSeenAt: DateTime
+  @column.dateTime()
+  declare freshnessAt: DateTime
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare kind: string
+  @column.dateTime()
+  declare lastSeenAt: DateTime
+  @column()
+  declare lifecycleStage: string
+  @column()
+  declare missingComponents: any
+  @column()
+  declare observationSnapshot: any
+  @column()
+  declare priorityScore: string
+  @column()
+  declare rankingPolicyVersion: string
+  @column()
+  declare recommendedActionEn: string
+  @column()
+  declare recommendedActionFa: string
+  @column()
+  declare reversibilityWeight: string | null
+  @column()
+  declare scoreComponents: any
+  @column()
+  declare scoreMode: string
+  @column()
+  declare severity: string
+  @column()
+  declare signalSnapshot: any
+  @column()
+  declare signalState: string
+  @column()
+  declare stableKey: string
+  @column()
+  declare strategicAlignment: string | null
+  @column()
+  declare summaryEn: string
+  @column()
+  declare summaryFa: string
+  @column()
+  declare tenantId: bigint | number
+  @column()
+  declare timeToValueWeight: string | null
+  @column()
+  declare titleEn: string
+  @column()
+  declare titleFa: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare urgency: string | null
+  @column()
+  declare version: number
+}
+
+export class IntelligenceDecisionSchema extends BaseModel {
+  static $columns = ['caseId', 'caseVersion', 'contextSnapshot', 'createdAt', 'decision', 'evidenceSnapshot', 'id', 'reason', 'reviewerUserId', 'tenantId'] as const
+  $columns = IntelligenceDecisionSchema.$columns
+  @column()
+  declare caseId: bigint | number
+  @column()
+  declare caseVersion: number
+  @column()
+  declare contextSnapshot: any
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare decision: string
+  @column()
+  declare evidenceSnapshot: any
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare reason: string
+  @column()
+  declare reviewerUserId: bigint | number | null
+  @column()
+  declare tenantId: bigint | number
+}
+
+export class IntelligenceEvidenceLinkSchema extends BaseModel {
+  static $columns = ['caseId', 'createdAt', 'evidenceType', 'freshnessAt', 'id', 'labelEn', 'labelFa', 'metricName', 'payload', 'sourceDomain', 'sourceId', 'sourceKind', 'sourceRoute', 'tenantId'] as const
+  $columns = IntelligenceEvidenceLinkSchema.$columns
+  @column()
+  declare caseId: bigint | number
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare evidenceType: string
+  @column.dateTime()
+  declare freshnessAt: DateTime
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare labelEn: string
+  @column()
+  declare labelFa: string
+  @column()
+  declare metricName: string | null
+  @column()
+  declare payload: any
+  @column()
+  declare sourceDomain: string
+  @column()
+  declare sourceId: string | null
+  @column()
+  declare sourceKind: string
+  @column()
+  declare sourceRoute: string | null
+  @column()
+  declare tenantId: bigint | number
+}
+
+export class IntelligenceOutcomeRecordSchema extends BaseModel {
+  static $columns = ['actionRecordId', 'attributionConfidence', 'baselineValue', 'caseId', 'createdAt', 'delta', 'id', 'measurementWindow', 'metricName', 'notes', 'observedAt', 'observedValue', 'recordedByUserId', 'tenantId'] as const
+  $columns = IntelligenceOutcomeRecordSchema.$columns
+  @column()
+  declare actionRecordId: bigint | number | null
+  @column()
+  declare attributionConfidence: string | null
+  @column()
+  declare baselineValue: string | null
+  @column()
+  declare caseId: bigint | number
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare delta: string | null
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare measurementWindow: string | null
+  @column()
+  declare metricName: string
+  @column()
+  declare notes: string | null
+  @column.dateTime()
+  declare observedAt: DateTime
+  @column()
+  declare observedValue: string | null
+  @column()
+  declare recordedByUserId: bigint | number | null
+  @column()
+  declare tenantId: bigint | number
 }
 
 export class InventoryItemSchema extends BaseModel {
@@ -2100,6 +3416,279 @@ export class PaymentLinkSchema extends BaseModel {
   declare updatedAt: DateTime
   @column()
   declare usedCount: number
+}
+
+export class PersonalizationConsentSchema extends BaseModel {
+  static $columns = ['analytics', 'createdAt', 'id', 'personalization', 'policyVersion', 'source', 'subjectId', 'subjectType', 'tenantId', 'updatedAt', 'version'] as const
+  $columns = PersonalizationConsentSchema.$columns
+  @column()
+  declare analytics: boolean
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare personalization: boolean
+  @column()
+  declare policyVersion: string
+  @column()
+  declare source: string
+  @column()
+  declare subjectId: string
+  @column()
+  declare subjectType: string
+  @column()
+  declare tenantId: bigint | number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare version: number
+}
+
+export class PersonalizationEventSchema extends BaseModel {
+  static $columns = ['consentSnapshot', 'customerId', 'eventId', 'eventType', 'id', 'occurredAt', 'payload', 'placement', 'productId', 'receivedAt', 'schemaVersion', 'sessionId', 'tenantId', 'visitorId'] as const
+  $columns = PersonalizationEventSchema.$columns
+  @column()
+  declare consentSnapshot: any
+  @column()
+  declare customerId: bigint | number | null
+  @column()
+  declare eventId: string
+  @column()
+  declare eventType: string
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column.dateTime()
+  declare occurredAt: DateTime
+  @column()
+  declare payload: any
+  @column()
+  declare placement: string | null
+  @column()
+  declare productId: bigint | number | null
+  @column.dateTime()
+  declare receivedAt: DateTime
+  @column()
+  declare schemaVersion: number
+  @column()
+  declare sessionId: string | null
+  @column()
+  declare tenantId: bigint | number
+  @column()
+  declare visitorId: string | null
+}
+
+export class PersonalizationFeatureRegistrySchema extends BaseModel {
+  static $columns = ['createdAt', 'enabled', 'featureKey', 'freshnessSeconds', 'id', 'metadata', 'sensitive', 'source', 'tenantId', 'updatedAt'] as const
+  $columns = PersonalizationFeatureRegistrySchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare enabled: boolean
+  @column()
+  declare featureKey: string
+  @column()
+  declare freshnessSeconds: number | null
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare metadata: any
+  @column()
+  declare sensitive: boolean
+  @column()
+  declare source: string
+  @column()
+  declare tenantId: bigint | number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+}
+
+export class PersonalizationIdentityMergeSchema extends BaseModel {
+  static $columns = ['customerId', 'id', 'mergeVersion', 'mergedAt', 'tenantId', 'visitorId'] as const
+  $columns = PersonalizationIdentityMergeSchema.$columns
+  @column()
+  declare customerId: bigint | number
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare mergeVersion: string
+  @column.dateTime()
+  declare mergedAt: DateTime
+  @column()
+  declare tenantId: bigint | number
+  @column()
+  declare visitorId: string
+}
+
+export class PersonalizationModelSchema extends BaseModel {
+  static $columns = ['activatedAt', 'config', 'createdAt', 'createdByUserId', 'id', 'modelKey', 'rolloutPercent', 'status', 'tenantId', 'version'] as const
+  $columns = PersonalizationModelSchema.$columns
+  @column.dateTime()
+  declare activatedAt: DateTime | null
+  @column()
+  declare config: any
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare createdByUserId: bigint | number | null
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare modelKey: string
+  @column()
+  declare rolloutPercent: number
+  @column()
+  declare status: string
+  @column()
+  declare tenantId: bigint | number
+  @column()
+  declare version: string
+}
+
+export class PersonalizationPlacementSchema extends BaseModel {
+  static $columns = ['createdAt', 'enabled', 'explorationPercent', 'id', 'maxItems', 'placement', 'rules', 'strategy', 'tenantId', 'updatedAt', 'version'] as const
+  $columns = PersonalizationPlacementSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare enabled: boolean
+  @column()
+  declare explorationPercent: number
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare maxItems: number
+  @column()
+  declare placement: string
+  @column()
+  declare rules: any
+  @column()
+  declare strategy: string
+  @column()
+  declare tenantId: bigint | number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare version: number
+}
+
+export class PersonalizationPolicySchema extends BaseModel {
+  static $columns = ['activatedAt', 'config', 'createdAt', 'createdByUserId', 'id', 'policyKey', 'reasonCodeVersion', 'status', 'tenantId', 'version'] as const
+  $columns = PersonalizationPolicySchema.$columns
+  @column.dateTime()
+  declare activatedAt: DateTime | null
+  @column()
+  declare config: any
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare createdByUserId: bigint | number | null
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare policyKey: string
+  @column()
+  declare reasonCodeVersion: string
+  @column()
+  declare status: string
+  @column()
+  declare tenantId: bigint | number
+  @column()
+  declare version: number
+}
+
+export class PersonalizationPreferenceSchema extends BaseModel {
+  static $columns = ['createdAt', 'hiddenCategoryIds', 'hiddenProductIds', 'id', 'showLessTopics', 'subjectId', 'subjectType', 'tenantId', 'updatedAt'] as const
+  $columns = PersonalizationPreferenceSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare hiddenCategoryIds: any
+  @column()
+  declare hiddenProductIds: any
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare showLessTopics: any
+  @column()
+  declare subjectId: string
+  @column()
+  declare subjectType: string
+  @column()
+  declare tenantId: bigint | number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+}
+
+export class PersonalizationProfileSchema extends BaseModel {
+  static $columns = ['brandAffinity', 'categoryAffinity', 'createdAt', 'id', 'recentProductIds', 'subjectId', 'subjectType', 'tenantId', 'updatedAt', 'version'] as const
+  $columns = PersonalizationProfileSchema.$columns
+  @column()
+  declare brandAffinity: any
+  @column()
+  declare categoryAffinity: any
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare recentProductIds: any
+  @column()
+  declare subjectId: string
+  @column()
+  declare subjectType: string
+  @column()
+  declare tenantId: bigint | number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare version: number
+}
+
+export class PersonalizationProjectionCursorSchema extends BaseModel {
+  static $columns = ['cursorEventRowId', 'id', 'projection', 'replayFromEventRowId', 'tenantId', 'updatedAt'] as const
+  $columns = PersonalizationProjectionCursorSchema.$columns
+  @column()
+  declare cursorEventRowId: bigint | number | null
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare projection: string
+  @column()
+  declare replayFromEventRowId: bigint | number | null
+  @column()
+  declare tenantId: bigint | number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+}
+
+export class PersonalizationRolloutSchema extends BaseModel {
+  static $columns = ['createdAt', 'createdByUserId', 'endedAt', 'fromVersion', 'id', 'kind', 'percentage', 'registryKey', 'startedAt', 'status', 'tenantId', 'toVersion'] as const
+  $columns = PersonalizationRolloutSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare createdByUserId: bigint | number | null
+  @column.dateTime()
+  declare endedAt: DateTime | null
+  @column()
+  declare fromVersion: string | null
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare kind: string
+  @column()
+  declare percentage: number
+  @column()
+  declare registryKey: string
+  @column.dateTime()
+  declare startedAt: DateTime | null
+  @column()
+  declare status: string
+  @column()
+  declare tenantId: bigint | number
+  @column()
+  declare toVersion: string
 }
 
 export class PlanSchema extends BaseModel {
@@ -3162,6 +4751,33 @@ export class QueueScheduleSchema extends BaseModel {
   declare timezone: string
   @column.dateTime()
   declare toDate: DateTime | null
+}
+
+export class RecommendationExposureSchema extends BaseModel {
+  static $columns = ['createdAt', 'exposureId', 'id', 'modelVersion', 'placement', 'policyVersion', 'productIds', 'requestId', 'subjectId', 'subjectType', 'tenantId'] as const
+  $columns = RecommendationExposureSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare exposureId: string
+  @column({ isPrimary: true })
+  declare id: bigint | number
+  @column()
+  declare modelVersion: string
+  @column()
+  declare placement: string
+  @column()
+  declare policyVersion: string
+  @column()
+  declare productIds: any
+  @column()
+  declare requestId: string
+  @column()
+  declare subjectId: string
+  @column()
+  declare subjectType: string
+  @column()
+  declare tenantId: bigint | number
 }
 
 export class RegionTranslationSchema extends BaseModel {

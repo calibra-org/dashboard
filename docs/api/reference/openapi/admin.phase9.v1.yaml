@@ -1,0 +1,69 @@
+openapi: 3.1.0
+info:
+  title: Calibra Admin Phase 9 Personalization Overlay
+  version: "1.1.0"
+security:
+  - BearerAuth: []
+components:
+  securitySchemes:
+    BearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  schemas:
+    Phase9Envelope: { type: object, additionalProperties: true }
+paths:
+  /api/v1/admin/personalization/overview:
+    get: { operationId: adminPhase9Overview, tags: [Admin / Personalization], responses: { "200": { description: Phase 9 overview }, "401": { description: Authentication required }, "403": { description: Admin required } } }
+  /api/v1/admin/personalization/health:
+    get: { operationId: adminPhase9Health, tags: [Admin / Personalization], responses: { "200": { description: "Event, recommendation and deal health" } } }
+  /api/v1/admin/personalization/campaigns:
+    get: { operationId: adminPhase9Campaigns, tags: [Admin / Personalization], responses: { "200": { description: Deal campaigns } } }
+    post: { operationId: adminPhase9CampaignCreate, tags: [Admin / Personalization], requestBody: { required: true, content: { application/json: { schema: { type: object, required: [name], additionalProperties: true } } } }, responses: { "201": { description: Draft campaign created }, "422": { description: Invalid campaign } } }
+  /api/v1/admin/personalization/campaigns/{id}:
+    parameters: [{ name: id, in: path, required: true, schema: { type: integer, format: int64, minimum: 1 } }]
+    patch: { operationId: adminPhase9CampaignUpdate, tags: [Admin / Personalization], requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: true } } } }, responses: { "200": { description: Campaign updated }, "404": { description: Not found }, "409": { description: Version conflict } } }
+  /api/v1/admin/personalization/campaigns/{id}/publish:
+    parameters: [{ name: id, in: path, required: true, schema: { type: integer, format: int64, minimum: 1 } }]
+    post: { operationId: adminPhase9CampaignPublish, tags: [Admin / Personalization], responses: { "200": { description: Campaign activated }, "409": { description: Version conflict }, "422": { description: No eligible products } } }
+  /api/v1/admin/personalization/campaigns/{id}/pause:
+    parameters: [{ name: id, in: path, required: true, schema: { type: integer, format: int64, minimum: 1 } }]
+    post: { operationId: adminPhase9CampaignPause, tags: [Admin / Personalization], responses: { "200": { description: Campaign paused }, "409": { description: Version conflict } } }
+  /api/v1/admin/personalization/campaigns/{id}/transition/{target}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, format: int64, minimum: 1 } }
+      - { name: target, in: path, required: true, schema: { type: string, enum: [scheduled, preheat, active, paused, sold_out, expired, cancelled, ended, archived] } }
+    post: { operationId: adminPhase9CampaignTransition, tags: [Admin / Personalization], requestBody: { content: { application/json: { schema: { type: object, properties: { expected_version: { type: integer, minimum: 1 } } } } } }, responses: { "200": { description: Deterministic lifecycle transition }, "409": { description: Invalid transition or version conflict } } }
+  /api/v1/admin/personalization/settings:
+    get: { operationId: adminPhase9Settings, tags: [Admin / Personalization], responses: { "200": { description: Runtime settings } } }
+    patch: { operationId: adminPhase9SettingsUpdate, tags: [Admin / Personalization], requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: true } } } }, responses: { "200": { description: Settings updated } } }
+  /api/v1/admin/personalization/placements:
+    get: { operationId: adminPhase9Placements, tags: [Admin / Personalization], responses: { "200": { description: Placement policies } } }
+  /api/v1/admin/personalization/placements/{placement}:
+    parameters: [{ name: placement, in: path, required: true, schema: { type: string } }]
+    patch: { operationId: adminPhase9PlacementUpdate, tags: [Admin / Personalization], requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: true } } } }, responses: { "200": { description: Placement updated }, "404": { description: Placement not found } } }
+  /api/v1/admin/personalization/features:
+    get: { operationId: adminPhase9Features, tags: [Admin / Personalization], responses: { "200": { description: Feature registry } } }
+    put: { operationId: adminPhase9FeatureUpsert, tags: [Admin / Personalization], requestBody: { required: true, content: { application/json: { schema: { type: object, required: [feature_key, source], additionalProperties: true } } } }, responses: { "200": { description: Feature registry entry upserted } } }
+  /api/v1/admin/personalization/policies:
+    get: { operationId: adminPhase9Policies, tags: [Admin / Personalization], responses: { "200": { description: Ranking policy versions } } }
+    post: { operationId: adminPhase9PolicyCreate, tags: [Admin / Personalization], requestBody: { required: true, content: { application/json: { schema: { type: object, required: [policy_key], additionalProperties: true } } } }, responses: { "201": { description: Draft policy version created } } }
+  /api/v1/admin/personalization/models:
+    get: { operationId: adminPhase9Models, tags: [Admin / Personalization], responses: { "200": { description: Model and rule versions } } }
+    post: { operationId: adminPhase9ModelCreate, tags: [Admin / Personalization], requestBody: { required: true, content: { application/json: { schema: { type: object, required: [model_key, version], additionalProperties: true } } } }, responses: { "201": { description: Draft model/rule version created } } }
+  /api/v1/admin/personalization/rollouts:
+    get: { operationId: adminPhase9Rollouts, tags: [Admin / Personalization], responses: { "200": { description: Rollout and rollback history } } }
+  /api/v1/admin/personalization/registry/{kind}/{key}/{version}/activate:
+    parameters:
+      - { name: kind, in: path, required: true, schema: { type: string, enum: [policy, model] } }
+      - { name: key, in: path, required: true, schema: { type: string } }
+      - { name: version, in: path, required: true, schema: { type: string } }
+    post: { operationId: adminPhase9RegistryActivate, tags: [Admin / Personalization], requestBody: { content: { application/json: { schema: { type: object, properties: { percentage: { type: integer, minimum: 0, maximum: 100 } } } } } }, responses: { "200": { description: Registry version activated with controlled rollout }, "422": { description: Invalid registry version } } }
+  /api/v1/admin/personalization/registry/{kind}/{key}/rollback:
+    parameters:
+      - { name: kind, in: path, required: true, schema: { type: string, enum: [policy, model] } }
+      - { name: key, in: path, required: true, schema: { type: string } }
+    post: { operationId: adminPhase9RegistryRollback, tags: [Admin / Personalization], responses: { "200": { description: Previous registry version restored }, "422": { description: Rollback unavailable } } }
+  /api/v1/admin/personalization/simulate:
+    post: { operationId: adminPhase9Simulate, tags: [Admin / Personalization], requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: true } } } }, responses: { "200": { description: Recommendation decision trace or canonical DiscounterService economics preview } } }
+  /api/v1/admin/personalization/events:
+    get: { operationId: adminPhase9Events, tags: [Admin / Personalization], parameters: [{ name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100 } }], responses: { "200": { description: Recent versioned behavior events } } }
+  /api/v1/admin/personalization/consents:
+    get: { operationId: adminPhase9Consents, tags: [Admin / Personalization], parameters: [{ name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100 } }], responses: { "200": { description: Recent consent records } } }
