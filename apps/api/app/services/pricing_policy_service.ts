@@ -421,7 +421,7 @@ export class PricingPolicyService {
                 quantity: line.quantity,
                 guardrails,
             });
-            if (active && !decision.allowed) {
+            if (active && !decision.accepted) {
                 throw new Exception("Checkout price violates an active pricing policy", {
                     status: 409,
                     code: "E_PRICING_POLICY_VIOLATION",
@@ -443,7 +443,7 @@ export class PricingPolicyService {
                     policy_version_id: active?.id ?? null,
                     coupon_ids: couponIds,
                     guardrail_result: {
-                        allowed: decision.allowed,
+                        accepted: decision.accepted,
                         violations: decision.violations,
                         economics: cogs == null ? "unavailable" : "available",
                     },
@@ -487,11 +487,22 @@ export class PricingPolicyService {
             .first();
         if (!target) fail("Rollback target was not found", 404, "E_PRICING_ROLLBACK_TARGET");
         if (!target.approved_at) fail("Rollback target was never approved", 422, "E_PRICING_ROLLBACK_UNAPPROVED");
-        await trx.from("pricing_policy_versions").where("id", current.id).update({ state: "rolled_back", retired_at: now(), updated_at: now() });
+        const currentId = Number(current.id);
+        await trx
+            .from("pricing_policy_versions")
+            .where("id", currentId)
+            .update({ state: "rolled_back", retired_at: now(), updated_at: now() });
         const [restored] = await trx
             .from("pricing_policy_versions")
-            .where("id", target.id)
-            .update({ state: "active", rollback_of_version_id: current.id, activated_by: actorId, activated_at: now(), retired_at: null, updated_at: now() })
+            .where("id", Number(target.id))
+            .update({
+                state: "active",
+                rollback_of_version_id: currentId,
+                activated_by: actorId,
+                activated_at: now(),
+                retired_at: null,
+                updated_at: now(),
+            })
             .returning("*");
         const event = await this.recordAction(trx, {
             policyId: Number(policy.id),
@@ -509,26 +520,26 @@ export class PricingPolicyService {
     }
 
     private async resolveActiveGuardrail(productId: number, variationId: number | null, trx: TransactionClientContract) {
-        return trx
-            .from("pricing_policy_versions as v")
-            .innerJoin("pricing_policies as p", "p.id", "v.policy_id")
-            .where("v.tenant_id", tenantId())
-            .where("p.tenant_id", tenantId())
-            .where("p.status", "active")
-            .where("v.state", "active")
-            .where((query) => {
-                query.where((exact) => exact.where("v.product_id", productId).where("v.variation_id", variationId));
-                query.orWhere((product) => product.where("v.product_id", productId).whereNull("v.variation_id"));
-                query.orWhereNull("v.product_id");
-            })
-            .select("v.*", "p.id as policy_id", "p.policy_key")
-            .orderByRaw("CASE WHEN v.product_id = ? AND v.variation_id IS NOT DISTINCT FROM ? THEN 0 WHEN v.product_id = ? THEN 1 ELSE 2 END", [
-                productId,
-                variationId,
-                productId,
-            ])
-            .orderBy("v.activated_at", "desc")
-            .first();
+        const base = () =>
+            trx
+                .from("pricing_policy_versions as v")
+                .innerJoin("pricing_policies as p", "p.id", "v.policy_id")
+                .where("v.tenant_id", tenantId())
+                .where("p.tenant_id", tenantId())
+                .where("p.status", "active")
+                .where("v.state", "active")
+                .select("v.*", "p.id as policy_id", "p.policy_key")
+                .orderBy("v.activated_at", "desc");
+
+        if (variationId !== null) {
+            const exact = await base().where("v.product_id", productId).where("v.variation_id", variationId).first();
+            if (exact) return exact;
+        }
+
+        const productLevel = await base().where("v.product_id", productId).whereNull("v.variation_id").first();
+        if (productLevel) return productLevel;
+
+        return base().whereNull("v.product_id").whereNull("v.variation_id").first();
     }
 
     private async resolveCogs(productId: number, variationId: number | null, trx: TransactionClientContract): Promise<number | null> {
