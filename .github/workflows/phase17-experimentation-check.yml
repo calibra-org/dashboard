@@ -19,6 +19,29 @@ on:
 jobs:
   phase17:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: calibra
+          POSTGRES_PASSWORD: calibra
+          POSTGRES_DB: calibra
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U calibra -d calibra"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -29,6 +52,10 @@ jobs:
           node-version: 24.14.0
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Create API test database
+        env:
+          PGPASSWORD: calibra
+        run: psql -h localhost -U calibra -d calibra -c "CREATE DATABASE calibra_test OWNER calibra;"
       - run: node scripts/verify-phase17-experimentation-integration.mjs
       - name: Typecheck Phase 17 API surface
         run: pnpm --filter @calibra/api exec tsc --noEmit -p tsconfig.phase17.json
