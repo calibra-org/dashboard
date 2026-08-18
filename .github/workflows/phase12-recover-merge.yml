@@ -1,0 +1,82 @@
+name: Phase 12 recover merge
+
+on:
+  push:
+    branches:
+      - agent/bootstrap-tools-20260817
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: read
+  actions: read
+
+jobs:
+  recover-merge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+      - name: Recover Phase 12 patch from publisher branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin '+refs/heads/*:refs/remotes/origin/*'
+          git show origin/agent/phase12-publisher2-20260818:.phase12-recovery/chunk-00.b64 > /tmp/phase12.patch.gz.b64
+          test "$(wc -c < /tmp/phase12.patch.gz.b64 | tr -d ' ')" = "26212"
+          echo '722c8a8b13c8fb37518014fcb37624a86670f073871ef660d54e8070a4296fc0  /tmp/phase12.patch.gz.b64' | sha256sum -c -
+          base64 -d /tmp/phase12.patch.gz.b64 | gzip -d > /tmp/phase12.patch
+          echo '6e5c7cb9d1d6d299dcbe7823060e7fc860871d8f05db2d1295d1865d26890aff  /tmp/phase12.patch' | sha256sum -c -
+      - name: Apply Phase 12 onto live main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'calibra-dev'
+          git config user.email 'keshavarz20.com@gmail.com'
+          git switch -C agent/phase12-profitability-cash-os origin/main
+          git apply --3way /tmp/phase12.patch
+          git diff --check
+          git status --short
+          test -f apps/api/app/services/economics_service.ts
+          test -f apps/admin/src/features/economics/EconomicsWorkspace.tsx
+          test -f apps/api/database/migrations/1765000000000_create_economics_os.ts
+          git add .
+          git commit -m 'feat(economics): Phase 12 Profitability, Cash & Working Capital OS'
+          git push --force-with-lease origin HEAD:agent/phase12-profitability-cash-os
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.32.1 --activate
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Verify Phase 12
+        run: |
+          pnpm run verify:phase12
+          pnpm -r --if-present typecheck
+          pnpm -r --if-present test
+          pnpm -r --if-present build
+      - name: Create PR and merge
+        shell: bash
+        run: |
+          set -euo pipefail
+          pr=$(gh pr list --repo '${{ github.repository }}' --head agent/phase12-profitability-cash-os --base main --state open --json number --jq '.[0].number // empty')
+          if [ -z "$pr" ]; then
+            url=$(gh pr create --repo '${{ github.repository }}' --base main --head agent/phase12-profitability-cash-os --title 'feat(economics): Phase 12 Profitability, Cash & Working Capital OS' --body 'Recovered canonical Phase 12 implementation onto live main. Includes economics ledger, immutable cost basis, profitability/cash/working-capital APIs and Admin workspace, OpenAPI integration and Phase 12 verifier.')
+            pr=${url##*/}
+          fi
+          sleep 10
+          gh pr checks "$pr" --repo '${{ github.repository }}' --watch --interval 10
+          head_sha=$(gh pr view "$pr" --repo '${{ github.repository }}' --json headRefOid --jq .headRefOid)
+          gh pr merge "$pr" --repo '${{ github.repository }}' --merge --match-head-commit "$head_sha" --delete-branch
+          git fetch origin main
+          git merge-base --is-ancestor "$head_sha" origin/main
+          echo "Merged Phase 12 head $head_sha into $(git rev-parse origin/main)"
