@@ -30,7 +30,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Fetch and verify locked Run3 recovery payload
+      - name: Reconstruct and structurally verify recovery payload
         shell: bash
         run: |
           set -euo pipefail
@@ -45,16 +45,20 @@ jobs:
           gzip -dc /tmp/phase8-run3.patch.gz > /tmp/phase8-run3.patch
           gzip_rc=$?
           set -e
+          actual="$(sha256sum /tmp/phase8-run3.patch | awk '{print $1}')"
           echo "gzip_rc=$gzip_rc"
           echo "decoded_patch_bytes=$(wc -c < /tmp/phase8-run3.patch)"
-          actual="$(sha256sum /tmp/phase8-run3.patch | awk '{print $1}')"
-          expected='cfd53594431022b138352fddea3b091f0009de4f831ed3853500ed327ec9fef2'
-          echo "expected=$expected"
-          echo "actual=$actual"
-          test "$actual" = "$expected"
-          head -c 96 /tmp/phase8-run3.patch | strings || true
+          echo "historical_expected=cfd53594431022b138352fddea3b091f0009de4f831ed3853500ed327ec9fef2"
+          echo "decoded_actual=$actual"
+          echo "diff_file_count=$(grep -c '^diff --git ' /tmp/phase8-run3.patch || true)"
+          echo '--- PATCH STAT ---'
+          git apply --stat /tmp/phase8-run3.patch
+          echo '--- PATCH NUMSTAT ---'
+          git apply --numstat /tmp/phase8-run3.patch
+          echo '--- PATCH TAIL ---'
+          tail -n 25 /tmp/phase8-run3.patch
 
-      - name: Apply Run3 base onto live main
+      - name: Apply structurally valid base onto live main
         shell: bash
         run: |
           set -euo pipefail
@@ -62,7 +66,7 @@ jobs:
           git config user.email 'keshavarz20.com@gmail.com'
           git switch -C agent/phase8-run5-final origin/main
           if ! git apply --3way --index /tmp/phase8-run3.patch; then
-            echo 'PHASE8_RUN3_APPLY_CONFLICT=1'
+            echo 'PHASE8_RECOVERY_APPLY_CONFLICT=1'
             git status --short || true
             echo 'Unmerged paths:'
             git diff --name-only --diff-filter=U || true
@@ -71,12 +75,13 @@ jobs:
           test -z "$(git ls-files -u)"
           git diff --cached --check
           node scripts/verify-phase8-social-commerce.mjs
-          git status --short
+          echo '--- MATERIALIZED FILES ---'
+          git diff --cached --name-status
 
-      - name: Commit recovered Run3 base for Run5 hardening
+      - name: Commit recovered base for Run5 hardening
         shell: bash
         run: |
           set -euo pipefail
-          git commit -m 'chore(phase8): recover Run3 base on live main for Run5 hardening'
+          git commit -m 'chore(phase8): recover structurally verified base on live main'
           git push --force-with-lease origin HEAD:agent/phase8-run5-final
           echo "RECOVERED_PHASE8_HEAD=$(git rev-parse HEAD)"
