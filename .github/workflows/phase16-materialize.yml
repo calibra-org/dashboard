@@ -2,6 +2,8 @@ name: Phase 16 Materialize
 on:
   push:
     branches: [agent/phase16-discovery-os-20260818]
+  pull_request:
+    branches: [main]
 permissions:
   contents: write
 concurrency:
