@@ -22,53 +22,17 @@ jobs:
           node-version: 24.14.0
       - run: npm install --global pnpm@10.32.1
       - run: pnpm install --frozen-lockfile
-      - name: Fix Phase 12 typing and regenerate SDK
+      - name: Regenerate exact Phase 12 Admin SDK
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'calibra-dev'
           git config user.email 'keshavarz20.com@gmail.com'
-          python3 <<'PY'
-          from pathlib import Path
-          p=Path('apps/api/app/services/economics_service.ts')
-          s=p.read_text()
-          s=s.replace('.crossJoin(trx.raw("jsonb_array_elements(s.layer_breakdown) AS elem"))', '.joinRaw("CROSS JOIN jsonb_array_elements(s.layer_breakdown) AS elem")')
-          old='''    const layers = await trx
-        .from("economic_cost_layers")
-        .where("product_id", Number(line.product_id))
-        .where("currency", currency)
-        .where("effective_at", "<=", effectiveAt)
-        .modify((q) => {
-            if (line.variation_id) q.where("variation_id", Number(line.variation_id));
-            else q.whereNull("variation_id");
-        })
-        .orderBy("effective_at", "asc")
-        .orderBy("id", "asc");'''
-          new='''    const layersQuery = trx
-        .from("economic_cost_layers")
-        .where("product_id", Number(line.product_id))
-        .where("currency", currency)
-        .where("effective_at", "<=", effectiveAt);
-    if (line.variation_id) layersQuery.where("variation_id", Number(line.variation_id));
-    else layersQuery.whereNull("variation_id");
-    const layers = await layersQuery.orderBy("effective_at", "asc").orderBy("id", "asc");'''
-          if old not in s: raise SystemExit('layers block not found')
-          p.write_text(s.replace(old,new))
-          p=Path('apps/api/app/services/order_state_machine.ts')
-          s=p.read_text()
-          old='effectiveAt: order.datePaidAt?.toUTC().toSQL() ?? order.createdAt.toUTC().toSQL(),'
-          new='effectiveAt: order.datePaidAt?.toUTC().toSQL() ?? order.createdAt.toUTC().toSQL() ?? undefined,'
-          if old not in s: raise SystemExit('effectiveAt line not found')
-          p.write_text(s.replace(old,new))
-          PY
-          pnpm --filter @calibra/sdk run codegen
-          node scripts/verify-phase12-economics-integration.mjs
-          pnpm run typecheck
-          pnpm run build
-          pnpm --filter @calibra/sdk run codegen:check
+          pnpm --filter @calibra/api-docs run build:json:admin
+          pnpm --filter @calibra/sdk run codegen:admin
           git diff --check
-          git add apps/api/app/services/economics_service.ts apps/api/app/services/order_state_machine.ts packages/sdk/src/generated/admin.d.ts
+          git add packages/sdk/src/generated/admin.d.ts
           if ! git diff --cached --quiet; then
-            git commit -m 'fix(economics): pass Phase 12 type and SDK gates'
+            git commit -m 'fix(sdk): sync Phase 12 Admin contract'
             git push origin HEAD:agent/phase12-profitability-cash-os
           fi
