@@ -21,7 +21,7 @@ export default class CheckoutSubmitController {
 
         await phase20TrustRiskService.checkoutGuard({
             orderId: Number(draft.id),
-            customerId: cart.customerId,
+            customerId: cart.customerId === null ? null : String(cart.customerId),
             idempotencyKey: ctx.idempotencyKey ?? null,
         });
 

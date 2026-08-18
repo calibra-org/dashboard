@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
+import { CustomerWorkspaceNav } from "#/views/customers/customer-workspace-nav";
 import { CustomersListClient } from "#/views/customers/list/customers-list";
 
 interface PageProps {
@@ -16,5 +17,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function CustomersPage({ params }: PageProps) {
     const { locale } = await params;
     setRequestLocale(locale);
-    return <CustomersListClient />;
+    return (
+        <div className="flex flex-col gap-5">
+            <CustomerWorkspaceNav />
+            <CustomersListClient />
+        </div>
+    );
 }

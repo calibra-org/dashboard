@@ -1,0 +1,129 @@
+name: Phase 15 Verify
+
+on:
+    pull_request:
+        branches: [main]
+        paths:
+            - ".github/workflows/phase15-verify.yml"
+            - "apps/api/app/controllers/admin/customer_intelligence_controller.ts"
+            - "apps/api/app/controllers/admin/customer_segments_controller.ts"
+            - "apps/api/app/jobs/refresh_customer_intelligence_job.ts"
+            - "apps/api/app/services/customer_intelligence*.ts"
+            - "apps/api/app/validators/admin/customer_intelligence_validator.ts"
+            - "apps/api/database/migrations/1768000000000_create_phase15_customer_intelligence.ts"
+            - "apps/api/start/routes/admin_customer_intelligence.ts"
+            - "apps/api/start/routes/admin_customer_segments.ts"
+            - "apps/api/start/routes.ts"
+            - "apps/api/tests/unit/customer_intelligence.spec.ts"
+            - "apps/admin/messages/customer-intelligence/**"
+            - "apps/admin/src/app/**/customers/**"
+            - "apps/admin/src/lib/i18n/request.ts"
+            - "apps/admin/src/lib/queries/customer-intelligence.ts"
+            - "apps/admin/src/views/customers/**"
+            - "apps/admin/src/icons/index.ts"
+            - "docs/api/package.json"
+            - "docs/api/reference/openapi/admin.customer-intelligence.v1.yaml"
+            - "docs/api/scripts/merge-admin-spec.js"
+    push:
+        branches: [main]
+        paths:
+            - ".github/workflows/phase15-verify.yml"
+            - "apps/api/app/controllers/admin/customer_intelligence_controller.ts"
+            - "apps/api/app/controllers/admin/customer_segments_controller.ts"
+            - "apps/api/app/jobs/refresh_customer_intelligence_job.ts"
+            - "apps/api/app/services/customer_intelligence*.ts"
+            - "apps/api/app/validators/admin/customer_intelligence_validator.ts"
+            - "apps/api/database/migrations/1768000000000_create_phase15_customer_intelligence.ts"
+            - "apps/api/start/routes/admin_customer_intelligence.ts"
+            - "apps/api/start/routes/admin_customer_segments.ts"
+            - "apps/api/start/routes.ts"
+            - "apps/api/tests/unit/customer_intelligence.spec.ts"
+            - "apps/admin/messages/customer-intelligence/**"
+            - "apps/admin/src/app/**/customers/**"
+            - "apps/admin/src/lib/i18n/request.ts"
+            - "apps/admin/src/lib/queries/customer-intelligence.ts"
+            - "apps/admin/src/views/customers/**"
+            - "apps/admin/src/icons/index.ts"
+            - "docs/api/package.json"
+            - "docs/api/reference/openapi/admin.customer-intelligence.v1.yaml"
+            - "docs/api/scripts/merge-admin-spec.js"
+
+permissions:
+    contents: read
+
+concurrency:
+    group: phase15-customer-genome-${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+env:
+    FORCE_COLOR: 3
+    TURBO_TELEMETRY_DISABLED: 1
+    DO_NOT_TRACK: 1
+    NODE_VERSION: "24.14.0"
+    PNPM_VERSION: "10.32.1"
+
+jobs:
+    verify:
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        steps:
+            - uses: actions/checkout@v4
+            - uses: pnpm/action-setup@v4
+              with:
+                  version: ${{ env.PNPM_VERSION }}
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: pnpm
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+            - name: Build merged Admin OpenAPI contract
+              run: pnpm --filter @calibra/api-docs run build:json:admin
+            - name: Verify Phase 15 OpenAPI merge
+              run: |
+                  node -e "const fs=require('node:fs');const s=fs.readFileSync('docs/api/dist/admin.v1.json','utf8');for(const k of ['historical_contribution_ltv_minor','contribution_coverage_ratio','economics.historical_contribution_ltv_minor'])if(!s.includes(k))throw new Error('Missing Phase 15 contract key: '+k)"
+            - name: Regenerate typed Admin SDK
+              run: pnpm --filter @calibra/sdk run codegen:admin
+            - name: Typecheck Phase 15 workspaces
+              run: |
+                  pnpm --filter @calibra/api run typecheck
+                  pnpm --filter @calibra/sdk run typecheck
+                  pnpm --filter @calibra/sdk run build
+                  pnpm --filter @calibra/admin run typecheck
+            - name: Build Admin production bundle
+              run: pnpm --filter @calibra/admin run build
+            - name: Run Phase 15 unit tests
+              working-directory: apps/api
+              run: pnpm test --files=tests/unit/customer_intelligence.spec.ts
+            - name: Check Phase 15 formatting and lint
+              run: >-
+                  pnpm exec biome check
+                  apps/api/app/controllers/admin/customer_intelligence_controller.ts
+                  apps/api/app/controllers/admin/customer_segments_controller.ts
+                  apps/api/app/jobs/refresh_customer_intelligence_job.ts
+                  apps/api/app/services/customer_intelligence_eligibility_service.ts
+                  apps/api/app/services/customer_intelligence_segments_service.ts
+                  apps/api/app/services/customer_intelligence_service.ts
+                  apps/api/app/validators/admin/customer_intelligence_validator.ts
+                  apps/api/database/migrations/1768000000000_create_phase15_customer_intelligence.ts
+                  apps/api/start/routes/admin_customer_intelligence.ts
+                  apps/api/start/routes/admin_customer_segments.ts
+                  apps/api/tests/unit/customer_intelligence.spec.ts
+                  apps/admin/src/lib/i18n/request.ts
+                  apps/admin/src/lib/queries/customer-intelligence.ts
+                  apps/admin/src/views/customers/customer-workspace-nav.tsx
+                  apps/admin/src/views/customers/cohorts/cohorts-lifecycle.tsx
+                  apps/admin/src/views/customers/detail/customers-detail.tsx
+                  apps/admin/src/views/customers/detail/intelligence-card.tsx
+                  apps/admin/src/views/customers/intelligence/intelligence-overview.tsx
+                  apps/admin/src/views/customers/segments/segment-studio.tsx
+                  apps/admin/messages/customer-intelligence/en.json
+                  apps/admin/messages/customer-intelligence/fa.json
+                  docs/api/reference/openapi/admin.customer-intelligence.v1.yaml
+                  docs/api/scripts/merge-admin-spec.js
+            - name: Upload regenerated Admin SDK declaration
+              uses: actions/upload-artifact@v4
+              with:
+                  name: phase15-admin-sdk
+                  path: packages/sdk/src/generated/admin.d.ts
+                  if-no-files-found: error

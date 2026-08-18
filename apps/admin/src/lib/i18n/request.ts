@@ -20,6 +20,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
     const tickets = (await import(`../../../messages/tickets/${locale}.json`)).default;
     const operations = (await import(`../../../messages/operations/${locale}.json`)).default;
     const personalization = (await import(`../../../messages/personalization/${locale}.json`)).default;
+    const customerIntelligence = (await import(`../../../messages/customer-intelligence/${locale}.json`)).default;
 
     return {
         locale,
@@ -29,6 +30,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
             ...tickets,
             ...operations,
             ...personalization,
+            ...customerIntelligence,
             Nav: {
                 ...base.Nav,
                 ...transactions.Nav,

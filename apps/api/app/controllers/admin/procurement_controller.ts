@@ -16,6 +16,10 @@ function id(value: unknown): number {
     return parsed;
 }
 
+function actor(user: { id: unknown }) {
+    return { id: String(user.id) };
+}
+
 function idempotencyKey(ctx: HttpContext): string | null {
     const value = ctx.request.header("Idempotency-Key")?.trim();
     return value ? value.slice(0, 160) : null;
@@ -38,7 +42,7 @@ export default class ProcurementController {
 
     async createPurchaseOrder(ctx: HttpContext) {
         const payload = await ctx.request.validateUsing(createPurchaseOrderValidator);
-        const result = await phase14ProcurementService.createPurchaseOrder(payload, await ctx.auth.authenticate(), idempotencyKey(ctx));
+        const result = await phase14ProcurementService.createPurchaseOrder(payload, actor(await ctx.auth.authenticate()), idempotencyKey(ctx));
         ctx.response.status(result.replayed ? 200 : 201);
         if (!result.replayed) await recordAudit({ ctx, action: "procurement.po.create", entityKind: "purchase_order", entityId: result.data.id, payload: { supplier_id: payload.supplier_id, line_count: payload.lines.length } });
         return result;
@@ -47,7 +51,7 @@ export default class ProcurementController {
     async transition(ctx: HttpContext) {
         const purchaseOrderId = id(ctx.params.id);
         const payload = await ctx.request.validateUsing(transitionPurchaseOrderValidator);
-        const result = await phase14ProcurementService.transition(purchaseOrderId, payload, await ctx.auth.authenticate());
+        const result = await phase14ProcurementService.transition(purchaseOrderId, payload, actor(await ctx.auth.authenticate()));
         await recordAudit({ ctx, action: `procurement.po.${payload.status}`, entityKind: "purchase_order", entityId: purchaseOrderId, payload: { expected_version: payload.expected_version } });
         return result;
     }
@@ -55,7 +59,7 @@ export default class ProcurementController {
     async receive(ctx: HttpContext) {
         const purchaseOrderId = id(ctx.params.id);
         const payload = await ctx.request.validateUsing(receivePurchaseOrderValidator);
-        const result = await phase14ProcurementService.receive(purchaseOrderId, payload, await ctx.auth.authenticate(), idempotencyKey(ctx));
+        const result = await phase14ProcurementService.receive(purchaseOrderId, payload, actor(await ctx.auth.authenticate()), idempotencyKey(ctx));
         ctx.response.status(result.replayed ? 200 : 201);
         if (!result.replayed) await recordAudit({ ctx, action: "procurement.po.receive", entityKind: "purchase_order_receipt", entityId: result.data.id, payload: { purchase_order_id: purchaseOrderId, line_count: payload.lines.length } });
         return result;
