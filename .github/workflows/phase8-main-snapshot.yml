@@ -1,0 +1,40 @@
+name: Phase 8 Main Snapshot
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/phase8-main-snapshot.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+tasks: {}
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact live main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+      - name: Record baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rev-parse HEAD | tee PHASE8_BASELINE_SHA.txt
+          git status --short
+      - name: Upload source snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase8-main-snapshot
+          path: |
+            .
+            !.git
+          include-hidden-files: true
+          retention-days: 1
