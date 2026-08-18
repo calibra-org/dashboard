@@ -1,7 +1,6 @@
 import { Exception } from "@adonisjs/core/exceptions";
-import db from "@adonisjs/lucid/services/db";
 
-import { currentTenantId, withTenantTransaction } from "#services/tenant_context";
+import { currentTenantId, currentTrx, withTenantTransaction } from "#services/tenant_context";
 
 type Severity = "low" | "medium" | "high" | "critical";
 type RiskBand = Severity;
@@ -17,6 +16,7 @@ const SIGNAL_MULTIPLIERS: Record<string, number> = {
 const SENSITIVE_KEY = /(authorization|cookie|password|secret|token|session|email|phone|otp|totp|recovery)/i;
 const numberValue = (value: unknown) => Number(value ?? 0);
 const tenantId = () => Number(currentTenantId());
+const tenantDb = () => currentTrx();
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
 function sanitizeEvidence(value: unknown, depth = 0): unknown {
@@ -48,22 +48,22 @@ export function calculateRiskDecision(signals: SignalInput[], control?: string |
 class Phase20TrustRiskService {
     async overview() {
         const [bands, decisions, cases, signals, recentScores, recentCases] = await Promise.all([
-            db.from("fraud_risk_scores").select("band").count("id as count").where("evaluated_at", ">=", db.raw("NOW() - INTERVAL '30 days'")).groupBy("band"),
-            db.from("fraud_decisions").select("decision").count("id as count").where("created_at", ">=", db.raw("NOW() - INTERVAL '30 days'")).groupBy("decision"),
-            db.from("fraud_cases").whereNotIn("status", ["resolved", "closed"]).count("id as total").first(),
-            db.from("fraud_signals").where("observed_at", ">=", db.raw("NOW() - INTERVAL '24 hours'")).count("id as total").first(),
-            db.from("fraud_risk_scores").select("id", "subject_type", "subject_id", "score", "band", "reason_codes_json", "evaluated_at").orderBy("evaluated_at", "desc").limit(30),
-            db.from("fraud_cases").select("id", "case_number", "subject_type", "subject_id", "status", "priority", "summary", "opened_at", "assignee_user_id").orderBy("opened_at", "desc").limit(30),
+            tenantDb().from("fraud_risk_scores").select("band").count("id as count").where("evaluated_at", ">=", tenantDb().raw("NOW() - INTERVAL '30 days'")).groupBy("band"),
+            tenantDb().from("fraud_decisions").select("decision").count("id as count").where("created_at", ">=", tenantDb().raw("NOW() - INTERVAL '30 days'")).groupBy("decision"),
+            tenantDb().from("fraud_cases").whereNotIn("status", ["resolved", "closed"]).count("id as total").first(),
+            tenantDb().from("fraud_signals").where("observed_at", ">=", tenantDb().raw("NOW() - INTERVAL '24 hours'")).count("id as total").first(),
+            tenantDb().from("fraud_risk_scores").select("id", "subject_type", "subject_id", "score", "band", "reason_codes_json", "evaluated_at").orderBy("evaluated_at", "desc").limit(30),
+            tenantDb().from("fraud_cases").select("id", "case_number", "subject_type", "subject_id", "status", "priority", "summary", "opened_at", "assignee_user_id").orderBy("opened_at", "desc").limit(30),
         ]);
         return { data: { kpis: {
             open_cases: numberValue(cases?.total), signals_24h: numberValue(signals?.total), evaluated_30d: bands.reduce((sum: number, row: any) => sum + numberValue(row.count), 0),
             challenged_30d: numberValue(decisions.find((row: any) => row.decision === "challenge")?.count), blocked_30d: numberValue(decisions.find((row: any) => row.decision === "block")?.count),
         }, bands: Object.fromEntries(bands.map((row: any) => [row.band, numberValue(row.count)])), decisions: Object.fromEntries(decisions.map((row: any) => [row.decision, numberValue(row.count)])), recent_scores: recentScores, recent_cases: recentCases } };
     }
-    async cases() { return { data: await db.from("fraud_cases").select("*").orderBy("opened_at", "desc").limit(200) }; }
-    async signals() { return { data: await db.from("fraud_signals").select("id", "subject_type", "subject_id", "code", "severity", "value", "observed_at", "expires_at").orderBy("observed_at", "desc").limit(300) }; }
+    async cases() { return { data: await tenantDb().from("fraud_cases").select("*").orderBy("opened_at", "desc").limit(200) }; }
+    async signals() { return { data: await tenantDb().from("fraud_signals").select("id", "subject_type", "subject_id", "code", "severity", "value", "observed_at", "expires_at").orderBy("observed_at", "desc").limit(300) }; }
     async models() {
-        const rows = await db.from("fraud_risk_models as m").leftJoin("fraud_risk_model_versions as v", "v.risk_model_id", "m.id")
+        const rows = await tenantDb().from("fraud_risk_models as m").leftJoin("fraud_risk_model_versions as v", "v.risk_model_id", "m.id")
             .select("m.*", "v.id as version_id", "v.version", "v.deployment_state", "v.validated_at", "v.known_limitations").orderBy("m.updated_at", "desc");
         return { data: rows };
     }
@@ -114,14 +114,14 @@ class Phase20TrustRiskService {
     }
 
     async createModel(payload: any, actor: Actor) {
-        const [row] = await db.table("fraud_risk_models").insert({ tenant_id: tenantId(), model_id: payload.model_id, purpose: payload.purpose ?? "commerce_fraud", owner: payload.owner ?? null, description: payload.description ?? null, status: "active" }).returning("*");
-        await db.table("fraud_action_executions").insert({ tenant_id: tenantId(), action: "model.create", actor_user_id: actor.id ?? null, metadata: { model_id: row.model_id } });
+        const [row] = await tenantDb().table("fraud_risk_models").insert({ tenant_id: tenantId(), model_id: payload.model_id, purpose: payload.purpose ?? "commerce_fraud", owner: payload.owner ?? null, description: payload.description ?? null, status: "active" }).returning("*");
+        await tenantDb().table("fraud_action_executions").insert({ tenant_id: tenantId(), action: "model.create", actor_user_id: actor.id ?? null, metadata: { model_id: row.model_id } });
         return { data: row };
     }
     async createModelVersion(modelId: number, payload: any, actor: Actor) {
-        const model = await db.from("fraud_risk_models").where("id", modelId).first();
+        const model = await tenantDb().from("fraud_risk_models").where("id", modelId).first();
         if (!model) throw new Exception("Risk model not found", { status: 404, code: "E_TRUST_MODEL" });
-        const [row] = await db.table("fraud_risk_model_versions").insert({ tenant_id: tenantId(), risk_model_id: modelId, version: payload.version, deployment_state: payload.deployment_state ?? "draft",
+        const [row] = await tenantDb().table("fraud_risk_model_versions").insert({ tenant_id: tenantId(), risk_model_id: modelId, version: payload.version, deployment_state: payload.deployment_state ?? "draft",
             thresholds: payload.thresholds ?? {}, weights: payload.weights ?? {}, validation_metrics: payload.validation_metrics ?? {}, known_limitations: payload.known_limitations ?? null, validated_at: payload.validated ? new Date() : null, created_by_user_id: actor.id ?? null }).returning("*");
         return { data: row };
     }
@@ -138,35 +138,35 @@ class Phase20TrustRiskService {
         });
     }
     async createCase(payload: any, actor: Actor) {
-        const [row] = await db.table("fraud_cases").insert({ tenant_id: tenantId(), case_number: `FR-${new Date().getUTCFullYear()}-M${Date.now()}`, subject_type: payload.subject_type, subject_id: payload.subject_id, priority: payload.priority ?? "medium", summary: payload.summary ?? null }).returning("*");
-        await db.table("fraud_case_events").insert({ tenant_id: tenantId(), case_id: row.id, event_type: "case.opened.manual", actor_user_id: actor.id ?? null }); return { data: row };
+        const [row] = await tenantDb().table("fraud_cases").insert({ tenant_id: tenantId(), case_number: `FR-${new Date().getUTCFullYear()}-M${Date.now()}`, subject_type: payload.subject_type, subject_id: payload.subject_id, priority: payload.priority ?? "medium", summary: payload.summary ?? null }).returning("*");
+        await tenantDb().table("fraud_case_events").insert({ tenant_id: tenantId(), case_id: row.id, event_type: "case.opened.manual", actor_user_id: actor.id ?? null }); return { data: row };
     }
     async assignCase(caseId: number, assigneeUserId: number | null, actor: Actor) {
-        const [row] = await db.from("fraud_cases").where("id", caseId).update({ assignee_user_id: assigneeUserId, status: "investigating" }).returning("*");
+        const [row] = await tenantDb().from("fraud_cases").where("id", caseId).update({ assignee_user_id: assigneeUserId, status: "investigating" }).returning("*");
         if (!row) throw new Exception("Fraud case not found", { status: 404, code: "E_TRUST_CASE" });
-        await db.table("fraud_case_events").insert({ tenant_id: tenantId(), case_id: caseId, event_type: "case.assigned", actor_user_id: actor.id ?? null, metadata: { assignee_user_id: assigneeUserId } }); return { data: row };
+        await tenantDb().table("fraud_case_events").insert({ tenant_id: tenantId(), case_id: caseId, event_type: "case.assigned", actor_user_id: actor.id ?? null, metadata: { assignee_user_id: assigneeUserId } }); return { data: row };
     }
     async updateCaseStatus(caseId: number, payload: any, actor: Actor) {
         const patch: any = { status: payload.status, resolution: payload.resolution ?? null }; if (["resolved", "closed"].includes(payload.status)) patch.closed_at = new Date();
-        const [row] = await db.from("fraud_cases").where("id", caseId).update(patch).returning("*"); if (!row) throw new Exception("Fraud case not found", { status: 404, code: "E_TRUST_CASE" });
-        await db.table("fraud_case_events").insert({ tenant_id: tenantId(), case_id: caseId, event_type: `case.${payload.status}`, actor_user_id: actor.id ?? null, note: payload.resolution ?? null }); return { data: row };
+        const [row] = await tenantDb().from("fraud_cases").where("id", caseId).update(patch).returning("*"); if (!row) throw new Exception("Fraud case not found", { status: 404, code: "E_TRUST_CASE" });
+        await tenantDb().table("fraud_case_events").insert({ tenant_id: tenantId(), case_id: caseId, event_type: `case.${payload.status}`, actor_user_id: actor.id ?? null, note: payload.resolution ?? null }); return { data: row };
     }
     async addCaseNote(caseId: number, note: string, actor: Actor) {
-        if (!await db.from("fraud_cases").where("id", caseId).first()) throw new Exception("Fraud case not found", { status: 404, code: "E_TRUST_CASE" });
-        const [row] = await db.table("fraud_case_events").insert({ tenant_id: tenantId(), case_id: caseId, event_type: "case.note", actor_user_id: actor.id ?? null, note }).returning("*"); return { data: row };
+        if (!await tenantDb().from("fraud_cases").where("id", caseId).first()) throw new Exception("Fraud case not found", { status: 404, code: "E_TRUST_CASE" });
+        const [row] = await tenantDb().table("fraud_case_events").insert({ tenant_id: tenantId(), case_id: caseId, event_type: "case.note", actor_user_id: actor.id ?? null, note }).returning("*"); return { data: row };
     }
     async createControl(payload: any, actor: Actor, idempotencyKey: string | null) {
-        if (idempotencyKey) { const replay = await db.from("fraud_subject_controls").where("idempotency_key", idempotencyKey).first(); if (replay) return { data: replay, replayed: true }; }
-        const [row] = await db.table("fraud_subject_controls").insert({ tenant_id: tenantId(), subject_type: payload.subject_type, subject_id: payload.subject_id, control: payload.control, reason: payload.reason,
+        if (idempotencyKey) { const replay = await tenantDb().from("fraud_subject_controls").where("idempotency_key", idempotencyKey).first(); if (replay) return { data: replay, replayed: true }; }
+        const [row] = await tenantDb().table("fraud_subject_controls").insert({ tenant_id: tenantId(), subject_type: payload.subject_type, subject_id: payload.subject_id, control: payload.control, reason: payload.reason,
             expires_at: payload.expires_at ?? null, created_by_user_id: actor.id ?? null, idempotency_key: idempotencyKey }).returning("*"); return { data: row, replayed: false };
     }
     async releaseControl(controlId: number, actor: Actor, idempotencyKey: string | null) {
-        if (idempotencyKey) { const replay = await db.from("fraud_action_executions").where("idempotency_key", idempotencyKey).first(); if (replay) return { data: replay, replayed: true }; }
-        const [control] = await db.from("fraud_subject_controls").where("id", controlId).update({ status: "released" }).returning("*"); if (!control) throw new Exception("Subject control not found", { status: 404, code: "E_TRUST_CONTROL" });
-        const [action] = await db.table("fraud_action_executions").insert({ tenant_id: tenantId(), action: "control.release", actor_user_id: actor.id ?? null, idempotency_key: idempotencyKey, metadata: { control_id: controlId } }).returning("*"); return { data: action, replayed: false };
+        if (idempotencyKey) { const replay = await tenantDb().from("fraud_action_executions").where("idempotency_key", idempotencyKey).first(); if (replay) return { data: replay, replayed: true }; }
+        const [control] = await tenantDb().from("fraud_subject_controls").where("id", controlId).update({ status: "released" }).returning("*"); if (!control) throw new Exception("Subject control not found", { status: 404, code: "E_TRUST_CONTROL" });
+        const [action] = await tenantDb().table("fraud_action_executions").insert({ tenant_id: tenantId(), action: "control.release", actor_user_id: actor.id ?? null, idempotency_key: idempotencyKey, metadata: { control_id: controlId } }).returning("*"); return { data: action, replayed: false };
     }
     async health() {
-        const result = await db.rawQuery(`SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('fraud_risk_scores','fraud_signals','fraud_cases','fraud_decisions','fraud_subject_controls')`);
+        const result = await tenantDb().rawQuery(`SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('fraud_risk_scores','fraud_signals','fraud_cases','fraud_decisions','fraud_subject_controls')`);
         return { data: { status: result.rows.length === 5 ? "ready" : "degraded", tables: result.rows.map((row: any) => row.table_name), policy: "rule-v1" } };
     }
 }
