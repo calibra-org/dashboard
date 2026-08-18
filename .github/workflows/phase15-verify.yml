@@ -29,7 +29,7 @@ on:
             - "docs/api/reference/openapi/admin.customer-intelligence.v1.yaml"
             - "docs/api/scripts/merge-admin-spec.js"
     push:
-        branches: [main]
+        branches: [main, agent/phase15-customer-genome]
         paths:
             - ".github/workflows/phase15-verify.yml"
             - "apps/api/app/controllers/admin/customer_intelligence_controller.ts"
@@ -57,7 +57,7 @@ on:
             - "docs/api/scripts/merge-admin-spec.js"
 
 permissions:
-    contents: read
+    contents: write
 
 concurrency:
     group: phase15-customer-genome-${{ github.workflow }}-${{ github.ref }}
@@ -115,6 +115,16 @@ jobs:
                   node -e "const fs=require('node:fs');const s=fs.readFileSync('docs/api/dist/admin.v1.json','utf8');for(const k of ['historical_contribution_ltv_minor','contribution_coverage_ratio','economics.historical_contribution_ltv_minor'])if(!s.includes(k))throw new Error('Missing Phase 15 contract key: '+k)"
             - name: Regenerate typed Admin SDK
               run: pnpm --filter @calibra/sdk run codegen:admin
+            - name: One-shot commit generated Admin SDK
+              if: github.event_name == 'push' && github.ref == 'refs/heads/agent/phase15-customer-genome'
+              run: |
+                  if ! git diff --quiet -- packages/sdk/src/generated/admin.d.ts; then
+                    git config user.name "github-actions[bot]"
+                    git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+                    git add packages/sdk/src/generated/admin.d.ts
+                    git commit -m "chore(sdk): sync Phase 15 admin types"
+                    git push origin HEAD:agent/phase15-customer-genome
+                  fi
             - name: Typecheck Phase 15 workspaces
               run: |
                   pnpm --filter @calibra/api run typecheck
