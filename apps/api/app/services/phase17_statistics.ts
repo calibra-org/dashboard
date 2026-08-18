@@ -12,12 +12,12 @@ export interface VariantAggregate {
     sumSquares: number;
 }
 
-export function deterministicBucket(parts: Array<string | number>): number {
+export function deterministicBucket(parts: Array<string | number | bigint>): number {
     const digest = createHash("sha256").update(parts.join("|")).digest();
     return digest.readUInt32BE(0) % 10000;
 }
 
-export function subjectHash(tenantId: number, subjectType: string, subjectKey: string): string {
+export function subjectHash(tenantId: number | bigint, subjectType: string, subjectKey: string): string {
     return createHash("sha256").update(`${tenantId}|${subjectType}|${subjectKey}`).digest("hex");
 }
 
@@ -49,7 +49,7 @@ function variance(row: VariantAggregate): number | null {
 export function variantEffect(row: VariantAggregate, control: VariantAggregate | null) {
     const mean = row.observations > 0 ? row.sum / row.observations : null;
     const controlMean = control && control.observations > 0 ? control.sum / control.observations : null;
-    if (mean === null || controlMean === null || row.variantId === control?.variantId) {
+    if (!control || mean === null || controlMean === null || row.variantId === control.variantId) {
         return {
             mean,
             absoluteLift: row.variantId === control?.variantId ? 0 : null,
