@@ -41,6 +41,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
                 ...tickets.Nav,
                 ...personalization.Nav,
                 ...trust.Nav,
+                ...agenticGateway.Nav,
             },
         },
     };
