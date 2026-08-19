@@ -72,6 +72,21 @@ jobs:
           NODE
           node /tmp/phase18-source-fix.cjs
 
+      - name: Serialize coupon snapshot ids as JSONB input
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs")
+          const path = "apps/api/app/services/pricing_policy_service.ts"
+          let source = fs.readFileSync(path, "utf8")
+          const oldValue = "coupon_ids: couponIds,"
+          const newValue = "coupon_ids: JSON.stringify(couponIds),"
+          const count = source.split(oldValue).length - 1
+          if (count !== 1) throw new Error(`Expected exactly one coupon snapshot persistence anchor, found ${count}`)
+          source = source.replace(oldValue, newValue)
+          fs.writeFileSync(path, source)
+          NODE
+
       - name: Normalize Phase 18 bigint response fields to the documented integer contract
         shell: bash
         run: |
