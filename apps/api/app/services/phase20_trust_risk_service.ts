@@ -89,9 +89,9 @@ class Phase20TrustRiskService {
             const result = calculateRiskDecision(allSignals, activeControl?.control ?? null);
             const champion = await trx.from("fraud_risk_model_versions").where("tenant_id", tenantId()).where("deployment_state", "champion").orderBy("validated_at", "desc").first();
             const [score] = await trx.table("fraud_risk_scores").insert({ tenant_id: tenantId(), subject_type: input.subject_type, subject_id: input.subject_id, model_version_id: champion?.id ?? null,
-                score: result.score, band: result.band, reason_codes_json: result.reasons, evidence_summary: { signal_count: allSignals.length, control: activeControl?.control ?? null, evidence_storage: "redacted" }, idempotency_key: key }).returning("*");
+                score: result.score, band: result.band, reason_codes_json: JSON.stringify(result.reasons), evidence_summary: { signal_count: allSignals.length, control: activeControl?.control ?? null, evidence_storage: "redacted" }, idempotency_key: key }).returning("*");
             const [decision] = await trx.table("fraud_decisions").insert({ tenant_id: tenantId(), risk_score_id: score.id, subject_type: input.subject_type, subject_id: input.subject_id, decision: result.decision,
-                policy_version: champion ? `model:${champion.version}` : "rule-v1", reason_codes_json: result.reasons, idempotency_key: key ? `${key}:decision`.slice(0, 180) : null }).returning("*");
+                policy_version: champion ? `model:${champion.version}` : "rule-v1", reason_codes_json: JSON.stringify(result.reasons), idempotency_key: key ? `${key}:decision`.slice(0, 180) : null }).returning("*");
             if (result.decision !== "allow") {
                 const priority = result.band === "critical" ? "critical" : result.band === "high" ? "high" : "medium";
                 const [fraudCase] = await trx.table("fraud_cases").insert({ tenant_id: tenantId(), case_number: `FR-${new Date().getUTCFullYear()}-${score.id}`, subject_type: input.subject_type, subject_id: input.subject_id,
