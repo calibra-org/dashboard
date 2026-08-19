@@ -34,3 +34,5 @@ The Persian-first RTL `Agentic Commerce` workspace exposes Overview, Channels & 
 
 ## Release evidence
 The Phase 21 source finalizer passed the static contract, Admin OpenAPI composition, Admin SDK generation, merged OpenAPI 3.0 validation, focused Japa contract tests, API typecheck, Admin typecheck, Admin production build and diff hygiene on the finalized source. Temporary hardening transport files and the temporary finalizer workflow were then removed; the permanent repository gates run on the final review head before merge.
+
+Repository-wide Biome formatting was normalized with the same toolchain used by CI before the final review head was submitted to the permanent gates.
