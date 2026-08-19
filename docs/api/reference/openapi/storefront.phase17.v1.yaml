@@ -1,0 +1,29 @@
+openapi: 3.1.0
+info:
+  title: Calibra Storefront Phase 17 Experimentation API
+  version: 1.0.0
+paths:
+  /api/v1/experiments/assign:
+    post:
+      tags: [Phase17Experimentation]
+      operationId: phase17ExperimentAssign
+      responses:
+        "200": { description: Deterministic experiment assignment }
+        "422": { description: Assignment contract validation failed }
+  /api/v1/experiments/exposures:
+    post:
+      tags: [Phase17Experimentation]
+      operationId: phase17ExperimentExposure
+      responses:
+        "201": { description: Exposure recorded }
+        "422": { description: Exposure contract validation failed }
+  /api/v1/experiments/observations:
+    post:
+      tags: [Phase17Experimentation]
+      operationId: phase17ExperimentObservation
+      responses:
+        "201": { description: Experiment observation recorded }
+        "422": { description: Observation contract validation failed }
+tags:
+  - name: Phase17Experimentation
+    description: Public deterministic assignment, exposure, and outcome observation endpoints.
