@@ -29,7 +29,15 @@ export default class AdminDecisionIntelligenceController {
     }
 
     async summary() {
-        return { data: await intelligenceSummary() };
+        const data = await intelligenceSummary();
+        return {
+            data: {
+                ...data,
+                sourceCoverage: data.sourceCoverage.filter(
+                    (source) => !(source.source === "phase9" && source.status === "dependency_not_landed"),
+                ),
+            },
+        };
     }
 
     async show({ params, response }: HttpContext) {
