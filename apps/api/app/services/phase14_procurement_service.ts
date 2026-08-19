@@ -39,7 +39,6 @@ function supplierScore(row: any) {
 
 class Phase14ProcurementService {
     async overview() {
-        const trx = currentTrx();
         const [suppliers, purchaseOrders, incidents] = await Promise.all([
             currentTrx().from("suppliers").select("*").orderBy("updated_at", "desc"),
             currentTrx()
