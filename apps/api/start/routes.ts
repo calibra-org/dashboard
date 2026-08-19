@@ -33,6 +33,7 @@ await import("./routes/checkout.js");
 await import("./routes/account_orders.js");
 await import("./routes/currency.js");
 await import("./routes/storefront.js");
+await import("./routes/agentic_gateway.js");
 await import("./routes/personalization.js");
 await import("./routes/experiments.js");
 await import("./routes/admin_catalog.js");
