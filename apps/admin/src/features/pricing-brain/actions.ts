@@ -90,7 +90,8 @@ export async function mutatePricingGovernanceAction(
         if (operation === "create_policy") {
             const policyKey = stringFromForm(formData, "policy_key");
             const name = stringFromForm(formData, "name");
-            if (!policyKey || !name) return mutationError(isFa, "کلید و نام سیاست الزامی است.", "Policy key and name are required.");
+            if (!policyKey || !name)
+                return mutationError(isFa, "کلید و نام سیاست الزامی است.", "Policy key and name are required.");
             await api.http.post("/admin/pricing-brain/policies", {
                 policy_key: policyKey,
                 name,
@@ -131,7 +132,8 @@ export async function mutatePricingGovernanceAction(
             const expectedVersion = requiredPositiveInteger(formData, "expected_version");
             const action = stringFromForm(formData, "action");
             const reason = stringFromForm(formData, "reason");
-            if (!action || !reason) return mutationError(isFa, "نوع اقدام و دلیل آن الزامی است.", "Lifecycle action and reason are required.");
+            if (!action || !reason)
+                return mutationError(isFa, "نوع اقدام و دلیل آن الزامی است.", "Lifecycle action and reason are required.");
             await api.http.post(`/admin/pricing-brain/policies/${policyId}/actions/${action}`, {
                 expected_version: expectedVersion,
                 reason,
@@ -144,7 +146,8 @@ export async function mutatePricingGovernanceAction(
         } else if (operation === "freeze") {
             const policyId = requiredPositiveInteger(formData, "policy_id");
             const reason = stringFromForm(formData, "reason");
-            if (!reason) return mutationError(isFa, "ثبت دلیل Freeze/Unfreeze الزامی است.", "A freeze/unfreeze reason is required.");
+            if (!reason)
+                return mutationError(isFa, "ثبت دلیل Freeze/Unfreeze الزامی است.", "A freeze/unfreeze reason is required.");
             await api.http.post(`/admin/pricing-brain/policies/${policyId}/freeze`, {
                 frozen: stringFromForm(formData, "frozen") === "true",
                 reason,
@@ -158,7 +161,9 @@ export async function mutatePricingGovernanceAction(
         return {
             ok: true,
             error: null,
-            message: isFa ? "عملیات با موفقیت ثبت شد و وضعیت جدید از API خوانده می‌شود." : "The operation was recorded and the refreshed state is read from the API.",
+            message: isFa
+                ? "عملیات با موفقیت ثبت شد و وضعیت جدید از API خوانده می‌شود."
+                : "The operation was recorded and the refreshed state is read from the API.",
         };
     } catch {
         return mutationError(

@@ -1,5 +1,5 @@
-import { currentTrx } from "#services/tenant_context";
 import { evaluatePricingCandidate, type PricingDecision, type PricingGuardrails } from "#services/pricing_decision_engine";
+import { currentTrx } from "#services/tenant_context";
 
 export interface PricingSimulationInput {
     referencePrice: number;
@@ -128,7 +128,10 @@ async function resolveCogsEvidence(input: PricingSimulationInput): Promise<CogsE
         };
     }
 
-    const layerQuery = trx.from("economic_cost_layers").where("product_id", input.productId).whereNotNull("unit_landed_cost_minor");
+    const layerQuery = trx
+        .from("economic_cost_layers")
+        .where("product_id", input.productId)
+        .whereNotNull("unit_landed_cost_minor");
     if (input.variationId === undefined || input.variationId === null) layerQuery.whereNull("variation_id");
     else layerQuery.where("variation_id", input.variationId);
     const layer = await layerQuery.orderBy("effective_at", "desc").orderBy("id", "desc").first();

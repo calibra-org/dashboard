@@ -1,8 +1,14 @@
 import db from "@adonisjs/lucid/services/db";
 import { test } from "@japa/runner";
 
+import { CouponFactory } from "#factories/coupon_factory";
+import CouponRedemption from "#models/coupon_redemption";
+import OrderCouponLine from "#models/order_coupon_line";
+import PaymentGateway from "#models/payment_gateway";
 import User from "#models/user";
 import { PRICING_PERMISSIONS } from "#services/pricing_permissions";
+import { createTaxableProduct } from "#tests/helpers/cart";
+import { iranRegionId, resetPhase05 } from "#tests/helpers/orders";
 import { TEST_TENANT_ID } from "#tests/helpers/tenant";
 
 type PricingTestContext = Parameters<NonNullable<Parameters<typeof test>[1]>>[0];
@@ -27,11 +33,23 @@ async function resetPricingTables() {
     await admin.from("pricing_proposals").delete();
     await admin.from("pricing_policy_versions").delete();
     await admin.from("pricing_policies").delete();
-    await admin.from("admin_permissions").whereIn("permission", [...PRICING_PERMISSIONS]).delete();
+    await admin
+        .from("admin_permissions")
+        .whereIn("permission", [...PRICING_PERMISSIONS])
+        .delete();
     await admin.from("admin_audit_log").where("entity_kind", "pricing_policy").delete();
 }
 
-async function createPolicy(client: PricingTestClient, admin: User, key: string) {
+async function createPolicy(
+    client: PricingTestClient,
+    admin: User,
+    key: string,
+    options: {
+        currency?: string;
+        productId?: number;
+        guardrails?: Record<string, number>;
+    } = {},
+) {
     const response = await client
         .post("/api/v1/admin/pricing-brain/policies")
         .withGuard("api")
@@ -40,8 +58,9 @@ async function createPolicy(client: PricingTestClient, admin: User, key: string)
             policy_key: key,
             name: `Policy ${key}`,
             objective: "margin_protection",
-            currency: "IRR",
-            guardrails: { floor_price_minor: 90_000, maximum_discount_percent: 20 },
+            currency: options.currency ?? "IRR",
+            product_id: options.productId ?? null,
+            guardrails: options.guardrails ?? { floor_price_minor: 90_000, maximum_discount_percent: 20 },
             evidence: { source: "phase18-functional-test" },
             reason: "create governance test policy",
         });
@@ -67,6 +86,81 @@ async function transition(
         .json(body);
 }
 
+async function activatePolicy(
+    client: PricingTestClient,
+    proposer: User,
+    approver: User,
+    key: string,
+    options: { currency?: string; productId?: number; guardrails?: Record<string, number> } = {},
+) {
+    const created = await createPolicy(client, proposer, key, options);
+    const submitted = await transition(client, proposer, created.policy.id, "submit", {
+        expected_version: created.version.version,
+        reason: `submit ${key} for independent review`,
+    });
+    submitted.assertStatus(200);
+    const approved = await transition(client, approver, created.policy.id, "approve", {
+        expected_version: created.version.version,
+        reason: `approve ${key}`,
+    });
+    approved.assertStatus(200);
+    const activated = await transition(client, approver, created.policy.id, "activate", {
+        expected_version: created.version.version,
+        reason: `activate ${key}`,
+    });
+    activated.assertStatus(200);
+    return { created, activated: activated.body().data.version as { id: number; version: number; state: string } };
+}
+
+function tokenFromResponse(response: { cookie(name: string): { value: unknown } | undefined }): string {
+    const cookie = response.cookie("cart_token");
+    if (!cookie || typeof cookie.value !== "string") throw new Error("expected cart_token");
+    return cookie.value;
+}
+
+async function checkoutProduct(client: PricingTestClient, productId: number, idempotencyKey: string, couponCode?: string) {
+    const regionId = await iranRegionId();
+    const gateway = await PaymentGateway.findByOrFail("code", "cod");
+    const seeded = await client.post("/api/v1/cart/items").json({ product_id: productId, quantity: 1 });
+    const token = tokenFromResponse(seeded);
+
+    if (couponCode) {
+        const applied = await client.post("/api/v1/cart/coupons").cookie("cart_token", token).json({ code: couponCode });
+        applied.assertStatus(200);
+    }
+
+    const customer = await client
+        .post("/api/v1/cart/customer")
+        .cookie("cart_token", token)
+        .json({ country: "IR", region_id: regionId, postcode: "1234567890" });
+    customer.assertStatus(200);
+
+    const draft = await client
+        .put("/api/v1/checkout")
+        .cookie("cart_token", token)
+        .json({
+            billing_address: {
+                first_name: "Phase",
+                last_name: "Eighteen",
+                address_line_1: "Vali-Asr 1",
+                city: "Tehran",
+                country: "IR",
+                region_id: regionId,
+                postcode: "1234567890",
+                phone: "+989121234567",
+                email: "phase18-checkout@example.test",
+            },
+            payment_gateway_id: Number(gateway.id),
+        });
+    draft.assertStatus(200);
+
+    const finalize = await client
+        .post("/api/v1/checkout/submit")
+        .cookie("cart_token", token)
+        .header("Idempotency-Key", idempotencyKey);
+    return { token, finalize };
+}
+
 test.group("Phase 18 pricing governance", (group) => {
     group.each.setup(resetPricingTables);
 
@@ -78,12 +172,15 @@ test.group("Phase 18 pricing governance", (group) => {
 
     test("tenant-scoped pricing.view override denies an admin", async ({ client }) => {
         const admin = await createUser();
-        await db.connection("postgres_admin").table("admin_permissions").insert({
-            tenant_id: TEST_TENANT_ID,
-            user_id: Number(admin.id),
-            permission: "pricing.view",
-            allowed: false,
-        });
+        await db
+            .connection("postgres_admin")
+            .table("admin_permissions")
+            .insert({
+                tenant_id: TEST_TENANT_ID,
+                user_id: Number(admin.id),
+                permission: "pricing.view",
+                allowed: false,
+            });
         const response = await client.get("/api/v1/admin/pricing-brain/policies").withGuard("api").loginAs(admin);
         response.assertStatus(403);
     });
@@ -263,5 +360,82 @@ test.group("Phase 18 pricing governance", (group) => {
             .where("action", "pricing.version.rollback")
             .first();
         assert.exists(audit);
+    });
+
+    test("active policy preserves canonical coupon redemption and records the exact promotion allocation", async ({
+        client,
+        assert,
+    }) => {
+        await resetPhase05();
+        await db.rawQuery("TRUNCATE TABLE coupons, coupon_redemptions RESTART IDENTITY CASCADE");
+
+        const proposer = await createUser();
+        const approver = await createUser();
+        const coupon = await CouponFactory.merge({ code: "P18REG10", amountPercent: "10.00" }).create();
+        const product = await createTaxableProduct({ regularPrice: 1_000_000 });
+        const policy = await activatePolicy(client, proposer, approver, "coupon-golden-regression", {
+            productId: Number(product.id),
+            guardrails: { floor_price_minor: 800_000, maximum_discount_percent: 20 },
+        });
+
+        const { finalize } = await checkoutProduct(client, Number(product.id), "phase18-coupon-golden-regression", "P18REG10");
+        finalize.assertStatus(200);
+        finalize.assertAgainstApiSpec();
+        const orderId = Number(finalize.body().data.id);
+
+        const couponLines = await OrderCouponLine.query().where("order_id", orderId);
+        assert.lengthOf(couponLines, 1);
+        assert.equal(couponLines[0]!.codeSnapshot, "P18REG10");
+        assert.equal(Number(couponLines[0]!.discount), 100_000);
+
+        const redemptions = await CouponRedemption.query().where("coupon_id", Number(coupon.id));
+        assert.lengthOf(redemptions, 1);
+        assert.equal(Number(redemptions[0]!.orderId), orderId);
+
+        const snapshot = await db
+            .connection("postgres_admin")
+            .from("pricing_order_snapshots")
+            .where("tenant_id", TEST_TENANT_ID)
+            .where("order_id", orderId)
+            .where("product_id", Number(product.id))
+            .first();
+        assert.exists(snapshot);
+        assert.equal(Number(snapshot.policy_id), policy.created.policy.id);
+        assert.equal(Number(snapshot.policy_version_id), policy.activated.id);
+        assert.equal(snapshot.currency, "IRR");
+        assert.deepEqual((snapshot.coupon_ids ?? []).map(Number), [Number(coupon.id)]);
+        const guardrailResult = (snapshot.guardrail_result ?? {}) as Record<string, unknown>;
+        assert.equal(Number(guardrailResult.promotion_discount_minor), Number(couponLines[0]!.discount));
+        assert.equal(guardrailResult.promotion_engine, "shared_discounter");
+    });
+
+    test("an active policy for another currency cannot govern an IRR checkout", async ({ client, assert }) => {
+        await resetPhase05();
+
+        const proposer = await createUser();
+        const approver = await createUser();
+        const product = await createTaxableProduct({ regularPrice: 1_000_000 });
+        await activatePolicy(client, proposer, approver, "foreign-currency-guardrail", {
+            currency: "USD",
+            productId: Number(product.id),
+            guardrails: { floor_price_minor: 2_000_000 },
+        });
+
+        const { finalize } = await checkoutProduct(client, Number(product.id), "phase18-currency-isolation-regression");
+        finalize.assertStatus(200);
+        finalize.assertAgainstApiSpec();
+        const orderId = Number(finalize.body().data.id);
+
+        const snapshot = await db
+            .connection("postgres_admin")
+            .from("pricing_order_snapshots")
+            .where("tenant_id", TEST_TENANT_ID)
+            .where("order_id", orderId)
+            .where("product_id", Number(product.id))
+            .first();
+        assert.exists(snapshot);
+        assert.equal(snapshot.currency, "IRR");
+        assert.isNull(snapshot.policy_id);
+        assert.isNull(snapshot.policy_version_id);
     });
 });

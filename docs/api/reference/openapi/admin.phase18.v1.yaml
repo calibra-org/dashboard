@@ -95,9 +95,9 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/PricingTransitionEnvelope' }
         '403': { description: Required pricing permission denied }
-        '404': { description: Policy, version, action or rollback target not found }
-        '409': { description: Frozen policy, stale version or invalid lifecycle transition }
-        '422': { description: Validation, self-approval, schedule or rollback guard failed }
+        '404': { description: 'Policy, version, action or rollback target not found' }
+        '409': { description: 'Frozen policy, stale version or invalid lifecycle transition' }
+        '422': { description: 'Validation, self-approval, schedule or rollback guard failed' }
   /api/v1/admin/pricing-brain/policies/{id}/freeze:
     post:
       operationId: adminPricingBrainFreezePolicy

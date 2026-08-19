@@ -23,7 +23,10 @@ router
             .post("/policies/:id/freeze", [Controller, "freeze"])
             .as("admin.pricing_brain.policies.freeze")
             .use(adminWriteLimiter);
-        router.post("/proposals", [Controller, "createProposal"]).as("admin.pricing_brain.proposals.create").use(adminWriteLimiter);
+        router
+            .post("/proposals", [Controller, "createProposal"])
+            .as("admin.pricing_brain.proposals.create")
+            .use(adminWriteLimiter);
         router.post("/simulate", [Controller, "simulate"]).as("admin.pricing_brain.simulate").use(adminWriteLimiter);
     })
     .prefix("/api/v1/admin/pricing-brain")

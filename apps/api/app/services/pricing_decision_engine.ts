@@ -72,7 +72,8 @@ export function evaluatePricingCandidate(input: PricingCandidateInput): PricingD
     if (referencePrice <= 0 || candidatePrice < 0 || referenceGrossRevenue < 0 || !promotionValid) {
         violations.push({
             code: "invalid_price",
-            message: "Reference, candidate, quantity, and promotion allocation must remain valid integer minor-unit money values.",
+            message:
+                "Reference, candidate, quantity, and promotion allocation must remain valid integer minor-unit money values.",
             actual: promotionValid ? candidatePrice : promotionDiscount,
             required: 0,
         });

@@ -8,11 +8,19 @@ import Product from "#models/product";
 import ProductVariation from "#models/product_variation";
 import { recordAudit } from "#services/admin_audit_log_service";
 import { getDiscounter } from "#services/discounter";
-import { evaluatePricingCandidate, type PricingGuardrails } from "#services/pricing_decision_engine";
 import { resolvePrice } from "#services/price_resolver";
+import { evaluatePricingCandidate, type PricingGuardrails } from "#services/pricing_decision_engine";
 import { currentTenantId, currentTrx, withTenantTransaction } from "#services/tenant_context";
 
-export type PricingLifecycleState = "draft" | "review" | "approved" | "scheduled" | "active" | "paused" | "stopped" | "rolled_back";
+export type PricingLifecycleState =
+    | "draft"
+    | "review"
+    | "approved"
+    | "scheduled"
+    | "active"
+    | "paused"
+    | "stopped"
+    | "rolled_back";
 export type PricingLifecycleAction = "submit" | "approve" | "schedule" | "activate" | "pause" | "stop" | "rollback";
 
 type Actor = { id: string | number | bigint };
@@ -73,18 +81,61 @@ function fail(message: string, status: number, code: string): never {
 
 function safeMinor(value: unknown, label: string): number {
     const result = Number(value);
-    if (!Number.isSafeInteger(result) || result < 0) fail(`${label} is outside the supported minor-unit range`, 422, "E_PRICING_MONEY_RANGE");
+    if (!Number.isSafeInteger(result) || result < 0)
+        fail(`${label} is outside the supported minor-unit range`, 422, "E_PRICING_MONEY_RANGE");
     return result;
 }
 
 function safeLineMinor(unitAmount: number, quantity: number, label: string): number {
     const result = unitAmount * quantity;
-    if (!Number.isSafeInteger(result) || result < 0) fail(`${label} is outside the supported minor-unit range`, 422, "E_PRICING_MONEY_RANGE");
+    if (!Number.isSafeInteger(result) || result < 0)
+        fail(`${label} is outside the supported minor-unit range`, 422, "E_PRICING_MONEY_RANGE");
     return result;
 }
 
 function jsonObject(value: unknown): JsonObject {
     return value && typeof value === "object" && !Array.isArray(value) ? (value as JsonObject) : {};
+}
+
+const PRICING_POSITIVE_INTEGER_FIELDS = new Set([
+    "id",
+    "tenant_id",
+    "policy_id",
+    "policy_version_id",
+    "product_id",
+    "variation_id",
+    "actor_user_id",
+    "created_by",
+    "frozen_by",
+    "proposed_by",
+    "reviewed_by",
+    "approved_by",
+    "scheduled_by",
+    "activated_by",
+    "rollback_of_version_id",
+    "version",
+]);
+const PRICING_NON_NEGATIVE_INTEGER_FIELDS = new Set(["reference_price_minor", "candidate_price_minor"]);
+
+function normalizePricingRow<T extends Record<string, unknown>>(row: T): T {
+    const normalized = { ...row } as Record<string, unknown>;
+    for (const key of PRICING_POSITIVE_INTEGER_FIELDS) {
+        if (!(key in normalized) || normalized[key] === null || normalized[key] === undefined) continue;
+        const value = Number(normalized[key]);
+        if (!Number.isSafeInteger(value) || value < 1) {
+            fail(`${key} is outside the supported API integer range`, 500, "E_PRICING_IDENTIFIER_RANGE");
+        }
+        normalized[key] = value;
+    }
+    for (const key of PRICING_NON_NEGATIVE_INTEGER_FIELDS) {
+        if (!(key in normalized) || normalized[key] === null || normalized[key] === undefined) continue;
+        const value = Number(normalized[key]);
+        if (!Number.isSafeInteger(value) || value < 0) {
+            fail(`${key} is outside the supported API integer range`, 500, "E_PRICING_INTEGER_RANGE");
+        }
+        normalized[key] = value;
+    }
+    return normalized as T;
 }
 
 function guardrailsFrom(value: unknown): PricingGuardrails {
@@ -129,10 +180,11 @@ export class PricingPolicyService {
             )
             .orderBy("version", "desc");
         const latest = new Map<number, (typeof versions)[number]>();
-        for (const row of versions) if (!latest.has(Number(row.policy_id))) latest.set(Number(row.policy_id), row);
+        for (const row of versions)
+            if (!latest.has(Number(row.policy_id))) latest.set(Number(row.policy_id), normalizePricingRow(row));
         return {
             data: policies.map((policy) => ({
-                ...policy,
+                ...normalizePricingRow(policy),
                 latest_version: latest.get(Number(policy.id)) ?? null,
             })),
         };
@@ -145,7 +197,8 @@ export class PricingPolicyService {
                 .where("tenant_id", tenantId())
                 .select("*")
                 .orderBy("created_at", "desc")
-                .limit(200),
+                .limit(200)
+                .then((rows) => rows.map((row) => normalizePricingRow(row))),
         };
     }
 
@@ -190,7 +243,7 @@ export class PricingPolicyService {
                 reason: input.reason ?? "pricing.policy.create",
                 evidence: input.evidence ?? {},
             });
-            return { data: { policy, version } };
+            return { data: { policy: normalizePricingRow(policy), version: normalizePricingRow(version) } };
         });
     }
 
@@ -238,7 +291,7 @@ export class PricingPolicyService {
                 reason: input.reason ?? "pricing.version.create",
                 evidence: input.evidence ?? {},
             });
-            return { data: version };
+            return { data: normalizePricingRow(version) };
         });
     }
 
@@ -246,11 +299,7 @@ export class PricingPolicyService {
         safeMinor(input.reference_price_minor, "reference_price_minor");
         safeMinor(input.candidate_price_minor, "candidate_price_minor");
         return withTenantTransaction(async (trx) => {
-            const policy = await trx
-                .from("pricing_policies")
-                .where("tenant_id", tenantId())
-                .where("id", input.policy_id)
-                .first();
+            const policy = await trx.from("pricing_policies").where("tenant_id", tenantId()).where("id", input.policy_id).first();
             if (!policy) fail("Pricing policy not found", 404, "E_PRICING_POLICY_NOT_FOUND");
             if (policy.status === "frozen") fail("Pricing policy is frozen", 409, "E_PRICING_POLICY_FROZEN");
             const [proposal] = await trx
@@ -271,7 +320,7 @@ export class PricingPolicyService {
                     proposed_by: Number(actor.id),
                 })
                 .returning("*");
-            return { data: proposal };
+            return { data: normalizePricingRow(proposal) };
         });
     }
 
@@ -285,7 +334,7 @@ export class PricingPolicyService {
                     .where("tenant_id", tenantId())
                     .where("idempotency_key", idempotencyKey)
                     .first();
-                if (replay) return { data: replay, replayed: true };
+                if (replay) return { data: normalizePricingRow(replay), replayed: true };
             }
             const policy = await trx
                 .from("pricing_policies")
@@ -317,7 +366,8 @@ export class PricingPolicyService {
             const changes: Record<string, unknown> = { state: toState, updated_at: now() };
             if (action === "submit") changes.reviewed_at = null;
             if (action === "approve") {
-                if (Number(version.proposed_by) === actorId) fail("A proposer cannot approve their own pricing version", 422, "E_PRICING_SELF_APPROVAL");
+                if (Number(version.proposed_by) === actorId)
+                    fail("A proposer cannot approve their own pricing version", 422, "E_PRICING_SELF_APPROVAL");
                 changes.reviewed_by = actorId;
                 changes.reviewed_at = now();
                 changes.approved_by = actorId;
@@ -361,7 +411,7 @@ export class PricingPolicyService {
                 correlationId: input.correlation_id ?? null,
                 idempotencyKey,
             });
-            return { data: { version: updated, action: event }, replayed: false };
+            return { data: { version: normalizePricingRow(updated), action: event }, replayed: false };
         });
     }
 
@@ -374,7 +424,7 @@ export class PricingPolicyService {
                     .where("tenant_id", tenantId())
                     .where("idempotency_key", key)
                     .first();
-                if (replay) return { data: replay, replayed: true };
+                if (replay) return { data: normalizePricingRow(replay), replayed: true };
             }
             const policy = await trx
                 .from("pricing_policies")
@@ -384,13 +434,16 @@ export class PricingPolicyService {
                 .first();
             if (!policy) fail("Pricing policy not found", 404, "E_PRICING_POLICY_NOT_FOUND");
             const nextStatus = frozen ? "frozen" : "active";
-            await trx.from("pricing_policies").where("id", policyId).update({
-                status: nextStatus,
-                frozen_at: frozen ? now() : null,
-                frozen_by: frozen ? Number(actor.id) : null,
-                freeze_reason: frozen ? reason : null,
-                updated_at: now(),
-            });
+            await trx
+                .from("pricing_policies")
+                .where("id", policyId)
+                .update({
+                    status: nextStatus,
+                    frozen_at: frozen ? now() : null,
+                    frozen_by: frozen ? Number(actor.id) : null,
+                    freeze_reason: frozen ? reason : null,
+                    updated_at: now(),
+                });
             const event = await this.recordAction(trx, {
                 policyId,
                 versionId: null,
@@ -407,6 +460,7 @@ export class PricingPolicyService {
     }
 
     async enforceAndSnapshotOrder(orderId: number, currency: string, trx: TransactionClientContract): Promise<void> {
+        const pricingCurrency = currency.toUpperCase();
         const lines = await OrderLineItem.query({ client: trx }).where("order_id", orderId).orderBy("id", "asc");
         if (lines.length === 0) return;
         const couponLines = await OrderCouponLine.query({ client: trx }).where("order_id", orderId).orderBy("id", "asc");
@@ -465,7 +519,8 @@ export class PricingPolicyService {
         const discountItems = runtimeLines.map((row) => row.discountItem);
         const itemsTotal = discountItems.reduce((sum, item) => {
             const total = sum + item.lineSubtotal;
-            if (!Number.isSafeInteger(total) || total < 0) fail("Promotion subtotal exceeds supported money range", 422, "E_PRICING_MONEY_RANGE");
+            if (!Number.isSafeInteger(total) || total < 0)
+                fail("Promotion subtotal exceeds supported money range", 422, "E_PRICING_MONEY_RANGE");
             return total;
         }, 0);
         const discountResult = await getDiscounter().calculate({
@@ -496,7 +551,7 @@ export class PricingPolicyService {
         }
 
         for (const runtime of runtimeLines) {
-            const active = await this.resolveActiveGuardrail(runtime.productId, runtime.variationId, trx);
+            const active = await this.resolveActiveGuardrail(runtime.productId, runtime.variationId, pricingCurrency, trx);
             const guardrails = guardrailsFrom(active?.guardrails);
             const cogs =
                 guardrails.minimumMarginPercent == null
@@ -534,10 +589,10 @@ export class PricingPolicyService {
                     variation_id: runtime.variationId,
                     reference_price_minor: runtime.referencePrice,
                     resolved_price_minor: runtime.resolvedPrice,
-                    currency,
+                    currency: pricingCurrency,
                     policy_id: active?.policy_id ?? null,
                     policy_version_id: active?.id ?? null,
-                    coupon_ids: couponIds,
+                    coupon_ids: JSON.stringify(couponIds),
                     guardrail_result: {
                         accepted: decision.accepted,
                         violations: decision.violations,
@@ -555,7 +610,10 @@ export class PricingPolicyService {
     }
 
     private nextState(action: Exclude<PricingLifecycleAction, "rollback">, state: PricingLifecycleState): PricingLifecycleState {
-        const allowed: Record<Exclude<PricingLifecycleAction, "rollback">, Partial<Record<PricingLifecycleState, PricingLifecycleState>>> = {
+        const allowed: Record<
+            Exclude<PricingLifecycleAction, "rollback">,
+            Partial<Record<PricingLifecycleState, PricingLifecycleState>>
+        > = {
             submit: { draft: "review" },
             approve: { review: "approved" },
             schedule: { approved: "scheduled" },
@@ -576,9 +634,11 @@ export class PricingPolicyService {
         actorId: number,
         idempotencyKey: string | null,
     ) {
-        if (String(current.state) !== "active") fail("Only an active pricing version can be rolled back", 409, "E_PRICING_ROLLBACK_STATE");
+        if (String(current.state) !== "active")
+            fail("Only an active pricing version can be rolled back", 409, "E_PRICING_ROLLBACK_STATE");
         const targetVersion = input.rollback_to_version;
-        if (!targetVersion || targetVersion === Number(current.version)) fail("A different rollback target is required", 422, "E_PRICING_ROLLBACK_TARGET");
+        if (!targetVersion || targetVersion === Number(current.version))
+            fail("A different rollback target is required", 422, "E_PRICING_ROLLBACK_TARGET");
         const target = await trx
             .from("pricing_policy_versions")
             .where("tenant_id", tenantId())
@@ -613,14 +673,23 @@ export class PricingPolicyService {
             toState: "active",
             actorId,
             reason: input.reason,
-            evidence: { ...(input.evidence ?? {}), rolled_back_version: Number(current.version), restored_version: targetVersion },
+            evidence: {
+                ...(input.evidence ?? {}),
+                rolled_back_version: Number(current.version),
+                restored_version: targetVersion,
+            },
             correlationId: input.correlation_id ?? null,
             idempotencyKey,
         });
-        return { data: { version: restored, action: event }, replayed: false };
+        return { data: { version: normalizePricingRow(restored), action: event }, replayed: false };
     }
 
-    private async resolveActiveGuardrail(productId: number, variationId: number | null, trx: TransactionClientContract) {
+    private async resolveActiveGuardrail(
+        productId: number,
+        variationId: number | null,
+        currency: string,
+        trx: TransactionClientContract,
+    ) {
         const base = () =>
             trx
                 .from("pricing_policy_versions as v")
@@ -629,6 +698,7 @@ export class PricingPolicyService {
                 .where("p.tenant_id", tenantId())
                 .where("p.status", "active")
                 .where("v.state", "active")
+                .where("v.currency", currency)
                 .select("v.*", "p.id as policy_id", "p.policy_key")
                 .orderBy("v.activated_at", "desc");
 
@@ -643,7 +713,11 @@ export class PricingPolicyService {
         return base().whereNull("v.product_id").whereNull("v.variation_id").first();
     }
 
-    private async resolveCogs(productId: number, variationId: number | null, trx: TransactionClientContract): Promise<number | null> {
+    private async resolveCogs(
+        productId: number,
+        variationId: number | null,
+        trx: TransactionClientContract,
+    ): Promise<number | null> {
         const snapshotQuery = trx
             .from("economic_line_cost_snapshots")
             .where("product_id", productId)
@@ -709,7 +783,7 @@ export class PricingPolicyService {
             trx,
             strict: true,
         });
-        return event;
+        return normalizePricingRow(event);
     }
 }
 

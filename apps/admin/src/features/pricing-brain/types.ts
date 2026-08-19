@@ -1,4 +1,12 @@
-export type PricingLifecycleState = "draft" | "review" | "approved" | "scheduled" | "active" | "paused" | "stopped" | "rolled_back";
+export type PricingLifecycleState =
+    | "draft"
+    | "review"
+    | "approved"
+    | "scheduled"
+    | "active"
+    | "paused"
+    | "stopped"
+    | "rolled_back";
 
 export interface PricingPolicyVersion {
     id: number;
