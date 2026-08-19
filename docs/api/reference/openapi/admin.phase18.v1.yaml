@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
   title: Calibra Admin Phase 18 Pricing and Promotion Brain
-  version: 1.0.0
-  description: Evidence-aware pricing simulation and runtime health without replacing canonical product pricing or promotion resolution.
+  version: 1.2.0
+  description: Evidence-aware pricing simulation, governed policy lifecycle, promotion-aware guardrails, and checkout trace without replacing canonical product pricing or promotion resolution.
 paths:
   /api/v1/admin/pricing-brain/overview:
     get:
@@ -11,7 +11,7 @@ paths:
       security: [{ bearerAuth: [] }]
       responses:
         '200':
-          description: Phase 18 catalog, promotion, economics, evidence and runtime status.
+          description: Phase 18 catalog, promotion, economics, evidence, policy and runtime status.
           content:
             application/json:
               schema:
@@ -19,6 +19,137 @@ paths:
                 required: [data]
                 properties:
                   data: { $ref: '#/components/schemas/PricingBrainOverview' }
+  /api/v1/admin/pricing-brain/policies:
+    get:
+      operationId: adminPricingBrainPolicies
+      tags: [Pricing Brain]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Tenant-scoped pricing policies with their latest version.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PricingPolicyListEnvelope' }
+        '403': { description: Pricing view permission denied }
+    post:
+      operationId: adminPricingBrainCreatePolicy
+      tags: [Pricing Brain]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreatePricingPolicyRequest' }
+      responses:
+        '200':
+          description: Pricing policy and immutable draft version created.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PricingPolicyCreateEnvelope' }
+        '403': { description: Pricing propose permission denied }
+        '422': { description: Validation failed }
+  /api/v1/admin/pricing-brain/policies/{id}/versions:
+    post:
+      operationId: adminPricingBrainCreatePolicyVersion
+      tags: [Pricing Brain]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/PricingPolicyId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreatePricingVersionRequest' }
+      responses:
+        '200':
+          description: New draft version created under the existing policy.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PricingVersionEnvelope' }
+        '403': { description: Pricing propose permission denied }
+        '404': { description: Policy not found }
+        '409': { description: Policy frozen }
+        '422': { description: Validation failed }
+  /api/v1/admin/pricing-brain/policies/{id}/actions/{action}:
+    post:
+      operationId: adminPricingBrainTransitionPolicy
+      tags: [Pricing Brain]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/PricingPolicyId'
+        - name: action
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [submit, approve, schedule, activate, pause, stop, rollback]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PricingTransitionRequest' }
+      responses:
+        '200':
+          description: Idempotent policy version lifecycle transition result.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PricingTransitionEnvelope' }
+        '403': { description: Required pricing permission denied }
+        '404': { description: 'Policy, version, action or rollback target not found' }
+        '409': { description: 'Frozen policy, stale version or invalid lifecycle transition' }
+        '422': { description: 'Validation, self-approval, schedule or rollback guard failed' }
+  /api/v1/admin/pricing-brain/policies/{id}/freeze:
+    post:
+      operationId: adminPricingBrainFreezePolicy
+      tags: [Pricing Brain]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/PricingPolicyId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PricingFreezeRequest' }
+      responses:
+        '200':
+          description: Emergency freeze or explicit unfreeze action recorded.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PricingActionEnvelope' }
+        '403': { description: Pricing freeze permission denied }
+        '404': { description: Policy not found }
+        '422': { description: Validation failed }
+  /api/v1/admin/pricing-brain/proposals:
+    get:
+      operationId: adminPricingBrainProposals
+      tags: [Pricing Brain]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Tenant-scoped pricing proposals ordered by recency.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PricingProposalListEnvelope' }
+        '403': { description: Pricing view permission denied }
+    post:
+      operationId: adminPricingBrainCreateProposal
+      tags: [Pricing Brain]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreatePricingProposalRequest' }
+      responses:
+        '200':
+          description: Proposal recorded without mutating canonical catalog pricing.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PricingProposalEnvelope' }
+        '403': { description: Pricing propose permission denied }
+        '404': { description: Policy not found }
+        '409': { description: Policy frozen }
+        '422': { description: Validation failed }
   /api/v1/admin/pricing-brain/simulate:
     post:
       operationId: adminPricingBrainSimulate
@@ -31,7 +162,7 @@ paths:
             schema: { $ref: '#/components/schemas/PricingSimulationRequest' }
       responses:
         '200':
-          description: Deterministic pricing candidate simulation using Phase 18 guardrails and Phase 12 cost evidence when available.
+          description: Deterministic pricing candidate simulation using Phase 18 guardrails, optional canonical promotion allocation, and Phase 12 cost evidence when available.
           content:
             application/json:
               schema:
@@ -39,14 +170,21 @@ paths:
                 required: [data]
                 properties:
                   data: { $ref: '#/components/schemas/PricingSimulationResponse' }
+        '403': { description: Pricing simulate permission denied }
         '422': { description: Validation failed }
 components:
   securitySchemes:
     bearerAuth: { type: http, scheme: bearer }
+  parameters:
+    PricingPolicyId:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer, minimum: 1 }
   schemas:
     PricingBrainOverview:
       type: object
-      required: [catalog, promotions, economics, evidence, runtime]
+      required: [catalog, promotions, economics, evidence, runtime, policies, proposals]
       properties:
         catalog:
           type: object
@@ -88,12 +226,201 @@ components:
             simulation_engine: { type: string }
             autonomy_level: { type: integer, minimum: 0, maximum: 5 }
             activation_enabled: { type: boolean }
+        policies:
+          type: array
+          items: { $ref: '#/components/schemas/PricingPolicySummary' }
+        proposals:
+          type: array
+          items: { $ref: '#/components/schemas/PricingProposal' }
     PricingEvidenceState:
       type: object
       required: [status, reason]
       properties:
         status: { type: string, enum: [available, unavailable, insufficient_evidence, stale] }
         reason: { type: string }
+    PricingPolicySummary:
+      type: object
+      additionalProperties: true
+      required: [id, policy_key, name, status, latest_version]
+      properties:
+        id: { type: integer }
+        policy_key: { type: string }
+        name: { type: string }
+        objective: { type: [string, 'null'] }
+        status: { type: string, enum: [active, frozen] }
+        frozen_at: { type: [string, 'null'] }
+        freeze_reason: { type: [string, 'null'] }
+        updated_at: { type: string }
+        latest_version:
+          oneOf:
+            - { $ref: '#/components/schemas/PricingPolicyVersion' }
+            - { type: 'null' }
+    PricingPolicyVersion:
+      type: object
+      additionalProperties: true
+      required: [id, policy_id, version, state, currency]
+      properties:
+        id: { type: integer }
+        policy_id: { type: integer }
+        version: { type: integer, minimum: 1 }
+        state: { type: string, enum: [draft, review, approved, scheduled, active, paused, stopped, rolled_back] }
+        currency: { type: string, minLength: 3, maxLength: 3 }
+        product_id: { type: [integer, 'null'] }
+        variation_id: { type: [integer, 'null'] }
+        guardrails: { type: object, additionalProperties: true }
+        evidence: { type: object, additionalProperties: true }
+        scheduled_at: { type: [string, 'null'] }
+        activated_at: { type: [string, 'null'] }
+        approved_by: { type: [integer, 'null'] }
+        proposed_by: { type: [integer, 'null'] }
+    PricingProposal:
+      type: object
+      additionalProperties: true
+      required: [id, policy_id, product_id, reference_price_minor, candidate_price_minor, currency, status]
+      properties:
+        id: { type: integer }
+        policy_id: { type: integer }
+        policy_version_id: { type: [integer, 'null'] }
+        product_id: { type: integer }
+        variation_id: { type: [integer, 'null'] }
+        reference_price_minor: { type: integer, minimum: 0 }
+        candidate_price_minor: { type: integer, minimum: 0 }
+        currency: { type: string, minLength: 3, maxLength: 3 }
+        status: { type: string }
+        objective: { type: [string, 'null'] }
+        rationale: { type: [string, 'null'] }
+        evidence: { type: object, additionalProperties: true }
+    PricingAction:
+      type: object
+      additionalProperties: true
+      required: [id, policy_id, action]
+      properties:
+        id: { type: integer }
+        policy_id: { type: integer }
+        policy_version_id: { type: [integer, 'null'] }
+        action: { type: string }
+        from_state: { type: [string, 'null'] }
+        to_state: { type: [string, 'null'] }
+        actor_user_id: { type: [integer, 'null'] }
+        reason: { type: [string, 'null'] }
+        evidence: { type: object, additionalProperties: true }
+        correlation_id: { type: [string, 'null'] }
+        idempotency_key: { type: [string, 'null'] }
+    PricingPolicyListEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/PricingPolicySummary' }
+    PricingProposalListEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/PricingProposal' }
+    PricingPolicyCreateEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [policy, version]
+          properties:
+            policy: { type: object, additionalProperties: true }
+            version: { $ref: '#/components/schemas/PricingPolicyVersion' }
+    PricingVersionEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/PricingPolicyVersion' }
+    PricingProposalEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/PricingProposal' }
+    PricingTransitionEnvelope:
+      type: object
+      required: [data, replayed]
+      properties:
+        data:
+          oneOf:
+            - type: object
+              additionalProperties: true
+              required: [version, action]
+              properties:
+                version: { $ref: '#/components/schemas/PricingPolicyVersion' }
+                action: { $ref: '#/components/schemas/PricingAction' }
+            - { $ref: '#/components/schemas/PricingAction' }
+        replayed: { type: boolean }
+    PricingActionEnvelope:
+      type: object
+      required: [data, replayed]
+      properties:
+        data: { $ref: '#/components/schemas/PricingAction' }
+        replayed: { type: boolean }
+    CreatePricingPolicyRequest:
+      type: object
+      additionalProperties: false
+      required: [policy_key, name, currency]
+      properties:
+        policy_key: { type: string, minLength: 2, maxLength: 120 }
+        name: { type: string, minLength: 2, maxLength: 180 }
+        objective: { type: [string, 'null'], maxLength: 120 }
+        currency: { type: string, minLength: 3, maxLength: 3 }
+        product_id: { type: [integer, 'null'], minimum: 1 }
+        variation_id: { type: [integer, 'null'], minimum: 1 }
+        scope: { type: object, additionalProperties: true }
+        guardrails: { type: object, additionalProperties: true }
+        evidence: { type: object, additionalProperties: true }
+        reason: { type: [string, 'null'], maxLength: 2000 }
+    CreatePricingVersionRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        currency: { type: string, minLength: 3, maxLength: 3 }
+        product_id: { type: [integer, 'null'], minimum: 1 }
+        variation_id: { type: [integer, 'null'], minimum: 1 }
+        scope: { type: object, additionalProperties: true }
+        guardrails: { type: object, additionalProperties: true }
+        evidence: { type: object, additionalProperties: true }
+        reason: { type: [string, 'null'], maxLength: 2000 }
+    CreatePricingProposalRequest:
+      type: object
+      additionalProperties: false
+      required: [policy_id, product_id, reference_price_minor, candidate_price_minor, currency]
+      properties:
+        policy_id: { type: integer, minimum: 1 }
+        policy_version_id: { type: [integer, 'null'], minimum: 1 }
+        product_id: { type: integer, minimum: 1 }
+        variation_id: { type: [integer, 'null'], minimum: 1 }
+        reference_price_minor: { type: integer, minimum: 0 }
+        candidate_price_minor: { type: integer, minimum: 0 }
+        currency: { type: string, minLength: 3, maxLength: 3 }
+        objective: { type: [string, 'null'], maxLength: 120 }
+        rationale: { type: [string, 'null'], maxLength: 4000 }
+        evidence: { type: object, additionalProperties: true }
+    PricingTransitionRequest:
+      type: object
+      additionalProperties: false
+      required: [expected_version, reason]
+      properties:
+        expected_version: { type: integer, minimum: 1 }
+        reason: { type: string, minLength: 3, maxLength: 2000 }
+        evidence: { type: object, additionalProperties: true }
+        correlation_id: { type: [string, 'null'], maxLength: 120 }
+        idempotency_key: { type: [string, 'null'], maxLength: 180 }
+        scheduled_at: { type: [string, 'null'], format: date-time }
+        rollback_to_version: { type: [integer, 'null'], minimum: 1 }
+    PricingFreezeRequest:
+      type: object
+      additionalProperties: false
+      required: [frozen, reason]
+      properties:
+        frozen: { type: boolean }
+        reason: { type: string, minLength: 3, maxLength: 2000 }
+        idempotency_key: { type: [string, 'null'], maxLength: 180 }
     PricingSimulationRequest:
       type: object
       additionalProperties: false
@@ -102,6 +429,7 @@ components:
         reference_price: { type: integer, minimum: 1 }
         candidate_price: { type: integer, minimum: 0 }
         quantity: { type: integer, minimum: 1 }
+        promotion_discount: { type: integer, minimum: 0 }
         product_id: { type: integer, minimum: 1 }
         variation_id: { type: [integer, 'null'], minimum: 1 }
         floor_price: { type: [integer, 'null'], minimum: 0 }
@@ -116,14 +444,18 @@ components:
         economics: { $ref: '#/components/schemas/PricingCogsEvidence' }
     PricingDecision:
       type: object
-      required: [accepted, referencePrice, candidatePrice, effectivePrice, quantity, grossRevenue, estimatedGrossProfit, discountPercent, marginPercent, economicsState, violations]
+      required: [accepted, referencePrice, candidatePrice, effectivePrice, quantity, promotionDiscount, candidateGrossRevenue, candidateNetRevenue, netRevenue, grossRevenue, estimatedGrossProfit, discountPercent, marginPercent, economicsState, violations]
       properties:
         accepted: { type: boolean }
         referencePrice: { type: integer }
         candidatePrice: { type: integer }
         effectivePrice: { type: integer }
         quantity: { type: integer, minimum: 1 }
-        grossRevenue: { type: integer }
+        promotionDiscount: { type: integer, minimum: 0 }
+        candidateGrossRevenue: { type: integer, minimum: 0 }
+        candidateNetRevenue: { type: integer, minimum: 0 }
+        netRevenue: { type: integer, minimum: 0 }
+        grossRevenue: { type: integer, minimum: 0 }
         estimatedGrossProfit: { type: [integer, 'null'] }
         discountPercent: { type: number }
         marginPercent: { type: [number, 'null'] }
@@ -149,4 +481,4 @@ components:
         observedAt: { type: [string, 'null'] }
 tags:
   - name: Pricing Brain
-    description: Phase 18 evidence-aware pricing and promotion decision support.
+    description: Phase 18 evidence-aware pricing and promotion governance.

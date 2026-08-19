@@ -13,6 +13,8 @@ export interface PricingCandidateInput {
     referencePrice: number;
     candidatePrice: number;
     quantity?: number;
+    /** Exact line-level promotion allocation from the canonical Discounter, in minor units. */
+    promotionDiscount?: number;
     guardrails: PricingGuardrails;
 }
 
@@ -36,6 +38,12 @@ export interface PricingDecision {
     candidatePrice: number;
     effectivePrice: number;
     quantity: number;
+    promotionDiscount: number;
+    candidateGrossRevenue: number;
+    candidateNetRevenue: number;
+    /** Alias of candidateNetRevenue kept explicit for API/UI readability. */
+    netRevenue: number;
+    /** Revenue of the effective fallback path; rejected candidates fall back to reference revenue. */
     grossRevenue: number;
     estimatedGrossProfit: number | null;
     discountPercent: number;
@@ -46,32 +54,43 @@ export interface PricingDecision {
 
 /**
  * Phase 18's deterministic decision layer. It does not replace `resolvePrice()` or the shared
- * Discounter. Both preview and any future activation adapter must call this same evaluator before
- * a candidate can reach the canonical price path.
+ * Discounter. The caller may pass the Discounter's exact line allocation so floor, maximum
+ * discount and margin guardrails evaluate the customer-facing economics after promotions without
+ * reimplementing any promotion rules here.
  */
 export function evaluatePricingCandidate(input: PricingCandidateInput): PricingDecision {
     const quantity = normalizeQuantity(input.quantity);
     const referencePrice = normalizeMoney(input.referencePrice);
     const candidatePrice = normalizeMoney(input.candidatePrice);
+    const promotionDiscount = normalizeMoney(input.promotionDiscount ?? 0);
     const violations: PricingGuardrailViolation[] = [];
 
-    if (referencePrice <= 0 || candidatePrice < 0) {
+    const referenceGrossRevenue = safeMultiply(referencePrice, quantity);
+    const candidateGrossRevenue = safeMultiply(candidatePrice, quantity);
+    const promotionValid = promotionDiscount >= 0 && candidateGrossRevenue >= 0 && promotionDiscount <= candidateGrossRevenue;
+
+    if (referencePrice <= 0 || candidatePrice < 0 || referenceGrossRevenue < 0 || !promotionValid) {
         violations.push({
             code: "invalid_price",
-            message: "Reference price must be positive and candidate price must be zero or greater.",
-            actual: candidatePrice,
+            message:
+                "Reference, candidate, quantity, and promotion allocation must remain valid integer minor-unit money values.",
+            actual: promotionValid ? candidatePrice : promotionDiscount,
             required: 0,
         });
     }
 
-    const discountPercent = referencePrice > 0 ? ((referencePrice - candidatePrice) / referencePrice) * 100 : 0;
+    const candidateNetRevenue = promotionValid ? candidateGrossRevenue - promotionDiscount : 0;
+    const discountPercent =
+        referenceGrossRevenue > 0 ? ((referenceGrossRevenue - candidateNetRevenue) / referenceGrossRevenue) * 100 : 0;
+
     const floorPrice = nullableMoney(input.guardrails.floorPrice);
-    if (floorPrice !== null && candidatePrice < floorPrice) {
+    const floorRevenue = floorPrice === null ? null : safeMultiply(floorPrice, quantity);
+    if (floorRevenue !== null && floorRevenue >= 0 && candidateNetRevenue < floorRevenue) {
         violations.push({
             code: "below_floor",
-            message: "Candidate price is below the configured floor price.",
-            actual: candidatePrice,
-            required: floorPrice,
+            message: "Customer-facing line revenue after promotions is below the configured floor.",
+            actual: candidateNetRevenue,
+            required: floorRevenue,
         });
     }
 
@@ -79,7 +98,7 @@ export function evaluatePricingCandidate(input: PricingCandidateInput): PricingD
     if (maximumDiscountPercent !== null && discountPercent > maximumDiscountPercent) {
         violations.push({
             code: "discount_too_deep",
-            message: "Candidate discount is deeper than the configured maximum.",
+            message: "Combined base-price and promotion discount is deeper than the configured maximum.",
             actual: roundMetric(discountPercent),
             required: maximumDiscountPercent,
         });
@@ -87,7 +106,11 @@ export function evaluatePricingCandidate(input: PricingCandidateInput): PricingD
 
     const cogs = nullableMoney(input.guardrails.cogs);
     const minimumMarginPercent = nullablePercent(input.guardrails.minimumMarginPercent);
-    const marginPercent = cogs !== null && candidatePrice > 0 ? ((candidatePrice - cogs) / candidatePrice) * 100 : null;
+    const totalCogs = cogs === null ? null : safeMultiply(cogs, quantity);
+    const marginPercent =
+        totalCogs !== null && totalCogs >= 0 && candidateNetRevenue > 0
+            ? ((candidateNetRevenue - totalCogs) / candidateNetRevenue) * 100
+            : null;
     if (minimumMarginPercent !== null && cogs === null) {
         violations.push({
             code: "missing_economics",
@@ -98,7 +121,7 @@ export function evaluatePricingCandidate(input: PricingCandidateInput): PricingD
     } else if (minimumMarginPercent !== null && marginPercent !== null && marginPercent < minimumMarginPercent) {
         violations.push({
             code: "below_margin",
-            message: "Candidate price would breach the minimum gross-margin guardrail.",
+            message: "Customer-facing revenue after promotions would breach the minimum gross-margin guardrail.",
             actual: roundMetric(marginPercent),
             required: minimumMarginPercent,
         });
@@ -106,8 +129,8 @@ export function evaluatePricingCandidate(input: PricingCandidateInput): PricingD
 
     const accepted = violations.length === 0;
     const effectivePrice = accepted ? candidatePrice : referencePrice;
-    const grossRevenue = effectivePrice * quantity;
-    const estimatedGrossProfit = cogs === null ? null : (effectivePrice - cogs) * quantity;
+    const grossRevenue = accepted ? candidateNetRevenue : referenceGrossRevenue;
+    const estimatedGrossProfit = totalCogs === null || totalCogs < 0 ? null : grossRevenue - totalCogs;
     const economicsState = cogs !== null ? "available" : minimumMarginPercent === null ? "not_required" : "unavailable";
 
     return {
@@ -116,6 +139,10 @@ export function evaluatePricingCandidate(input: PricingCandidateInput): PricingD
         candidatePrice,
         effectivePrice,
         quantity,
+        promotionDiscount,
+        candidateGrossRevenue,
+        candidateNetRevenue,
+        netRevenue: candidateNetRevenue,
         grossRevenue,
         estimatedGrossProfit,
         discountPercent: roundMetric(discountPercent),
@@ -143,6 +170,11 @@ function nullablePercent(value: number | null): number | null {
 function normalizeQuantity(value: number | undefined): number {
     if (value === undefined || !Number.isSafeInteger(value)) return 1;
     return Math.max(1, value);
+}
+
+function safeMultiply(left: number, right: number): number {
+    const result = left * right;
+    return Number.isSafeInteger(result) ? result : -1;
 }
 
 function roundMetric(value: number): number {
