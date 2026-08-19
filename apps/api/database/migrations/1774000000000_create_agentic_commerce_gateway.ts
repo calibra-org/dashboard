@@ -54,7 +54,13 @@ export default class extends BaseSchema {
             table.bigIncrements("id").notNullable();
             table.uuid("public_id").notNullable().unique();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("channel_id").unsigned().notNullable().references("id").inTable("agentic_channels").onDelete("CASCADE");
+            table
+                .bigInteger("channel_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("agentic_channels")
+                .onDelete("CASCADE");
             table.string("capability_key", 120).notNullable();
             table.integer("version").notNullable();
             table.string("status", 24).notNullable().defaultTo("draft");
@@ -72,7 +78,9 @@ export default class extends BaseSchema {
             table.timestamp("effective_to", { useTz: true }).nullable();
             table.bigInteger("created_by_user_id").unsigned().nullable().references("id").inTable("users").onDelete("SET NULL");
             table.timestamp("created_at", { useTz: true }).notNullable().defaultTo(this.now());
-            table.unique(["tenant_id", "channel_id", "capability_key", "version"], { indexName: "agentic_capability_version_unique" });
+            table.unique(["tenant_id", "channel_id", "capability_key", "version"], {
+                indexName: "agentic_capability_version_unique",
+            });
         });
 
         this.schema.createTable("agentic_product_readiness", (table) => {
@@ -96,8 +104,20 @@ export default class extends BaseSchema {
             table.string("event_id", 160).notNullable();
             table.integer("schema_version").notNullable().defaultTo(1);
             table.string("event_type", 160).notNullable();
-            table.bigInteger("channel_id").unsigned().nullable().references("id").inTable("agentic_channels").onDelete("SET NULL");
-            table.bigInteger("principal_id").unsigned().nullable().references("id").inTable("agentic_principals").onDelete("SET NULL");
+            table
+                .bigInteger("channel_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("agentic_channels")
+                .onDelete("SET NULL");
+            table
+                .bigInteger("principal_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("agentic_principals")
+                .onDelete("SET NULL");
             table.string("aggregate_type", 64).notNullable();
             table.string("aggregate_id", 190).notNullable();
             table.string("session_id", 160).nullable();
@@ -117,8 +137,20 @@ export default class extends BaseSchema {
             table.bigIncrements("id").notNullable();
             table.uuid("public_id").notNullable().unique();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("channel_id").unsigned().nullable().references("id").inTable("agentic_channels").onDelete("SET NULL");
-            table.bigInteger("principal_id").unsigned().nullable().references("id").inTable("agentic_principals").onDelete("SET NULL");
+            table
+                .bigInteger("channel_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("agentic_channels")
+                .onDelete("SET NULL");
+            table
+                .bigInteger("principal_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("agentic_principals")
+                .onDelete("SET NULL");
             table.string("capability_key", 120).notNullable();
             table.string("action_type", 120).notNullable();
             table.string("idempotency_key", 160).notNullable();
@@ -141,7 +173,13 @@ export default class extends BaseSchema {
             table.bigIncrements("id").notNullable();
             table.uuid("public_id").notNullable().unique();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("channel_id").unsigned().notNullable().references("id").inTable("agentic_channels").onDelete("CASCADE");
+            table
+                .bigInteger("channel_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("agentic_channels")
+                .onDelete("CASCADE");
             table.string("adapter_key", 64).notNullable();
             table.string("protocol_version", 80).nullable();
             table.string("status", 24).notNullable();
@@ -153,17 +191,31 @@ export default class extends BaseSchema {
             table.index(["tenant_id", "channel_id", "ran_at"], "agentic_conformance_channel_idx");
         });
 
-        this.schema.raw(`ALTER TABLE "agentic_principals" ADD CONSTRAINT "agentic_principals_status_check" CHECK (status IN ('disabled','shadow','active','revoked'))`);
-        this.schema.raw(`ALTER TABLE "agentic_channels" ADD CONSTRAINT "agentic_channels_mode_check" CHECK (mode IN ('disabled','shadow','read_only','live'))`);
-        this.schema.raw(`ALTER TABLE "agentic_capability_versions" ADD CONSTRAINT "agentic_capabilities_status_check" CHECK (status IN ('draft','verified','active','retired'))`);
-        this.schema.raw(`ALTER TABLE "agentic_product_readiness" ADD CONSTRAINT "agentic_readiness_score_check" CHECK (score_bp BETWEEN 0 AND 10000)`);
-        this.schema.raw(`ALTER TABLE "agentic_action_ledger" ADD CONSTRAINT "agentic_action_status_check" CHECK (status IN ('pending','approved','running','completed','blocked','failed','rolled_back'))`);
-        this.schema.raw(`ALTER TABLE "agentic_conformance_runs" ADD CONSTRAINT "agentic_conformance_status_check" CHECK (status IN ('pass','fail','blocked'))`);
+        this.schema.raw(
+            `ALTER TABLE "agentic_principals" ADD CONSTRAINT "agentic_principals_status_check" CHECK (status IN ('disabled','shadow','active','revoked'))`,
+        );
+        this.schema.raw(
+            `ALTER TABLE "agentic_channels" ADD CONSTRAINT "agentic_channels_mode_check" CHECK (mode IN ('disabled','shadow','read_only','live'))`,
+        );
+        this.schema.raw(
+            `ALTER TABLE "agentic_capability_versions" ADD CONSTRAINT "agentic_capabilities_status_check" CHECK (status IN ('draft','verified','active','retired'))`,
+        );
+        this.schema.raw(
+            `ALTER TABLE "agentic_product_readiness" ADD CONSTRAINT "agentic_readiness_score_check" CHECK (score_bp BETWEEN 0 AND 10000)`,
+        );
+        this.schema.raw(
+            `ALTER TABLE "agentic_action_ledger" ADD CONSTRAINT "agentic_action_status_check" CHECK (status IN ('pending','approved','running','completed','blocked','failed','rolled_back'))`,
+        );
+        this.schema.raw(
+            `ALTER TABLE "agentic_conformance_runs" ADD CONSTRAINT "agentic_conformance_status_check" CHECK (status IN ('pass','fail','blocked'))`,
+        );
 
         for (const table of TABLES) {
             this.schema.raw(`ALTER TABLE "${table}" ENABLE ROW LEVEL SECURITY`);
             this.schema.raw(`ALTER TABLE "${table}" FORCE ROW LEVEL SECURITY`);
-            this.schema.raw(`CREATE POLICY "${table}_tenant_isolation" ON "${table}" USING (tenant_id = NULLIF(current_setting('app.current_tenant', true), '')::bigint) WITH CHECK (tenant_id = NULLIF(current_setting('app.current_tenant', true), '')::bigint)`);
+            this.schema.raw(
+                `CREATE POLICY "${table}_tenant_isolation" ON "${table}" USING (tenant_id = NULLIF(current_setting('app.current_tenant', true), '')::bigint) WITH CHECK (tenant_id = NULLIF(current_setting('app.current_tenant', true), '')::bigint)`,
+            );
         }
     }
 

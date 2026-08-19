@@ -16,21 +16,72 @@ const ui = read("apps/admin/src/features/agentic_gateway/AgenticCommerceWorkspac
 const openapi = read("docs/api/reference/openapi/admin.agentic-commerce.v1.yaml");
 
 const assertions = [
-    ["7 RLS tables", (migration.match(/ENABLE ROW LEVEL SECURITY/g) ?? []).length === 1 && migration.includes("for (const table of TABLES)") && migration.includes("agentic_conformance_runs")],
+    [
+        "7 RLS tables",
+        (migration.match(/ENABLE ROW LEVEL SECURITY/g) ?? []).length === 1 &&
+            migration.includes("for (const table of TABLES)") &&
+            migration.includes("agentic_conformance_runs"),
+    ],
     ["no duplicate product/order truth tables", !/createTable\("(?:products|orders|payments|order_refunds)"/.test(migration)],
-    ["live conformance gate", service.includes("E_AGENTIC_CONFORMANCE_REQUIRED") && service.includes("recent passing conformance run")],
-    ["signed capability metadata verified", service.includes("getMessageVerifier().sign") && service.includes("getMessageVerifier().unsign") && service.includes("E_AGENTIC_CAPABILITY_SIGNATURE_INVALID")],
+    [
+        "live conformance gate",
+        service.includes("E_AGENTIC_CONFORMANCE_REQUIRED") && service.includes("recent passing conformance run"),
+    ],
+    [
+        "signed capability metadata verified",
+        service.includes("getMessageVerifier().sign") &&
+            service.includes("getMessageVerifier().unsign") &&
+            service.includes("E_AGENTIC_CAPABILITY_SIGNATURE_INVALID"),
+    ],
     ["fresh conformance gate", service.includes("CONFORMANCE_MAX_AGE_MS") && service.includes("recent passing conformance")],
     ["idempotency payload conflict", service.includes("E_AGENTIC_IDEMPOTENCY_CONFLICT")],
-    ["canonical product reuse", ["products", "product_variations", "inventory_items"].every((name) => graph.includes(`\"${name}\"`))],
-    ["principal dynamic rate limit", service.includes("principal_rate_limit_exceeded") && service.includes("window_seconds") && service.includes("recent_action_count")],
-    ["admin write rate limit", adminRoutes.split("router.post").slice(1).every((chunk) => chunk.includes("adminWriteLimiter"))],
-    ["public profile and data plane routed", publicRoutes.includes("/.well-known/calibra-agentic-commerce") && publicRoutes.includes("/actions/authorize") && publicRoutes.includes("/events") && routeRegistry.includes("./routes/agentic_gateway.js")],
-    ["public principal credentials are hash verified", publicService.includes("timingSafeEqual") && publicService.includes("credential_fingerprint") && publicService.includes("sha256")],
-    ["public telemetry is redacted and idempotent", publicService.includes("[redacted]") && publicService.includes("E_AGENTIC_EVENT_IDEMPOTENCY_CONFLICT")],
-    ["canonical Phase 20 trust bridge", riskBridge.includes("phase20TrustRiskService.evaluate") && riskBridge.includes("signals: []") && riskBridge.includes("E_AGENTIC_TRUST_BLOCKED")],
+    [
+        "canonical product reuse",
+        ["products", "product_variations", "inventory_items"].every((name) => graph.includes(`\"${name}\"`)),
+    ],
+    [
+        "principal dynamic rate limit",
+        service.includes("principal_rate_limit_exceeded") &&
+            service.includes("window_seconds") &&
+            service.includes("recent_action_count"),
+    ],
+    [
+        "admin write rate limit",
+        adminRoutes
+            .split("router.post")
+            .slice(1)
+            .every((chunk) => chunk.includes("adminWriteLimiter")),
+    ],
+    [
+        "public profile and data plane routed",
+        publicRoutes.includes("/.well-known/calibra-agentic-commerce") &&
+            publicRoutes.includes("/actions/authorize") &&
+            publicRoutes.includes("/events") &&
+            routeRegistry.includes("./routes/agentic_gateway.js"),
+    ],
+    [
+        "public principal credentials are hash verified",
+        publicService.includes("timingSafeEqual") &&
+            publicService.includes("credential_fingerprint") &&
+            publicService.includes("sha256"),
+    ],
+    [
+        "public telemetry is redacted and idempotent",
+        publicService.includes("[redacted]") && publicService.includes("E_AGENTIC_EVENT_IDEMPOTENCY_CONFLICT"),
+    ],
+    [
+        "canonical Phase 20 trust bridge",
+        riskBridge.includes("phase20TrustRiskService.evaluate") &&
+            riskBridge.includes("signals: []") &&
+            riskBridge.includes("E_AGENTIC_TRUST_BLOCKED"),
+    ],
     ["public outer rate limiter", limiter.includes("agenticPublicLimiter") && publicRoutes.includes("agenticPublicLimiter")],
-    ["public OpenAPI contract", openapi.includes("/.well-known/calibra-agentic-commerce") && openapi.includes("/api/v1/agentic/actions/authorize") && openapi.includes("/api/v1/agentic/events")],
+    [
+        "public OpenAPI contract",
+        openapi.includes("/.well-known/calibra-agentic-commerce") &&
+            openapi.includes("/api/v1/agentic/actions/authorize") &&
+            openapi.includes("/api/v1/agentic/events"),
+    ],
     ["admin navigation", sidebar.includes("/agentic-commerce/overview") && sidebar.includes("agenticCommerce")],
     ["UI help", (ui.match(/HelperTooltip/g) ?? []).length >= 4],
     ["no raw colors", !/(bg|text|border)-(red|blue|green|amber|slate|gray|zinc|neutral|stone)-\d/.test(ui)],

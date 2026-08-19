@@ -16,19 +16,55 @@ export async function trustOverview() {
     const tenantId = Number(currentTenantId());
     const since30d = DateTime.utc().minus({ days: 30 }).toSQL();
     const [openCases, severeCases, decisions, outcomes, falsePositives, signals, activeActions] = await Promise.all([
-        trx.from("fraud_cases").where("tenant_id", tenantId).whereIn("status", ["open", "in_review", "waiting_step_up", "held", "appealed"]).count("id as count").first(),
-        trx.from("fraud_cases").where("tenant_id", tenantId).whereIn("risk_band", ["high", "severe"]).whereIn("status", ["open", "in_review", "waiting_step_up", "held", "appealed"]).count("id as count").first(),
+        trx
+            .from("fraud_cases")
+            .where("tenant_id", tenantId)
+            .whereIn("status", ["open", "in_review", "waiting_step_up", "held", "appealed"])
+            .count("id as count")
+            .first(),
+        trx
+            .from("fraud_cases")
+            .where("tenant_id", tenantId)
+            .whereIn("risk_band", ["high", "severe"])
+            .whereIn("status", ["open", "in_review", "waiting_step_up", "held", "appealed"])
+            .count("id as count")
+            .first(),
         trx.from("fraud_decisions").where("tenant_id", tenantId).where("created_at", ">=", since30d).count("id as count").first(),
         trx.from("fraud_outcomes").where("tenant_id", tenantId).where("created_at", ">=", since30d).count("id as count").first(),
-        trx.from("fraud_outcomes").where("tenant_id", tenantId).where("created_at", ">=", since30d).where("is_false_positive", true).count("id as count").first(),
+        trx
+            .from("fraud_outcomes")
+            .where("tenant_id", tenantId)
+            .where("created_at", ">=", since30d)
+            .where("is_false_positive", true)
+            .count("id as count")
+            .first(),
         trx.from("fraud_signals").where("tenant_id", tenantId).where("occurred_at", ">=", since30d).count("id as count").first(),
-        trx.from("fraud_action_executions").where("tenant_id", tenantId).whereIn("status", ["active", "pending"]).count("id as count").first(),
+        trx
+            .from("fraud_action_executions")
+            .where("tenant_id", tenantId)
+            .whereIn("status", ["active", "pending"])
+            .count("id as count")
+            .first(),
     ]);
     const recentCases = await trx
         .from("fraud_cases")
         .where("tenant_id", tenantId)
         .whereIn("status", ["open", "in_review", "waiting_step_up", "held", "appealed"])
-        .select("public_id", "title", "pattern", "subject_type", "subject_id", "risk_score", "risk_band", "status", "recommended_action", "assignee_user_id as assigned_to_user_id", "sla_due_at", "updated_at", "version")
+        .select(
+            "public_id",
+            "title",
+            "pattern",
+            "subject_type",
+            "subject_id",
+            "risk_score",
+            "risk_band",
+            "status",
+            "recommended_action",
+            "assignee_user_id as assigned_to_user_id",
+            "sla_due_at",
+            "updated_at",
+            "version",
+        )
         .orderBy("risk_score", "desc")
         .orderBy("updated_at", "desc")
         .limit(8);
@@ -69,8 +105,15 @@ export async function trustOverview() {
         },
         recent_cases: recentCases,
         decision_distribution: distribution.map((row) => ({ action: row.action, count: Number(row.count) })),
-        active_patterns: patterns.map((row) => ({ signal_type: row.signal_type, count: Number(row.count), latest_at: row.latest_at })),
-        freshness: { generated_at: DateTime.utc().toISO(), sources: ["fraud_signals", "fraud_cases", "fraud_decisions", "fraud_outcomes"] },
+        active_patterns: patterns.map((row) => ({
+            signal_type: row.signal_type,
+            count: Number(row.count),
+            latest_at: row.latest_at,
+        })),
+        freshness: {
+            generated_at: DateTime.utc().toISO(),
+            sources: ["fraud_signals", "fraud_cases", "fraud_decisions", "fraud_outcomes"],
+        },
     };
 }
 
@@ -82,11 +125,38 @@ export async function listTrustCases(input: { status?: string; riskBand?: string
     if (input.riskBand) query.where("risk_band", input.riskBand);
     if (input.q) {
         const needle = `%${input.q.toLowerCase()}%`;
-        query.where((sub) => sub.whereRaw("LOWER(title) LIKE ?", [needle]).orWhereRaw("LOWER(subject_id) LIKE ?", [needle]).orWhereRaw("LOWER(public_id::text) LIKE ?", [needle]));
+        query.where((sub) =>
+            sub
+                .whereRaw("LOWER(title) LIKE ?", [needle])
+                .orWhereRaw("LOWER(subject_id) LIKE ?", [needle])
+                .orWhereRaw("LOWER(public_id::text) LIKE ?", [needle]),
+        );
     }
     const countQuery = query.clone().clearSelect().clearOrder().count("id as count").first();
     const rowsQuery = query
-        .select("public_id", "title", "pattern", "subject_type", "subject_id", "order_id", "risk_score", "risk_band", "confidence_bp", "false_positive_risk_bp", "status", "recommended_action", "assignee_user_id as assigned_to_user_id", "sla_due_at", "policy_key", "policy_version", "model_id", "model_version", "opened_at", "updated_at", "version")
+        .select(
+            "public_id",
+            "title",
+            "pattern",
+            "subject_type",
+            "subject_id",
+            "order_id",
+            "risk_score",
+            "risk_band",
+            "confidence_bp",
+            "false_positive_risk_bp",
+            "status",
+            "recommended_action",
+            "assignee_user_id as assigned_to_user_id",
+            "sla_due_at",
+            "policy_key",
+            "policy_version",
+            "model_id",
+            "model_version",
+            "opened_at",
+            "updated_at",
+            "version",
+        )
         .orderBy("risk_score", "desc")
         .orderBy("updated_at", "desc")
         .offset((page - 1) * limit)
@@ -125,7 +195,30 @@ export async function listTrustSignals(input: { riskBand?: string; source?: stri
     if (input.source) query.where("source", input.source);
     if (input.signalType) query.where("signal_type", input.signalType);
     return query
-        .select("public_id", "event_type", "source", "source_ref", "correlation_id", "causation_id", "session_ref as session_id", "consent_context", "subject_type", "subject_id", "signal_type", "risk_band", "score_delta", "confidence_bp", "privacy_classification", "rule_key", "rule_version", "model_id", "model_version", "evidence", "occurred_at", "received_at")
+        .select(
+            "public_id",
+            "event_type",
+            "source",
+            "source_ref",
+            "correlation_id",
+            "causation_id",
+            "session_ref as session_id",
+            "consent_context",
+            "subject_type",
+            "subject_id",
+            "signal_type",
+            "risk_band",
+            "score_delta",
+            "confidence_bp",
+            "privacy_classification",
+            "rule_key",
+            "rule_version",
+            "model_id",
+            "model_version",
+            "evidence",
+            "occurred_at",
+            "received_at",
+        )
         .orderBy("occurred_at", "desc")
         .limit(Math.max(1, Math.min(250, input.limit ?? 100)));
 }
@@ -140,7 +233,8 @@ export async function trustGraph(input: { subjectType?: string; subjectId?: stri
         subjectType = caseRow.subject_type;
         subjectId = caseRow.subject_id;
     }
-    if (!subjectType || !subjectId) return { nodes: [], edges: [], root: null, depth: 1, freshness: { generated_at: DateTime.utc().toISO() } };
+    if (!subjectType || !subjectId)
+        return { nodes: [], edges: [], root: null, depth: 1, freshness: { generated_at: DateTime.utc().toISO() } };
     const depth = Math.max(1, Math.min(3, input.depth ?? 1));
     const seen = new Set([`${subjectType}:${subjectId}`]);
     let frontier = [{ type: subjectType, id: subjectId }];
@@ -187,16 +281,41 @@ export async function trustGraph(input: { subjectType?: string; subjectId?: stri
     }
     const nodes = [...seen].map((key) => {
         const separator = key.indexOf(":");
-        return { key, type: key.slice(0, separator), id: key.slice(separator + 1), is_root: key === `${subjectType}:${subjectId}` };
+        return {
+            key,
+            type: key.slice(0, separator),
+            id: key.slice(separator + 1),
+            is_root: key === `${subjectType}:${subjectId}`,
+        };
     });
-    return { nodes, edges, root: { type: subjectType, id: subjectId }, depth, freshness: { generated_at: DateTime.utc().toISO() } };
+    return {
+        nodes,
+        edges,
+        root: { type: subjectType, id: subjectId },
+        depth,
+        freshness: { generated_at: DateTime.utc().toISO() },
+    };
 }
 
 export async function listTrustPolicies() {
     return currentTrx()
         .from("fraud_policy_versions")
         .where("tenant_id", Number(currentTenantId()))
-        .select("public_id", "policy_key", "version", "status", "scope", "conditions", "effect", "approval_required", "reason", "owner_user_id", "effective_from", "effective_to", "created_at")
+        .select(
+            "public_id",
+            "policy_key",
+            "version",
+            "status",
+            "scope",
+            "conditions",
+            "effect",
+            "approval_required",
+            "reason",
+            "owner_user_id",
+            "effective_from",
+            "effective_to",
+            "created_at",
+        )
         .orderBy("policy_key")
         .orderBy("version", "desc");
 }
@@ -214,10 +333,20 @@ export async function createTrustPolicyVersion(input: {
 }) {
     const trx = currentTrx();
     const tenantId = Number(currentTenantId());
-    const latest = await trx.from("fraud_policy_versions").where("tenant_id", tenantId).where("policy_key", input.policyKey).max("version as version").first();
+    const latest = await trx
+        .from("fraud_policy_versions")
+        .where("tenant_id", tenantId)
+        .where("policy_key", input.policyKey)
+        .max("version as version")
+        .first();
     const version = Number(latest?.version ?? 0) + 1;
     if (input.status === "active") {
-        await trx.from("fraud_policy_versions").where("tenant_id", tenantId).where("policy_key", input.policyKey).where("status", "active").update({ status: "retired", effective_to: DateTime.utc().toSQL() });
+        await trx
+            .from("fraud_policy_versions")
+            .where("tenant_id", tenantId)
+            .where("policy_key", input.policyKey)
+            .where("status", "active")
+            .update({ status: "retired", effective_to: DateTime.utc().toSQL() });
     }
     const rows = await trx
         .table("fraud_policy_versions")
@@ -267,8 +396,19 @@ function compare(left: unknown, operator: string, right: unknown): boolean {
 }
 
 export async function simulateTrustPolicy(input: { policyKey: string; version?: number; context: Record<string, unknown> }) {
-    const allowedFields = new Set(["risk_score", "signal_type", "redemptions_48h", "refunds_30d", "returns_30d", "auth_failures_10m", "automation_class"]);
-    let query = currentTrx().from("fraud_policy_versions").where("tenant_id", Number(currentTenantId())).where("policy_key", input.policyKey);
+    const allowedFields = new Set([
+        "risk_score",
+        "signal_type",
+        "redemptions_48h",
+        "refunds_30d",
+        "returns_30d",
+        "auth_failures_10m",
+        "automation_class",
+    ]);
+    let query = currentTrx()
+        .from("fraud_policy_versions")
+        .where("tenant_id", Number(currentTenantId()))
+        .where("policy_key", input.policyKey);
     if (input.version) query = query.where("version", input.version);
     else query = query.orderByRaw("CASE WHEN status = 'active' THEN 0 ELSE 1 END").orderBy("version", "desc");
     const policy = await query.first();
@@ -351,17 +491,23 @@ export async function registerTrustModel(input: {
     const tenantId = Number(currentTenantId());
     let model = await trx.from("fraud_risk_models").where("tenant_id", tenantId).where("model_id", input.modelId).first();
     if (!model) {
-        const rows = await trx.table("fraud_risk_models").insert({
-            tenant_id: tenantId,
-            model_id: input.modelId,
-            purpose: input.purpose,
-            owner: input.owner,
-            description: `Phase 20 governed model: ${input.modelId}`,
-            status: "active",
-        }).returning("*");
+        const rows = await trx
+            .table("fraud_risk_models")
+            .insert({
+                tenant_id: tenantId,
+                model_id: input.modelId,
+                purpose: input.purpose,
+                owner: input.owner,
+                description: `Phase 20 governed model: ${input.modelId}`,
+                status: "active",
+            })
+            .returning("*");
         model = rows[0];
     } else if (String(model.purpose) !== input.purpose) {
-        throw Object.assign(new Error("Model purpose conflicts with the registered model"), { status: 409, code: "E_TRUST_MODEL_PURPOSE_CONFLICT" });
+        throw Object.assign(new Error("Model purpose conflicts with the registered model"), {
+            status: 409,
+            code: "E_TRUST_MODEL_PURPOSE_CONFLICT",
+        });
     }
     const rows = await trx
         .table("fraud_risk_model_versions")
@@ -418,7 +564,10 @@ export async function updateTrustModelRollout(input: {
         .first();
     if (!row) throw Object.assign(new Error("Trust model version not found"), { status: 404, code: "E_TRUST_MODEL_NOT_FOUND" });
     if (input.status === "champion" && input.rolloutPercent <= 0)
-        throw Object.assign(new Error("Champion rollout must be greater than zero"), { status: 422, code: "E_TRUST_MODEL_ROLLOUT_INVALID" });
+        throw Object.assign(new Error("Champion rollout must be greater than zero"), {
+            status: 422,
+            code: "E_TRUST_MODEL_ROLLOUT_INVALID",
+        });
     if (input.status === "champion") {
         const competing = await trx
             .from("fraud_risk_model_versions as other")
@@ -431,18 +580,30 @@ export async function updateTrustModelRollout(input: {
         if (competing.length) {
             await trx
                 .from("fraud_risk_model_versions")
-                .whereIn("id", competing.map((item) => Number(item.id)))
+                .whereIn(
+                    "id",
+                    competing.map((item) => Number(item.id)),
+                )
                 .update({ deployment_state: "rollback_ready", rollout_percent: 0, updated_at: DateTime.utc().toSQL() });
         }
     }
-    await trx.from("fraud_risk_model_versions").where("id", row.id).update({ deployment_state: input.status, rollout_percent: input.rolloutPercent, updated_at: DateTime.utc().toSQL() });
+    await trx
+        .from("fraud_risk_model_versions")
+        .where("id", row.id)
+        .update({ deployment_state: input.status, rollout_percent: input.rolloutPercent, updated_at: DateTime.utc().toSQL() });
     await recordAudit({
         ctx: input.ctx,
         actorUserId: Number(input.actor.id),
         action: "trust.model.rollout.update",
         entityKind: "fraud_risk_model_version",
         entityId: Number(row.id),
-        payload: { model_id: row.model_id, version: row.version, status: input.status, rollout_percent: input.rolloutPercent, reason: input.reason },
+        payload: {
+            model_id: row.model_id,
+            version: row.version,
+            status: input.status,
+            rollout_percent: input.rolloutPercent,
+            reason: input.reason,
+        },
         trx,
         strict: true,
     });
@@ -456,7 +617,23 @@ export async function trustOutcomeSummary() {
         .from("fraud_outcomes")
         .where("tenant_id", Number(currentTenantId()))
         .where("created_at", ">=", since30d)
-        .select("outcome", "is_false_positive", "appeal_outcome", "baseline", "predicted_p10_minor", "predicted_p50_minor", "predicted_p90_minor", "measurement_confidence_bp", "actual_loss_minor", "incremental_effect_minor", "prevented_loss_minor", "guardrails", "unexpected_effects", "final_assessment", "created_at")
+        .select(
+            "outcome",
+            "is_false_positive",
+            "appeal_outcome",
+            "baseline",
+            "predicted_p10_minor",
+            "predicted_p50_minor",
+            "predicted_p90_minor",
+            "measurement_confidence_bp",
+            "actual_loss_minor",
+            "incremental_effect_minor",
+            "prevented_loss_minor",
+            "guardrails",
+            "unexpected_effects",
+            "final_assessment",
+            "created_at",
+        )
         .orderBy("created_at", "desc")
         .limit(250);
     return { rows, generated_at: DateTime.utc().toISO() };

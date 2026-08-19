@@ -1,13 +1,13 @@
 {
-  "Nav": {
-    "agenticCommerce": "تجارت ایجنتی",
-    "agenticOverview": "نمای کلی",
-    "agenticChannels": "کانال‌ها و قابلیت‌ها",
-    "agenticReadiness": "آمادگی محصول",
-    "agenticConformance": "انطباق و انتشار"
-  },
-  "agenticGateway": {
-    "title": "درگاه تجارت ایجنتی",
-    "subtitle": "کاتالوگ ماشین‌خوان، کنترل کانال‌های AI و قابلیت‌های نسخه‌بندی‌شده با حفظ کنترل فروشنده"
-  }
+    "Nav": {
+        "agenticCommerce": "تجارت ایجنتی",
+        "agenticOverview": "نمای کلی",
+        "agenticChannels": "کانال‌ها و قابلیت‌ها",
+        "agenticReadiness": "آمادگی محصول",
+        "agenticConformance": "انطباق و انتشار"
+    },
+    "agenticGateway": {
+        "title": "درگاه تجارت ایجنتی",
+        "subtitle": "کاتالوگ ماشین‌خوان، کنترل کانال‌های AI و قابلیت‌های نسخه‌بندی‌شده با حفظ کنترل فروشنده"
+    }
 }

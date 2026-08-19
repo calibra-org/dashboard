@@ -49,7 +49,10 @@ export async function listTrustAccess() {
         .where("role", "admin")
         .whereNull("deleted_at")
         .select("id", "email", "phone");
-    const overrides = await currentTrx().from("admin_permissions").where("tenant_id", tenantId).whereIn("permission", [...TRUST_PERMISSIONS]);
+    const overrides = await currentTrx()
+        .from("admin_permissions")
+        .where("tenant_id", tenantId)
+        .whereIn("permission", [...TRUST_PERMISSIONS]);
     return users.map((user) => {
         const permissionMap = new Map<string, boolean>();
         for (const row of overrides)
@@ -61,7 +64,9 @@ export async function listTrustAccess() {
                 : user.phone
                   ? `${String(user.phone).slice(0, 4)}••••${String(user.phone).slice(-3)}`
                   : `#${user.id}`,
-            permissions: Object.fromEntries(TRUST_PERMISSIONS.map((permission) => [permission, permissionMap.get(permission) ?? true])),
+            permissions: Object.fromEntries(
+                TRUST_PERMISSIONS.map((permission) => [permission, permissionMap.get(permission) ?? true]),
+            ),
         };
     });
 }
@@ -83,11 +88,21 @@ export async function applyTrustPreset(actorUserId: number, targetUserId: number
         .where("role", "admin")
         .whereNull("deleted_at")
         .first();
-    if (!target) throw Object.assign(new Error("Target admin was not found in this tenant"), { status: 404, code: "E_TRUST_ADMIN_NOT_FOUND" });
+    if (!target)
+        throw Object.assign(new Error("Target admin was not found in this tenant"), {
+            status: 404,
+            code: "E_TRUST_ADMIN_NOT_FOUND",
+        });
     for (const permission of TRUST_PERMISSIONS) {
         await trx
             .table("admin_permissions")
-            .insert({ tenant_id: tenantId, user_id: targetUserId, permission, allowed: allowed.has(permission), updated_by: actorUserId })
+            .insert({
+                tenant_id: tenantId,
+                user_id: targetUserId,
+                permission,
+                allowed: allowed.has(permission),
+                updated_by: actorUserId,
+            })
             .onConflict(["tenant_id", "user_id", "permission"])
             .merge(["allowed", "updated_by", "updated_at"]);
     }

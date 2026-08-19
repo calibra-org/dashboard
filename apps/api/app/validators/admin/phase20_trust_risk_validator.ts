@@ -77,7 +77,15 @@ export const trustOutcomeValidator = vine.compile(
 );
 
 const policyCondition = vine.object({
-    field: vine.enum(["risk_score", "signal_type", "redemptions_48h", "refunds_30d", "returns_30d", "auth_failures_10m", "automation_class"]),
+    field: vine.enum([
+        "risk_score",
+        "signal_type",
+        "redemptions_48h",
+        "refunds_30d",
+        "returns_30d",
+        "auth_failures_10m",
+        "automation_class",
+    ]),
     operator: vine.enum(["eq", "neq", "gte", "gt", "lte", "lt", "in"]),
     value: vine.any(),
 });

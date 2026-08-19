@@ -2,7 +2,14 @@ import type { HttpContext } from "@adonisjs/core/http";
 
 import { recordAudit } from "#services/admin_audit_log_service";
 import { isMutationCapability } from "#services/agentic_gateway/contracts";
-import { createCapabilityVersion, gatewayOverview, listChannels, runConformance, upsertChannel, upsertPrincipal } from "#services/agentic_gateway/gateway_service";
+import {
+    createCapabilityVersion,
+    gatewayOverview,
+    listChannels,
+    runConformance,
+    upsertChannel,
+    upsertPrincipal,
+} from "#services/agentic_gateway/gateway_service";
 import { requireAgenticGatewayPermission } from "#services/agentic_gateway/permissions";
 import { evaluateProductReadiness, listReadiness, productGraph } from "#services/agentic_gateway/product_graph_service";
 import { authorizeGovernedAgenticAction } from "#services/agentic_gateway/public_service";
@@ -50,7 +57,12 @@ export default class AdminAgenticGatewayController {
             action: "agentic.channel.save",
             entityKind: "agentic_channel",
             entityId: data?.id ?? null,
-            payload: { channel_key: payload.channel_key, adapter_key: payload.adapter_key, mode: payload.mode, reason: payload.reason },
+            payload: {
+                channel_key: payload.channel_key,
+                adapter_key: payload.adapter_key,
+                mode: payload.mode,
+                reason: payload.reason,
+            },
             strict: true,
         });
         return { data };
@@ -132,7 +144,11 @@ export default class AdminAgenticGatewayController {
             action: "agentic.capability.version.create",
             entityKind: "agentic_capability",
             entityId: data?.id ?? null,
-            payload: { capability_key: payload.capability_key, channel_public_id: payload.channel_public_id, reason: payload.reason },
+            payload: {
+                capability_key: payload.capability_key,
+                channel_public_id: payload.channel_public_id,
+                reason: payload.reason,
+            },
             strict: true,
         });
         return { data };

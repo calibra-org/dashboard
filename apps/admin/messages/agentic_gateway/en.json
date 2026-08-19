@@ -1,13 +1,13 @@
 {
-  "Nav": {
-    "agenticCommerce": "Agentic Commerce",
-    "agenticOverview": "Overview",
-    "agenticChannels": "Channels & Capabilities",
-    "agenticReadiness": "Product Readiness",
-    "agenticConformance": "Conformance"
-  },
-  "agenticGateway": {
-    "title": "Agentic Commerce Gateway",
-    "subtitle": "Machine-readable catalog and governed AI channels"
-  }
+    "Nav": {
+        "agenticCommerce": "Agentic Commerce",
+        "agenticOverview": "Overview",
+        "agenticChannels": "Channels & Capabilities",
+        "agenticReadiness": "Product Readiness",
+        "agenticConformance": "Conformance"
+    },
+    "agenticGateway": {
+        "title": "Agentic Commerce Gateway",
+        "subtitle": "Machine-readable catalog and governed AI channels"
+    }
 }

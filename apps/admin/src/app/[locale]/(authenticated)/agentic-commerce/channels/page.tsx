@@ -1,2 +1,4 @@
 import { AgenticCommerceWorkspace } from "#/features/agentic_gateway/AgenticCommerceWorkspace";
-export default function Page() { return <AgenticCommerceWorkspace section="channels" />; }
+export default function Page() {
+    return <AgenticCommerceWorkspace section="channels" />;
+}

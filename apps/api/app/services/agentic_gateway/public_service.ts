@@ -77,7 +77,9 @@ export async function authenticateAgentPrincipal(principalPublicId: string, cred
     }
 
     const presented = createHash("sha256").update(credential).digest("hex");
-    const stored = String(principal.credential_fingerprint).replace(/^sha256:/i, "").toLowerCase();
+    const stored = String(principal.credential_fingerprint)
+        .replace(/^sha256:/i, "")
+        .toLowerCase();
     if (!safeEqualHex(presented, stored)) {
         throw Object.assign(new Error("Agent principal credential is invalid"), {
             status: 401,
@@ -198,12 +200,17 @@ export async function recordAgenticChannelEvent(input: {
         return existing;
     }
 
-    const principal = await trx.from("agentic_principals").where({ tenant_id: tenantId, public_id: input.principalPublicId }).first();
-    if (!principal) throw Object.assign(new Error("Agent principal not found"), { status: 404, code: "E_AGENTIC_PRINCIPAL_NOT_FOUND" });
+    const principal = await trx
+        .from("agentic_principals")
+        .where({ tenant_id: tenantId, public_id: input.principalPublicId })
+        .first();
+    if (!principal)
+        throw Object.assign(new Error("Agent principal not found"), { status: 404, code: "E_AGENTIC_PRINCIPAL_NOT_FOUND" });
     const channel = input.channelPublicId
         ? await trx.from("agentic_channels").where({ tenant_id: tenantId, public_id: input.channelPublicId }).first()
         : null;
-    if (input.channelPublicId && !channel) throw Object.assign(new Error("Agentic channel not found"), { status: 404, code: "E_AGENTIC_CHANNEL_NOT_FOUND" });
+    if (input.channelPublicId && !channel)
+        throw Object.assign(new Error("Agentic channel not found"), { status: 404, code: "E_AGENTIC_CHANNEL_NOT_FOUND" });
 
     const [row] = await trx
         .table("agentic_channel_events")

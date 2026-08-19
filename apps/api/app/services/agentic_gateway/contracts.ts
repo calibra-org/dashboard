@@ -18,7 +18,9 @@ export function weightedReadiness(dimensions: ProductReadinessDimension[]) {
         weightBp: Math.max(0, Math.min(10000, Number(dimension.weightBp) || 0)),
     }));
     const denominator = normalized.reduce((sum, dimension) => sum + dimension.weightBp, 0) || 1;
-    const score = Math.round(normalized.reduce((sum, dimension) => sum + dimension.scoreBp * dimension.weightBp, 0) / denominator);
+    const score = Math.round(
+        normalized.reduce((sum, dimension) => sum + dimension.scoreBp * dimension.weightBp, 0) / denominator,
+    );
     return Math.max(0, Math.min(10000, score));
 }
 

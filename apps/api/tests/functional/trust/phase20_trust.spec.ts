@@ -31,26 +31,30 @@ async function createAdmin(email: string) {
 async function seedCase(subjectId: string, riskScore = 82) {
     const now = DateTime.utc().toSQL()!;
     const publicId = randomUUID();
-    const rows = await db.connection("postgres_admin").table("fraud_cases").insert({
-        public_id: publicId,
-        tenant_id: TEST_TENANT_ID,
-        case_number: `FR-TEST-${publicId.slice(0, 8)}`,
-        subject_type: "customer_account",
-        subject_id: subjectId,
-        pattern: "identity_velocity",
-        title: "ناهنجاری در هویت یا سرعت تلاش‌ها",
-        risk_score: riskScore,
-        risk_band: riskScore >= 90 ? "severe" : "high",
-        confidence_bp: 9100,
-        false_positive_risk_bp: 900,
-        priority: riskScore >= 90 ? "critical" : "high",
-        status: "open",
-        recommended_action: riskScore >= 90 ? "block" : "hold",
-        version: 1,
-        opened_at: now,
-        created_at: now,
-        updated_at: now,
-    }).returning("*");
+    const rows = await db
+        .connection("postgres_admin")
+        .table("fraud_cases")
+        .insert({
+            public_id: publicId,
+            tenant_id: TEST_TENANT_ID,
+            case_number: `FR-TEST-${publicId.slice(0, 8)}`,
+            subject_type: "customer_account",
+            subject_id: subjectId,
+            pattern: "identity_velocity",
+            title: "ناهنجاری در هویت یا سرعت تلاش‌ها",
+            risk_score: riskScore,
+            risk_band: riskScore >= 90 ? "severe" : "high",
+            confidence_bp: 9100,
+            false_positive_risk_bp: 900,
+            priority: riskScore >= 90 ? "critical" : "high",
+            status: "open",
+            recommended_action: riskScore >= 90 ? "block" : "hold",
+            version: 1,
+            opened_at: now,
+            created_at: now,
+            updated_at: now,
+        })
+        .returning("*");
     return rows[0];
 }
 
@@ -68,17 +72,23 @@ test.group("Phase 20 trust intelligence", (group) => {
 
     test("backend trust permission overrides cannot be bypassed by the UI", async ({ client }) => {
         const admin = await createAdmin("phase20-view-denied@calibra.dev");
-        await db.connection("postgres_admin").table("admin_permissions").insert({
-            tenant_id: TEST_TENANT_ID,
-            user_id: Number(admin.id),
-            permission: "trust.view",
-            allowed: false,
-        });
+        await db
+            .connection("postgres_admin")
+            .table("admin_permissions")
+            .insert({
+                tenant_id: TEST_TENANT_ID,
+                user_id: Number(admin.id),
+                permission: "trust.view",
+                allowed: false,
+            });
         const response = await client.get("/api/v1/admin/trust/overview").withGuard("api").loginAs(admin);
         response.assertStatus(403);
     });
 
-    test("a reviewer decision creates an append-only decision plus action ledger and advances case version", async ({ client, assert }) => {
+    test("a reviewer decision creates an append-only decision plus action ledger and advances case version", async ({
+        client,
+        assert,
+    }) => {
         const admin = await createAdmin("phase20-review@calibra.dev");
         const trustCase = await seedCase(String(admin.id), 68);
         const response = await client
@@ -160,12 +170,15 @@ test.group("Phase 20 trust intelligence", (group) => {
             summary: "مرجع پرداخت حساس برای بررسی داخلی",
             is_sensitive: true,
         });
-        await db.connection("postgres_admin").table("admin_permissions").insert({
-            tenant_id: TEST_TENANT_ID,
-            user_id: Number(admin.id),
-            permission: "trust.sensitive.view",
-            allowed: false,
-        });
+        await db
+            .connection("postgres_admin")
+            .table("admin_permissions")
+            .insert({
+                tenant_id: TEST_TENANT_ID,
+                user_id: Number(admin.id),
+                permission: "trust.sensitive.view",
+                allowed: false,
+            });
 
         const response = await client.get(`/api/v1/admin/trust/cases/${trustCase.public_id}`).withGuard("api").loginAs(admin);
         response.assertStatus(200);
@@ -185,37 +198,64 @@ test.group("Phase 20 trust intelligence", (group) => {
             reason,
         });
 
-        const denied = await client.post("/api/v1/admin/trust/policies").withGuard("api").loginAs(admin).json(payload("نسخهٔ اول برای آزمون کنترل Step-up"));
+        const denied = await client
+            .post("/api/v1/admin/trust/policies")
+            .withGuard("api")
+            .loginAs(admin)
+            .json(payload("نسخهٔ اول برای آزمون کنترل Step-up"));
         denied.assertStatus(403);
         await stepUp(client, admin, "trust.policy.manage");
-        const first = await client.post("/api/v1/admin/trust/policies").withGuard("api").loginAs(admin).json(payload("نسخهٔ اول فعال برای آزمون سیاست"));
+        const first = await client
+            .post("/api/v1/admin/trust/policies")
+            .withGuard("api")
+            .loginAs(admin)
+            .json(payload("نسخهٔ اول فعال برای آزمون سیاست"));
         first.assertStatus(200);
-        const second = await client.post("/api/v1/admin/trust/policies").withGuard("api").loginAs(admin).json(payload("نسخهٔ دوم فعال برای آزمون بازنشستگی"));
+        const second = await client
+            .post("/api/v1/admin/trust/policies")
+            .withGuard("api")
+            .loginAs(admin)
+            .json(payload("نسخهٔ دوم فعال برای آزمون بازنشستگی"));
         second.assertStatus(200);
 
-        const rows = await db.connection("postgres_admin").from("fraud_policy_versions").where("tenant_id", TEST_TENANT_ID).where("policy_key", "promotion_abuse_severe").orderBy("version", "asc");
+        const rows = await db
+            .connection("postgres_admin")
+            .from("fraud_policy_versions")
+            .where("tenant_id", TEST_TENANT_ID)
+            .where("policy_key", "promotion_abuse_severe")
+            .orderBy("version", "asc");
         assert.lengthOf(rows, 2);
         assert.equal(rows[0].status, "retired");
         assert.equal(rows[1].status, "active");
     });
 
-    test("canonical identity risk scan is idempotent and keeps raw identifiers out of the trust signal", async ({ client, assert }) => {
+    test("canonical identity risk scan is idempotent and keeps raw identifiers out of the trust signal", async ({
+        client,
+        assert,
+    }) => {
         const admin = await createAdmin("phase20-scan@calibra.dev");
-        await db.connection("postgres_admin").table("identity_risk_events").insert({
-            tenant_id: TEST_TENANT_ID,
-            user_id: Number(admin.id),
-            event_type: "auth_velocity",
-            subject_hash: "a".repeat(64),
-            score: 86,
-            decision: "review",
-            reasons: JSON.stringify(["velocity"]),
-            created_at: DateTime.utc().toSQL(),
-        });
+        await db
+            .connection("postgres_admin")
+            .table("identity_risk_events")
+            .insert({
+                tenant_id: TEST_TENANT_ID,
+                user_id: Number(admin.id),
+                event_type: "auth_velocity",
+                subject_hash: "a".repeat(64),
+                score: 86,
+                decision: "review",
+                reasons: JSON.stringify(["velocity"]),
+                created_at: DateTime.utc().toSQL(),
+            });
         const first = await client.post("/api/v1/admin/trust/scan").withGuard("api").loginAs(admin);
         first.assertStatus(200);
         const second = await client.post("/api/v1/admin/trust/scan").withGuard("api").loginAs(admin);
         second.assertStatus(200);
-        const rows = await db.connection("postgres_admin").from("fraud_signals").where("tenant_id", TEST_TENANT_ID).where("source", "identity");
+        const rows = await db
+            .connection("postgres_admin")
+            .from("fraud_signals")
+            .where("tenant_id", TEST_TENANT_ID)
+            .where("source", "identity");
         assert.lengthOf(rows, 1);
         assert.equal(rows[0].subject_id, String(admin.id));
         assert.equal(rows[0].privacy_classification, "auth_security_sensitive");

@@ -45,11 +45,15 @@ export default class extends BaseSchema {
             t.timestamp("received_at", { useTz: true }).notNullable().defaultTo(this.now());
         });
         this.schema.raw(deterministicUuidSql("fraud_signals"));
-        this.schema.raw(`UPDATE fraud_signals SET occurred_at=COALESCE(occurred_at,observed_at), received_at=COALESCE(received_at,created_at,observed_at)`);
+        this.schema.raw(
+            `UPDATE fraud_signals SET occurred_at=COALESCE(occurred_at,observed_at), received_at=COALESCE(received_at,created_at,observed_at)`,
+        );
         this.schema.raw(`ALTER TABLE fraud_signals ALTER COLUMN public_id SET DEFAULT ${UUID_DEFAULT}`);
         this.schema.raw(`ALTER TABLE fraud_signals ALTER COLUMN public_id SET NOT NULL`);
         this.schema.raw(`CREATE UNIQUE INDEX fraud_signals_public_id_unique ON fraud_signals(public_id)`);
-        this.schema.raw(`CREATE UNIQUE INDEX fraud_signals_event_unique ON fraud_signals(tenant_id,event_id) WHERE event_id IS NOT NULL`);
+        this.schema.raw(
+            `CREATE UNIQUE INDEX fraud_signals_event_unique ON fraud_signals(tenant_id,event_id) WHERE event_id IS NOT NULL`,
+        );
         this.schema.raw(`CREATE INDEX fraud_signals_risk_idx ON fraud_signals(tenant_id,risk_band,observed_at)`);
 
         this.schema.alterTable("fraud_cases", (t) => {
@@ -74,24 +78,41 @@ export default class extends BaseSchema {
             t.timestamp("resolved_at", { useTz: true }).nullable();
         });
         this.schema.raw(deterministicUuidSql("fraud_cases"));
-        this.schema.raw(`UPDATE fraud_cases c SET risk_score=LEAST(100,GREATEST(0,ROUND(s.score::numeric/10))), risk_band=CASE s.band WHEN 'critical' THEN 'severe' WHEN 'high' THEN 'high' WHEN 'medium' THEN 'medium' ELSE 'low' END, recommended_action=CASE s.band WHEN 'critical' THEN 'block' WHEN 'high' THEN 'hold' WHEN 'medium' THEN 'monitor' ELSE 'monitor' END, pattern=COALESCE(c.pattern,'legacy_risk_decision'), title=COALESCE(c.title,c.summary,'Trust review case') FROM fraud_decisions d JOIN fraud_risk_scores s ON s.id=d.risk_score_id WHERE c.decision_id=d.id`);
-        this.schema.raw(`UPDATE fraud_cases SET risk_band=COALESCE(risk_band,'medium'), recommended_action=COALESCE(recommended_action,'monitor'), pattern=COALESCE(pattern,'manual_review'), title=COALESCE(title,summary,'Trust review case')`);
+        this.schema.raw(
+            `UPDATE fraud_cases c SET risk_score=LEAST(100,GREATEST(0,ROUND(s.score::numeric/10))), risk_band=CASE s.band WHEN 'critical' THEN 'severe' WHEN 'high' THEN 'high' WHEN 'medium' THEN 'medium' ELSE 'low' END, recommended_action=CASE s.band WHEN 'critical' THEN 'block' WHEN 'high' THEN 'hold' WHEN 'medium' THEN 'monitor' ELSE 'monitor' END, pattern=COALESCE(c.pattern,'legacy_risk_decision'), title=COALESCE(c.title,c.summary,'Trust review case') FROM fraud_decisions d JOIN fraud_risk_scores s ON s.id=d.risk_score_id WHERE c.decision_id=d.id`,
+        );
+        this.schema.raw(
+            `UPDATE fraud_cases SET risk_band=COALESCE(risk_band,'medium'), recommended_action=COALESCE(recommended_action,'monitor'), pattern=COALESCE(pattern,'manual_review'), title=COALESCE(title,summary,'Trust review case')`,
+        );
         this.schema.raw(`ALTER TABLE fraud_cases ALTER COLUMN public_id SET DEFAULT ${UUID_DEFAULT}`);
         this.schema.raw(`ALTER TABLE fraud_cases ALTER COLUMN public_id SET NOT NULL`);
         this.schema.raw(`CREATE UNIQUE INDEX fraud_cases_public_id_unique ON fraud_cases(public_id)`);
         this.schema.raw(`ALTER TABLE fraud_cases DROP CONSTRAINT IF EXISTS fraud_case_status_check`);
-        this.schema.raw(`ALTER TABLE fraud_cases ADD CONSTRAINT fraud_case_status_check CHECK (status IN ('open','investigating','waiting','in_review','waiting_step_up','held','resolved','closed','dismissed','appealed'))`);
+        this.schema.raw(
+            `ALTER TABLE fraud_cases ADD CONSTRAINT fraud_case_status_check CHECK (status IN ('open','investigating','waiting','in_review','waiting_step_up','held','resolved','closed','dismissed','appealed'))`,
+        );
         this.schema.raw(`ALTER TABLE fraud_cases ADD CONSTRAINT fraud_case_version_check CHECK (version >= 1)`);
-        this.schema.raw(`ALTER TABLE fraud_cases ADD CONSTRAINT fraud_case_risk_score_check CHECK (risk_score BETWEEN 0 AND 100)`);
-        this.schema.raw(`ALTER TABLE fraud_cases ADD CONSTRAINT fraud_case_confidence_check CHECK (confidence_bp IS NULL OR confidence_bp BETWEEN 0 AND 10000)`);
-        this.schema.raw(`ALTER TABLE fraud_cases ADD CONSTRAINT fraud_case_fp_risk_check CHECK (false_positive_risk_bp IS NULL OR false_positive_risk_bp BETWEEN 0 AND 10000)`);
+        this.schema.raw(
+            `ALTER TABLE fraud_cases ADD CONSTRAINT fraud_case_risk_score_check CHECK (risk_score BETWEEN 0 AND 100)`,
+        );
+        this.schema.raw(
+            `ALTER TABLE fraud_cases ADD CONSTRAINT fraud_case_confidence_check CHECK (confidence_bp IS NULL OR confidence_bp BETWEEN 0 AND 10000)`,
+        );
+        this.schema.raw(
+            `ALTER TABLE fraud_cases ADD CONSTRAINT fraud_case_fp_risk_check CHECK (false_positive_risk_bp IS NULL OR false_positive_risk_bp BETWEEN 0 AND 10000)`,
+        );
         this.schema.raw(`CREATE INDEX fraud_cases_queue_v2_idx ON fraud_cases(tenant_id,status,risk_score,updated_at)`);
 
         this.schema.alterTable("fraud_decisions", (t) => {
             t.uuid("public_id").nullable();
             t.bigInteger("case_id").unsigned().nullable().references("id").inTable("fraud_cases").onDelete("CASCADE");
             t.bigInteger("actor_user_id").unsigned().nullable().references("id").inTable("users").onDelete("SET NULL");
-            t.bigInteger("previous_decision_id").unsigned().nullable().references("id").inTable("fraud_decisions").onDelete("SET NULL");
+            t.bigInteger("previous_decision_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("fraud_decisions")
+                .onDelete("SET NULL");
             t.string("reason_code", 100).nullable();
             t.text("reason").nullable();
             t.boolean("is_override").notNullable().defaultTo(false);
@@ -106,7 +127,9 @@ export default class extends BaseSchema {
         this.schema.raw(`ALTER TABLE fraud_decisions ALTER COLUMN public_id SET NOT NULL`);
         this.schema.raw(`CREATE UNIQUE INDEX fraud_decisions_public_id_unique ON fraud_decisions(public_id)`);
         this.schema.raw(`ALTER TABLE fraud_decisions DROP CONSTRAINT IF EXISTS fraud_decision_check`);
-        this.schema.raw(`ALTER TABLE fraud_decisions ADD CONSTRAINT fraud_decision_check CHECK (decision IN ('allow','review','challenge','hold','block','monitor','step_up','dismiss'))`);
+        this.schema.raw(
+            `ALTER TABLE fraud_decisions ADD CONSTRAINT fraud_decision_check CHECK (decision IN ('allow','review','challenge','hold','block','monitor','step_up','dismiss'))`,
+        );
         this.schema.raw(`CREATE INDEX fraud_decisions_case_idx ON fraud_decisions(tenant_id,case_id,created_at)`);
 
         this.schema.alterTable("fraud_action_executions", (t) => {
@@ -149,9 +172,15 @@ export default class extends BaseSchema {
         this.schema.raw(`ALTER TABLE fraud_risk_model_versions ALTER COLUMN public_id SET NOT NULL`);
         this.schema.raw(`CREATE UNIQUE INDEX fraud_model_version_public_id_unique ON fraud_risk_model_versions(public_id)`);
         this.schema.raw(`ALTER TABLE fraud_risk_model_versions DROP CONSTRAINT IF EXISTS fraud_model_deployment_check`);
-        this.schema.raw(`ALTER TABLE fraud_risk_model_versions ADD CONSTRAINT fraud_model_deployment_check CHECK (deployment_state IN ('draft','shadow','candidate','challenger','champion','rollback_ready','disabled','retired'))`);
-        this.schema.raw(`ALTER TABLE fraud_risk_model_versions ADD CONSTRAINT fraud_model_rollout_check CHECK (rollout_percent BETWEEN 0 AND 100)`);
-        this.schema.raw(`WITH ranked AS (SELECT v.id, ROW_NUMBER() OVER (PARTITION BY v.tenant_id,m.purpose ORDER BY v.validated_at DESC NULLS LAST,v.updated_at DESC,v.id DESC) AS rn FROM fraud_risk_model_versions v JOIN fraud_risk_models m ON m.id=v.risk_model_id WHERE v.deployment_state='champion') UPDATE fraud_risk_model_versions SET deployment_state='rollback_ready', rollout_percent=0 WHERE id IN (SELECT id FROM ranked WHERE rn>1)`);
+        this.schema.raw(
+            `ALTER TABLE fraud_risk_model_versions ADD CONSTRAINT fraud_model_deployment_check CHECK (deployment_state IN ('draft','shadow','candidate','challenger','champion','rollback_ready','disabled','retired'))`,
+        );
+        this.schema.raw(
+            `ALTER TABLE fraud_risk_model_versions ADD CONSTRAINT fraud_model_rollout_check CHECK (rollout_percent BETWEEN 0 AND 100)`,
+        );
+        this.schema.raw(
+            `WITH ranked AS (SELECT v.id, ROW_NUMBER() OVER (PARTITION BY v.tenant_id,m.purpose ORDER BY v.validated_at DESC NULLS LAST,v.updated_at DESC,v.id DESC) AS rn FROM fraud_risk_model_versions v JOIN fraud_risk_models m ON m.id=v.risk_model_id WHERE v.deployment_state='champion') UPDATE fraud_risk_model_versions SET deployment_state='rollback_ready', rollout_percent=0 WHERE id IN (SELECT id FROM ranked WHERE rn>1)`,
+        );
 
         this.schema.createTable("fraud_relationship_edges", (t) => {
             t.bigIncrements("id");
@@ -171,18 +200,27 @@ export default class extends BaseSchema {
             t.timestamp("valid_to", { useTz: true }).nullable();
             t.timestamp("last_observed_at", { useTz: true }).notNullable().defaultTo(this.now());
             t.timestamps(true, true);
-            t.unique(["tenant_id", "source_type", "source_id", "target_type", "target_id", "relationship"], { indexName: "fraud_relationship_edges_identity_unique" });
+            t.unique(["tenant_id", "source_type", "source_id", "target_type", "target_id", "relationship"], {
+                indexName: "fraud_relationship_edges_identity_unique",
+            });
             t.index(["tenant_id", "source_type", "source_id"], "fraud_relationship_edges_source_idx");
             t.index(["tenant_id", "target_type", "target_id"], "fraud_relationship_edges_target_idx");
         });
-        this.schema.raw(`ALTER TABLE fraud_relationship_edges ADD CONSTRAINT fraud_relationship_edge_confidence_check CHECK (confidence_bp BETWEEN 0 AND 10000)`);
+        this.schema.raw(
+            `ALTER TABLE fraud_relationship_edges ADD CONSTRAINT fraud_relationship_edge_confidence_check CHECK (confidence_bp BETWEEN 0 AND 10000)`,
+        );
 
         this.schema.createTable("fraud_case_evidence", (t) => {
             t.bigIncrements("id");
             t.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
             t.bigInteger("case_id").unsigned().notNullable().references("id").inTable("fraud_cases").onDelete("CASCADE");
             t.bigInteger("signal_id").unsigned().nullable().references("id").inTable("fraud_signals").onDelete("SET NULL");
-            t.bigInteger("edge_id").unsigned().nullable().references("id").inTable("fraud_relationship_edges").onDelete("SET NULL");
+            t.bigInteger("edge_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("fraud_relationship_edges")
+                .onDelete("SET NULL");
             t.string("evidence_type", 64).notNullable();
             t.string("evidence_ref", 190).nullable();
             t.integer("weight").notNullable().defaultTo(0);
@@ -212,9 +250,15 @@ export default class extends BaseSchema {
             t.unique(["tenant_id", "policy_key", "version"], { indexName: "fraud_policy_versions_unique" });
             t.index(["tenant_id", "policy_key", "status"], "fraud_policy_versions_status_idx");
         });
-        this.schema.raw(`ALTER TABLE fraud_policy_versions ADD CONSTRAINT fraud_policy_status_check CHECK (status IN ('draft','active','paused','retired'))`);
-        this.schema.raw(`ALTER TABLE fraud_policy_versions ADD CONSTRAINT fraud_policy_effect_check CHECK (effect IN ('allow','monitor','step_up','hold','block'))`);
-        this.schema.raw(`CREATE UNIQUE INDEX fraud_policy_single_active_idx ON fraud_policy_versions(tenant_id,policy_key) WHERE status='active'`);
+        this.schema.raw(
+            `ALTER TABLE fraud_policy_versions ADD CONSTRAINT fraud_policy_status_check CHECK (status IN ('draft','active','paused','retired'))`,
+        );
+        this.schema.raw(
+            `ALTER TABLE fraud_policy_versions ADD CONSTRAINT fraud_policy_effect_check CHECK (effect IN ('allow','monitor','step_up','hold','block'))`,
+        );
+        this.schema.raw(
+            `CREATE UNIQUE INDEX fraud_policy_single_active_idx ON fraud_policy_versions(tenant_id,policy_key) WHERE status='active'`,
+        );
 
         this.schema.createTable("fraud_outcomes", (t) => {
             t.bigIncrements("id");
@@ -241,8 +285,12 @@ export default class extends BaseSchema {
             t.index(["tenant_id", "case_id", "created_at"], "fraud_outcomes_case_idx");
             t.index(["tenant_id", "is_false_positive", "created_at"], "fraud_outcomes_fp_idx");
         });
-        this.schema.raw(`ALTER TABLE fraud_outcomes ADD CONSTRAINT fraud_outcome_confidence_check CHECK (measurement_confidence_bp BETWEEN 0 AND 10000)`);
-        this.schema.raw(`ALTER TABLE fraud_outcomes ADD CONSTRAINT fraud_outcome_money_nonnegative_check CHECK ((predicted_p10_minor IS NULL OR predicted_p10_minor >= 0) AND (predicted_p50_minor IS NULL OR predicted_p50_minor >= 0) AND (predicted_p90_minor IS NULL OR predicted_p90_minor >= 0) AND (actual_loss_minor IS NULL OR actual_loss_minor >= 0) AND (prevented_loss_minor IS NULL OR prevented_loss_minor >= 0))`);
+        this.schema.raw(
+            `ALTER TABLE fraud_outcomes ADD CONSTRAINT fraud_outcome_confidence_check CHECK (measurement_confidence_bp BETWEEN 0 AND 10000)`,
+        );
+        this.schema.raw(
+            `ALTER TABLE fraud_outcomes ADD CONSTRAINT fraud_outcome_money_nonnegative_check CHECK ((predicted_p10_minor IS NULL OR predicted_p10_minor >= 0) AND (predicted_p50_minor IS NULL OR predicted_p50_minor >= 0) AND (predicted_p90_minor IS NULL OR predicted_p90_minor >= 0) AND (actual_loss_minor IS NULL OR actual_loss_minor >= 0) AND (prevented_loss_minor IS NULL OR prevented_loss_minor >= 0))`,
+        );
 
         for (const table of [...EXISTING_RLS_TABLES, ...NEW_RLS_TABLES]) {
             this.schema.raw(`ALTER TABLE ${table} ALTER COLUMN tenant_id SET DEFAULT ${TENANT.replace("tenant_id = ", "")}`);
@@ -258,25 +306,78 @@ export default class extends BaseSchema {
         for (const table of [...NEW_RLS_TABLES].reverse()) this.schema.dropTable(table);
 
         // Normalize values introduced by the hardening migration before restoring the original checks.
-        this.schema.raw(`UPDATE fraud_risk_model_versions SET deployment_state=CASE deployment_state WHEN 'challenger' THEN 'candidate' WHEN 'rollback_ready' THEN 'retired' WHEN 'disabled' THEN 'retired' ELSE deployment_state END`);
-        this.schema.raw(`UPDATE fraud_cases SET status=CASE status WHEN 'in_review' THEN 'investigating' WHEN 'waiting_step_up' THEN 'waiting' WHEN 'held' THEN 'waiting' WHEN 'dismissed' THEN 'closed' WHEN 'appealed' THEN 'investigating' ELSE status END`);
-        this.schema.raw(`UPDATE fraud_decisions SET decision=CASE decision WHEN 'monitor' THEN 'review' WHEN 'step_up' THEN 'challenge' WHEN 'dismiss' THEN 'allow' ELSE decision END`);
+        this.schema.raw(
+            `UPDATE fraud_risk_model_versions SET deployment_state=CASE deployment_state WHEN 'challenger' THEN 'candidate' WHEN 'rollback_ready' THEN 'retired' WHEN 'disabled' THEN 'retired' ELSE deployment_state END`,
+        );
+        this.schema.raw(
+            `UPDATE fraud_cases SET status=CASE status WHEN 'in_review' THEN 'investigating' WHEN 'waiting_step_up' THEN 'waiting' WHEN 'held' THEN 'waiting' WHEN 'dismissed' THEN 'closed' WHEN 'appealed' THEN 'investigating' ELSE status END`,
+        );
+        this.schema.raw(
+            `UPDATE fraud_decisions SET decision=CASE decision WHEN 'monitor' THEN 'review' WHEN 'step_up' THEN 'challenge' WHEN 'dismiss' THEN 'allow' ELSE decision END`,
+        );
 
         this.schema.raw(`ALTER TABLE fraud_risk_model_versions DROP CONSTRAINT IF EXISTS fraud_model_rollout_check`);
         this.schema.raw(`ALTER TABLE fraud_risk_model_versions DROP CONSTRAINT IF EXISTS fraud_model_deployment_check`);
-        this.schema.raw(`ALTER TABLE fraud_risk_model_versions ADD CONSTRAINT fraud_model_deployment_check CHECK (deployment_state IN ('draft','shadow','candidate','champion','retired'))`);
+        this.schema.raw(
+            `ALTER TABLE fraud_risk_model_versions ADD CONSTRAINT fraud_model_deployment_check CHECK (deployment_state IN ('draft','shadow','candidate','champion','retired'))`,
+        );
         this.schema.alterTable("fraud_risk_model_versions", (t) => {
-            for (const column of ["last_evaluated_at","rollback_version","limitations_json","deployment","calibration","evaluation","privacy_controls","features","rollout_percent","public_id"]) t.dropColumn(column);
+            for (const column of [
+                "last_evaluated_at",
+                "rollback_version",
+                "limitations_json",
+                "deployment",
+                "calibration",
+                "evaluation",
+                "privacy_controls",
+                "features",
+                "rollout_percent",
+                "public_id",
+            ])
+                t.dropColumn(column);
         });
 
         this.schema.alterTable("fraud_action_executions", (t) => {
-            for (const column of ["error_message","error_code","verification","external_refs","result","policy_result","input_snapshot","rollback_plan","reversible","dry_run","autonomy_ceiling","required_permission","risk_class","case_id","public_id"]) t.dropColumn(column);
+            for (const column of [
+                "error_message",
+                "error_code",
+                "verification",
+                "external_refs",
+                "result",
+                "policy_result",
+                "input_snapshot",
+                "rollback_plan",
+                "reversible",
+                "dry_run",
+                "autonomy_ceiling",
+                "required_permission",
+                "risk_class",
+                "case_id",
+                "public_id",
+            ])
+                t.dropColumn(column);
         });
 
         this.schema.raw(`ALTER TABLE fraud_decisions DROP CONSTRAINT IF EXISTS fraud_decision_check`);
-        this.schema.raw(`ALTER TABLE fraud_decisions ADD CONSTRAINT fraud_decision_check CHECK (decision IN ('allow','review','challenge','hold','block'))`);
+        this.schema.raw(
+            `ALTER TABLE fraud_decisions ADD CONSTRAINT fraud_decision_check CHECK (decision IN ('allow','review','challenge','hold','block'))`,
+        );
         this.schema.alterTable("fraud_decisions", (t) => {
-            for (const column of ["correlation_id","approval_chain","policy_evaluation","evidence_snapshot","alternatives","is_override","reason","reason_code","previous_decision_id","actor_user_id","case_id","public_id"]) t.dropColumn(column);
+            for (const column of [
+                "correlation_id",
+                "approval_chain",
+                "policy_evaluation",
+                "evidence_snapshot",
+                "alternatives",
+                "is_override",
+                "reason",
+                "reason_code",
+                "previous_decision_id",
+                "actor_user_id",
+                "case_id",
+                "public_id",
+            ])
+                t.dropColumn(column);
         });
 
         this.schema.raw(`ALTER TABLE fraud_cases DROP CONSTRAINT IF EXISTS fraud_case_version_check`);
@@ -284,13 +385,58 @@ export default class extends BaseSchema {
         this.schema.raw(`ALTER TABLE fraud_cases DROP CONSTRAINT IF EXISTS fraud_case_confidence_check`);
         this.schema.raw(`ALTER TABLE fraud_cases DROP CONSTRAINT IF EXISTS fraud_case_fp_risk_check`);
         this.schema.raw(`ALTER TABLE fraud_cases DROP CONSTRAINT IF EXISTS fraud_case_status_check`);
-        this.schema.raw(`ALTER TABLE fraud_cases ADD CONSTRAINT fraud_case_status_check CHECK (status IN ('open','investigating','waiting','resolved','closed'))`);
+        this.schema.raw(
+            `ALTER TABLE fraud_cases ADD CONSTRAINT fraud_case_status_check CHECK (status IN ('open','investigating','waiting','resolved','closed'))`,
+        );
         this.schema.alterTable("fraud_cases", (t) => {
-            for (const column of ["resolved_at","sla_due_at","version","model_version","model_id","policy_version","policy_key","recommended_action","false_positive_risk_bp","confidence_bp","risk_band","risk_score","title","pattern","coupon_id","ticket_id","refund_id","order_id","public_id"]) t.dropColumn(column);
+            for (const column of [
+                "resolved_at",
+                "sla_due_at",
+                "version",
+                "model_version",
+                "model_id",
+                "policy_version",
+                "policy_key",
+                "recommended_action",
+                "false_positive_risk_bp",
+                "confidence_bp",
+                "risk_band",
+                "risk_score",
+                "title",
+                "pattern",
+                "coupon_id",
+                "ticket_id",
+                "refund_id",
+                "order_id",
+                "public_id",
+            ])
+                t.dropColumn(column);
         });
 
         this.schema.alterTable("fraud_signals", (t) => {
-            for (const column of ["received_at","model_version","model_id","rule_version","rule_key","privacy_classification","confidence_bp","score_delta","risk_band","signal_type","consent_context","session_ref","causation_id","correlation_id","source_ref","source","event_type","schema_version","event_id","public_id"]) t.dropColumn(column);
+            for (const column of [
+                "received_at",
+                "model_version",
+                "model_id",
+                "rule_version",
+                "rule_key",
+                "privacy_classification",
+                "confidence_bp",
+                "score_delta",
+                "risk_band",
+                "signal_type",
+                "consent_context",
+                "session_ref",
+                "causation_id",
+                "correlation_id",
+                "source_ref",
+                "source",
+                "event_type",
+                "schema_version",
+                "event_id",
+                "public_id",
+            ])
+                t.dropColumn(column);
         });
 
         for (const table of EXISTING_RLS_TABLES) this.schema.raw(`ALTER TABLE ${table} ALTER COLUMN tenant_id DROP DEFAULT`);

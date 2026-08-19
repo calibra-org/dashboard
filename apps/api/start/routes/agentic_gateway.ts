@@ -4,9 +4,7 @@ import { agenticPublicLimiter } from "#start/limiter";
 
 const AgenticGatewayController = () => import("#controllers/agentic_gateway_controller");
 
-router
-    .get("/.well-known/calibra-agentic-commerce", [AgenticGatewayController, "profile"])
-    .as("agentic_gateway.profile");
+router.get("/.well-known/calibra-agentic-commerce", [AgenticGatewayController, "profile"]).as("agentic_gateway.profile");
 
 router
     .group(() => {

@@ -25,11 +25,22 @@ export async function assertTrustAllowsCheckout(ctx: HttpContext, customerId: bi
         .whereIn("action.status", ["active", "pending"])
         .where((query) => {
             for (const [index, subject] of subjects.entries()) {
-                if (index === 0) query.where((nested) => nested.where("trust_case.subject_type", subject.type).where("trust_case.subject_id", subject.id));
-                else query.orWhere((nested) => nested.where("trust_case.subject_type", subject.type).where("trust_case.subject_id", subject.id));
+                if (index === 0)
+                    query.where((nested) =>
+                        nested.where("trust_case.subject_type", subject.type).where("trust_case.subject_id", subject.id),
+                    );
+                else
+                    query.orWhere((nested) =>
+                        nested.where("trust_case.subject_type", subject.type).where("trust_case.subject_id", subject.id),
+                    );
             }
         })
-        .select("trust_case.public_id as case_public_id", "action.action as action_type", "action.risk_class", "action.created_at")
+        .select(
+            "trust_case.public_id as case_public_id",
+            "action.action as action_type",
+            "action.risk_class",
+            "action.created_at",
+        )
         .orderBy("action.created_at", "desc")
         .limit(20);
 
