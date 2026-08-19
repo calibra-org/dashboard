@@ -1,0 +1,52 @@
+name: Phase 21 Biome Error Diagnostic
+
+on:
+  push:
+    branches:
+      - agent/phase21-agentic-commerce-gateway
+    paths:
+      - .github/workflows/phase21-biome-errors.yml
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    env:
+      NODE_VERSION: 24.14.0
+      PNPM_VERSION: 10.32.1
+      NO_COLOR: 1
+      FORCE_COLOR: 0
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/phase21-agentic-commerce-gateway
+          fetch-depth: 0
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Install pnpm
+        run: npm install --global pnpm@${PNPM_VERSION}
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Capture errors and self-clean
+        shell: bash
+        run: |
+          set +e
+          pnpm exec biome check . --diagnostic-level=error --max-diagnostics=100 > /tmp/phase21-biome-errors.log 2>&1
+          status=$?
+          set -e
+          rm -f .github/workflows/phase21-biome-errors.yml
+          if [ "$status" -ne 0 ]; then
+            cp /tmp/phase21-biome-errors.log docs/calibra/phase21-biome-errors.log
+          else
+            rm -f docs/calibra/phase21-biome-errors.log
+          fi
+          git add -A
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: capture remaining Biome errors"
+          git push origin HEAD:agent/phase21-agentic-commerce-gateway
