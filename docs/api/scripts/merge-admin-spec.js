@@ -18,6 +18,7 @@ const phase11 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase11.v1.jso
 const phase12 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase12.v1.json"), "utf8"));
 const phase13 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase13.v1.json"), "utf8"));
 const phase14 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase14.v1.json"), "utf8"));
+const customerIntelligence = JSON.parse(readFileSync(resolve(root, "dist/admin.customer-intelligence.v1.json"), "utf8"));
 const phase17 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase17.v1.json"), "utf8"));
 const phase18 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase18.v1.json"), "utf8"));
 const trust = JSON.parse(readFileSync(resolve(root, "dist/admin.trust.v1.json"), "utf8"));
@@ -104,6 +105,7 @@ for (const [overlaySource, namespace] of [
     [phase12, "Phase12Overlay"],
     [phase13, "Phase13PlanningOverlay"],
     [phase14, "Phase14ProcurementOverlay"],
+    [customerIntelligence, "CustomerIntelligenceOverlay"],
     [phase17, "Phase17ExperimentationOverlay"],
     [phase18, "Phase18PricingOverlay"],
     [trust, "TrustOverlay"],
