@@ -1,0 +1,237 @@
+openapi: 3.1.0
+info:
+  title: Calibra Admin Trust Phase 20 Overlay
+  version: 1.0.0
+servers:
+  - url: /
+tags:
+  - name: Trust
+    description: Tenant-scoped trust, fraud, abuse, case review, graph, policy, model, and outcome controls.
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque
+  schemas:
+    TrustEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { type: object, additionalProperties: true }
+    TrustListEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items: { type: object, additionalProperties: true }
+    TrustPageEnvelope:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items: { type: object, additionalProperties: true }
+        meta:
+          type: object
+          additionalProperties: true
+    TrustDecisionInput:
+      type: object
+      required: [action, reason_code, reason, expected_version, idempotency_key]
+      properties:
+        action: { type: string, enum: [allow, monitor, step_up, hold, block, dismiss] }
+        reason_code: { type: string, minLength: 2, maxLength: 100 }
+        reason: { type: string, minLength: 8, maxLength: 1000 }
+        expected_version: { type: integer, minimum: 1 }
+        idempotency_key: { type: string, minLength: 8, maxLength: 160 }
+    TrustPolicyInput:
+      type: object
+      required: [policy_key, status, scope, conditions, effect, approval_required, reason]
+      properties:
+        policy_key: { type: string, minLength: 2, maxLength: 120 }
+        status: { type: string, enum: [draft, active] }
+        scope: { type: object, additionalProperties: true }
+        conditions:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items: { type: object, additionalProperties: true }
+        effect: { type: string, enum: [allow, monitor, step_up, hold, block] }
+        approval_required: { type: boolean }
+        reason: { type: string, minLength: 8, maxLength: 1000 }
+  parameters:
+    CasePublicId: { in: path, name: publicId, required: true, schema: { type: string, format: uuid } }
+    ModelPublicId: { in: path, name: publicId, required: true, schema: { type: string, format: uuid } }
+paths:
+  /api/v1/admin/trust/overview:
+    get:
+      summary: Read evidence-backed trust command-center data
+      tags: [Trust]
+      operationId: adminTrustOverview
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200': { description: Trust overview, content: { application/json: { schema: { $ref: '#/components/schemas/TrustEnvelope' } } } }
+        '403': { description: Trust permission denied }
+  /api/v1/admin/trust/cases:
+    get:
+      summary: List trust review cases
+      tags: [Trust]
+      operationId: adminTrustCases
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { in: query, name: status, schema: { type: string } }
+        - { in: query, name: risk_band, schema: { type: string } }
+        - { in: query, name: q, schema: { type: string, maxLength: 190 } }
+        - { in: query, name: page, schema: { type: integer, minimum: 1 } }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 100 } }
+      responses:
+        '200': { description: Paged trust case queue, content: { application/json: { schema: { $ref: '#/components/schemas/TrustPageEnvelope' } } } }
+  /api/v1/admin/trust/cases/{publicId}:
+    get:
+      summary: Read a trust case with role-redacted evidence and ledgers
+      tags: [Trust]
+      operationId: adminTrustCase
+      security: [{ BearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/CasePublicId' }]
+      responses:
+        '200': { description: Trust case detail, content: { application/json: { schema: { $ref: '#/components/schemas/TrustEnvelope' } } } }
+        '404': { description: Trust case not found }
+  /api/v1/admin/trust/cases/{publicId}/assign:
+    post:
+      summary: Assign or unassign a trust case with optimistic concurrency
+      tags: [Trust]
+      operationId: adminTrustCaseAssign
+      security: [{ BearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/CasePublicId' }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [assignee_user_id, expected_version, reason], properties: { assignee_user_id: { type: [integer, 'null'] }, expected_version: { type: integer, minimum: 1 }, reason: { type: string, minLength: 4, maxLength: 500 } } } } } }
+      responses: { '200': { description: Updated case assignment, content: { application/json: { schema: { $ref: '#/components/schemas/TrustEnvelope' } } } }, '409': { description: Case version conflict } }
+  /api/v1/admin/trust/cases/{publicId}/decision:
+    post:
+      summary: Record and execute an idempotent trust decision
+      tags: [Trust]
+      operationId: adminTrustCaseDecision
+      security: [{ BearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/CasePublicId' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/TrustDecisionInput' } } } }
+      responses: { '200': { description: Decision and action ledger result, content: { application/json: { schema: { $ref: '#/components/schemas/TrustEnvelope' } } } }, '403': { description: Permission or fresh step-up required for enforcing actions }, '409': { description: Version or canonical state conflict } }
+  /api/v1/admin/trust/cases/{publicId}/override:
+    post:
+      summary: Override a trust decision with fresh scoped step-up and strict audit
+      tags: [Trust]
+      operationId: adminTrustCaseOverride
+      security: [{ BearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/CasePublicId' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/TrustDecisionInput' } } } }
+      responses: { '200': { description: Override recorded and executed, content: { application/json: { schema: { $ref: '#/components/schemas/TrustEnvelope' } } } }, '403': { description: Override permission or fresh step-up required } }
+  /api/v1/admin/trust/cases/{publicId}/appeal:
+    post:
+      summary: Reopen a trust case for appeal without deleting history
+      tags: [Trust]
+      operationId: adminTrustCaseAppeal
+      security: [{ BearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/CasePublicId' }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [reason, expected_version], properties: { reason: { type: string, minLength: 8 }, expected_version: { type: integer, minimum: 1 } } } } } }
+      responses: { '200': { description: Appealed case, content: { application/json: { schema: { $ref: '#/components/schemas/TrustEnvelope' } } } } }
+  /api/v1/admin/trust/cases/{publicId}/outcome:
+    post:
+      summary: Record a measured post-decision outcome and false-positive label
+      tags: [Trust]
+      operationId: adminTrustCaseOutcome
+      security: [{ BearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/CasePublicId' }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+      responses: { '200': { description: Measured trust outcome, content: { application/json: { schema: { $ref: '#/components/schemas/TrustEnvelope' } } } } }
+  /api/v1/admin/trust/graph:
+    get:
+      summary: Traverse governed trust graph edges up to three hops
+      tags: [Trust]
+      operationId: adminTrustGraph
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { in: query, name: subject_type, schema: { type: string } }
+        - { in: query, name: subject_id, schema: { type: string } }
+        - { in: query, name: case_id, schema: { type: string, format: uuid } }
+        - { in: query, name: depth, schema: { type: integer, minimum: 1, maximum: 3 } }
+      responses: { '200': { description: 'Trust graph nodes, edges, provenance, and confidence', content: { application/json: { schema: { $ref: '#/components/schemas/TrustEnvelope' } } } } }
+  /api/v1/admin/trust/signals:
+    get:
+      summary: List normalized trust signals with lineage and privacy class
+      tags: [Trust]
+      operationId: adminTrustSignals
+      security: [{ BearerAuth: [] }]
+      responses: { '200': { description: Trust signal ledger, content: { application/json: { schema: { $ref: '#/components/schemas/TrustListEnvelope' } } } } }
+  /api/v1/admin/trust/scan:
+    post:
+      summary: Idempotently derive trust signals from canonical Calibra ledgers
+      tags: [Trust]
+      operationId: adminTrustScan
+      security: [{ BearerAuth: [] }]
+      responses: { '200': { description: Scan counts by source, content: { application/json: { schema: { $ref: '#/components/schemas/TrustEnvelope' } } } }, '403': { description: Scan permission denied } }
+  /api/v1/admin/trust/policies:
+    get:
+      summary: List versioned trust policies
+      tags: [Trust]
+      operationId: adminTrustPolicies
+      security: [{ BearerAuth: [] }]
+      responses: { '200': { description: Trust policy registry, content: { application/json: { schema: { $ref: '#/components/schemas/TrustListEnvelope' } } } } }
+    post:
+      summary: Create a new trust policy version
+      tags: [Trust]
+      operationId: adminTrustPolicyCreate
+      security: [{ BearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/TrustPolicyInput' } } } }
+      responses: { '200': { description: New policy version, content: { application/json: { schema: { $ref: '#/components/schemas/TrustEnvelope' } } } }, '403': { description: Permission or fresh step-up required } }
+  /api/v1/admin/trust/policies/simulate:
+    post:
+      summary: Dry-run a stored policy against explicit context with no side effects
+      tags: [Trust]
+      operationId: adminTrustPolicySimulate
+      security: [{ BearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+      responses: { '200': { description: Pure simulation result, content: { application/json: { schema: { $ref: '#/components/schemas/TrustEnvelope' } } } } }
+  /api/v1/admin/trust/models:
+    get:
+      summary: List explicit trust model versions and measured quality
+      tags: [Trust]
+      operationId: adminTrustModels
+      security: [{ BearerAuth: [] }]
+      responses: { '200': { description: Model registry, content: { application/json: { schema: { $ref: '#/components/schemas/TrustListEnvelope' } } } } }
+    post:
+      summary: Register an immutable trust model version
+      tags: [Trust]
+      operationId: adminTrustModelRegister
+      security: [{ BearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+      responses: { '200': { description: Registered model version, content: { application/json: { schema: { $ref: '#/components/schemas/TrustEnvelope' } } } }, '403': { description: Permission or fresh step-up required } }
+  /api/v1/admin/trust/models/{publicId}/rollout:
+    patch:
+      summary: Change a model version rollout state under fresh step-up
+      tags: [Trust]
+      operationId: adminTrustModelRollout
+      security: [{ BearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/ModelPublicId' }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+      responses: { '200': { description: Model rollout updated, content: { application/json: { schema: { $ref: '#/components/schemas/TrustEnvelope' } } } }, '403': { description: Permission or fresh step-up required } }
+  /api/v1/admin/trust/outcomes:
+    get:
+      summary: Read measured trust outcome and false-positive summary
+      tags: [Trust]
+      operationId: adminTrustOutcomes
+      security: [{ BearerAuth: [] }]
+      responses: { '200': { description: Measured outcome quality, content: { application/json: { schema: { $ref: '#/components/schemas/TrustEnvelope' } } } } }
+  /api/v1/admin/trust/access:
+    get:
+      summary: Read backend-enforced trust permission matrix
+      tags: [Trust]
+      operationId: adminTrustAccess
+      security: [{ BearerAuth: [] }]
+      responses: { '200': { description: Trust access matrix, content: { application/json: { schema: { $ref: '#/components/schemas/TrustListEnvelope' } } } } }
+  /api/v1/admin/trust/access/preset:
+    post:
+      summary: Apply a backend trust permission preset
+      tags: [Trust]
+      operationId: adminTrustAccessPreset
+      security: [{ BearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+      responses: { '200': { description: Access preset applied, content: { application/json: { schema: { $ref: '#/components/schemas/TrustEnvelope' } } } }, '403': { description: Permission or fresh step-up required } }

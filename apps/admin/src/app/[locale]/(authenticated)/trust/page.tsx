@@ -1,7 +1,6 @@
-import { TrustRiskWorkspace } from "#/features/trust/TrustRiskWorkspace";
-import { getTrustModels, getTrustOverview, getTrustSignals } from "#/lib/queries/trust-risk";
+import { redirect } from "next/navigation";
 
-export default async function TrustPage() {
-    const [overview, signals, models] = await Promise.all([getTrustOverview(), getTrustSignals(), getTrustModels()]);
-    return <TrustRiskWorkspace initial={overview} signals={signals.data} models={models.data} />;
+export default async function TrustCompatibilityPage({ params }: { params: Promise<{ locale: string }> }) {
+    const { locale } = await params;
+    redirect(`/${locale}/quality-trust/overview`);
 }

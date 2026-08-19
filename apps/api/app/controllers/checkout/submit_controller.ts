@@ -7,18 +7,20 @@ import Order from "#models/order";
 import { orderFinalizer } from "#services/order_finalizer";
 import { paymentService } from "#services/payment_service";
 import { phase20TrustRiskService } from "#services/phase20_trust_risk_service";
+import { assertTrustAllowsCheckout } from "#services/trust/enforcement_service";
 import OrderTransformer from "#transformers/order_transformer";
 
 /**
  * Storefront checkout finalize handler. The idempotency middleware runs before this controller.
- * Phase 20 evaluates trust before order finalization or payment side effects, so a blocked/review
- * decision cannot accidentally reserve stock or initialize a gateway transaction first.
+ * Active reviewed trust actions and the deterministic checkout scorer both execute before order
+ * finalization, stock reservation, gateway initialization, or any other irreversible side effect.
  */
 export default class CheckoutSubmitController {
     async submit(ctx: HttpContext) {
         const cart = ctx.cart;
         const draft = await this.findDraft(cart);
 
+        await assertTrustAllowsCheckout(ctx, cart.customerId);
         await phase20TrustRiskService.checkoutGuard({
             orderId: Number(draft.id),
             customerId: cart.customerId,
