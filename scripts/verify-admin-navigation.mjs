@@ -25,20 +25,28 @@ function messages(locale) {
     const base = JSON.parse(read(`apps/admin/messages/${locale}.json`));
     const transactionsPath = `apps/admin/messages/transactions/${locale}.json`;
     const ticketsPath = `apps/admin/messages/tickets/${locale}.json`;
+    const operationsPath = `apps/admin/messages/operations/${locale}.json`;
     const personalizationPath = `apps/admin/messages/personalization/${locale}.json`;
+    const trustPath = `apps/admin/messages/trust/${locale}.json`;
     const transactions = exists(transactionsPath) ? JSON.parse(read(transactionsPath)) : {};
     const tickets = exists(ticketsPath) ? JSON.parse(read(ticketsPath)) : {};
+    const operations = exists(operationsPath) ? JSON.parse(read(operationsPath)) : {};
     const personalization = exists(personalizationPath) ? JSON.parse(read(personalizationPath)) : {};
+    const trust = exists(trustPath) ? JSON.parse(read(trustPath)) : {};
     return {
         ...base,
         ...transactions,
         ...tickets,
+        ...operations,
         ...personalization,
+        ...trust,
         Nav: {
             ...base.Nav,
             ...(transactions.Nav ?? {}),
             ...(tickets.Nav ?? {}),
+            ...(operations.Nav ?? {}),
             ...(personalization.Nav ?? {}),
+            ...(trust.Nav ?? {}),
         },
     };
 }
