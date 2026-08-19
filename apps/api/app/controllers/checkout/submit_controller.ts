@@ -6,20 +6,24 @@ import type Cart from "#models/cart";
 import Order from "#models/order";
 import { orderFinalizer } from "#services/order_finalizer";
 import { paymentService } from "#services/payment_service";
+import { phase20TrustRiskService } from "#services/phase20_trust_risk_service";
 import OrderTransformer from "#transformers/order_transformer";
 
 /**
- * Storefront checkout finalize handler. The {@link IdempotencyMiddleware} runs first and either
- * short-circuits with a previously-stored response or stashes the key on `ctx`. This controller
- * then runs the full draft → pending flow via {@link OrderFinalizer} and hands the freshly-
- * pending order to {@link paymentService} so the response carries a real `redirect_url` for
- * redirect gateways (or `null` for cod / bank_transfer, which transition the order to `on_hold`
- * inline).
+ * Storefront checkout finalize handler. The idempotency middleware runs before this controller.
+ * Phase 20 evaluates trust before order finalization or payment side effects, so a blocked/review
+ * decision cannot accidentally reserve stock or initialize a gateway transaction first.
  */
 export default class CheckoutSubmitController {
     async submit(ctx: HttpContext) {
         const cart = ctx.cart;
         const draft = await this.findDraft(cart);
+
+        await phase20TrustRiskService.checkoutGuard({
+            orderId: Number(draft.id),
+            customerId: cart.customerId,
+            idempotencyKey: ctx.idempotencyKey ?? null,
+        });
 
         const result = await orderFinalizer.finalize(cart, draft, {
             idempotencyKey: ctx.idempotencyKey ?? null,

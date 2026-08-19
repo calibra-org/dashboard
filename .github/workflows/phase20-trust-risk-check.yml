@@ -1,20 +1,21 @@
-name: Phase 14 Procurement Integrity
+name: Phase 20 Trust Risk Integrity
 
 on:
   pull_request:
     paths:
-      - "apps/api/app/services/phase14_procurement_service.ts"
-      - "apps/api/app/controllers/admin/procurement_controller.ts"
-      - "apps/api/app/validators/admin/phase14_procurement_validator.ts"
-      - "apps/api/database/migrations/1767000000000_create_phase14_procurement_os.ts"
-      - "apps/api/start/routes/admin_procurement.ts"
+      - "apps/api/app/services/phase20_trust_risk_service.ts"
+      - "apps/api/app/controllers/admin/trust_risk_controller.ts"
+      - "apps/api/app/validators/admin/phase20_trust_risk_validator.ts"
+      - "apps/api/database/migrations/1767600000000_create_phase20_trust_risk_os.ts"
+      - "apps/api/start/routes/admin_trust_risk.ts"
       - "apps/api/start/routes.ts"
-      - "apps/api/tests/unit/procurement/phase14_procurement.spec.ts"
-      - "apps/admin/src/features/procurement/**"
-      - "apps/admin/src/lib/queries/procurement.ts"
-      - "apps/admin/src/app/**/procurement/**"
-      - "scripts/verify-phase14-procurement-integration.mjs"
-      - ".github/workflows/phase14-procurement-check.yml"
+      - "apps/api/app/controllers/checkout/submit_controller.ts"
+      - "apps/api/tests/unit/trust/phase20_trust_risk.spec.ts"
+      - "apps/admin/src/features/trust/**"
+      - "apps/admin/src/lib/queries/trust-risk.ts"
+      - "apps/admin/src/app/**/trust/**"
+      - "scripts/verify-phase20-trust-risk-integration.mjs"
+      - ".github/workflows/phase20-trust-risk-check.yml"
   push:
     branches: [main]
 
@@ -24,7 +25,7 @@ permissions:
 jobs:
   integrity:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     services:
       postgres:
         image: postgres:17-alpine
@@ -53,12 +54,14 @@ jobs:
           node-version: "24.14.0"
       - run: npm install --global pnpm@10.32.1
       - run: pnpm install --frozen-lockfile
-      - name: Phase 14 static contract
-        run: node scripts/verify-phase14-procurement-integration.mjs
-      - name: Phase 14 unit tests
+      - name: Phase 20 static contract
+        run: node scripts/verify-phase20-trust-risk-integration.mjs
+      - name: Phase 20 unit tests
         working-directory: apps/api
-        run: pnpm test --files=tests/unit/procurement/phase14_procurement.spec.ts
+        run: pnpm test --files=tests/unit/trust/phase20_trust_risk.spec.ts
       - name: API typecheck
         run: pnpm --filter @calibra/api run typecheck
-      - name: Admin build
+      - name: Admin typecheck
+        run: pnpm exec turbo run typecheck --filter=@calibra/admin
+      - name: Admin production build
         run: pnpm exec turbo run build --filter=@calibra/admin
