@@ -1,0 +1,123 @@
+openapi: 3.1.0
+info:
+  title: Calibra Admin Quality and Trust Overlay
+  version: 1.0.0
+  description: Phase 19 product quality and voice-of-customer contracts. Canonical returns, reviews, tickets and refunds remain owned by their existing domains.
+tags:
+  - name: QualityTrust
+paths:
+  /api/v1/admin/quality/overview:
+    get: { tags: [QualityTrust], operationId: qualityOverview, responses: { '200': { description: Quality overview } } }
+  /api/v1/admin/quality/cases:
+    get: { tags: [QualityTrust], operationId: qualityCases, responses: { '200': { description: Quality case page } } }
+    post:
+      tags: [QualityTrust]
+      operationId: createQualityCase
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CreateQualityCase' } } } }
+      responses: { '201': { description: Created }, '200': { description: Idempotent replay }, '409': { description: Idempotency conflict } }
+  /api/v1/admin/quality/cases/{id}:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    get: { tags: [QualityTrust], operationId: getQualityCase, responses: { '200': { description: Quality case }, '404': { description: Not found } } }
+    patch:
+      tags: [QualityTrust]
+      operationId: updateQualityCase
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/UpdateQualityCase' } } } }
+      responses: { '200': { description: Updated }, '409': { description: Version or state conflict }, '422': { description: Closure requires outcome or audited waiver } }
+  /api/v1/admin/quality/cases/{id}/sources:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    post: { tags: [QualityTrust], operationId: addQualitySource, requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/QualitySourceInput' } } } }, responses: { '201': { description: Linked }, '404': { description: Canonical source not found } } }
+  /api/v1/admin/quality/cases/{id}/evidence:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    post: { tags: [QualityTrust], operationId: addQualityEvidence, requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/QualityEvidenceInput' } } } }, responses: { '201': { description: Recorded }, '200': { description: Content-hash replay } } }
+  /api/v1/admin/quality/cases/{id}/findings:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    post: { tags: [QualityTrust], operationId: addQualityFinding, parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ], requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/QualityFindingInput' } } } }, responses: { '201': { description: Recorded }, '200': { description: Idempotent replay }, '409': { description: Idempotency conflict } } }
+  /api/v1/admin/quality/cases/{id}/findings/{findingId}:
+    parameters: [ { $ref: '#/components/parameters/Id' }, { name: findingId, in: path, required: true, schema: { type: integer, minimum: 1 } } ]
+    patch: { tags: [QualityTrust], operationId: adjudicateQualityFinding, responses: { '200': { description: Human adjudication recorded }, '409': { description: Version conflict } } }
+  /api/v1/admin/quality/returns:
+    get: { tags: [QualityTrust], operationId: qualityReturns, responses: { '200': { description: Analytical return-item projection } } }
+  /api/v1/admin/order-returns/{returnId}/items/{itemId}/inspection:
+    parameters: [ { name: returnId, in: path, required: true, schema: { type: integer, minimum: 1 } }, { name: itemId, in: path, required: true, schema: { type: integer, minimum: 1 } }, { $ref: '#/components/parameters/IdempotencyKey' } ]
+    post: { tags: [QualityTrust], operationId: inspectReturnItem, requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ReturnInspectionInput' } } } }, responses: { '201': { description: Append-only inspection recorded }, '200': { description: Idempotent replay }, '409': { description: Idempotency conflict } } }
+  /api/v1/admin/quality/voc:
+    get: { tags: [QualityTrust], operationId: qualityVoc, responses: { '200': { description: Unified return/review/ticket projection } } }
+  /api/v1/admin/quality/voc/classifications:
+    post: { tags: [QualityTrust], operationId: classifyFeedback, parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ], requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/FeedbackClassificationInput' } } } }, responses: { '201': { description: Classification recorded }, '200': { description: Idempotent replay }, '409': { description: Idempotency conflict } } }
+  /api/v1/admin/quality/signals:
+    get: { tags: [QualityTrust], operationId: qualitySignals, responses: { '200': { description: Quality signals } } }
+  /api/v1/admin/quality/signals/evaluate:
+    post: { tags: [QualityTrust], operationId: evaluateQualitySignals, requestBody: { content: { application/json: { schema: { $ref: '#/components/schemas/SignalEvaluationInput' } } } }, responses: { '200': { description: Deterministic denominator-aware evaluation } } }
+  /api/v1/admin/quality/signals/{id}/acknowledge:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    post: { tags: [QualityTrust], operationId: acknowledgeQualitySignal, responses: { '200': { description: Acknowledged } } }
+  /api/v1/admin/quality/signals/{id}/resolve:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    post: { tags: [QualityTrust], operationId: resolveQualitySignal, responses: { '200': { description: Resolved } } }
+  /api/v1/admin/quality/actions:
+    get: { tags: [QualityTrust], operationId: qualityActions, responses: { '200': { description: Corrective actions } } }
+    post: { tags: [QualityTrust], operationId: createQualityAction, parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ], requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/QualityActionInput' } } } }, responses: { '201': { description: Created }, '200': { description: Idempotent replay }, '409': { description: Idempotency conflict } } }
+  /api/v1/admin/quality/actions/{id}:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    patch: { tags: [QualityTrust], operationId: updateQualityAction, responses: { '200': { description: Updated }, '409': { description: Version or state conflict } } }
+  /api/v1/admin/quality/outcomes:
+    post: { tags: [QualityTrust], operationId: createQualityOutcome, parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ], requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/QualityOutcomeInput' } } } }, responses: { '201': { description: Recorded }, '200': { description: Idempotent replay }, '409': { description: Idempotency conflict } } }
+  /api/v1/admin/quality/taxonomy/reasons:
+    get: { tags: [QualityTrust], operationId: qualityReasons, responses: { '200': { description: Versioned normalized reasons } } }
+    post: { tags: [QualityTrust], operationId: createQualityReason, responses: { '201': { description: Version 1 created } } }
+  /api/v1/admin/quality/taxonomy/reasons/{id}/versions:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    post: { tags: [QualityTrust], operationId: createQualityReasonVersion, responses: { '201': { description: New immutable version created } } }
+  /api/v1/admin/quality/traceability:
+    get: { tags: [QualityTrust], operationId: qualityTraceability, responses: { '200': { description: Traceability coverage and gaps } } }
+  /api/v1/admin/quality/supplier-quality:
+    get: { tags: [QualityTrust], operationId: supplierQualityAvailability, responses: { '200': { description: Phase 14 dependency state; never fabricates supplier metrics } } }
+  /api/v1/admin/quality/metrics:
+    get: { tags: [QualityTrust], operationId: qualityMetrics, responses: { '200': { description: Canonical quality metric definitions and current availability } } }
+  /api/v1/admin/quality/audit:
+    get: { tags: [QualityTrust], operationId: qualityAudit, responses: { '200': { description: Canonical admin audit projection } } }
+components:
+  parameters:
+    Id: { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    IdempotencyKey: { name: Idempotency-Key, in: header, required: false, schema: { type: string, maxLength: 96 } }
+  schemas:
+    CreateQualityCase:
+      type: object
+      required: [case_type, title]
+      properties: { case_type: { type: string }, severity: { type: string, enum: [low, medium, high, critical] }, title: { type: string }, summary: { type: [string, 'null'] }, product_id: { type: [integer, 'null'] }, variation_id: { type: [integer, 'null'] } }
+    UpdateQualityCase:
+      type: object
+      required: [expected_version]
+      properties: { expected_version: { type: integer, minimum: 1 }, status: { type: string, enum: [open, triaged, investigating, action_required, verifying, resolved, closed] }, closure_waiver_reason: { type: [string, 'null'] } }
+    QualitySourceInput:
+      type: object
+      description: Exactly one canonical source id is allowed.
+      properties: { return_item_id: { type: [integer, 'null'] }, product_review_id: { type: [integer, 'null'] }, support_ticket_id: { type: [integer, 'null'] }, refund_id: { type: [integer, 'null'] } }
+    QualityEvidenceInput:
+      type: object
+      required: [evidence_type, source_system, provenance_type, summary]
+      properties: { evidence_type: { type: string }, source_system: { type: string }, source_ref: { type: [string, 'null'] }, provenance_type: { type: string, enum: [operator, customer, system, rule, ai, external] }, summary: { type: string }, ai_provenance: { type: object, additionalProperties: true } }
+    QualityFindingInput:
+      type: object
+      required: [finding_type, statement]
+      properties: { truth_state: { type: string, enum: [observed, inferred] }, finding_type: { type: string }, statement: { type: string }, confidence: { type: [number, 'null'], minimum: 0, maximum: 1 } }
+    ReturnInspectionInput:
+      type: object
+      required: [condition, disposition, inspected_quantity]
+      properties: { condition: { type: string }, disposition: { type: string }, inspected_quantity: { type: integer, minimum: 1 }, defect_quantity: { type: integer, minimum: 0 }, note: { type: [string, 'null'] } }
+    FeedbackClassificationInput:
+      type: object
+      required: [theme_code]
+      properties: { return_item_id: { type: [integer, 'null'] }, product_review_id: { type: [integer, 'null'] }, support_ticket_id: { type: [integer, 'null'] }, theme_code: { type: string }, sentiment: { type: [string, 'null'] }, provenance_type: { type: string, enum: [operator, rule, ai] }, ai_provenance: { type: object, additionalProperties: true } }
+    SignalEvaluationInput:
+      type: object
+      properties: { days: { type: integer, minimum: 7, maximum: 180 }, minimum_delivered_units: { type: integer, minimum: 5 }, threshold_rate: { type: number, minimum: 0.001, maximum: 1 } }
+    QualityActionInput:
+      type: object
+      required: [quality_case_id, action_type, title]
+      properties: { quality_case_id: { type: integer }, action_type: { type: string }, title: { type: string }, verification_metric_key: { type: [string, 'null'] } }
+    QualityOutcomeInput:
+      type: object
+      required: [quality_case_id, metric_key, unit, assessment]
+      properties: { quality_case_id: { type: integer }, quality_action_id: { type: [integer, 'null'] }, metric_key: { type: string }, unit: { type: string }, baseline_value: { type: [number, 'null'] }, actual_value: { type: [number, 'null'] }, assessment: { type: string } }
