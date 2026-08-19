@@ -1,0 +1,30 @@
+name: Phase 21 Main Sync
+
+on:
+  push:
+    branches:
+      - agent/phase21-agentic-commerce-gateway
+    paths:
+      - ".github/workflows/phase21-main-sync.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  sync-main:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/phase21-agentic-commerce-gateway
+          fetch-depth: 0
+
+      - name: Merge latest main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git merge --no-edit origin/main
+          git push origin HEAD:agent/phase21-agentic-commerce-gateway
