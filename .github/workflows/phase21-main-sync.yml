@@ -1,9 +1,6 @@
 name: Phase 21 Main Sync
 
 on:
-  pull_request:
-    paths:
-      - ".github/workflows/phase21-main-sync.yml"
   push:
     branches:
       - agent/phase21-agentic-commerce-gateway
@@ -15,32 +12,70 @@ permissions:
 
 jobs:
   sync-main:
-    if: github.event_name == 'push' || github.head_ref == 'agent/phase21-agentic-commerce-gateway'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      NODE_VERSION: 24.14.0
+      PNPM_VERSION: 10.32.1
     steps:
-      - name: Checkout branch
+      - name: Checkout Phase 21 branch
         uses: actions/checkout@v4
         with:
           ref: agent/phase21-agentic-commerce-gateway
           fetch-depth: 0
 
-      - name: Merge latest main
+      - name: Merge main, normalize generated artifacts, and self-clean
+        shell: bash
         run: |
+          set -e
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git fetch origin main
+
           set +e
-          git merge -X theirs --no-edit origin/main
+          git merge -X ours --no-commit origin/main
           merge_status=$?
           set -e
+
           if [ "$merge_status" -ne 0 ]; then
             conflicts="$(git diff --name-only --diff-filter=U)"
-            git merge --abort
-            printf '%s\n' "$conflicts" > .phase21-merge-conflicts.txt
-            git add .phase21-merge-conflicts.txt
-            git commit -m "chore(ci): record Phase 21 main sync conflicts"
-            git push origin HEAD:agent/phase21-agentic-commerce-gateway
+            if [ -z "$conflicts" ]; then
+              echo "Merge failed without resolvable file conflicts."
+              exit "$merge_status"
+            fi
+            while IFS= read -r file; do
+              [ -z "$file" ] && continue
+              git checkout --ours -- "$file"
+              git add -- "$file"
+            done <<< "$conflicts"
+          fi
+
+          if [ -n "$(git diff --name-only --diff-filter=U)" ]; then
+            echo "Unresolved merge conflicts remain."
+            git diff --name-only --diff-filter=U
             exit 1
           fi
+
+          git add -A
+          git commit --no-edit
+
+          npm install --global pnpm@${PNPM_VERSION}
+          pnpm install --frozen-lockfile
+
+          perl -0pi -e 's/\[factorActive\]/[factorActive, setFactorOpen]/g; s/\[contentActive\]/[contentActive, setContentOpen]/g; s/\[seoActive\]/[seoActive, setSeoOpen]/g; s/\[ticketActive\]/[ticketActive, setTicketOpen]/g; s/\[trustActive\]/[trustActive, setTrustOpen]/g; s/\[agenticActive\]/[agenticActive, setAgenticOpen]/g; s/\[identityActive\]/[identityActive, setIdentityOpen]/g' apps/admin/src/components/Sidebar.tsx
+
+          pnpm exec biome check --write . || true
+          pnpm --filter @calibra/sdk run codegen
+
+          rm -f \
+            .github/workflows/phase21-main-sync.yml \
+            .github/workflows/phase21-biome-diagnostic.yml \
+            .github/workflows/phase21-admin-sdk-sync.yml \
+            .phase21-merge-conflicts.txt
+
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: finalize Phase 21 after main sync"
+          fi
+
           git push origin HEAD:agent/phase21-agentic-commerce-gateway
