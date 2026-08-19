@@ -23,6 +23,8 @@ paths:
     post: { summary: Create or update a governed channel, responses: { "200": { description: OK }, "422": { description: Conformance required for live mode } } }
   /api/v1/admin/agentic-commerce/principals:
     post: { summary: Create or update an agent principal with scopes and bounded rate-limit policy, responses: { "200": { description: OK }, "422": { description: Invalid rate-limit policy } } }
+  /api/v1/admin/agentic-commerce/actions:
+    get: { summary: List the safe Agentic Commerce action-ledger projection without raw authorization tokens, responses: { "200": { description: Action ledger } } }
   /api/v1/admin/agentic-commerce/actions/authorize:
     post: { summary: Authorize a capability action with scope, mode, canonical Trust Risk, idempotency and principal rate-limit enforcement, responses: { "200": { description: Authorization ledger entry }, "403": { description: Trust or policy block }, "409": { description: Trust review or idempotency conflict } } }
   /api/v1/admin/agentic-commerce/capabilities: { post: { summary: Create a versioned capability, responses: { "200": { description: OK } } } }
