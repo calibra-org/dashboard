@@ -1,0 +1,49 @@
+name: Repair Release Baseline
+
+on:
+  push:
+    branches:
+      - agent/phase18-pricing-promotion-main-20260818
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/phase18-pricing-promotion-main-20260818
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.14.0'
+      - run: npm install --global pnpm@10.32.1
+      - run: pnpm install --frozen-lockfile
+      - name: Repair tenant scoping and OpenAPI composition
+        run: node scripts/repair-release-baseline.mjs
+      - name: Apply canonical formatting and safe Biome fixes
+        run: |
+          pnpm run format:fix
+          pnpm run lint:biome:fix
+          pnpm run format:fix
+      - name: Regenerate OpenAPI-derived SDK declarations
+        run: pnpm --filter @calibra/sdk run codegen
+      - name: Format generated output
+        run: pnpm run format:fix
+      - name: Verify generated tree is syntactically clean
+        run: git diff --check
+      - name: Commit generated repair
+        run: |
+          git config user.name "calibra-ci"
+          git config user.email "calibra-ci@users.noreply.github.com"
+          if [ -n "$(git status --porcelain)" ]; then
+            git add -A
+            git commit -m "fix(ci): close release baseline debt"
+            git push origin HEAD:agent/phase18-pricing-promotion-main-20260818
+          else
+            echo "No repair changes to commit."
+          fi
