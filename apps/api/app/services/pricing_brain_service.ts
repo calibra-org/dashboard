@@ -63,8 +63,8 @@ export async function pricingBrainOverview() {
                 reason: "No approved elasticity evidence source is connected to the Phase 18 serving path yet.",
             },
             experimentation: {
-                status: "unavailable",
-                reason: "Phase 17 is not part of the current main runtime, so attributed outcomes are not presented as causal lift.",
+                status: "insufficient_evidence",
+                reason: "Phase 17 experimentation is available on the current runtime, but Phase 18 does not present causal lift unless an eligible experiment outcome is explicitly linked and validated for the pricing decision.",
             },
         },
         runtime: {
