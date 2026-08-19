@@ -1,4 +1,4 @@
-import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
+import { createHash, timingSafeEqual } from "node:crypto";
 import encryption from "@adonisjs/core/services/encryption";
 
 import { authorizeAgenticAction } from "#services/agentic_gateway/gateway_service";
