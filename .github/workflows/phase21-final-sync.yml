@@ -1,0 +1,67 @@
+name: Phase 21 Final Sync
+
+on:
+  push:
+    branches:
+      - agent/phase21-agentic-commerce-gateway
+    paths:
+      - .github/workflows/phase21-final-sync.yml
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-24.04
+    env:
+      NODE_VERSION: 24.14.0
+      PNPM_VERSION: 10.32.1
+    steps:
+      - name: Checkout Phase 21 branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/phase21-agentic-commerce-gateway
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install pnpm
+        run: npm install --global pnpm@${PNPM_VERSION}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Format, regenerate specs and SDK, self-clean, and commit
+        shell: bash
+        run: |
+          set +e
+          pnpm exec biome format --write . > /tmp/phase21-final-sync.log 2>&1
+          status=$?
+          if [ "$status" -eq 0 ]; then
+            pnpm --filter @calibra/sdk run codegen >> /tmp/phase21-final-sync.log 2>&1
+            status=$?
+          fi
+
+          rm -f .github/workflows/phase21-final-sync.yml
+          if [ "$status" -ne 0 ]; then
+            cp /tmp/phase21-final-sync.log docs/calibra/phase21-final-sync-failure.log
+          else
+            rm -f docs/calibra/phase21-final-sync-failure.log
+          fi
+
+          git add -A
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [ "$status" -eq 0 ]; then
+            git commit -m "chore: sync final Phase 21 generated artifacts"
+          else
+            git commit -m "chore: capture Phase 21 sync failure"
+          fi
+          git push origin HEAD:agent/phase21-agentic-commerce-gateway
