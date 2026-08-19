@@ -1,3 +1,4 @@
+# Final admin SDK synchronization; this workflow deletes itself after execution.
 name: Phase 21 Admin SDK Sync
 
 on:
