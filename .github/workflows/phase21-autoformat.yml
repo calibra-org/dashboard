@@ -1,0 +1,52 @@
+name: Phase 21 Autoformat
+
+on:
+  push:
+    branches:
+      - agent/phase21-agentic-commerce-gateway
+    paths:
+      - .github/workflows/phase21-autoformat.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-24.04
+    env:
+      NODE_VERSION: 24.14.0
+      PNPM_VERSION: 10.32.1
+    steps:
+      - name: Checkout Phase 21 branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/phase21-agentic-commerce-gateway
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install pnpm
+        run: npm install --global pnpm@${PNPM_VERSION}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Format repository with CI Biome
+        run: pnpm exec biome format --write .
+
+      - name: Remove temporary workflow and commit formatting
+        shell: bash
+        run: |
+          rm -f .github/workflows/phase21-autoformat.yml
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No formatting changes were required."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "style: format repository with Biome"
+          git push origin HEAD:agent/phase21-agentic-commerce-gateway
