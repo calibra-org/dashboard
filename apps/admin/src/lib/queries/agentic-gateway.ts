@@ -2,6 +2,7 @@
 import type { Locale } from "@calibra/shared/i18n";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocale } from "next-intl";
+
 import { apiGet, apiMutate, type MutationMethod } from "#/lib/queries/api-client";
 
 export function useAgenticGatewayResource<T>(path: string, enabled = true) {
