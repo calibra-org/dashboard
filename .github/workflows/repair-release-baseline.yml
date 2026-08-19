@@ -27,14 +27,29 @@ jobs:
         run: node scripts/repair-release-baseline.mjs
       - name: Apply canonical formatting
         run: pnpm run format:fix
+      - name: Apply safe Biome fixes
+        run: |
+          pnpm exec biome lint . --write --diagnostic-level=error --max-diagnostics=100 || true
+          pnpm exec biome check . --write --diagnostic-level=error --max-diagnostics=100 || true
+          pnpm run format:fix
       - name: Regenerate OpenAPI-derived SDK declarations
         run: pnpm --filter @calibra/sdk run codegen
       - name: Format generated output
         run: pnpm run format:fix
-      - name: Validate format and lint before committing
+      - name: Remove one-shot finalizer files
+        run: rm .github/workflows/repair-release-baseline.yml scripts/repair-release-baseline.mjs
+      - name: Apply final safe Biome fixes
         run: |
+          pnpm exec biome lint . --write --diagnostic-level=error --max-diagnostics=100 || true
+          pnpm exec biome check . --write --diagnostic-level=error --max-diagnostics=100 || true
+          pnpm run format:fix
+      - name: Validate release tree before committing
+        run: |
+          pnpm exec biome lint . --diagnostic-level=error --max-diagnostics=100
+          pnpm exec biome check . --diagnostic-level=error --max-diagnostics=100
+          pnpm run lint:tokens
+          pnpm run lint:ws
           pnpm run format
-          pnpm run lint
           git diff --check
       - name: Commit generated repair
         run: |
