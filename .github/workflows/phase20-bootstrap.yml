@@ -88,13 +88,22 @@ jobs:
 
           python - <<'PY'
           from pathlib import Path
-          path = Path('.github/workflows/phase20-trust-risk-check.yml')
-          text = path.read_text()
-          old = '        run: pnpm --filter @calibra/admin run build\n'
-          new = '        run: pnpm exec turbo run build --filter=@calibra/admin\n'
-          if text.count(old) != 1:
+
+          workflow = Path('.github/workflows/phase20-trust-risk-check.yml')
+          workflow_text = workflow.read_text()
+          old_build = '        run: pnpm --filter @calibra/admin run build\n'
+          new_build = '        run: pnpm exec turbo run build --filter=@calibra/admin\n'
+          if workflow_text.count(old_build) != 1:
               raise SystemExit('unexpected Phase 20 Admin production build shape')
-          path.write_text(text.replace(old, new))
+          workflow.write_text(workflow_text.replace(old_build, new_build))
+
+          spec = Path('docs/api/reference/openapi/admin.trust.v1.yaml')
+          spec_text = spec.read_text()
+          bad = "      responses: { '200': { description: Trust graph nodes, edges, provenance, and confidence, content: { application/json: { schema: { $ref: '#/components/schemas/TrustEnvelope' } } } } }\n"
+          fixed = "      responses: { '200': { description: 'Trust graph nodes, edges, provenance, and confidence', content: { application/json: { schema: { $ref: '#/components/schemas/TrustEnvelope' } } } } }\n"
+          if spec_text.count(bad) != 1:
+              raise SystemExit('unexpected trust graph OpenAPI response shape')
+          spec.write_text(spec_text.replace(bad, fixed))
           PY
 
           if ! git merge-file -p /tmp/phase20-merge/candidate-sidebar.tsx /tmp/phase20-merge/base-sidebar.tsx /tmp/phase20-merge/main-sidebar.tsx > /tmp/phase20-merge/merged-sidebar.tsx; then
