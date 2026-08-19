@@ -103,6 +103,9 @@ jobs:
       - name: Install workspace
         run: pnpm install --frozen-lockfile
 
+      - name: Build SDK
+        run: pnpm --filter @calibra/sdk build
+
       - name: Write runtime env
         shell: bash
         run: |
@@ -169,7 +172,7 @@ jobs:
 
           ready=0
           for i in $(seq 1 120); do
-            if curl -fsS http://127.0.0.1:3333/health >/dev/null && curl -fsS http://127.0.0.1:3001 >/dev/null; then
+            if curl -fsS http://127.0.0.1:3333/health >/dev/null && curl -fsSL --max-redirs 10 http://127.0.0.1:3001 >/dev/null; then
               ready=1
               break
             fi
@@ -194,7 +197,7 @@ jobs:
           fi
 
           curl -fsS http://127.0.0.1:3333/health
-          curl -fsSI http://127.0.0.1:3001 | head
+          curl -fsSL --max-redirs 10 http://127.0.0.1:3001 >/dev/null
 
       - name: Install Cloudflare Tunnel
         shell: bash
@@ -283,7 +286,7 @@ jobs:
               exit 1
             fi
 
-            if ! curl -fsS http://127.0.0.1:3001 >/dev/null; then
+            if ! curl -fsSL --max-redirs 10 http://127.0.0.1:3001 >/dev/null; then
               echo "Admin health failed"
               tail -n 150 /tmp/calibra-admin.log || true
               exit 1
