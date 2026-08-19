@@ -49,10 +49,10 @@ jobs:
       - name: Sync live main baseline
         run: |
           git fetch origin main
-          PHASE20_MERGE_BASE="$(git merge-base HEAD origin/main)"
-          test -n "$PHASE20_MERGE_BASE"
-          echo "PHASE20_MERGE_BASE=$PHASE20_MERGE_BASE" >> "$GITHUB_ENV"
-          echo "Phase 20 merge base: $PHASE20_MERGE_BASE"
+          PHASE20_CANDIDATE_BASE="ec5e38182296e9985d6fc0c5b8e9c55841e1aca9"
+          git cat-file -e "$PHASE20_CANDIDATE_BASE^{commit}"
+          echo "PHASE20_CANDIDATE_BASE=$PHASE20_CANDIDATE_BASE" >> "$GITHUB_ENV"
+          echo "Phase 20 candidate base: $PHASE20_CANDIDATE_BASE"
           echo "Live main: $(git rev-parse origin/main)"
           git merge --no-edit origin/main
       - name: Recover verified Phase 20 candidate
@@ -65,16 +65,16 @@ jobs:
           echo "cd77aec08d9c2a0a5e6832739a0ee7c5afee8930f619078098cd89823b2e9a01  /tmp/phase20.tar.xz" | sha256sum -c -
           xz -d -c /tmp/phase20.tar.xz > /tmp/phase20.tar
           tar -tf /tmp/phase20.tar | sed 's#^\./##' | sort -u > /tmp/phase20-merge/payload-files.txt
-          git diff --name-only "$PHASE20_MERGE_BASE"..origin/main | sort -u > /tmp/phase20-merge/main-files.txt
+          git diff --name-only "$PHASE20_CANDIDATE_BASE"..origin/main | sort -u > /tmp/phase20-merge/main-files.txt
           comm -12 /tmp/phase20-merge/payload-files.txt /tmp/phase20-merge/main-files.txt > /tmp/phase20-merge/overlap.txt
           printf '%s\n' '.github/workflows/phase20-trust-risk-check.yml' 'apps/admin/src/components/Sidebar.tsx' | sort -u > /tmp/phase20-merge/expected-overlap.txt
           echo 'Phase 20/main overlapping files:'
           cat /tmp/phase20-merge/overlap.txt
           diff -u /tmp/phase20-merge/expected-overlap.txt /tmp/phase20-merge/overlap.txt
           git show "origin/main:.github/workflows/phase20-trust-risk-check.yml" > /tmp/phase20-merge/main-phase20-check.yml
-          git show "$PHASE20_MERGE_BASE:.github/workflows/phase20-trust-risk-check.yml" > /tmp/phase20-merge/base-phase20-check.yml
+          git show "$PHASE20_CANDIDATE_BASE:.github/workflows/phase20-trust-risk-check.yml" > /tmp/phase20-merge/base-phase20-check.yml
           git show "origin/main:apps/admin/src/components/Sidebar.tsx" > /tmp/phase20-merge/main-sidebar.tsx
-          git show "$PHASE20_MERGE_BASE:apps/admin/src/components/Sidebar.tsx" > /tmp/phase20-merge/base-sidebar.tsx
+          git show "$PHASE20_CANDIDATE_BASE:apps/admin/src/components/Sidebar.tsx" > /tmp/phase20-merge/base-sidebar.tsx
           tar -xf /tmp/phase20.tar
           cp .github/workflows/phase20-trust-risk-check.yml /tmp/phase20-merge/candidate-phase20-check.yml
           cp apps/admin/src/components/Sidebar.tsx /tmp/phase20-merge/candidate-sidebar.tsx
