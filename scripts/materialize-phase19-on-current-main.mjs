@@ -57,7 +57,7 @@ rewrite("apps/admin/src/lib/queries/api-client.ts", (source) => {
         /^quality\\/outcomes$/,
     ].some((pattern) => pattern.test(cleaned));
     if (!supported) return null;
-    return \`${method}:\${cleaned}:\${stableJson(body ?? null)}\`;
+    return \`\${method}:\${cleaned}:\${stableJson(body ?? null)}\`;
 }`;
     return source.slice(0, start) + fn + source.slice(end);
 });
