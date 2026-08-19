@@ -105,3 +105,14 @@ export const contentPublicLimiter = limiter.define("content_public", (ctx) => {
         .usingKey(`content:${tenant}:${ctx.request.ip()}`)
         .limitExceeded(() => recordRateLimitThrottled("content_public"));
 });
+
+/** Public Agentic Commerce data plane: outer IP/principal circuit breaker; principal policy adds a stricter dynamic quota. */
+export const agenticPublicLimiter = limiter.define("agentic_public", (ctx) => {
+    const tenant = ctx.request.header("x-calibra-tenant") ?? ctx.request.host() ?? "unknown";
+    const principal = ctx.request.header("x-calibra-agent-principal") ?? "anonymous";
+    return limiter
+        .allowRequests(240)
+        .every("1 minute")
+        .usingKey(`agentic:${tenant}:${principal}:${ctx.request.ip()}`)
+        .limitExceeded(() => recordRateLimitThrottled("agentic_public"));
+});
