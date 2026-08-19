@@ -248,6 +248,9 @@ export function Sidebar({ userId }: { userId: number }) {
         if (trustActive) setTrustOpen(true);
     }, [trustActive]);
     useEffect(() => {
+        if (agenticActive) setAgenticOpen(true);
+    }, [agenticActive]);
+    useEffect(() => {
         if (identityActive) setIdentityOpen(true);
     }, [identityActive]);
 
@@ -392,6 +395,15 @@ export function Sidebar({ userId }: { userId: number }) {
                         navT("trust"),
                         trustItems,
                         { 0: navT("trustSectionReview"), 2: navT("trustSectionControl"), 4: navT("trustSectionIntelligence") },
+                    )}
+                    {collapsible(
+                        "agentic-sidebar-items",
+                        agenticActive,
+                        agenticOpen,
+                        setAgenticOpen,
+                        Bot,
+                        navT("agenticCommerce"),
+                        agenticItems,
                     )}
                 </div>
                 {groups.slice(3).map((group) => (
