@@ -1,18 +1,19 @@
 name: Live Review Preview
 
 on:
-  push:
+  pull_request:
     branches:
-      - preview/live-review-20260819
+      - main
     paths:
       - .github/workflows/live-review-preview.yml
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+  pull-requests: write
 
 concurrency:
-  group: live-review-preview
+  group: live-review-preview-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
 
 jobs:
@@ -204,6 +205,8 @@ jobs:
 
       - name: Open public HTTPS preview
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           nohup cloudflared tunnel --no-autoupdate --http-host-header localhost:3001 --url http://127.0.0.1:3001 > /tmp/cloudflared.log 2>&1 &
           echo $! > /tmp/cloudflared.pid
@@ -244,14 +247,21 @@ jobs:
 
           echo "PREVIEW_URL=$URL" >> "$GITHUB_ENV"
 
-          printf '%s\n' "$URL" > LIVE_PREVIEW_URL.txt
-          printf 'Admin: %s\nTenant: aurora\nEmail: admin@bulk.calibra.dev\nPassword: Passw0rd1!\n' "$URL" > LIVE_PREVIEW_LOGIN.txt
+          cat > /tmp/live-preview-comment.md <<EOF
+          ## Calibra live review is ready
 
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add LIVE_PREVIEW_URL.txt LIVE_PREVIEW_LOGIN.txt
-          git commit -m "chore(preview): publish live review URL" || true
-          git push origin HEAD:preview/live-review-20260819
+          **Admin:** $URL
+
+          **Tenant:** \`aurora\`  
+          **Email:** \`admin@bulk.calibra.dev\`  
+          **Password:** \`Passw0rd1!\`
+
+          This temporary preview stays online while the workflow job is running.
+          EOF
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            gh pr comment "${{ github.event.pull_request.number }}" --body-file /tmp/live-preview-comment.md
+          fi
 
           echo "## Calibra live review" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
