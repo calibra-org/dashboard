@@ -16,21 +16,50 @@ on:
       - "docs/api/**"
       - "scripts/verify-phase17-experimentation-integration.mjs"
 
+permissions:
+  contents: read
+
 jobs:
   phase17:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: calibra
+          POSTGRES_PASSWORD: calibra
+          POSTGRES_DB: calibra
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U calibra -d calibra"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10.32.1
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: pnpm
+          node-version: "24.14.0"
+      - run: npm install --global pnpm@10.32.1
       - run: pnpm install --frozen-lockfile
-      - run: node scripts/verify-phase17-experimentation-integration.mjs
-      - run: pnpm --filter @calibra/api typecheck
-      - run: pnpm exec turbo run typecheck --filter=@calibra/admin
-      - run: pnpm --filter @calibra/api test -- --files "tests/unit/experimentation/phase17_statistics.spec.ts"
-      - run: pnpm --filter @calibra/api test -- --files "tests/functional/admin/phase17_experimentation.spec.ts"
+      - name: Phase 17 static contract
+        run: node scripts/verify-phase17-experimentation-integration.mjs
+      - name: API typecheck
+        run: pnpm --filter @calibra/api run typecheck
+      - name: Admin typecheck
+        run: pnpm exec turbo run typecheck --filter=@calibra/admin
+      - name: Phase 17 statistics unit tests
+        working-directory: apps/api
+        run: pnpm test --files=tests/unit/experimentation/phase17_statistics.spec.ts
+      - name: Phase 17 functional tests
+        working-directory: apps/api
+        run: pnpm test --files=tests/functional/admin/phase17_experimentation.spec.ts
