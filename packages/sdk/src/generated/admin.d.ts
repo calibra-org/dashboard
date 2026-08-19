@@ -8780,6 +8780,314 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/trust/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read evidence-backed trust command-center data */
+        get: operations["adminTrustOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/cases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List trust review cases */
+        get: operations["adminTrustCases"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/cases/{publicId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read a trust case with role-redacted evidence and ledgers */
+        get: operations["adminTrustCase"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/cases/{publicId}/assign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Assign or unassign a trust case with optimistic concurrency */
+        post: operations["adminTrustCaseAssign"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/cases/{publicId}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record and execute an idempotent trust decision */
+        post: operations["adminTrustCaseDecision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/cases/{publicId}/override": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Override a trust decision with fresh scoped step-up and strict audit */
+        post: operations["adminTrustCaseOverride"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/cases/{publicId}/appeal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reopen a trust case for appeal without deleting history */
+        post: operations["adminTrustCaseAppeal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/cases/{publicId}/outcome": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record a measured post-decision outcome and false-positive label */
+        post: operations["adminTrustCaseOutcome"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/graph": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Traverse governed trust graph edges up to three hops */
+        get: operations["adminTrustGraph"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/signals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List normalized trust signals with lineage and privacy class */
+        get: operations["adminTrustSignals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/scan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Idempotently derive trust signals from canonical Calibra ledgers */
+        post: operations["adminTrustScan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/policies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List versioned trust policies */
+        get: operations["adminTrustPolicies"];
+        put?: never;
+        /** Create a new trust policy version */
+        post: operations["adminTrustPolicyCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/policies/simulate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dry-run a stored policy against explicit context with no side effects */
+        post: operations["adminTrustPolicySimulate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List explicit trust model versions and measured quality */
+        get: operations["adminTrustModels"];
+        put?: never;
+        /** Register an immutable trust model version */
+        post: operations["adminTrustModelRegister"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/models/{publicId}/rollout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Change a model version rollout state under fresh step-up */
+        patch: operations["adminTrustModelRollout"];
+        trace?: never;
+    };
+    "/api/v1/admin/trust/outcomes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read measured trust outcome and false-positive summary */
+        get: operations["adminTrustOutcomes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read backend-enforced trust permission matrix */
+        get: operations["adminTrustAccess"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/access/preset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Apply a backend trust permission preset */
+        post: operations["adminTrustAccessPreset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -12212,6 +12520,47 @@ export interface components {
             /** @enum {string} */
             decision: "approved" | "rejected";
         };
+        TrustEnvelope: {
+            data: {
+                [key: string]: unknown;
+            };
+        };
+        TrustListEnvelope: {
+            data: {
+                [key: string]: unknown;
+            }[];
+        };
+        TrustPageEnvelope: {
+            data: {
+                [key: string]: unknown;
+            }[];
+            meta: {
+                [key: string]: unknown;
+            };
+        };
+        TrustDecisionInput: {
+            /** @enum {string} */
+            action: "allow" | "monitor" | "step_up" | "hold" | "block" | "dismiss";
+            reason_code: string;
+            reason: string;
+            expected_version: number;
+            idempotency_key: string;
+        };
+        TrustPolicyInput: {
+            policy_key: string;
+            /** @enum {string} */
+            status: "draft" | "active";
+            scope: {
+                [key: string]: unknown;
+            };
+            conditions: {
+                [key: string]: unknown;
+            }[];
+            /** @enum {string} */
+            effect: "allow" | "monitor" | "step_up" | "hold" | "block";
+            approval_required: boolean;
+            reason: string;
+        };
     };
     responses: {
         /** @description Unauthorized (401) — the request did not include a valid bearer token, or the token has been revoked. */
@@ -12301,6 +12650,8 @@ export interface components {
         IdempotencyKey: string;
         PlanningRunIdQuery: number;
         PlanningId: number;
+        CasePublicId: string;
+        ModelPublicId: string;
     };
     requestBodies: never;
     headers: never;
@@ -26883,6 +27234,565 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PlanningHealthEnvelope"];
                 };
+            };
+        };
+    };
+    adminTrustOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Trust overview */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrustEnvelope"];
+                };
+            };
+            /** @description Trust permission denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTrustCases: {
+        parameters: {
+            query?: {
+                status?: string;
+                risk_band?: string;
+                q?: string;
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Paged trust case queue */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrustPageEnvelope"];
+                };
+            };
+        };
+    };
+    adminTrustCase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["CasePublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Trust case detail */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrustEnvelope"];
+                };
+            };
+            /** @description Trust case not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTrustCaseAssign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["CasePublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    assignee_user_id: number | null;
+                    expected_version: number;
+                    reason: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Updated case assignment */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrustEnvelope"];
+                };
+            };
+            /** @description Case version conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTrustCaseDecision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["CasePublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrustDecisionInput"];
+            };
+        };
+        responses: {
+            /** @description Decision and action ledger result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrustEnvelope"];
+                };
+            };
+            /** @description Permission or fresh step-up required for enforcing actions */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Version or canonical state conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTrustCaseOverride: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["CasePublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrustDecisionInput"];
+            };
+        };
+        responses: {
+            /** @description Override recorded and executed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrustEnvelope"];
+                };
+            };
+            /** @description Override permission or fresh step-up required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTrustCaseAppeal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["CasePublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    reason: string;
+                    expected_version: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Appealed case */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrustEnvelope"];
+                };
+            };
+        };
+    };
+    adminTrustCaseOutcome: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["CasePublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Measured trust outcome */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrustEnvelope"];
+                };
+            };
+        };
+    };
+    adminTrustGraph: {
+        parameters: {
+            query?: {
+                subject_type?: string;
+                subject_id?: string;
+                case_id?: string;
+                depth?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Trust graph nodes, edges, provenance, and confidence */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrustEnvelope"];
+                };
+            };
+        };
+    };
+    adminTrustSignals: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Trust signal ledger */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrustListEnvelope"];
+                };
+            };
+        };
+    };
+    adminTrustScan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Scan counts by source */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrustEnvelope"];
+                };
+            };
+            /** @description Scan permission denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTrustPolicies: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Trust policy registry */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrustListEnvelope"];
+                };
+            };
+        };
+    };
+    adminTrustPolicyCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrustPolicyInput"];
+            };
+        };
+        responses: {
+            /** @description New policy version */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrustEnvelope"];
+                };
+            };
+            /** @description Permission or fresh step-up required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTrustPolicySimulate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Pure simulation result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrustEnvelope"];
+                };
+            };
+        };
+    };
+    adminTrustModels: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Model registry */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrustListEnvelope"];
+                };
+            };
+        };
+    };
+    adminTrustModelRegister: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Registered model version */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrustEnvelope"];
+                };
+            };
+            /** @description Permission or fresh step-up required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTrustModelRollout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["ModelPublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Model rollout updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrustEnvelope"];
+                };
+            };
+            /** @description Permission or fresh step-up required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTrustOutcomes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Measured outcome quality */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrustEnvelope"];
+                };
+            };
+        };
+    };
+    adminTrustAccess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Trust access matrix */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrustListEnvelope"];
+                };
+            };
+        };
+    };
+    adminTrustAccessPreset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Access preset applied */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrustEnvelope"];
+                };
+            };
+            /** @description Permission or fresh step-up required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

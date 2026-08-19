@@ -285,3 +285,8 @@ Phase20 فقط وقتی Done است که:
 - برای سبز کردن CI check را bypass/disable نکن.
 - داده/اعتماد/ریسک/KPI جعلی نساز.
 - سیستم موازی، generated edit دستی، direct main push، force push و hidden default behavior ممنوع.
+
+## قرارداد شمارشی اجرای Phase 20
+- قرارداد API این completion شامل **20 endpoint** است و باید با route/OpenAPI/SDK زنده هم‌راستا بماند.
+- از این قرارداد **11 مسیر write** هستند و تمام writeها باید auth، permission، tenant/RLS، audit و limiter/step-up لازم را حفظ کنند.
+- merge فقط پس از **CI سبز** روی همان candidate commit مجاز است؛ هیچ gate نباید bypass یا سبز فرض شود.
