@@ -66,7 +66,7 @@ jobs:
         run: pnpm --filter @calibra/api-docs run build:test-spec
       - name: Diagnose merged OpenAPI 3.0 contract
         run: |
-          VALIDATOR_DIR="$(find node_modules/.pnpm -type d -path '*/node_modules/openapi-schema-validator' | head -1)"
+          VALIDATOR_DIR="$(find "$PWD/node_modules/.pnpm" -type d -path '*/node_modules/openapi-schema-validator' | head -1)"
           test -n "$VALIDATOR_DIR" || { echo 'openapi-schema-validator not found'; exit 1; }
           node - "$VALIDATOR_DIR" <<'NODE'
           const fs = require('node:fs')
