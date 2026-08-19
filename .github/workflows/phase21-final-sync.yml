@@ -1,3 +1,4 @@
+# Final branch artifact synchronization; this workflow deletes itself after execution.
 name: Phase 21 Final Sync
 
 on:
