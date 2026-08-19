@@ -33,6 +33,6 @@ RLS is forced on every Phase 21 table. Sensitive Admin mutations use backend per
 The Persian-first RTL `Agentic Commerce` workspace exposes Overview, Channels & Principals, Product Readiness, Conformance and the safe Action Ledger projection. Raw credentials and authorization tokens are not rendered.
 
 ## Release evidence
-The Phase 21 source finalizer passed the static contract, Admin OpenAPI composition, Admin SDK generation, merged OpenAPI 3.0 validation, focused Japa contract tests, API typecheck, Admin typecheck, Admin production build and diff hygiene on the finalized source. Temporary hardening transport files and the temporary finalizer workflow were then removed; the permanent repository gates run on the final review head before merge.
+The Phase 21 source finalizer passed the static contract, Admin OpenAPI composition, Admin SDK generation, merged OpenAPI 3.0 validation, focused Japa contract tests, API typecheck, Admin typecheck, Admin production build and diff hygiene on the finalized source. Temporary hardening transport files and temporary release workflows were removed before final review.
 
-Repository-wide Biome formatting was normalized with the same toolchain used by CI before the final review head was submitted to the permanent gates.
+Repository-wide Biome formatting was normalized with the same toolchain used by CI. The aggregate OpenAPI build now includes the existing Phase 14 procurement and Phase 17 experimentation contracts, the public Phase 17 data plane, and the Phase 21 well-known route in drift verification; SDK types were regenerated from those final bundles before the permanent repository gates were triggered.
