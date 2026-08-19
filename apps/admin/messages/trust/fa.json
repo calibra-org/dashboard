@@ -10,7 +10,9 @@
         "trustModels": "مدل‌ها و پیامدها",
         "trustSectionReview": "بررسی و تصمیم",
         "trustSectionControl": "کنترل و سیاست",
-        "trustSectionIntelligence": "داده و کیفیت"
+        "trustSectionIntelligence": "داده و کیفیت",
+        "qualityVoc": "کیفیت محصول و صدای مشتری",
+        "trustSectionQuality": "کیفیت و صدای مشتری"
     },
     "Trust": {
         "eyebrow": "اعتماد، تقلب و سوءاستفاده",
