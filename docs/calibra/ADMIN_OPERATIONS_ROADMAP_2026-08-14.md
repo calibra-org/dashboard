@@ -73,7 +73,7 @@ Merged through PR #12. Merge commit: `5b04ca0f62bba814b225ca3f8b5e0220a3aada34`.
 Landed capabilities include:
 
 - Tenant-scoped ticket queue, detail, conversation, replies, internal notes, assignment, customer resources, settings, SLA KPIs and trends.
-- Backend storage/API with tenant RLS, per-tenant numbering, optimistic-version guards, legal status transitions, write limiting and TableView queue filtering.
+- Backend storage/API with tenant RLS, per-tenant numbering, optimistic version guards, audit/events, write limiting and TableView queue filtering.
 - Literal operator search, explicit-unassigned semantics, settle-mutation rollback safety, RTL-aware navigation and next-intl catalogs.
 - Typed Tickets OpenAPI overlay and generated `admin.tickets.d.ts` composed with Core + Payment Phase 4 in the Admin SDK.
 - Functional coverage for authentication/authorization, creation/search/detail, SLA, defaults, concurrency and TableView grammar.
@@ -198,3 +198,27 @@ A second append-only audit pass found and closed additional integration and edge
 ### Release status after this checkpoint
 
 Phase 5 is still **IN PROGRESS**. Source-level hardening is ahead of the executable release evidence because GitHub-hosted runners are still failing before job steps execute. No 99/100 release claim and no merge are allowed until the existing release gate actually runs successfully.
+
+---
+
+## Phase 5 closure checkpoint — appended 2026-08-19
+
+The earlier `IN PROGRESS` entries above are preserved as historical checkpoints. They are no longer the current repository state.
+
+### Current status
+
+Phase 5 — Fulfillment & Order Operations — **CLOSED / LANDED**
+
+- Merged through PR #15.
+- Merge commit: `6bdaa1c7233e32639748783742a9b1b5f40b5509`.
+- The repository `Check` workflow now executes `pnpm run verify:phase5` as a normal release invariant, and later executable CI has passed that invariant.
+- The historical GitHub-hosted runner allocation/billing blocker recorded above is therefore not the current repository state.
+- Orders, Inventory, Shipping, Tax, Refunds and Tickets remain the canonical authority boundaries; Phase 5 extends those systems rather than creating parallel replacements.
+
+### Evidence boundary
+
+This closure records the landed repository state and executable automated verification. It does not retroactively claim that every historical manual runtime/visual QA item listed in the original release gate was independently re-performed after merge unless separate evidence exists for that item.
+
+### Preservation note
+
+No historical checkpoint above was rewritten. This appended closure entry is the current status correction for Phase 5.
