@@ -2,7 +2,6 @@ import { randomBytes } from "node:crypto";
 import { DateTime } from "luxon";
 
 import { BusinessRuleException, ResourceNotFoundException } from "#exceptions/domain_exceptions";
-import { currentTenantId, currentTrx } from "#services/tenant_context";
 import {
     chiSquareStatistic,
     deterministicBucket,
@@ -11,6 +10,7 @@ import {
     type VariantAggregate,
     variantEffect,
 } from "#services/phase17_statistics";
+import { currentTenantId, currentTrx } from "#services/tenant_context";
 
 interface VariantInput {
     key: string;
@@ -364,7 +364,18 @@ export class Phase17ExperimentationService {
         return this.show(experimentId);
     }
 
-    async assign(input: { experiment_key: string; subject_type: string; subject_key: string }): Promise<{ data: { assigned: boolean; reason?: string; assignment_id?: number; experiment_key?: string; variant_key?: string; variant_name?: string; payload?: Record<string, unknown>; sticky?: boolean } }> {
+    async assign(input: { experiment_key: string; subject_type: string; subject_key: string }): Promise<{
+        data: {
+            assigned: boolean;
+            reason?: string;
+            assignment_id?: number;
+            experiment_key?: string;
+            variant_key?: string;
+            variant_name?: string;
+            payload?: Record<string, unknown>;
+            sticky?: boolean;
+        };
+    }> {
         const trx = currentTrx();
         const experiment = (await trx
             .from("experiments")
@@ -552,7 +563,10 @@ export class Phase17ExperimentationService {
         const trx = currentTrx();
         const experiment = (await trx.from("experiments").where("id", experimentId).first()) as ExperimentRow | undefined;
         if (!experiment) throw new ResourceNotFoundException("Experiment not found");
-        const variants = (await trx.from("experiment_variants").where("experiment_id", experimentId).orderBy("id", "asc")) as VariantRow[];
+        const variants = (await trx
+            .from("experiment_variants")
+            .where("experiment_id", experimentId)
+            .orderBy("id", "asc")) as VariantRow[];
         const assignmentRows = await trx
             .from("experiment_assignments")
             .where("experiment_id", experimentId)
@@ -659,13 +673,16 @@ export class Phase17ExperimentationService {
             .returning(["id"]);
         let automaticAction: string | null = null;
         if (guardrailBreached && experiment.status === "running") {
-            await trx.from("experiments").where("id", experimentId).update({
-                status: "paused",
-                version: num(experiment.version) + 1,
-                stop_reason: "automatic_guardrail_breach",
-                stopped_at: cutoff.toSQL(),
-                updated_at: cutoff.toSQL(),
-            });
+            await trx
+                .from("experiments")
+                .where("id", experimentId)
+                .update({
+                    status: "paused",
+                    version: num(experiment.version) + 1,
+                    stop_reason: "automatic_guardrail_breach",
+                    stopped_at: cutoff.toSQL(),
+                    updated_at: cutoff.toSQL(),
+                });
             automaticAction = "paused_for_guardrail";
         }
         if (["randomized_evidence", "randomized_evidence_guardrail_failed"].includes(causalStrength))
@@ -763,11 +780,9 @@ export class Phase17ExperimentationService {
     private assertVariantPlan(variants: VariantInput[]) {
         const total = variants.reduce((sum, variant) => sum + Number(variant.weight_bps), 0);
         if (total !== 10000)
-            throw new BusinessRuleException(
-                "Variant weights must total 10000 basis points",
-                "experiment.variants.weight_total",
-                { total },
-            );
+            throw new BusinessRuleException("Variant weights must total 10000 basis points", "experiment.variants.weight_total", {
+                total,
+            });
         if (variants.filter((variant) => variant.is_control === true).length !== 1)
             throw new BusinessRuleException("Exactly one control variant is required", "experiment.variants.control_required");
         if (new Set(variants.map((variant) => variant.key)).size !== variants.length)
@@ -815,8 +830,8 @@ export class Phase17ExperimentationService {
     }
 
     private async guardrailResults(experimentId: number, experiment: ExperimentRow, variants: VariantRow[]) {
-        const guardrails = arrayValue(experiment.guardrails).filter(
-            (item): item is Record<string, unknown> => Boolean(item && typeof item === "object" && !Array.isArray(item)),
+        const guardrails = arrayValue(experiment.guardrails).filter((item): item is Record<string, unknown> =>
+            Boolean(item && typeof item === "object" && !Array.isArray(item)),
         );
         const control = variants.find((variant) => variant.is_control) ?? null;
         if (!control) return [];
@@ -841,8 +856,7 @@ export class Phase17ExperimentationService {
                 .sum("o.value as sum")
                 .groupBy("a.variant_id");
             const controlRow = rows.find((row) => num(row.variant_id) === num(control.id));
-            const controlMean =
-                num(controlRow?.observations) > 0 ? num(controlRow?.sum) / num(controlRow?.observations) : null;
+            const controlMean = num(controlRow?.observations) > 0 ? num(controlRow?.sum) / num(controlRow?.observations) : null;
             let worst: number | null = null;
             for (const variant of variants.filter((item) => num(item.id) !== num(control.id))) {
                 const row = rows.find((item) => num(item.variant_id) === num(variant.id));
@@ -866,8 +880,15 @@ export class Phase17ExperimentationService {
         const trx = currentTrx();
         const experiment = (await trx.from("experiments").where("id", experimentId).first()) as ExperimentRow | undefined;
         if (!experiment) return;
-        const analysis = await trx.from("experiment_analysis_runs").where("experiment_id", experimentId).orderBy("id", "desc").first();
-        if (!analysis || !["randomized_evidence", "randomized_evidence_guardrail_failed"].includes(String(analysis.causal_strength)))
+        const analysis = await trx
+            .from("experiment_analysis_runs")
+            .where("experiment_id", experimentId)
+            .orderBy("id", "desc")
+            .first();
+        if (
+            !analysis ||
+            !["randomized_evidence", "randomized_evidence_guardrail_failed"].includes(String(analysis.causal_strength))
+        )
             return;
         const key = `experiment:${experiment.experiment_key}:${experiment.primary_metric_key}`;
         const existing = await trx.from("experiment_causal_knowledge").where("knowledge_key", key).first();

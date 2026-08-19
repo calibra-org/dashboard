@@ -1,0 +1,26 @@
+openapi: 3.1.0
+info:
+  title: Calibra Storefront Phase 17 Experimentation API
+  version: 1.0.0
+paths:
+  /api/v1/experiments/assign:
+    post:
+      tags: [Phase17Experimentation]
+      operationId: phase17ExperimentAssign
+      responses:
+        "200": { description: Deterministic assignment result }
+  /api/v1/experiments/exposures:
+    post:
+      tags: [Phase17Experimentation]
+      operationId: phase17ExperimentExposure
+      responses:
+        "200": { description: Exposure accepted or deduplicated }
+  /api/v1/experiments/observations:
+    post:
+      tags: [Phase17Experimentation]
+      operationId: phase17ExperimentObservation
+      responses:
+        "200": { description: Observation accepted or deduplicated }
+tags:
+  - name: Phase17Experimentation
+    description: Deterministic assignment, exposure logging and outcome observation.

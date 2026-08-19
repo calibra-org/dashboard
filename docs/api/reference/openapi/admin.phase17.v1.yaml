@@ -43,7 +43,7 @@ paths:
         - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
       responses:
         "200": { description: State transition applied }
-        "422": { description: Invalid transition, stale version, collision, or missing approval }
+        "422": { description: Invalid transition }
   /api/v1/admin/experiments/{id}/analyze:
     post:
       tags: [Phase17Experimentation]

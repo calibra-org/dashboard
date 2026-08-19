@@ -178,7 +178,12 @@ export default class AdminTrustController {
         await requireTrustPermission(user, "trust.view");
         const payload = await ctx.request.validateUsing(trustSignalListValidator);
         return {
-            data: await listTrustSignals({ riskBand: payload.risk_band, source: payload.source, signalType: payload.signal_type, limit: payload.limit }),
+            data: await listTrustSignals({
+                riskBand: payload.risk_band,
+                source: payload.source,
+                signalType: payload.signal_type,
+                limit: payload.limit,
+            }),
         };
     }
 
@@ -228,7 +233,13 @@ export default class AdminTrustController {
         const user = ctx.auth.getUserOrFail();
         await requireTrustPermission(user, "trust.view");
         const payload = await ctx.request.validateUsing(trustPolicySimulationValidator);
-        return { data: await simulateTrustPolicy({ policyKey: payload.policy_key, version: payload.version, context: payload.context }) };
+        return {
+            data: await simulateTrustPolicy({
+                policyKey: payload.policy_key,
+                version: payload.version,
+                context: payload.context,
+            }),
+        };
     }
 
     async models(ctx: HttpContext) {

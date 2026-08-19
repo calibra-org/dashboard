@@ -53,25 +53,42 @@ export async function assignTrustCase(input: {
             .where("role", "admin")
             .whereNull("deleted_at")
             .first();
-        if (!assignee) throw Object.assign(new Error("Reviewer is not available in this tenant"), { status: 422, code: "E_TRUST_REVIEWER_INVALID" });
+        if (!assignee)
+            throw Object.assign(new Error("Reviewer is not available in this tenant"), {
+                status: 422,
+                code: "E_TRUST_REVIEWER_INVALID",
+            });
     }
     const nextVersion = Number(row.version) + 1;
     const nextStatus = row.status === "open" ? "in_review" : row.status;
-    await currentTrx()
-        .from("fraud_cases")
-        .where("id", row.id)
-        .update({ assignee_user_id: input.assigneeUserId, status: nextStatus, version: nextVersion, updated_at: DateTime.utc().toSQL() });
+    await currentTrx().from("fraud_cases").where("id", row.id).update({
+        assignee_user_id: input.assigneeUserId,
+        status: nextStatus,
+        version: nextVersion,
+        updated_at: DateTime.utc().toSQL(),
+    });
     await recordAudit({
         ctx: input.ctx,
         actorUserId: Number(input.actor.id),
         action: "trust.case.assign",
         entityKind: "trust_case",
         entityId: Number(row.id),
-        payload: { case_public_id: input.publicId, assignee_user_id: input.assigneeUserId, reason: input.reason, previous_version: row.version },
+        payload: {
+            case_public_id: input.publicId,
+            assignee_user_id: input.assigneeUserId,
+            reason: input.reason,
+            previous_version: row.version,
+        },
         trx: currentTrx(),
         strict: true,
     });
-    return { ...row, assignee_user_id: input.assigneeUserId, assigned_to_user_id: input.assigneeUserId, status: nextStatus, version: nextVersion };
+    return {
+        ...row,
+        assignee_user_id: input.assigneeUserId,
+        assigned_to_user_id: input.assigneeUserId,
+        status: nextStatus,
+        version: nextVersion,
+    };
 }
 
 export async function decideTrustCase(input: {
@@ -111,7 +128,14 @@ export async function decideTrustCase(input: {
         .select("evidence_type", "evidence_ref", "weight", "summary", "is_sensitive");
     const score1000 = Math.max(0, Math.min(1000, Math.round(Number(row.risk_score ?? 0) * 10)));
     const scoreBand = String(row.risk_band ?? "medium");
-    const legacyBand = scoreBand === "severe" ? "critical" : scoreBand === "high" || scoreBand === "elevated" ? "high" : scoreBand === "medium" ? "medium" : "low";
+    const legacyBand =
+        scoreBand === "severe"
+            ? "critical"
+            : scoreBand === "high" || scoreBand === "elevated"
+              ? "high"
+              : scoreBand === "medium"
+                ? "medium"
+                : "low";
     const scoreRows = await currentTrx()
         .table("fraud_risk_scores")
         .insert({
@@ -121,7 +145,11 @@ export async function decideTrustCase(input: {
             score: score1000,
             band: legacyBand,
             reason_codes_json: JSON.stringify([input.reasonCode]),
-            evidence_summary: JSON.stringify({ case_public_id: row.public_id, case_version: row.version, source: "human_review" }),
+            evidence_summary: JSON.stringify({
+                case_public_id: row.public_id,
+                case_version: row.version,
+                source: "human_review",
+            }),
             idempotency_key: `case:${input.idempotencyKey}:score`.slice(0, 180),
         })
         .returning("*");
@@ -138,14 +166,25 @@ export async function decideTrustCase(input: {
             previous_decision_id: previous?.id ?? null,
             idempotency_key: input.idempotencyKey,
             decision: input.action,
-            policy_version: row.policy_key && row.policy_version ? `${String(row.policy_key)}:${String(row.policy_version)}` : "human-review-v1",
+            policy_version:
+                row.policy_key && row.policy_version
+                    ? `${String(row.policy_key)}:${String(row.policy_version)}`
+                    : "human-review-v1",
             reason_code: input.reasonCode,
             reason: input.reason,
             is_override: input.isOverride ?? false,
-            alternatives: JSON.stringify(["allow", "monitor", "step_up", "hold", "block", "dismiss"].filter((action) => action !== input.action)),
+            alternatives: JSON.stringify(
+                ["allow", "monitor", "step_up", "hold", "block", "dismiss"].filter((action) => action !== input.action),
+            ),
             evidence_snapshot: JSON.stringify({ case_version: row.version, evidence }),
             policy_evaluation: JSON.stringify({ policy_key: row.policy_key ?? null, policy_version: row.policy_version ?? null }),
-            approval_chain: JSON.stringify([{ actor_user_id: Number(input.actor.id), at: DateTime.utc().toISO(), kind: input.isOverride ? "override" : "review" }]),
+            approval_chain: JSON.stringify([
+                {
+                    actor_user_id: Number(input.actor.id),
+                    at: DateTime.utc().toISO(),
+                    kind: input.isOverride ? "override" : "review",
+                },
+            ]),
             reason_codes_json: JSON.stringify([input.reasonCode]),
         })
         .returning("*");

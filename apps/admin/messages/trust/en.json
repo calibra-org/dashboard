@@ -30,13 +30,34 @@
         "copyId": "Copy ID",
         "copied": "ID copied",
         "sections": {
-            "overview": { "title": "Trust & Risk Command Center", "subtitle": "Decision-first, tenant-scoped and connected to identity, orders, refunds, returns and promotions." },
-            "cases": { "title": "Trust Review Cases", "subtitle": "One queue for human review, SLA, evidence, decisions, overrides, appeals and outcomes." },
-            "caseDetail": { "title": "Case Detail & Explainability", "subtitle": "Evidence, policy/model versions, decisions and the action ledger in one auditable view." },
-            "graph": { "title": "Trust Graph", "subtitle": "Customer/account/device/order/coupon/refund/ticket relationships with verified vs inferred edges." },
-            "policies": { "title": "Policies, Decisions & Access", "subtitle": "Versioned policies, dry-run simulation, approvals and granular permissions." },
-            "signals": { "title": "Trust Signals & Events", "subtitle": "Normalized evidence with source, event/receive time, privacy class, confidence and lineage." },
-            "models": { "title": "Models, Outcomes & Quality", "subtitle": "Versioned model registry, controlled rollout, real outcomes, false positives and rollback." }
+            "overview": {
+                "title": "Trust & Risk Command Center",
+                "subtitle": "Decision-first, tenant-scoped and connected to identity, orders, refunds, returns and promotions."
+            },
+            "cases": {
+                "title": "Trust Review Cases",
+                "subtitle": "One queue for human review, SLA, evidence, decisions, overrides, appeals and outcomes."
+            },
+            "caseDetail": {
+                "title": "Case Detail & Explainability",
+                "subtitle": "Evidence, policy/model versions, decisions and the action ledger in one auditable view."
+            },
+            "graph": {
+                "title": "Trust Graph",
+                "subtitle": "Customer/account/device/order/coupon/refund/ticket relationships with verified vs inferred edges."
+            },
+            "policies": {
+                "title": "Policies, Decisions & Access",
+                "subtitle": "Versioned policies, dry-run simulation, approvals and granular permissions."
+            },
+            "signals": {
+                "title": "Trust Signals & Events",
+                "subtitle": "Normalized evidence with source, event/receive time, privacy class, confidence and lineage."
+            },
+            "models": {
+                "title": "Models, Outcomes & Quality",
+                "subtitle": "Versioned model registry, controlled rollout, real outcomes, false positives and rollback."
+            }
         },
         "help": {
             "workspace": "This workspace is the trust decision layer, not a duplicate source of truth for orders or payments. Sensitive actions reuse canonical services and are audited.",
@@ -74,11 +95,124 @@
             "modelQuality": "Quality metrics are calculated only from labeled outcomes.",
             "freshness": "Shows when the decision view was generated and which sources contributed."
         },
-        "metrics": { "openCases": "Open cases", "highCases": "High / Severe", "decisions30d": "30d decisions", "signals30d": "30d signals", "activeEnforcement": "Active enforcement", "preventedLoss": "Prevented loss", "falsePositive": "False Positive", "outcomeCoverage": "Outcome coverage" },
-        "blocks": { "attention": "Needs attention", "distribution": "Decision distribution", "patterns": "Active patterns", "friction": "Adaptive friction matrix", "freshness": "Freshness & lineage", "caseQueue": "Case queue", "evidence": "Evidence & signals", "timeline": "Decision & action timeline", "review": "Reviewer decision", "assignment": "Case owner", "outcome": "Record real outcome", "graph": "Graph Explorer", "relationship": "Relationship & provenance", "policies": "Versioned policies", "newPolicy": "New policy version", "simulator": "Policy Simulator", "access": "Operator access", "signalLedger": "Signal Ledger", "automation": "Agent / Automation / Bot classification", "models": "Model Registry", "quality": "Outcomes & False Positive", "registerModel": "Register model version" },
-        "fields": { "search": "Search", "status": "Status", "riskBand": "Risk band", "subject": "Subject", "pattern": "Pattern", "recommended": "Recommended action", "owner": "Owner", "sla": "SLA", "updated": "Updated", "source": "Source", "event": "Event", "occurred": "Occurred", "received": "Received", "privacy": "Privacy class", "policyVersion": "Policy version", "modelVersion": "Model version", "reason": "Reason", "reasonCode": "Reason code", "reviewer": "Reviewer", "expectedVersion": "Case version", "action": "Action", "outcome": "Outcome", "falsePositive": "False Positive", "confidence": "Confidence", "subjectType": "Entity type", "subjectId": "Entity ID", "depth": "Graph depth", "policyKey": "Policy key", "conditions": "Conditions JSON", "effect": "Effect", "scope": "Scope JSON", "approval": "Approval required", "context": "Context JSON", "modelId": "Model ID", "version": "Version", "purpose": "Purpose", "modelOwner": "Model owner", "features": "Features", "limitations": "Limitations", "rollout": "Rollout", "preset": "Access preset" },
-        "actions": { "open": "Open", "assign": "Assign", "allow": "Allow", "monitor": "Monitor", "step_up": "Step-up", "hold": "Hold / manual review", "block": "Block", "dismiss": "Dismiss signal", "override": "Override", "appeal": "Appeal", "recordOutcome": "Record outcome", "createPolicy": "Create policy version", "registerModel": "Register model", "updateRollout": "Update rollout", "viewGraph": "View graph", "viewCase": "View case" },
-        "risk": { "trusted": "Trusted", "low": "Low", "medium": "Medium", "elevated": "Elevated", "high": "High", "severe": "Severe" },
-        "status": { "open": "Open", "in_review": "In review", "waiting_step_up": "Waiting for step-up", "held": "Held", "resolved": "Resolved", "dismissed": "Dismissed", "appealed": "Appealed", "active": "Active", "draft": "Draft", "retired": "Retired", "challenger": "Challenger", "champion": "Champion", "rollback_ready": "Rollback ready", "disabled": "Disabled" }
+        "metrics": {
+            "openCases": "Open cases",
+            "highCases": "High / Severe",
+            "decisions30d": "30d decisions",
+            "signals30d": "30d signals",
+            "activeEnforcement": "Active enforcement",
+            "preventedLoss": "Prevented loss",
+            "falsePositive": "False Positive",
+            "outcomeCoverage": "Outcome coverage"
+        },
+        "blocks": {
+            "attention": "Needs attention",
+            "distribution": "Decision distribution",
+            "patterns": "Active patterns",
+            "friction": "Adaptive friction matrix",
+            "freshness": "Freshness & lineage",
+            "caseQueue": "Case queue",
+            "evidence": "Evidence & signals",
+            "timeline": "Decision & action timeline",
+            "review": "Reviewer decision",
+            "assignment": "Case owner",
+            "outcome": "Record real outcome",
+            "graph": "Graph Explorer",
+            "relationship": "Relationship & provenance",
+            "policies": "Versioned policies",
+            "newPolicy": "New policy version",
+            "simulator": "Policy Simulator",
+            "access": "Operator access",
+            "signalLedger": "Signal Ledger",
+            "automation": "Agent / Automation / Bot classification",
+            "models": "Model Registry",
+            "quality": "Outcomes & False Positive",
+            "registerModel": "Register model version"
+        },
+        "fields": {
+            "search": "Search",
+            "status": "Status",
+            "riskBand": "Risk band",
+            "subject": "Subject",
+            "pattern": "Pattern",
+            "recommended": "Recommended action",
+            "owner": "Owner",
+            "sla": "SLA",
+            "updated": "Updated",
+            "source": "Source",
+            "event": "Event",
+            "occurred": "Occurred",
+            "received": "Received",
+            "privacy": "Privacy class",
+            "policyVersion": "Policy version",
+            "modelVersion": "Model version",
+            "reason": "Reason",
+            "reasonCode": "Reason code",
+            "reviewer": "Reviewer",
+            "expectedVersion": "Case version",
+            "action": "Action",
+            "outcome": "Outcome",
+            "falsePositive": "False Positive",
+            "confidence": "Confidence",
+            "subjectType": "Entity type",
+            "subjectId": "Entity ID",
+            "depth": "Graph depth",
+            "policyKey": "Policy key",
+            "conditions": "Conditions JSON",
+            "effect": "Effect",
+            "scope": "Scope JSON",
+            "approval": "Approval required",
+            "context": "Context JSON",
+            "modelId": "Model ID",
+            "version": "Version",
+            "purpose": "Purpose",
+            "modelOwner": "Model owner",
+            "features": "Features",
+            "limitations": "Limitations",
+            "rollout": "Rollout",
+            "preset": "Access preset"
+        },
+        "actions": {
+            "open": "Open",
+            "assign": "Assign",
+            "allow": "Allow",
+            "monitor": "Monitor",
+            "step_up": "Step-up",
+            "hold": "Hold / manual review",
+            "block": "Block",
+            "dismiss": "Dismiss signal",
+            "override": "Override",
+            "appeal": "Appeal",
+            "recordOutcome": "Record outcome",
+            "createPolicy": "Create policy version",
+            "registerModel": "Register model",
+            "updateRollout": "Update rollout",
+            "viewGraph": "View graph",
+            "viewCase": "View case"
+        },
+        "risk": {
+            "trusted": "Trusted",
+            "low": "Low",
+            "medium": "Medium",
+            "elevated": "Elevated",
+            "high": "High",
+            "severe": "Severe"
+        },
+        "status": {
+            "open": "Open",
+            "in_review": "In review",
+            "waiting_step_up": "Waiting for step-up",
+            "held": "Held",
+            "resolved": "Resolved",
+            "dismissed": "Dismissed",
+            "appealed": "Appealed",
+            "active": "Active",
+            "draft": "Draft",
+            "retired": "Retired",
+            "challenger": "Challenger",
+            "champion": "Champion",
+            "rollback_ready": "Rollback ready",
+            "disabled": "Disabled"
+        }
     }
 }

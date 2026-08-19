@@ -46,10 +46,7 @@ function sanitizeEvidence(value: unknown, depth = 0): unknown {
     return Object.fromEntries(
         Object.entries(value as Record<string, unknown>)
             .slice(0, 40)
-            .map(([key, item]) => [
-                key,
-                SENSITIVE_KEY.test(key) ? "[redacted]" : sanitizeEvidence(item, depth + 1),
-            ]),
+            .map(([key, item]) => [key, SENSITIVE_KEY.test(key) ? "[redacted]" : sanitizeEvidence(item, depth + 1)]),
     );
 }
 
@@ -75,9 +72,7 @@ export function calculateRiskDecision(signals: SignalInput[], control?: string |
         const value = clamp(Number.isFinite(Number(signal.value)) ? Number(signal.value) : 1, 0, 4);
         return {
             code: signal.code,
-            score: Math.round(
-                BASE_BY_SEVERITY[severity] * (SIGNAL_MULTIPLIERS[signal.code] ?? 0.8) * value,
-            ),
+            score: Math.round(BASE_BY_SEVERITY[severity] * (SIGNAL_MULTIPLIERS[signal.code] ?? 0.8) * value),
         };
     });
     const score = clamp(
@@ -85,8 +80,7 @@ export function calculateRiskDecision(signals: SignalInput[], control?: string |
         0,
         1000,
     );
-    const band: RiskBand =
-        score >= 750 ? "critical" : score >= 500 ? "high" : score >= 250 ? "medium" : "low";
+    const band: RiskBand = score >= 750 ? "critical" : score >= 500 ? "high" : score >= 250 ? "medium" : "low";
     let decision: Decision =
         band === "critical" ? "block" : band === "high" ? "challenge" : band === "medium" ? "review" : "allow";
     if (control === "challenge") decision = "challenge";
@@ -124,15 +118,7 @@ class Phase20TrustRiskService {
             trx.from("fraud_signals").where("observed_at", ">=", dayAgo).count("id as total").first(),
             trx
                 .from("fraud_risk_scores")
-                .select(
-                    "id",
-                    "subject_type",
-                    "subject_id",
-                    "score",
-                    "band",
-                    "reason_codes_json",
-                    "evaluated_at",
-                )
+                .select("id", "subject_type", "subject_id", "score", "band", "reason_codes_json", "evaluated_at")
                 .orderBy("evaluated_at", "desc")
                 .limit(30),
             trx
@@ -156,23 +142,12 @@ class Phase20TrustRiskService {
                 kpis: {
                     open_cases: numberValue(cases?.total),
                     signals_24h: numberValue(signals?.total),
-                    evaluated_30d: bands.reduce(
-                        (sum: number, row: any) => sum + numberValue(row.count),
-                        0,
-                    ),
-                    challenged_30d: numberValue(
-                        decisions.find((row: any) => row.decision === "challenge")?.count,
-                    ),
-                    blocked_30d: numberValue(
-                        decisions.find((row: any) => row.decision === "block")?.count,
-                    ),
+                    evaluated_30d: bands.reduce((sum: number, row: any) => sum + numberValue(row.count), 0),
+                    challenged_30d: numberValue(decisions.find((row: any) => row.decision === "challenge")?.count),
+                    blocked_30d: numberValue(decisions.find((row: any) => row.decision === "block")?.count),
                 },
-                bands: Object.fromEntries(
-                    bands.map((row: any) => [row.band, numberValue(row.count)]),
-                ),
-                decisions: Object.fromEntries(
-                    decisions.map((row: any) => [row.decision, numberValue(row.count)]),
-                ),
+                bands: Object.fromEntries(bands.map((row: any) => [row.band, numberValue(row.count)])),
+                decisions: Object.fromEntries(decisions.map((row: any) => [row.decision, numberValue(row.count)])),
                 recent_scores: recentScores,
                 recent_cases: recentCases,
             },
@@ -181,11 +156,7 @@ class Phase20TrustRiskService {
 
     async cases() {
         return {
-            data: await currentTrx()
-                .from("fraud_cases")
-                .select("*")
-                .orderBy("opened_at", "desc")
-                .limit(200),
+            data: await currentTrx().from("fraud_cases").select("*").orderBy("opened_at", "desc").limit(200),
         };
     }
 
@@ -193,16 +164,7 @@ class Phase20TrustRiskService {
         return {
             data: await currentTrx()
                 .from("fraud_signals")
-                .select(
-                    "id",
-                    "subject_type",
-                    "subject_id",
-                    "code",
-                    "severity",
-                    "value",
-                    "observed_at",
-                    "expires_at",
-                )
+                .select("id", "subject_type", "subject_id", "code", "severity", "value", "observed_at", "expires_at")
                 .orderBy("observed_at", "desc")
                 .limit(300),
         };
@@ -212,14 +174,7 @@ class Phase20TrustRiskService {
         const rows = await currentTrx()
             .from("fraud_risk_models as m")
             .leftJoin("fraud_risk_model_versions as v", "v.risk_model_id", "m.id")
-            .select(
-                "m.*",
-                "v.id as version_id",
-                "v.version",
-                "v.deployment_state",
-                "v.validated_at",
-                "v.known_limitations",
-            )
+            .select("m.*", "v.id as version_id", "v.version", "v.deployment_state", "v.validated_at", "v.known_limitations")
             .orderBy("m.updated_at", "desc");
         return { data: rows };
     }
@@ -242,10 +197,7 @@ class Phase20TrustRiskService {
                     return {
                         data: {
                             score: existing,
-                            decision: await trx
-                                .from("fraud_decisions")
-                                .where("risk_score_id", existing.id)
-                                .first(),
+                            decision: await trx.from("fraud_decisions").where("risk_score_id", existing.id).first(),
                         },
                         replayed: true,
                     };
@@ -338,8 +290,7 @@ class Phase20TrustRiskService {
                 })
                 .returning("*");
             if (result.decision !== "allow") {
-                const priority =
-                    result.band === "critical" ? "critical" : result.band === "high" ? "high" : "medium";
+                const priority = result.band === "critical" ? "critical" : result.band === "high" ? "high" : "medium";
                 const [fraudCase] = await trx
                     .table("fraud_cases")
                     .insert({
@@ -464,11 +415,7 @@ class Phase20TrustRiskService {
                     .first();
                 if (replay) return { data: replay, replayed: true };
             }
-            const version = await trx
-                .from("fraud_risk_model_versions")
-                .where("id", versionId)
-                .forUpdate()
-                .first();
+            const version = await trx.from("fraud_risk_model_versions").where("id", versionId).forUpdate().first();
             if (!version) {
                 throw new Exception("Risk model version not found", {
                     status: 404,
@@ -486,10 +433,7 @@ class Phase20TrustRiskService {
                 .where("risk_model_id", version.risk_model_id)
                 .where("deployment_state", "champion")
                 .update({ deployment_state: "retired" });
-            await trx
-                .from("fraud_risk_model_versions")
-                .where("id", versionId)
-                .update({ deployment_state: "champion" });
+            await trx.from("fraud_risk_model_versions").where("id", versionId).update({ deployment_state: "champion" });
             const [action] = await trx
                 .table("fraud_action_executions")
                 .insert({
@@ -585,10 +529,7 @@ class Phase20TrustRiskService {
     async createControl(payload: any, actor: Actor, idempotencyKey: string | null) {
         const trx = currentTrx();
         if (idempotencyKey) {
-            const replay = await trx
-                .from("fraud_subject_controls")
-                .where("idempotency_key", idempotencyKey)
-                .first();
+            const replay = await trx.from("fraud_subject_controls").where("idempotency_key", idempotencyKey).first();
             if (replay) return { data: replay, replayed: true };
         }
         const [row] = await trx
@@ -610,10 +551,7 @@ class Phase20TrustRiskService {
     async releaseControl(controlId: number, actor: Actor, idempotencyKey: string | null) {
         const trx = currentTrx();
         if (idempotencyKey) {
-            const replay = await trx
-                .from("fraud_action_executions")
-                .where("idempotency_key", idempotencyKey)
-                .first();
+            const replay = await trx.from("fraud_action_executions").where("idempotency_key", idempotencyKey).first();
             if (replay) return { data: replay, replayed: true };
         }
         const [control] = await trx

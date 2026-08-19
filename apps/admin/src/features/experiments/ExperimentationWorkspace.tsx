@@ -315,7 +315,9 @@ function ExperimentDetail({ id }: { id: number | null }) {
                     <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
                             <div className="flex items-center gap-2">
-                                <StatusBadge tone={statusTone(item.status)}>{STATUS_COPY[item.status] ?? item.status}</StatusBadge>
+                                <StatusBadge tone={statusTone(item.status)}>
+                                    {STATUS_COPY[item.status] ?? item.status}
+                                </StatusBadge>
                                 <span className="font-mono text-[10px] text-muted-foreground">v{item.version}</span>
                             </div>
                             <CardTitle className="mt-3 text-xl">{item.name}</CardTitle>
@@ -344,11 +346,16 @@ function ExperimentDetail({ id }: { id: number | null }) {
                         {item.variants.map((variant) => (
                             <div
                                 key={variant.id}
-                                className={cn("rounded-xl border p-3", variant.is_control && "border-primary/25 bg-primary/[0.03]")}
+                                className={cn(
+                                    "rounded-xl border p-3",
+                                    variant.is_control && "border-primary/25 bg-primary/[0.03]",
+                                )}
                             >
                                 <div className="flex justify-between gap-2">
                                     <strong className="text-sm">{variant.name}</strong>
-                                    <span className="text-xs tabular-nums">{(variant.weight_bps / 100).toLocaleString("fa-IR")}%</span>
+                                    <span className="text-xs tabular-nums">
+                                        {(variant.weight_bps / 100).toLocaleString("fa-IR")}%
+                                    </span>
                                 </div>
                                 <p className="mt-1 font-mono text-[10px] text-muted-foreground">
                                     {variant.key} {variant.is_control ? "· control" : ""}
@@ -383,7 +390,12 @@ function ExperimentDetail({ id }: { id: number | null }) {
                                 <Button
                                     variant="outline"
                                     onClick={() =>
-                                        transition.mutate({ id: item.id, status: "paused", expected_version: item.version, reason })
+                                        transition.mutate({
+                                            id: item.id,
+                                            status: "paused",
+                                            expected_version: item.version,
+                                            reason,
+                                        })
                                     }
                                 >
                                     مکث
@@ -413,8 +425,12 @@ function ExperimentDetail({ id }: { id: number | null }) {
                 </CardContent>
             </CardRoot>
             <CardRoot>
-                <CardHeader><CardTitle className="text-base">تحلیل ثبت‌شده</CardTitle></CardHeader>
-                <CardContent><AnalysisPanel analysis={latest} /></CardContent>
+                <CardHeader>
+                    <CardTitle className="text-base">تحلیل ثبت‌شده</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <AnalysisPanel analysis={latest} />
+                </CardContent>
             </CardRoot>
         </div>
     );
@@ -461,17 +477,34 @@ function NewExperimentComposer() {
     return (
         <CardRoot className="overflow-hidden border-primary/20">
             <CardHeader className="border-b bg-primary/[0.03]">
-                <CardTitle className="flex items-center gap-2 text-base"><Activity className="size-4" /> قرارداد آزمایش جدید</CardTitle>
-                <p className="text-muted-foreground text-xs">نسخهٔ سریع 50/50؛ allocation پس از launch با state machine محافظت می‌شود.</p>
+                <CardTitle className="flex items-center gap-2 text-base">
+                    <Activity className="size-4" /> قرارداد آزمایش جدید
+                </CardTitle>
+                <p className="text-muted-foreground text-xs">
+                    نسخهٔ سریع 50/50؛ allocation پس از launch با state machine محافظت می‌شود.
+                </p>
             </CardHeader>
             <CardContent className="space-y-3 p-5">
                 <div className="grid gap-3 sm:grid-cols-2">
                     <Input value={key} onChange={(event) => setKey(event.target.value)} placeholder="experiment.key" dir="ltr" />
                     <Input value={name} onChange={(event) => setName(event.target.value)} placeholder="نام آزمایش" />
-                    <select className="h-9 rounded-md border bg-background px-3 text-sm" value={surface} onChange={(event) => setSurface(event.target.value)}>
-                        {Object.entries(SURFACE_COPY).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                    <select
+                        className="h-9 rounded-md border bg-background px-3 text-sm"
+                        value={surface}
+                        onChange={(event) => setSurface(event.target.value)}
+                    >
+                        {Object.entries(SURFACE_COPY).map(([value, label]) => (
+                            <option key={value} value={value}>
+                                {label}
+                            </option>
+                        ))}
                     </select>
-                    <Input value={metric} onChange={(event) => setMetric(event.target.value)} placeholder="primary metric" dir="ltr" />
+                    <Input
+                        value={metric}
+                        onChange={(event) => setMetric(event.target.value)}
+                        placeholder="primary metric"
+                        dir="ltr"
+                    />
                 </div>
                 <textarea
                     className="min-h-24 w-full rounded-md border bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring"
@@ -482,7 +515,9 @@ function NewExperimentComposer() {
                 <Button className="w-full" onClick={submit} disabled={mutation.isPending}>
                     {mutation.isPending ? "در حال ثبت…" : "ثبت در Experiment Registry"}
                 </Button>
-                {mutation.isError ? <p className="text-danger text-xs">ثبت آزمایش ناموفق بود؛ validation یا collision را بررسی کنید.</p> : null}
+                {mutation.isError ? (
+                    <p className="text-danger text-xs">ثبت آزمایش ناموفق بود؛ validation یا collision را بررسی کنید.</p>
+                ) : null}
             </CardContent>
         </CardRoot>
     );
@@ -498,11 +533,17 @@ function HoldoutsPanel() {
     return (
         <div className="grid gap-4 xl:grid-cols-[0.75fr_1.25fr]">
             <CardRoot>
-                <CardHeader><CardTitle className="text-base">Persistent Holdout</CardTitle></CardHeader>
+                <CardHeader>
+                    <CardTitle className="text-base">Persistent Holdout</CardTitle>
+                </CardHeader>
                 <CardContent className="space-y-3">
                     <Input value={key} onChange={(event) => setKey(event.target.value)} placeholder="holdout.key" dir="ltr" />
                     <Input value={name} onChange={(event) => setName(event.target.value)} placeholder="نام Holdout" />
-                    <select className="h-9 w-full rounded-md border bg-background px-3 text-sm" value={scope} onChange={(event) => setScope(event.target.value)}>
+                    <select
+                        className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                        value={scope}
+                        onChange={(event) => setScope(event.target.value)}
+                    >
                         <option value="recommendation">Recommendation</option>
                         <option value="automation">Automation</option>
                         <option value="ai_intervention">AI intervention</option>
@@ -510,36 +551,42 @@ function HoldoutsPanel() {
                     </select>
                     <Button
                         className="w-full"
-                        onClick={() => create.mutate({
-                            holdout_key: key,
-                            name,
-                            scope,
-                            allocation_bps: 500,
-                            purpose: "Persistent incrementality baseline for Phase 17 causal measurement",
-                        })}
+                        onClick={() =>
+                            create.mutate({
+                                holdout_key: key,
+                                name,
+                                scope,
+                                allocation_bps: 500,
+                                purpose: "Persistent incrementality baseline for Phase 17 causal measurement",
+                            })
+                        }
                     >
                         ساخت Holdout پنج‌درصدی
                     </Button>
                 </CardContent>
             </CardRoot>
             <div className="grid gap-3 sm:grid-cols-2">
-                {rows.length ? rows.map((row) => (
-                    <CardRoot key={row.id}>
-                        <CardContent className="p-4">
-                            <div className="flex justify-between">
-                                <StatusBadge tone={row.status === "active" ? "success" : "neutral"}>{row.status}</StatusBadge>
-                                <span className="font-mono text-[10px]">{row.holdout_key}</span>
-                            </div>
-                            <h3 className="mt-3 font-semibold">{row.name}</h3>
-                            <p className="mt-2 text-muted-foreground text-xs leading-5">{row.purpose}</p>
-                            <div className="mt-3 flex justify-between border-t pt-3 text-xs">
-                                <span>{row.scope}</span>
-                                <strong>{(row.allocation_bps / 100).toLocaleString("fa-IR")}%</strong>
-                            </div>
-                        </CardContent>
-                    </CardRoot>
-                )) : (
-                    <div className="col-span-full grid min-h-48 place-items-center rounded-2xl border border-dashed text-muted-foreground text-sm">Holdout فعالی ثبت نشده است.</div>
+                {rows.length ? (
+                    rows.map((row) => (
+                        <CardRoot key={row.id}>
+                            <CardContent className="p-4">
+                                <div className="flex justify-between">
+                                    <StatusBadge tone={row.status === "active" ? "success" : "neutral"}>{row.status}</StatusBadge>
+                                    <span className="font-mono text-[10px]">{row.holdout_key}</span>
+                                </div>
+                                <h3 className="mt-3 font-semibold">{row.name}</h3>
+                                <p className="mt-2 text-muted-foreground text-xs leading-5">{row.purpose}</p>
+                                <div className="mt-3 flex justify-between border-t pt-3 text-xs">
+                                    <span>{row.scope}</span>
+                                    <strong>{(row.allocation_bps / 100).toLocaleString("fa-IR")}%</strong>
+                                </div>
+                            </CardContent>
+                        </CardRoot>
+                    ))
+                ) : (
+                    <div className="col-span-full grid min-h-48 place-items-center rounded-2xl border border-dashed text-muted-foreground text-sm">
+                        Holdout فعالی ثبت نشده است.
+                    </div>
                 )}
             </div>
         </div>
@@ -554,27 +601,58 @@ function MemoryPanel() {
         <div className="space-y-4">
             {(collisions.data?.data.length ?? 0) > 0 ? (
                 <div className="rounded-2xl border border-danger/25 bg-danger/[0.04] p-4">
-                    <strong className="flex items-center gap-2 text-sm"><ShieldAlert className="size-4" /> Collision در لایه‌های فعال</strong>
-                    <p className="mt-2 text-muted-foreground text-xs">{collisions.data?.data.length.toLocaleString("fa-IR")} هم‌پوشانی باید قبل از assignment برطرف شود.</p>
+                    <strong className="flex items-center gap-2 text-sm">
+                        <ShieldAlert className="size-4" /> Collision در لایه‌های فعال
+                    </strong>
+                    <p className="mt-2 text-muted-foreground text-xs">
+                        {collisions.data?.data.length.toLocaleString("fa-IR")} هم‌پوشانی باید قبل از assignment برطرف شود.
+                    </p>
                 </div>
             ) : (
-                <div className="rounded-2xl border border-success/20 bg-success/[0.03] p-4 text-sm">Collision فعالی در namespace/layer ثبت‌شده دیده نشد.</div>
+                <div className="rounded-2xl border border-success/20 bg-success/[0.03] p-4 text-sm">
+                    Collision فعالی در namespace/layer ثبت‌شده دیده نشد.
+                </div>
             )}
             <div className="grid gap-3 lg:grid-cols-2">
-                {rows.length ? rows.map((row) => (
-                    <CardRoot key={row.id}>
-                        <CardContent className="p-4">
-                            <div className="flex items-center justify-between gap-3">
-                                <StatusBadge tone={row.evidence_strength.includes("randomized") || row.evidence_strength === "repeated_replicated" ? "success" : "warning"}>{row.evidence_strength}</StatusBadge>
-                                <span className="text-muted-foreground text-xs">×{row.replication_count.toLocaleString("fa-IR")}</span>
-                            </div>
-                            <h3 className="mt-3 font-semibold text-sm">{SURFACE_COPY[row.surface] ?? row.surface} · {row.metric_key}</h3>
-                            <p className="mt-2 text-muted-foreground text-xs leading-6">{row.conclusion}</p>
-                            {row.limitations?.length ? <div className="mt-3 flex flex-wrap gap-1">{row.limitations.map((item) => <span key={item} className="rounded-full bg-muted px-2 py-1 text-[10px]">{item}</span>)}</div> : null}
-                        </CardContent>
-                    </CardRoot>
-                )) : (
-                    <div className="col-span-full grid min-h-56 place-items-center rounded-2xl border border-dashed text-center text-muted-foreground text-sm">حافظهٔ علّی خالی است. نتیجهٔ معتبر پس از analysis اینجا ثبت می‌شود.</div>
+                {rows.length ? (
+                    rows.map((row) => (
+                        <CardRoot key={row.id}>
+                            <CardContent className="p-4">
+                                <div className="flex items-center justify-between gap-3">
+                                    <StatusBadge
+                                        tone={
+                                            row.evidence_strength.includes("randomized") ||
+                                            row.evidence_strength === "repeated_replicated"
+                                                ? "success"
+                                                : "warning"
+                                        }
+                                    >
+                                        {row.evidence_strength}
+                                    </StatusBadge>
+                                    <span className="text-muted-foreground text-xs">
+                                        ×{row.replication_count.toLocaleString("fa-IR")}
+                                    </span>
+                                </div>
+                                <h3 className="mt-3 font-semibold text-sm">
+                                    {SURFACE_COPY[row.surface] ?? row.surface} · {row.metric_key}
+                                </h3>
+                                <p className="mt-2 text-muted-foreground text-xs leading-6">{row.conclusion}</p>
+                                {row.limitations?.length ? (
+                                    <div className="mt-3 flex flex-wrap gap-1">
+                                        {row.limitations.map((item) => (
+                                            <span key={item} className="rounded-full bg-muted px-2 py-1 text-[10px]">
+                                                {item}
+                                            </span>
+                                        ))}
+                                    </div>
+                                ) : null}
+                            </CardContent>
+                        </CardRoot>
+                    ))
+                ) : (
+                    <div className="col-span-full grid min-h-56 place-items-center rounded-2xl border border-dashed text-center text-muted-foreground text-sm">
+                        حافظهٔ علّی خالی است. نتیجهٔ معتبر پس از analysis اینجا ثبت می‌شود.
+                    </div>
                 )}
             </div>
         </div>
@@ -596,39 +674,130 @@ export function ExperimentationWorkspace() {
     return (
         <div className="space-y-6 pb-12" dir="rtl">
             <section className="relative overflow-hidden rounded-[2rem] border bg-gradient-to-bl from-card via-card to-primary/[0.07] p-6 shadow-sm lg:p-8">
-                <div className="pointer-events-none absolute -left-20 -top-24 size-72 rounded-full bg-primary/10 blur-3xl" />
+                <div className="pointer-events-none absolute -top-24 -left-20 size-72 rounded-full bg-primary/10 blur-3xl" />
                 <div className="relative flex flex-col justify-between gap-6 xl:flex-row xl:items-end">
                     <div className="max-w-3xl">
-                        <div className="mb-3 flex items-center gap-2 text-primary text-sm"><Sparkles className="size-4" /><span>Experimentation & Causal Intelligence Lab · Phase 17</span></div>
+                        <div className="mb-3 flex items-center gap-2 text-primary text-sm">
+                            <Sparkles className="size-4" />
+                            <span>Experimentation & Causal Intelligence Lab · Phase 17</span>
+                        </div>
                         <h1 className="font-black text-2xl tracking-tight lg:text-4xl">آزمایشگاه مداخلهٔ مبتنی بر شواهد</h1>
-                        <p className="mt-3 max-w-2xl text-muted-foreground leading-7">از فرضیه تا assignment، exposure، SRM، guardrail و حافظهٔ علّی؛ بدون تبدیل همبستگی به ادعای causal و بدون KPI ساختگی.</p>
+                        <p className="mt-3 max-w-2xl text-muted-foreground leading-7">
+                            از فرضیه تا assignment، exposure، SRM، guardrail و حافظهٔ علّی؛ بدون تبدیل همبستگی به ادعای causal و
+                            بدون KPI ساختگی.
+                        </p>
                     </div>
-                    <Button variant="outline" onClick={refresh}><RefreshCw className={cn("size-4", (overview.isFetching || experiments.isFetching) && "animate-spin")} /> تازه‌سازی Lab</Button>
+                    <Button variant="outline" onClick={refresh}>
+                        <RefreshCw className={cn("size-4", (overview.isFetching || experiments.isFetching) && "animate-spin")} />{" "}
+                        تازه‌سازی Lab
+                    </Button>
                 </div>
             </section>
             <EvidenceBanner />
             <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <MetricCard label="آزمایش فعال" value={(counts?.running ?? 0).toLocaleString("fa-IR")} hint="Experimentهای واقعاً در وضعیت running." tone="primary" icon={Activity} />
-                <MetricCard label="هشدار SRM" value={(counts?.srm_alerts ?? 0).toLocaleString("fa-IR")} hint="Mismatch در نسبت assignment؛ causal claim را مسدود می‌کند." tone="danger" icon={ShieldAlert} />
-                <MetricCard label="Guardrail breach" value={(counts?.guardrail_alerts ?? 0).toLocaleString("fa-IR")} hint="برد primary metric در حضور آسیب ثبت‌شده پذیرفته نمی‌شود." tone="warning" icon={Activity} />
-                <MetricCard label="حافظهٔ علّی" value={(counts?.causal_memory ?? 0).toLocaleString("fa-IR")} hint="نتیجه‌های evidence-graded قابل استفاده برای تصمیم‌های آینده." tone="success" icon={CircleGauge} />
+                <MetricCard
+                    label="آزمایش فعال"
+                    value={(counts?.running ?? 0).toLocaleString("fa-IR")}
+                    hint="Experimentهای واقعاً در وضعیت running."
+                    tone="primary"
+                    icon={Activity}
+                />
+                <MetricCard
+                    label="هشدار SRM"
+                    value={(counts?.srm_alerts ?? 0).toLocaleString("fa-IR")}
+                    hint="Mismatch در نسبت assignment؛ causal claim را مسدود می‌کند."
+                    tone="danger"
+                    icon={ShieldAlert}
+                />
+                <MetricCard
+                    label="Guardrail breach"
+                    value={(counts?.guardrail_alerts ?? 0).toLocaleString("fa-IR")}
+                    hint="برد primary metric در حضور آسیب ثبت‌شده پذیرفته نمی‌شود."
+                    tone="warning"
+                    icon={Activity}
+                />
+                <MetricCard
+                    label="حافظهٔ علّی"
+                    value={(counts?.causal_memory ?? 0).toLocaleString("fa-IR")}
+                    hint="نتیجه‌های evidence-graded قابل استفاده برای تصمیم‌های آینده."
+                    tone="success"
+                    icon={CircleGauge}
+                />
             </section>
             <CardRoot>
-                <CardHeader><div className="flex items-center justify-between"><div><CardTitle className="text-base">Exposure واقعی · ۱۴ روز اخیر</CardTitle><p className="mt-1 text-muted-foreground text-xs">Assignmentها شمرده نمی‌شوند؛ فقط exposure ثبت‌شده.</p></div><Sparkles className="size-5 text-primary" /></div></CardHeader>
+                <CardHeader>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <CardTitle className="text-base">Exposure واقعی · ۱۴ روز اخیر</CardTitle>
+                            <p className="mt-1 text-muted-foreground text-xs">Assignmentها شمرده نمی‌شوند؛ فقط exposure ثبت‌شده.</p>
+                        </div>
+                        <Sparkles className="size-5 text-primary" />
+                    </div>
+                </CardHeader>
                 <CardContent>
                     {exposureChart.length ? (
                         <div className="h-64" dir="ltr">
-                            <ResponsiveContainer width="100%" height="100%"><AreaChart data={exposureChart}><defs><linearGradient id="phase17-exposure" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="hsl(var(--chart-1))" stopOpacity={0.28} /><stop offset="100%" stopColor="hsl(var(--chart-1))" stopOpacity={0.01} /></linearGradient></defs><CartesianGrid vertical={false} strokeDasharray="3 3" /><XAxis dataKey="day" tick={{ fontSize: 11 }} /><YAxis tick={{ fontSize: 11 }} /><Tooltip /><Area type="monotone" dataKey="count" stroke="hsl(var(--chart-1))" fill="url(#phase17-exposure)" strokeWidth={2.5} /></AreaChart></ResponsiveContainer>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={exposureChart}>
+                                    <defs>
+                                        <linearGradient id="phase17-exposure" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stopColor="hsl(var(--chart-1))" stopOpacity={0.28} />
+                                            <stop offset="100%" stopColor="hsl(var(--chart-1))" stopOpacity={0.01} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                                    <XAxis dataKey="day" tick={{ fontSize: 11 }} />
+                                    <YAxis tick={{ fontSize: 11 }} />
+                                    <Tooltip />
+                                    <Area
+                                        type="monotone"
+                                        dataKey="count"
+                                        stroke="hsl(var(--chart-1))"
+                                        fill="url(#phase17-exposure)"
+                                        strokeWidth={2.5}
+                                    />
+                                </AreaChart>
+                            </ResponsiveContainer>
                         </div>
-                    ) : <div className="grid h-48 place-items-center rounded-xl border border-dashed text-muted-foreground text-sm">Exposure ثبت‌شده‌ای در ۱۴ روز اخیر وجود ندارد.</div>}
+                    ) : (
+                        <div className="grid h-48 place-items-center rounded-xl border border-dashed text-muted-foreground text-sm">
+                            Exposure ثبت‌شده‌ای در ۱۴ روز اخیر وجود ندارد.
+                        </div>
+                    )}
                 </CardContent>
             </CardRoot>
             <Tabs defaultValue="lab" className="space-y-4">
-                <TabsList className="grid h-auto w-full grid-cols-2 gap-1 lg:grid-cols-4"><TabsTrigger value="lab">Portfolio & Lab</TabsTrigger><TabsTrigger value="new">طراحی آزمایش</TabsTrigger><TabsTrigger value="holdouts">Persistent Holdouts</TabsTrigger><TabsTrigger value="memory">Causal Memory</TabsTrigger></TabsList>
-                <TabsContent value="lab"><div className="grid gap-4 xl:grid-cols-[0.72fr_1.28fr]"><CardRoot><CardHeader><CardTitle className="text-base">Experiment Registry</CardTitle><p className="text-muted-foreground text-xs">{rows.length.toLocaleString("fa-IR")} قرارداد ثبت‌شده</p></CardHeader><CardContent><ExperimentList rows={rows} selectedId={effectiveId} onSelect={setSelectedId} /></CardContent></CardRoot><ExperimentDetail id={effectiveId} /></div></TabsContent>
-                <TabsContent value="new"><NewExperimentComposer /></TabsContent>
-                <TabsContent value="holdouts"><HoldoutsPanel /></TabsContent>
-                <TabsContent value="memory"><MemoryPanel /></TabsContent>
+                <TabsList className="grid h-auto w-full grid-cols-2 gap-1 lg:grid-cols-4">
+                    <TabsTrigger value="lab">Portfolio & Lab</TabsTrigger>
+                    <TabsTrigger value="new">طراحی آزمایش</TabsTrigger>
+                    <TabsTrigger value="holdouts">Persistent Holdouts</TabsTrigger>
+                    <TabsTrigger value="memory">Causal Memory</TabsTrigger>
+                </TabsList>
+                <TabsContent value="lab">
+                    <div className="grid gap-4 xl:grid-cols-[0.72fr_1.28fr]">
+                        <CardRoot>
+                            <CardHeader>
+                                <CardTitle className="text-base">Experiment Registry</CardTitle>
+                                <p className="text-muted-foreground text-xs">
+                                    {rows.length.toLocaleString("fa-IR")} قرارداد ثبت‌شده
+                                </p>
+                            </CardHeader>
+                            <CardContent>
+                                <ExperimentList rows={rows} selectedId={effectiveId} onSelect={setSelectedId} />
+                            </CardContent>
+                        </CardRoot>
+                        <ExperimentDetail id={effectiveId} />
+                    </div>
+                </TabsContent>
+                <TabsContent value="new">
+                    <NewExperimentComposer />
+                </TabsContent>
+                <TabsContent value="holdouts">
+                    <HoldoutsPanel />
+                </TabsContent>
+                <TabsContent value="memory">
+                    <MemoryPanel />
+                </TabsContent>
             </Tabs>
         </div>
     );

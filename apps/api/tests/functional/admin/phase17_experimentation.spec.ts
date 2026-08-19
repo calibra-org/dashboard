@@ -60,7 +60,11 @@ test.group("Phase 17 experimentation", (group) => {
 
     test("creates a versioned experiment contract", async ({ client, assert }) => {
         const admin = await createAdmin();
-        const response = await client.post("/api/v1/admin/experiments").withGuard("api").loginAs(admin).json(contract("checkout.copy.v1"));
+        const response = await client
+            .post("/api/v1/admin/experiments")
+            .withGuard("api")
+            .loginAs(admin)
+            .json(contract("checkout.copy.v1"));
         response.assertStatus(201);
         assert.equal(response.body().data.status, "draft");
         assert.equal(response.body().data.variants.length, 2);
@@ -69,12 +73,24 @@ test.group("Phase 17 experimentation", (group) => {
 
     test("high risk experiment cannot launch without governance reference", async ({ client }) => {
         const admin = await createAdmin();
-        const created = await client.post("/api/v1/admin/experiments").withGuard("api").loginAs(admin).json(contract("price.card.v1", "price"));
+        const created = await client
+            .post("/api/v1/admin/experiments")
+            .withGuard("api")
+            .loginAs(admin)
+            .json(contract("price.card.v1", "price"));
         created.assertStatus(201);
         const experimentId = created.body().data.id;
-        const review = await client.post(`/api/v1/admin/experiments/${experimentId}/transition`).withGuard("api").loginAs(admin).json({ status: "review", expected_version: 1 });
+        const review = await client
+            .post(`/api/v1/admin/experiments/${experimentId}/transition`)
+            .withGuard("api")
+            .loginAs(admin)
+            .json({ status: "review", expected_version: 1 });
         review.assertStatus(200);
-        const launch = await client.post(`/api/v1/admin/experiments/${experimentId}/transition`).withGuard("api").loginAs(admin).json({ status: "running", expected_version: 2 });
+        const launch = await client
+            .post(`/api/v1/admin/experiments/${experimentId}/transition`)
+            .withGuard("api")
+            .loginAs(admin)
+            .json({ status: "running", expected_version: 2 });
         launch.assertStatus(422);
     });
 });

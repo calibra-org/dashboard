@@ -57,7 +57,13 @@ export default class extends BaseSchema {
         this.schema.createTable("experiment_variants", (table) => {
             table.bigIncrements("id");
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("experiment_id").unsigned().notNullable().references("id").inTable("experiments").onDelete("CASCADE");
+            table
+                .bigInteger("experiment_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("experiments")
+                .onDelete("CASCADE");
             table.string("variant_key", 80).notNullable();
             table.string("name", 160).notNullable();
             table.integer("weight_bps").notNullable();
@@ -71,8 +77,20 @@ export default class extends BaseSchema {
         this.schema.createTable("experiment_assignments", (table) => {
             table.bigIncrements("id");
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("experiment_id").unsigned().notNullable().references("id").inTable("experiments").onDelete("CASCADE");
-            table.bigInteger("variant_id").unsigned().notNullable().references("id").inTable("experiment_variants").onDelete("RESTRICT");
+            table
+                .bigInteger("experiment_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("experiments")
+                .onDelete("CASCADE");
+            table
+                .bigInteger("variant_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("experiment_variants")
+                .onDelete("RESTRICT");
             table.string("subject_type", 24).notNullable();
             table.string("subject_hash", 64).notNullable();
             table.integer("layer_bucket").notNullable();
@@ -89,8 +107,20 @@ export default class extends BaseSchema {
         this.schema.createTable("experiment_exposures", (table) => {
             table.bigIncrements("id");
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("experiment_id").unsigned().notNullable().references("id").inTable("experiments").onDelete("CASCADE");
-            table.bigInteger("assignment_id").unsigned().notNullable().references("id").inTable("experiment_assignments").onDelete("CASCADE");
+            table
+                .bigInteger("experiment_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("experiments")
+                .onDelete("CASCADE");
+            table
+                .bigInteger("assignment_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("experiment_assignments")
+                .onDelete("CASCADE");
             table.uuid("exposure_id").notNullable();
             table.string("surface", 64).notNullable();
             table.string("placement", 96).nullable();
@@ -104,8 +134,20 @@ export default class extends BaseSchema {
         this.schema.createTable("experiment_metric_observations", (table) => {
             table.bigIncrements("id");
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("experiment_id").unsigned().notNullable().references("id").inTable("experiments").onDelete("CASCADE");
-            table.bigInteger("assignment_id").unsigned().notNullable().references("id").inTable("experiment_assignments").onDelete("CASCADE");
+            table
+                .bigInteger("experiment_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("experiments")
+                .onDelete("CASCADE");
+            table
+                .bigInteger("assignment_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("experiment_assignments")
+                .onDelete("CASCADE");
             table.uuid("observation_id").notNullable();
             table.string("metric_key", 120).notNullable();
             table.string("metric_kind", 24).notNullable();
@@ -121,7 +163,13 @@ export default class extends BaseSchema {
         this.schema.createTable("experiment_analysis_runs", (table) => {
             table.bigIncrements("id");
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("experiment_id").unsigned().notNullable().references("id").inTable("experiments").onDelete("CASCADE");
+            table
+                .bigInteger("experiment_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("experiments")
+                .onDelete("CASCADE");
             table.string("analysis_version", 48).notNullable().defaultTo("phase17-v1");
             table.string("status", 24).notNullable();
             table.boolean("srm_detected").notNullable().defaultTo(false);
@@ -153,7 +201,13 @@ export default class extends BaseSchema {
         this.schema.createTable("experiment_holdout_memberships", (table) => {
             table.bigIncrements("id");
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("holdout_id").unsigned().notNullable().references("id").inTable("experiment_holdouts").onDelete("CASCADE");
+            table
+                .bigInteger("holdout_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("experiment_holdouts")
+                .onDelete("CASCADE");
             table.string("subject_type", 24).notNullable();
             table.string("subject_hash", 64).notNullable();
             table.integer("bucket").notNullable();
