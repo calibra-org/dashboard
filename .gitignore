@@ -18,6 +18,9 @@ build
 *.pem
 .tmp
 
+# PR transport artifacts are temporary materialization payloads, never source.
+/.pr*-*.patch.gz.b64
+
 # debug
 npm-debug.log*
 yarn-debug.log*

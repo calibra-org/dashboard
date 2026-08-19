@@ -50,8 +50,13 @@ if (failures.length === 0) {
     for (const sourceDomain of ["payment_attempts", "order_shipments", "support_tickets", "inventory_items", "seo_crawl_runs"]) {
         if (!service.includes(sourceDomain)) failures.push(`service missing landed source ${sourceDomain}`);
     }
-    if (!service.includes('status: "dependency_not_landed"'))
-        failures.push("source coverage must disclose unlanded dependencies");
+    if (!service.includes('{ source: "phase8", status: "dependency_not_landed" }'))
+        failures.push("Phase 8 source coverage must disclose the dependency until Phase 8 lands");
+    const stalePhase9Marker = '{ source: "phase9", status: "dependency_not_landed" }';
+    const phase9CompatibilityFilter =
+        controller.includes('source.source === "phase9"') && controller.includes('source.status === "dependency_not_landed"');
+    if (service.includes(stalePhase9Marker) && !phase9CompatibilityFilter)
+        failures.push("landed Phase 9 must not be exposed to operators as dependency_not_landed");
     if (!service.includes('executionBoundary: "human_navigation_only"'))
         failures.push("Phase 10 must not bypass Phase 11 execution governance");
     if (!service.includes("scoreAvailableComponents")) failures.push("transparent scoring contract missing");
