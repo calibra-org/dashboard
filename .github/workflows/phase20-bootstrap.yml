@@ -102,33 +102,41 @@ jobs:
               '        run: pnpm exec turbo run build --filter=@calibra/admin\n',
               'Phase 20 Admin production build',
           )
-
           replace_once(
               'docs/api/reference/openapi/admin.trust.v1.yaml',
               "      responses: { '200': { description: Trust graph nodes, edges, provenance, and confidence, content: { application/json: { schema: { $ref: '#/components/schemas/TrustEnvelope' } } } } }\n",
               "      responses: { '200': { description: 'Trust graph nodes, edges, provenance, and confidence', content: { application/json: { schema: { $ref: '#/components/schemas/TrustEnvelope' } } } } }\n",
               'trust graph OpenAPI response',
           )
-
           replace_once(
               'apps/api/app/services/trust/admin_service.ts',
               '    const matched = trace.length > 0 && trace.every((item) => item.passed);\n',
               '    const matched = trace.length > 0 && trace.every((item: { passed: boolean }) => item.passed);\n',
               'trust policy trace typing',
           )
-
           replace_once(
               'apps/api/app/services/trust/permissions.ts',
               '.whereIn("permission", TRUST_PERMISSIONS);\n',
               '.whereIn("permission", [...TRUST_PERMISSIONS]);\n',
               'trust permission whereIn typing',
           )
-
           replace_once(
               'apps/api/app/services/trust/signal_service.ts',
               '.where("signal_id", signal.id)\n',
               '.where("signal_id", Number(signal.id))\n',
               'trust signal evidence query typing',
+          )
+          replace_once(
+              'apps/admin/src/features/trust/TrustWorkspace.tsx',
+              '    ScanSearch,\n',
+              '    Search as ScanSearch,\n',
+              'trust scan icon import',
+          )
+          replace_once(
+              'apps/admin/src/features/trust/TrustWorkspace.tsx',
+              '    UserRoundCheck,\n',
+              '    UserCheck as UserRoundCheck,\n',
+              'trust reviewer icon import',
           )
           PY
 
