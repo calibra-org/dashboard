@@ -89,21 +89,47 @@ jobs:
           python - <<'PY'
           from pathlib import Path
 
-          workflow = Path('.github/workflows/phase20-trust-risk-check.yml')
-          workflow_text = workflow.read_text()
-          old_build = '        run: pnpm --filter @calibra/admin run build\n'
-          new_build = '        run: pnpm exec turbo run build --filter=@calibra/admin\n'
-          if workflow_text.count(old_build) != 1:
-              raise SystemExit('unexpected Phase 20 Admin production build shape')
-          workflow.write_text(workflow_text.replace(old_build, new_build))
+          def replace_once(path_name: str, old: str, new: str, label: str) -> None:
+              path = Path(path_name)
+              text = path.read_text()
+              if text.count(old) != 1:
+                  raise SystemExit(f'unexpected {label} shape')
+              path.write_text(text.replace(old, new))
 
-          spec = Path('docs/api/reference/openapi/admin.trust.v1.yaml')
-          spec_text = spec.read_text()
-          bad = "      responses: { '200': { description: Trust graph nodes, edges, provenance, and confidence, content: { application/json: { schema: { $ref: '#/components/schemas/TrustEnvelope' } } } } }\n"
-          fixed = "      responses: { '200': { description: 'Trust graph nodes, edges, provenance, and confidence', content: { application/json: { schema: { $ref: '#/components/schemas/TrustEnvelope' } } } } }\n"
-          if spec_text.count(bad) != 1:
-              raise SystemExit('unexpected trust graph OpenAPI response shape')
-          spec.write_text(spec_text.replace(bad, fixed))
+          replace_once(
+              '.github/workflows/phase20-trust-risk-check.yml',
+              '        run: pnpm --filter @calibra/admin run build\n',
+              '        run: pnpm exec turbo run build --filter=@calibra/admin\n',
+              'Phase 20 Admin production build',
+          )
+
+          replace_once(
+              'docs/api/reference/openapi/admin.trust.v1.yaml',
+              "      responses: { '200': { description: Trust graph nodes, edges, provenance, and confidence, content: { application/json: { schema: { $ref: '#/components/schemas/TrustEnvelope' } } } } }\n",
+              "      responses: { '200': { description: 'Trust graph nodes, edges, provenance, and confidence', content: { application/json: { schema: { $ref: '#/components/schemas/TrustEnvelope' } } } } }\n",
+              'trust graph OpenAPI response',
+          )
+
+          replace_once(
+              'apps/api/app/services/trust/admin_service.ts',
+              '    const matched = trace.length > 0 && trace.every((item) => item.passed);\n',
+              '    const matched = trace.length > 0 && trace.every((item: { passed: boolean }) => item.passed);\n',
+              'trust policy trace typing',
+          )
+
+          replace_once(
+              'apps/api/app/services/trust/permissions.ts',
+              '.whereIn("permission", TRUST_PERMISSIONS);\n',
+              '.whereIn("permission", [...TRUST_PERMISSIONS]);\n',
+              'trust permission whereIn typing',
+          )
+
+          replace_once(
+              'apps/api/app/services/trust/signal_service.ts',
+              '.where("signal_id", signal.id)\n',
+              '.where("signal_id", Number(signal.id))\n',
+              'trust signal evidence query typing',
+          )
           PY
 
           if ! git merge-file -p /tmp/phase20-merge/candidate-sidebar.tsx /tmp/phase20-merge/base-sidebar.tsx /tmp/phase20-merge/main-sidebar.tsx > /tmp/phase20-merge/merged-sidebar.tsx; then
