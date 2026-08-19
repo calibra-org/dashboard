@@ -30,5 +30,17 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git fetch origin main
-          git merge --no-edit origin/main
+          set +e
+          git merge -X theirs --no-edit origin/main
+          merge_status=$?
+          set -e
+          if [ "$merge_status" -ne 0 ]; then
+            conflicts="$(git diff --name-only --diff-filter=U)"
+            git merge --abort
+            printf '%s\n' "$conflicts" > .phase21-merge-conflicts.txt
+            git add .phase21-merge-conflicts.txt
+            git commit -m "chore(ci): record Phase 21 main sync conflicts"
+            git push origin HEAD:agent/phase21-agentic-commerce-gateway
+            exit 1
+          fi
           git push origin HEAD:agent/phase21-agentic-commerce-gateway
