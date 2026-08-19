@@ -1,6 +1,8 @@
 "use client";
 import { useMemo, useState } from "react";
+
 import type { ProcurementOverview } from "#/lib/queries/procurement";
+
 const money = (v: number) => new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 0 }).format(v);
 export function ProcurementWorkspace({
     initial,
@@ -59,6 +61,7 @@ export function ProcurementWorkspace({
                         ["recommendations", "Smart PO"],
                     ].map(([k, l]) => (
                         <button
+                            type="button"
                             key={k}
                             onClick={() => setTab(k as any)}
                             className={`whitespace-nowrap rounded-xl px-4 py-2 text-sm font-bold transition ${tab === k ? "bg-slate-950 text-white shadow-lg" : "hover:bg-muted"}`}
@@ -170,8 +173,8 @@ export function ProcurementWorkspace({
                 )}
                 {tab === "recommendations" && (
                     <div className="grid gap-4 lg:grid-cols-2">
-                        {recommendations.map((r, i) => (
-                            <article key={`${r.id}-${i}`} className="rounded-[28px] border bg-background/90 p-5 shadow-sm">
+                        {recommendations.map((r) => (
+                            <article key={r.id} className="rounded-[28px] border bg-background/90 p-5 shadow-sm">
                                 <div className="flex justify-between gap-4">
                                     <div>
                                         <div className="font-black">{r.product_name_snapshot}</div>
