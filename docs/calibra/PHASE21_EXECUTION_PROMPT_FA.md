@@ -1,0 +1,2 @@
+# Phase21 Execution Prompt
+همه قواعد `00_MASTER_EXECUTION_PROMPT_FA.md` را اجرا کن و Phase21 را فقط روی canonical Catalog/Inventory/Checkout/Order truths سوار کن. Adapterها protocol-neutral باشند. هیچ UCP/ACP/MCP/A2A label تا conformance PASS به Live نرود. Product readiness باید decomposition/missing facts/freshness بدهد. همه mutationهای Admin backend permission + limiter + audit + step-up داشته باشند. UI فارسی RTL با HelperTooltip و بدون no-op باشد. RLS/tenant isolation و OpenAPI/tests/docs/QA اجباری است.

@@ -1,0 +1,17 @@
+openapi: 3.1.0
+info: { title: Calibra Admin Agentic Commerce Gateway, version: 1.0.0 }
+paths:
+  /api/v1/admin/agentic-commerce/overview: { get: { summary: Agentic commerce overview, responses: { "200": { description: OK } } } }
+  /api/v1/admin/agentic-commerce/channels:
+    get: { summary: List channels and principals, responses: { "200": { description: OK } } }
+    post: { summary: Create or update a governed channel, responses: { "200": { description: OK }, "422": { description: Conformance required for live mode } } }
+  /api/v1/admin/agentic-commerce/principals:
+    post: { summary: Create or update an agent principal with scopes and bounded rate-limit policy, responses: { "200": { description: OK }, "422": { description: Invalid rate-limit policy } } }
+  /api/v1/admin/agentic-commerce/actions/authorize:
+    post: { summary: Authorize a capability action with scope, mode, risk, idempotency and principal rate-limit enforcement, responses: { "200": { description: Authorization ledger entry } } }
+  /api/v1/admin/agentic-commerce/capabilities: { post: { summary: Create a versioned capability, responses: { "200": { description: OK } } } }
+  /api/v1/admin/agentic-commerce/conformance: { post: { summary: Run deterministic conformance gate, responses: { "200": { description: OK } } } }
+  /api/v1/admin/agentic-commerce/readiness:
+    get: { summary: List product readiness, responses: { "200": { description: OK } } }
+  /api/v1/admin/agentic-commerce/readiness/refresh: { post: { summary: Refresh product readiness snapshot, responses: { "200": { description: OK } } } }
+  /api/v1/admin/agentic-commerce/product-graph: { get: { summary: Read machine-safe product graph, responses: { "200": { description: OK } } } }

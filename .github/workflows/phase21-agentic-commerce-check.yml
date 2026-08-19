@@ -1,0 +1,58 @@
+name: Phase 21 Agentic Commerce Integrity
+
+on:
+  pull_request:
+    paths:
+      - "apps/api/app/services/agentic_gateway/**"
+      - "apps/api/app/controllers/admin/agentic_gateway_controller.ts"
+      - "apps/api/app/validators/agentic_gateway/**"
+      - "apps/api/database/migrations/1774000000000_create_agentic_commerce_gateway.ts"
+      - "apps/api/start/routes/admin_agentic_gateway.ts"
+      - "apps/api/start/routes.ts"
+      - "apps/api/tests/functional/agentic_gateway/**"
+      - "apps/admin/messages/agentic_gateway/**"
+      - "apps/admin/src/features/agentic_gateway/**"
+      - "apps/admin/src/lib/queries/agentic-gateway.ts"
+      - "apps/admin/src/app/**/agentic-commerce/**"
+      - "apps/admin/src/lib/i18n/request.ts"
+      - "docs/api/reference/openapi/admin.agentic-commerce.v1.yaml"
+      - "docs/api/scripts/merge-admin-spec.js"
+      - "docs/api/package.json"
+      - "docs/calibra/phase21-agentic-commerce-gateway.md"
+      - "scripts/verify-phase21-agentic-gateway.mjs"
+      - ".github/workflows/phase21-agentic-commerce-check.yml"
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.14.0"
+      - run: npm install --global pnpm@10.32.1
+      - run: pnpm install --frozen-lockfile
+      - name: Static Phase 21 contract
+        run: node scripts/verify-phase21-agentic-gateway.mjs
+      - name: OpenAPI and SDK
+        run: |
+          pnpm --dir docs/api run build:json:admin
+          pnpm --filter @calibra/sdk run codegen:admin
+          git diff --exit-code -- packages/sdk/src/generated/admin.d.ts
+      - name: Phase 21 contract tests
+        working-directory: apps/api
+        run: timeout 180s node ace test --files=tests/functional/agentic_gateway/phase21_agentic_gateway.spec.ts
+      - name: API typecheck
+        run: pnpm --filter @calibra/api run typecheck
+      - name: Admin typecheck
+        run: pnpm exec turbo run typecheck --filter=@calibra/admin
+      - name: Admin production build
+        run: pnpm exec turbo run build --filter=@calibra/admin
+      - name: Diff hygiene
+        run: git diff --check

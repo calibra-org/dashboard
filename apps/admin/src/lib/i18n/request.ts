@@ -17,6 +17,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
     const operations = (await import(`../../../messages/operations/${locale}.json`)).default;
     const personalization = (await import(`../../../messages/personalization/${locale}.json`)).default;
     const trust = (await import(`../../../messages/trust/${locale}.json`)).default;
+    const agenticGateway = (await import(`../../../messages/agentic_gateway/${locale}.json`)).default;
 
     return {
         locale,
@@ -27,12 +28,14 @@ export default getRequestConfig(async ({ requestLocale }) => {
             ...operations,
             ...personalization,
             ...trust,
+            ...agenticGateway,
             Nav: {
                 ...base.Nav,
                 ...transactions.Nav,
                 ...tickets.Nav,
                 ...personalization.Nav,
                 ...trust.Nav,
+                ...agenticGateway.Nav,
             },
         },
     };
