@@ -1,4 +1,5 @@
 import { test } from "@japa/runner";
+
 test.group("Phase14 procurement invariants", () => {
     test("receipt disposition is conserved", ({ assert }) => {
         const received = 12,
