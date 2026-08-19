@@ -1,6 +1,9 @@
 name: Phase 21 Main Sync
 
 on:
+  pull_request:
+    paths:
+      - ".github/workflows/phase21-main-sync.yml"
   push:
     branches:
       - agent/phase21-agentic-commerce-gateway
@@ -12,6 +15,7 @@ permissions:
 
 jobs:
   sync-main:
+    if: github.event_name == 'push' || github.head_ref == 'agent/phase21-agentic-commerce-gateway'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
