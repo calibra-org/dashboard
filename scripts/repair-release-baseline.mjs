@@ -23,6 +23,39 @@ phase14 = phase14.replaceAll("db.", "currentTrx().");
 if (phase14.includes("db.")) throw new Error("Bare global db reference remains in Phase 14 procurement service");
 write(phase14Path, phase14);
 
+// Resolve the remaining lint blockers in the already-shipped Phase 14/20 UI without unsafe transforms.
+const procurementWorkspacePath = "apps/admin/src/features/procurement/ProcurementWorkspace.tsx";
+let procurementWorkspace = read(procurementWorkspacePath);
+procurementWorkspace = replaceRequired(
+    procurementWorkspace,
+    "<button key={k} onClick",
+    '<button type="button" key={k} onClick',
+    "Phase 14 tab button type",
+);
+procurementWorkspace = replaceRequired(
+    procurementWorkspace,
+    'recommendations.map((r,i)=><article key={`${r.id}-${i}`}',
+    "recommendations.map((r)=><article key={String(r.id)}",
+    "Phase 14 recommendation stable key",
+);
+write(procurementWorkspacePath, procurementWorkspace);
+
+const trustWorkspacePath = "apps/admin/src/features/trust/TrustWorkspace.tsx";
+let trustWorkspace = read(trustWorkspacePath);
+trustWorkspace = replaceRequired(
+    trustWorkspace,
+    '.map((entry, index) => <div key={`${entry.kind}-${index}`} className=',
+    '.map((entry) => <div key={`${entry.kind}-${String(entry.item.id ?? entry.item.public_id ?? entry.item.created_at ?? entry.item.action ?? entry.item.action_type ?? entry.item.reason_code ?? "event")}`} className=',
+    "Phase 20 timeline stable key",
+);
+trustWorkspace = replaceRequired(
+    trustWorkspace,
+    ".slice(0, 20).map((row, index) => <div key={index} className=",
+    '.slice(0, 20).map((row) => <div key={String(row.id ?? row.public_id ?? row.created_at ?? row.final_assessment ?? row.outcome ?? "outcome")} className=',
+    "Phase 20 outcome stable key",
+);
+write(trustWorkspacePath, trustWorkspace);
+
 // Preserve Phase 20's current navigation while restoring the Phase 18 entry on the latest main baseline.
 const sidebarPath = "apps/admin/src/components/Sidebar.tsx";
 let sidebar = read(sidebarPath);
