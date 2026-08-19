@@ -169,6 +169,13 @@ const trustItems: NavItem[] = [
     { href: "/quality-trust/models", labelKey: "trustModels", icon: ChartNoAxesCombined },
 ];
 
+const agenticItems: NavItem[] = [
+    { href: "/agentic-commerce/overview", labelKey: "agenticOverview", icon: LayoutDashboard },
+    { href: "/agentic-commerce/channels", labelKey: "agenticChannels", icon: Link2 },
+    { href: "/agentic-commerce/readiness", labelKey: "agenticReadiness", icon: ChartNoAxesCombined },
+    { href: "/agentic-commerce/conformance", labelKey: "agenticConformance", icon: ShieldCheck },
+];
+
 const identityItems: NavItem[] = [
     { href: "/identity/overview", label: "نمای کلی", icon: LayoutDashboard },
     { href: "/identity/verifications", label: "تراکنش‌های تأیید", icon: FileText },
@@ -207,6 +214,7 @@ export function Sidebar({ userId }: { userId: number }) {
     const seoActive = pathname === "/seo" || pathname.startsWith("/seo/");
     const ticketActive = pathname === "/tickets" || pathname.startsWith("/tickets/");
     const trustActive = pathname === "/quality-trust" || pathname.startsWith("/quality-trust/");
+    const agenticActive = pathname === "/agentic-commerce" || pathname.startsWith("/agentic-commerce/");
     const identityActive = pathname === "/identity" || pathname.startsWith("/identity/");
     const ticketUnread = useTicketRealtime(userId);
     const [factorOpen, setFactorOpen] = useState(factorActive);
@@ -214,6 +222,7 @@ export function Sidebar({ userId }: { userId: number }) {
     const [seoOpen, setSeoOpen] = useState(seoActive);
     const [ticketOpen, setTicketOpen] = useState(ticketActive);
     const [trustOpen, setTrustOpen] = useState(trustActive);
+    const [agenticOpen, setAgenticOpen] = useState(agenticActive);
     const [identityOpen, setIdentityOpen] = useState(identityActive);
 
     useEffect(() => { if (factorActive) setFactorOpen(true); }, [factorActive]);
@@ -221,6 +230,7 @@ export function Sidebar({ userId }: { userId: number }) {
     useEffect(() => { if (seoActive) setSeoOpen(true); }, [seoActive]);
     useEffect(() => { if (ticketActive) setTicketOpen(true); }, [ticketActive]);
     useEffect(() => { if (trustActive) setTrustOpen(true); }, [trustActive]);
+    useEffect(() => { if (agenticActive) setAgenticOpen(true); }, [agenticActive]);
     useEffect(() => { if (identityActive) setIdentityOpen(true); }, [identityActive]);
 
     const itemLink = (item: NavItem, compact = false) => {
@@ -310,6 +320,7 @@ export function Sidebar({ userId }: { userId: number }) {
                     <div className="px-3 pb-1 font-medium text-[0.65rem] text-sidebar-foreground/50 uppercase tracking-wider">{navT("operations")}</div>
                     {collapsible("ticket-sidebar-items", ticketActive, ticketOpen, setTicketOpen, MessageSquare, navT("tickets"), ticketItems, undefined, ticketUnread)}
                     {collapsible("trust-sidebar-items", trustActive, trustOpen, setTrustOpen, ShieldCheck, navT("trust"), trustItems, { 0: navT("trustSectionReview"), 2: navT("trustSectionControl"), 4: navT("trustSectionIntelligence") })}
+                    {collapsible("agentic-sidebar-items", agenticActive, agenticOpen, setAgenticOpen, Bot, navT("agenticCommerce"), agenticItems)}
                 </div>
                 {groups.slice(3).map((group) => (
                     <div key={group.titleKey} className="flex flex-col gap-1">
