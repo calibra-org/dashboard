@@ -1,0 +1,83 @@
+name: Migration Smoke
+
+on:
+    pull_request:
+        branches: ["**"]
+    push:
+        branches: ["main"]
+
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+    FORCE_COLOR: 3
+    TURBO_TELEMETRY_DISABLED: 1
+    DO_NOT_TRACK: 1
+    NODE_VERSION: "24.14.0"
+    PNPM_VERSION: "10.32.1"
+
+jobs:
+    fresh-database:
+        runs-on: ubuntu-latest
+        timeout-minutes: 8
+        services:
+            postgres:
+                image: postgres:17-alpine
+                env:
+                    POSTGRES_USER: calibra
+                    POSTGRES_PASSWORD: calibra
+                    POSTGRES_DB: calibra
+                ports:
+                    - 5432:5432
+                options: >-
+                    --health-cmd "pg_isready -U calibra -d calibra"
+                    --health-interval 5s
+                    --health-timeout 5s
+                    --health-retries 10
+        steps:
+            - uses: actions/checkout@v4
+            - uses: pnpm/action-setup@v4
+              with:
+                  version: ${{ env.PNPM_VERSION }}
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: pnpm
+            - run: pnpm install --frozen-lockfile
+            - name: Create empty migration target
+              env:
+                  PGPASSWORD: calibra
+              run: psql -h localhost -U calibra -d calibra -c "CREATE DATABASE calibra_migration_smoke OWNER calibra;"
+            - name: Run complete migration chain on empty database
+              working-directory: apps/api
+              env:
+                  NODE_ENV: test
+                  APP_NAME: calibra-api
+                  APP_KEY: ci-only-key-not-used-for-real-secrets
+                  LOG_LEVEL: warn
+                  DB_HOST: localhost
+                  DB_PORT: "5432"
+                  DB_USER: calibra
+                  DB_PASSWORD: calibra
+                  DB_DATABASE: calibra_migration_smoke
+                  MAIL_FROM_ADDRESS: ops@calibra.local
+                  MAIL_FROM_NAME: Calibra
+                  MAIL_NOTIFICATIONS_ENABLED: "false"
+                  SMTP_HOST: localhost
+                  SMTP_PORT: "11025"
+                  REDIS_HOST: localhost
+                  REDIS_PORT: "6379"
+                  TRANSMIT_TRANSPORT: none
+                  QUEUE_DRIVER: sync
+                  LIMITER_STORE: memory
+                  CACHE_DRIVER: memory
+              run: node ace migration:run --force
+            - name: Verify webhook identity index shape
+              env:
+                  PGPASSWORD: calibra
+              run: |
+                  definition=$(psql -h localhost -U calibra -d calibra_migration_smoke -Atc "SELECT indexdef FROM pg_indexes WHERE schemaname='public' AND indexname='processed_webhook_events_provider_event_kind_unique'")
+                  echo "$definition"
+                  test -n "$definition"
+                  echo "$definition" | grep -F 'tenant_id, provider, event_id, event_kind'
