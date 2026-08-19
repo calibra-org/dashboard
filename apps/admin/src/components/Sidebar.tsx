@@ -155,6 +155,14 @@ const seoItems: NavItem[] = [
     { href: "/seo/settings", labelKey: "seoSettings", icon: Settings2 },
 ];
 
+const socialItems: NavItem[] = [
+    { href: "/social/overview", labelKey: "socialOverview", icon: BarChart3 },
+    { href: "/social/studio", labelKey: "socialStudio", icon: Sparkles },
+    { href: "/social/community", labelKey: "socialCommunity", icon: MessageSquare },
+    { href: "/social/moderation", labelKey: "socialModeration", icon: ShieldCheck },
+    { href: "/social/analytics", labelKey: "socialAnalytics", icon: ChartNoAxesCombined },
+];
+
 const ticketItems: NavItem[] = [
     { href: "/tickets/overview", labelKey: "ticketOverview", icon: LayoutDashboard },
     { href: "/tickets/create", labelKey: "ticketCreate", icon: PenLine },
@@ -221,6 +229,7 @@ export function Sidebar({ userId }: { userId: number }) {
     const contentActive = pathname === "/content" || pathname.startsWith("/content/");
     const seoActive = pathname === "/seo" || pathname.startsWith("/seo/");
     const ticketActive = pathname === "/tickets" || pathname.startsWith("/tickets/");
+    const socialActive = pathname === "/social" || pathname.startsWith("/social/");
     const trustActive =
         pathname === "/quality-trust" ||
         pathname.startsWith("/quality-trust/") ||
@@ -233,6 +242,7 @@ export function Sidebar({ userId }: { userId: number }) {
     const [contentOpen, setContentOpen] = useState(contentActive);
     const [seoOpen, setSeoOpen] = useState(seoActive);
     const [ticketOpen, setTicketOpen] = useState(ticketActive);
+    const [socialOpen, setSocialOpen] = useState(socialActive);
     const [trustOpen, setTrustOpen] = useState(trustActive);
     const [agenticOpen, setAgenticOpen] = useState(agenticActive);
     const [identityOpen, setIdentityOpen] = useState(identityActive);
@@ -249,6 +259,9 @@ export function Sidebar({ userId }: { userId: number }) {
     useEffect(() => {
         if (ticketActive) setTicketOpen(true);
     }, [ticketActive]);
+    useEffect(() => {
+        if (socialActive) setSocialOpen(true);
+    }, [socialActive]);
     useEffect(() => {
         if (trustActive) setTrustOpen(true);
     }, [trustActive]);
@@ -376,6 +389,15 @@ export function Sidebar({ userId }: { userId: number }) {
                     10: navT("seoSectionMonitoring"),
                     14: navT("seoSectionSystem"),
                 })}
+                {collapsible(
+                    "social-sidebar-items",
+                    socialActive,
+                    socialOpen,
+                    setSocialOpen,
+                    Sparkles,
+                    navT("social"),
+                    socialItems,
+                )}
                 <div className="flex flex-col gap-1">
                     <div className="px-3 pb-1 font-medium text-[0.65rem] text-sidebar-foreground/50 uppercase tracking-wider">
                         {navT("operations")}

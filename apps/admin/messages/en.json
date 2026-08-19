@@ -80,7 +80,13 @@
         "seoRankTracking": "Rank tracking",
         "seoCompetitorsSerp": "Competitors and SERP",
         "seoReports": "SEO reports",
-        "seoSettings": "Settings and tools"
+        "seoSettings": "Settings and tools",
+        "social": "Social Commerce",
+        "socialOverview": "Overview",
+        "socialStudio": "Creator Studio",
+        "socialCommunity": "Community",
+        "socialModeration": "Moderation",
+        "socialAnalytics": "Analytics"
     },
     "Topbar": {
         "search": "Search…",

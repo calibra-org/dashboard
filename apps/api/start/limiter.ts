@@ -116,3 +116,23 @@ export const agenticPublicLimiter = limiter.define("agentic_public", (ctx) => {
         .usingKey(`agentic:${tenant}:${principal}:${ctx.request.ip()}`)
         .limitExceeded(() => recordRateLimitThrottled("agentic_public"));
 });
+
+/** Phase 8 interaction writes: tenant/IP/user bounded to reduce vote/view/message abuse. */
+export const socialInteractionLimiter = limiter.define("social_interactions", (ctx) => {
+    const tenant = ctx.request.header("x-calibra-tenant") ?? ctx.request.host() ?? "unknown";
+    const subject = ctx.auth.user?.id ?? ctx.request.ip();
+    return limiter
+        .allowRequests(120)
+        .every("1 minute")
+        .usingKey(`social:${tenant}:${subject}`)
+        .limitExceeded(() => recordRateLimitThrottled("social_interactions"));
+});
+
+/** Provider callbacks are unauthenticated but signature-verified; cap retry storms before crypto/DB work. */
+export const socialProviderWebhookLimiter = limiter.define("social_provider_webhooks", (ctx) =>
+    limiter
+        .allowRequests(120)
+        .every("1 minute")
+        .usingKey(`provider:${ctx.request.ip()}`)
+        .limitExceeded(() => recordRateLimitThrottled("social_provider_webhooks")),
+);

@@ -7,6 +7,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const base = JSON.parse(readFileSync(resolve(root, "dist/storefront.base.v1.json"), "utf8"));
 const completion = JSON.parse(readFileSync(resolve(root, "dist/storefront.completion.v1.json"), "utf8"));
 const identity = JSON.parse(readFileSync(resolve(root, "dist/storefront.identity.v1.json"), "utf8"));
+const phase8 = JSON.parse(readFileSync(resolve(root, "dist/storefront.phase8.v1.json"), "utf8"));
 const phase9 = JSON.parse(readFileSync(resolve(root, "dist/storefront.phase9.v1.json"), "utf8"));
 const phase17 = JSON.parse(readFileSync(resolve(root, "dist/storefront.phase17.v1.json"), "utf8"));
 
@@ -31,7 +32,7 @@ function mergeRecord(baseRecord = {}, overlayRecord = {}, label) {
 }
 
 const tags = Array.isArray(base.tags) ? base.tags : [];
-for (const overlay of [completion, identity, phase9, phase17]) {
+for (const overlay of [completion, identity, phase8, phase9, phase17]) {
     base.paths = mergeRecord(base.paths, overlay.paths, "paths");
     for (const [section, values] of Object.entries(overlay.components ?? {})) {
         base.components ??= {};

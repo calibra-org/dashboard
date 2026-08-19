@@ -30,7 +30,10 @@
         "typecheck": "turbo run typecheck",
         "verify:phase10": "node scripts/verify-phase10-decision-intelligence-integration.mjs",
         "verify:phase12": "node scripts/verify-phase12-economics-integration.mjs",
-        "verify:phase9": "node scripts/verify-phase9.mjs"
+        "verify:phase9": "node scripts/verify-phase9.mjs",
+        "social:publish-due": "pnpm --filter @calibra/api exec node ace social:publish-due",
+        "social:privacy-retention": "pnpm --filter @calibra/api exec node ace social:privacy-retention",
+        "verify:phase8": "node scripts/verify-phase8-social-commerce.mjs"
     },
     "devDependencies": {
         "@biomejs/biome": "catalog:",
