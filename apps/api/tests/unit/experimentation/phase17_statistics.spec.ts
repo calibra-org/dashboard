@@ -29,8 +29,28 @@ test.group("Phase 17 statistics", () => {
     });
 
     test("effect estimator reports lift against control", ({ assert }) => {
-        const control = { variantId: 1, variantKey: "control", isControl: true, expectedShare: 0.5, assignments: 100, exposedSubjects: 100, observations: 100, sum: 10, sumSquares: 10 };
-        const treatment = { variantId: 2, variantKey: "treatment", isControl: false, expectedShare: 0.5, assignments: 100, exposedSubjects: 100, observations: 100, sum: 15, sumSquares: 15 };
+        const control = {
+            variantId: 1,
+            variantKey: "control",
+            isControl: true,
+            expectedShare: 0.5,
+            assignments: 100,
+            exposedSubjects: 100,
+            observations: 100,
+            sum: 10,
+            sumSquares: 10,
+        };
+        const treatment = {
+            variantId: 2,
+            variantKey: "treatment",
+            isControl: false,
+            expectedShare: 0.5,
+            assignments: 100,
+            exposedSubjects: 100,
+            observations: 100,
+            sum: 15,
+            sumSquares: 15,
+        };
         const result = variantEffect(treatment, control);
         assert.closeTo(result.mean ?? 0, 0.15, 0.000001);
         assert.closeTo(result.absoluteLift ?? 0, 0.05, 0.000001);

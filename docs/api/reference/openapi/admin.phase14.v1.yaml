@@ -1,0 +1,66 @@
+openapi: 3.1.0
+info:
+  title: Calibra Admin Phase 14 Procurement API
+  version: 1.0.0
+paths:
+  /api/v1/admin/procurement/overview:
+    get:
+      tags: [Phase14Procurement]
+      operationId: phase14ProcurementOverview
+      responses:
+        "200": { description: Procurement portfolio overview }
+  /api/v1/admin/procurement/suppliers:
+    get:
+      tags: [Phase14Procurement]
+      operationId: phase14SupplierList
+      responses:
+        "200": { description: Supplier registry }
+    post:
+      tags: [Phase14Procurement]
+      operationId: phase14SupplierCreate
+      responses:
+        "201": { description: Supplier created }
+  /api/v1/admin/procurement/purchase-orders:
+    get:
+      tags: [Phase14Procurement]
+      operationId: phase14PurchaseOrderList
+      responses:
+        "200": { description: Purchase order registry }
+    post:
+      tags: [Phase14Procurement]
+      operationId: phase14PurchaseOrderCreate
+      responses:
+        "200": { description: Idempotent replay }
+        "201": { description: Purchase order created }
+  /api/v1/admin/procurement/purchase-orders/{id}/transition:
+    post:
+      tags: [Phase14Procurement]
+      operationId: phase14PurchaseOrderTransition
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        "200": { description: Purchase order state changed }
+  /api/v1/admin/procurement/purchase-orders/{id}/receipts:
+    post:
+      tags: [Phase14Procurement]
+      operationId: phase14PurchaseOrderReceive
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        "200": { description: Idempotent replay }
+        "201": { description: Goods receipt recorded }
+  /api/v1/admin/procurement/recommendations:
+    get:
+      tags: [Phase14Procurement]
+      operationId: phase14ProcurementRecommendations
+      responses:
+        "200": { description: Replenishment recommendations }
+  /api/v1/admin/procurement/health:
+    get:
+      tags: [Phase14Procurement]
+      operationId: phase14ProcurementHealth
+      responses:
+        "200": { description: Procurement data-plane readiness }
+tags:
+  - name: Phase14Procurement
+    description: Supplier, purchase-order, receiving, recommendation and readiness contracts.

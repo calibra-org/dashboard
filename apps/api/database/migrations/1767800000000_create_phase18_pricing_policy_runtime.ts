@@ -30,12 +30,24 @@ export default class extends BaseSchema {
         this.schema.createTable("pricing_policy_versions", (table) => {
             table.bigIncrements("id").notNullable();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("policy_id").unsigned().notNullable().references("id").inTable("pricing_policies").onDelete("CASCADE");
+            table
+                .bigInteger("policy_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("pricing_policies")
+                .onDelete("CASCADE");
             table.integer("version").notNullable();
             table.string("state", 32).notNullable().defaultTo("draft");
             table.string("currency", 3).notNullable().defaultTo("IRR");
             table.bigInteger("product_id").unsigned().nullable().references("id").inTable("products").onDelete("SET NULL");
-            table.bigInteger("variation_id").unsigned().nullable().references("id").inTable("product_variations").onDelete("SET NULL");
+            table
+                .bigInteger("variation_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("product_variations")
+                .onDelete("SET NULL");
             table.jsonb("scope").notNullable().defaultTo(this.raw("'{}'::jsonb"));
             table.jsonb("guardrails").notNullable().defaultTo(this.raw("'{}'::jsonb"));
             table.jsonb("evidence").notNullable().defaultTo(this.raw("'{}'::jsonb"));
@@ -45,7 +57,13 @@ export default class extends BaseSchema {
             table.bigInteger("approved_by").unsigned().nullable().references("id").inTable("users").onDelete("SET NULL");
             table.bigInteger("scheduled_by").unsigned().nullable().references("id").inTable("users").onDelete("SET NULL");
             table.bigInteger("activated_by").unsigned().nullable().references("id").inTable("users").onDelete("SET NULL");
-            table.bigInteger("rollback_of_version_id").unsigned().nullable().references("id").inTable("pricing_policy_versions").onDelete("SET NULL");
+            table
+                .bigInteger("rollback_of_version_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("pricing_policy_versions")
+                .onDelete("SET NULL");
             table.timestamp("reviewed_at", { useTz: true }).nullable();
             table.timestamp("approved_at", { useTz: true }).nullable();
             table.timestamp("scheduled_at", { useTz: true }).nullable();
@@ -63,10 +81,28 @@ export default class extends BaseSchema {
         this.schema.createTable("pricing_proposals", (table) => {
             table.bigIncrements("id").notNullable();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("policy_id").unsigned().notNullable().references("id").inTable("pricing_policies").onDelete("CASCADE");
-            table.bigInteger("policy_version_id").unsigned().nullable().references("id").inTable("pricing_policy_versions").onDelete("SET NULL");
+            table
+                .bigInteger("policy_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("pricing_policies")
+                .onDelete("CASCADE");
+            table
+                .bigInteger("policy_version_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("pricing_policy_versions")
+                .onDelete("SET NULL");
             table.bigInteger("product_id").unsigned().notNullable().references("id").inTable("products").onDelete("CASCADE");
-            table.bigInteger("variation_id").unsigned().nullable().references("id").inTable("product_variations").onDelete("CASCADE");
+            table
+                .bigInteger("variation_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("product_variations")
+                .onDelete("CASCADE");
             table.bigInteger("reference_price_minor").notNullable();
             table.bigInteger("candidate_price_minor").notNullable();
             table.string("currency", 3).notNullable();
@@ -86,8 +122,20 @@ export default class extends BaseSchema {
         this.schema.createTable("pricing_policy_actions", (table) => {
             table.bigIncrements("id").notNullable();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("policy_id").unsigned().notNullable().references("id").inTable("pricing_policies").onDelete("CASCADE");
-            table.bigInteger("policy_version_id").unsigned().nullable().references("id").inTable("pricing_policy_versions").onDelete("SET NULL");
+            table
+                .bigInteger("policy_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("pricing_policies")
+                .onDelete("CASCADE");
+            table
+                .bigInteger("policy_version_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("pricing_policy_versions")
+                .onDelete("SET NULL");
             table.string("action", 64).notNullable();
             table.string("from_state", 32).nullable();
             table.string("to_state", 32).nullable();
@@ -105,14 +153,32 @@ export default class extends BaseSchema {
             table.bigIncrements("id").notNullable();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
             table.bigInteger("order_id").unsigned().notNullable().references("id").inTable("orders").onDelete("CASCADE");
-            table.bigInteger("line_item_id").unsigned().notNullable().references("id").inTable("order_line_items").onDelete("CASCADE");
+            table
+                .bigInteger("line_item_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("order_line_items")
+                .onDelete("CASCADE");
             table.bigInteger("product_id").unsigned().notNullable().references("id").inTable("products").onDelete("RESTRICT");
-            table.bigInteger("variation_id").unsigned().nullable().references("id").inTable("product_variations").onDelete("SET NULL");
+            table
+                .bigInteger("variation_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("product_variations")
+                .onDelete("SET NULL");
             table.bigInteger("reference_price_minor").notNullable();
             table.bigInteger("resolved_price_minor").notNullable();
             table.string("currency", 3).notNullable();
             table.bigInteger("policy_id").unsigned().nullable().references("id").inTable("pricing_policies").onDelete("SET NULL");
-            table.bigInteger("policy_version_id").unsigned().nullable().references("id").inTable("pricing_policy_versions").onDelete("SET NULL");
+            table
+                .bigInteger("policy_version_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("pricing_policy_versions")
+                .onDelete("SET NULL");
             table.jsonb("coupon_ids").notNullable().defaultTo(this.raw("'[]'::jsonb"));
             table.jsonb("guardrail_result").notNullable().defaultTo(this.raw("'{}'::jsonb"));
             table.timestamp("created_at", { useTz: true }).notNullable().defaultTo(this.now());

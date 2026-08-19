@@ -113,7 +113,15 @@ export async function upsertTrustEdge(input: {
         .table("fraud_relationship_edges")
         .insert(row)
         .onConflict(["tenant_id", "source_type", "source_id", "target_type", "target_id", "relationship"])
-        .merge(["is_inferred", "confidence_bp", "provenance_type", "provenance_ref", "evidence", "last_observed_at", "updated_at"]);
+        .merge([
+            "is_inferred",
+            "confidence_bp",
+            "provenance_type",
+            "provenance_ref",
+            "evidence",
+            "last_observed_at",
+            "updated_at",
+        ]);
 }
 
 async function maybeOpenCaseForSignal(signal: Record<string, unknown>) {
@@ -277,7 +285,9 @@ export async function scanCanonicalTrustSources() {
             .havingRaw("COUNT(id) >= 4")
             .limit(250);
         for (const row of couponRows) {
-            const subjectId = row.customer_id ? String(row.customer_id) : identityHash(`coupon-email:${String(row.email_snapshot ?? "").toLowerCase()}`);
+            const subjectId = row.customer_id
+                ? String(row.customer_id)
+                : identityHash(`coupon-email:${String(row.email_snapshot ?? "").toLowerCase()}`);
             const count = Number(row.redemption_count ?? 0);
             const score = count >= 6 ? 88 : 68;
             const eventId = `coupon-velocity:${row.coupon_id}:${subjectId}:${now.toFormat("yyyyLLddHH")}`;

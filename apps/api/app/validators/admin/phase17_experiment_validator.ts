@@ -10,7 +10,10 @@ const variant = vine.object({
 
 export const createExperimentValidator = vine.compile(
     vine.object({
-        experiment_key: vine.string().trim().regex(/^[a-z0-9][a-z0-9._-]{2,119}$/),
+        experiment_key: vine
+            .string()
+            .trim()
+            .regex(/^[a-z0-9][a-z0-9._-]{2,119}$/),
         name: vine.string().trim().minLength(3).maxLength(190),
         hypothesis: vine.string().trim().minLength(10).maxLength(3000),
         surface: vine.enum([
@@ -94,7 +97,10 @@ export const observationValidator = vine.compile(
 
 export const createHoldoutValidator = vine.compile(
     vine.object({
-        holdout_key: vine.string().trim().regex(/^[a-z0-9][a-z0-9._-]{2,119}$/),
+        holdout_key: vine
+            .string()
+            .trim()
+            .regex(/^[a-z0-9][a-z0-9._-]{2,119}$/),
         name: vine.string().trim().minLength(3).maxLength(190),
         scope: vine.enum(["recommendation", "automation", "ai_intervention", "marketing"]),
         allocation_bps: vine.number().withoutDecimals().min(1).max(5000),

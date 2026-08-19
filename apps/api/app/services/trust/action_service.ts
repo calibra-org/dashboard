@@ -27,7 +27,8 @@ export async function executeTrustAction(input: {
     const now = DateTime.utc();
     const caseId = Number(input.caseRow.id);
     const riskClass = String(input.caseRow.risk_band ?? "medium");
-    const actionType = input.action === "step_up" ? "require_step_up" : input.action === "hold" ? "order_hold_or_manual_review" : input.action;
+    const actionType =
+        input.action === "step_up" ? "require_step_up" : input.action === "hold" ? "order_hold_or_manual_review" : input.action;
     const rows = await trx
         .table("fraud_action_executions")
         .insert({
@@ -46,8 +47,17 @@ export async function executeTrustAction(input: {
             rollback_plan: ["step_up", "hold", "block", "monitor"].includes(input.action)
                 ? "Record a superseding allow/dismiss decision; canonical domain rollback remains governed by its own state machine."
                 : null,
-            input_snapshot: JSON.stringify({ case_public_id: input.caseRow.public_id, action: input.action, risk_band: input.caseRow.risk_band, subject_type: input.caseRow.subject_type, subject_id: input.caseRow.subject_id }),
-            policy_result: JSON.stringify({ policy_key: input.caseRow.policy_key ?? null, policy_version: input.caseRow.policy_version ?? null }),
+            input_snapshot: JSON.stringify({
+                case_public_id: input.caseRow.public_id,
+                action: input.action,
+                risk_band: input.caseRow.risk_band,
+                subject_type: input.caseRow.subject_type,
+                subject_id: input.caseRow.subject_id,
+            }),
+            policy_result: JSON.stringify({
+                policy_key: input.caseRow.policy_key ?? null,
+                policy_version: input.caseRow.policy_version ?? null,
+            }),
             result: JSON.stringify({}),
             external_refs: JSON.stringify({}),
             actor_user_id: Number(input.actor.id),
@@ -63,7 +73,11 @@ export async function executeTrustAction(input: {
         let externalRefs: Record<string, unknown> = {};
         if (input.action === "hold" && input.caseRow.order_id) {
             const order = await Order.query({ client: trx }).where("id", Number(input.caseRow.order_id)).forUpdate().first();
-            if (!order) throw Object.assign(new Error("Order referenced by trust case was not found"), { status: 404, code: "E_TRUST_ORDER_NOT_FOUND" });
+            if (!order)
+                throw Object.assign(new Error("Order referenced by trust case was not found"), {
+                    status: 404,
+                    code: "E_TRUST_ORDER_NOT_FOUND",
+                });
             if (order.status === OrderStatus.Pending) {
                 await orderStateMachine.transition(order, OrderStatus.OnHold, {
                     actor: input.actor,
@@ -105,7 +119,12 @@ export async function executeTrustAction(input: {
                 status: finalStatus,
                 result: JSON.stringify(result),
                 external_refs: JSON.stringify(externalRefs),
-                verification: JSON.stringify({ canonical_action_verified: input.action !== "hold" || !input.caseRow.order_id || ["transitioned_to_on_hold", "already_on_hold"].includes(String(result.canonical_order_action ?? "")) }),
+                verification: JSON.stringify({
+                    canonical_action_verified:
+                        input.action !== "hold" ||
+                        !input.caseRow.order_id ||
+                        ["transitioned_to_on_hold", "already_on_hold"].includes(String(result.canonical_order_action ?? "")),
+                }),
                 executed_at: now.toSQL(),
                 updated_at: now.toSQL(),
             });

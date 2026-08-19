@@ -259,7 +259,7 @@ export function DecisionIntelligenceWorkspace() {
     return (
         <div className="space-y-6 pb-10" dir="rtl">
             <section className="relative overflow-hidden rounded-3xl border bg-gradient-to-bl from-card via-card to-primary/[0.06] p-6 shadow-sm lg:p-8">
-                <div className="pointer-events-none absolute -left-24 -top-28 size-72 rounded-full bg-primary/10 blur-3xl" />
+                <div className="pointer-events-none absolute -top-28 -left-24 size-72 rounded-full bg-primary/10 blur-3xl" />
                 <div className="relative flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
                     <div className="max-w-3xl">
                         <div className="mb-3 flex items-center gap-2 text-primary text-sm">

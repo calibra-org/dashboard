@@ -187,8 +187,7 @@ export function useCreateExperiment() {
     const locale = useCurrentLocale();
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (body: Record<string, unknown>) =>
-            apiMutate<{ data: Experiment }>("POST", "experiments", { locale, body }),
+        mutationFn: (body: Record<string, unknown>) => apiMutate<{ data: Experiment }>("POST", "experiments", { locale, body }),
         onSuccess: async () => queryClient.invalidateQueries({ queryKey: ["experiments"] }),
     });
 }
@@ -197,8 +196,16 @@ export function useTransitionExperiment() {
     const locale = useCurrentLocale();
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({ id, ...body }: { id: number; status: string; expected_version: number; reason?: string; approval_reference?: string | null }) =>
-            apiMutate<{ data: Experiment }>("POST", `experiments/${id}/transition`, { locale, body }),
+        mutationFn: ({
+            id,
+            ...body
+        }: {
+            id: number;
+            status: string;
+            expected_version: number;
+            reason?: string;
+            approval_reference?: string | null;
+        }) => apiMutate<{ data: Experiment }>("POST", `experiments/${id}/transition`, { locale, body }),
         onSuccess: async () => queryClient.invalidateQueries({ queryKey: ["experiments"] }),
     });
 }

@@ -3,8 +3,8 @@ import type { HttpContext } from "@adonisjs/core/http";
 
 import { simulatePricing, viewPricingBrain } from "#abilities/main";
 import { pricingBrainOverview, simulatePricingCandidate } from "#services/pricing_brain_service";
-import { requirePricingPermission, type PricingPermission } from "#services/pricing_permissions";
-import { pricingPolicyService, type PricingLifecycleAction } from "#services/pricing_policy_service";
+import { type PricingPermission, requirePricingPermission } from "#services/pricing_permissions";
+import { type PricingLifecycleAction, pricingPolicyService } from "#services/pricing_policy_service";
 import {
     createPricingPolicyValidator,
     createPricingProposalValidator,
