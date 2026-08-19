@@ -1,0 +1,86 @@
+apps/admin/src/lib/queries/agentic-gateway.ts:2:1 assist/source/organizeImports  FIXABLE  ━━━━━━━━━━
+
+  × The imports and exports are not sorted.
+  
+    1 │ "use client";
+  > 2 │ import type { Locale } from "@calibra/shared/i18n";
+      │ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    3 │ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+    4 │ import { useLocale } from "next-intl";
+  
+  i Safe fix: Organize Imports (Biome)
+  
+     3  3 │   import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+     4  4 │   import { useLocale } from "next-intl";
+        5 │ + 
+     5  6 │   import { apiGet, apiMutate, type MutationMethod } from "#/lib/queries/api-client";
+     6  7 │   
+  
+
+apps/api/app/services/agentic_gateway/gateway_service.ts:1:1 assist/source/organizeImports  FIXABLE  ━━━━━━━━━━
+
+  × The imports and exports are not sorted.
+  
+  > 1 │ import { createHash, randomUUID } from "node:crypto";
+      │ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    2 │ import encryption from "@adonisjs/core/services/encryption";
+    3 │ import { currentTenantId, currentTrx } from "#services/tenant_context";
+  
+  i Safe fix: Organize Imports (Biome)
+  
+      1   1 │   import { createHash, randomUUID } from "node:crypto";
+      2   2 │   import encryption from "@adonisjs/core/services/encryption";
+      3     │ - import·{·currentTenantId,·currentTrx·}·from·"#services/tenant_context";
+      4     │ - import·{·isMutationCapability,·type·ChannelMode·}·from·"#services/agentic_gateway/contracts";
+          3 │ + 
+          4 │ + import·{·type·ChannelMode,·isMutationCapability·}·from·"#services/agentic_gateway/contracts";
+          5 │ + import·{·currentTenantId,·currentTrx·}·from·"#services/tenant_context";
+      5   6 │   
+      6   7 │   const PURPOSE = "calibra.agentic.capability.v1";
+  
+
+apps/api/app/services/agentic_gateway/product_graph_service.ts:1:1 assist/source/organizeImports  FIXABLE  ━━━━━━━━━━
+
+  × The imports and exports are not sorted.
+  
+  > 1 │ import { randomUUID } from "node:crypto";
+      │ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    2 │ import { currentTenantId, currentTrx } from "#services/tenant_context";
+    3 │ import { type ProductReadinessDimension, weightedReadiness } from "#services/agentic_gateway/contracts";
+  
+  i Safe fix: Organize Imports (Biome)
+  
+      1   1 │   import { randomUUID } from "node:crypto";
+      2     │ - import·{·currentTenantId,·currentTrx·}·from·"#services/tenant_context";
+      3     │ - import·{·type·ProductReadinessDimension,·weightedReadiness·}·from·"#services/agentic_gateway/contracts";
+          2 │ + 
+          3 │ + import·{·type·ProductReadinessDimension,·weightedReadiness·}·from·"#services/agentic_gateway/contracts";
+          4 │ + import·{·currentTenantId,·currentTrx·}·from·"#services/tenant_context";
+      4   5 │   
+      5   6 │   const EVALUATOR_VERSION = "agent-readiness-v1";
+  
+
+apps/api/tests/functional/agentic_gateway/phase21_agentic_gateway.spec.ts:1:1 assist/source/organizeImports  FIXABLE  ━━━━━━━━━━
+
+  × The imports and exports are not sorted.
+  
+  > 1 │ import { test } from "@japa/runner";
+      │ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    2 │ import { isMutationCapability, weightedReadiness } from "../../../app/services/agentic_gateway/contracts.js";
+    3 │ 
+  
+  i Safe fix: Organize Imports (Biome)
+  
+     1  1 │   import { test } from "@japa/runner";
+        2 │ + 
+     2  3 │   import { isMutationCapability, weightedReadiness } from "../../../app/services/agentic_gateway/contracts.js";
+     3  4 │   
+  
+
+Checked 2209 files in 6s. No fixes applied.
+Found 4 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+
