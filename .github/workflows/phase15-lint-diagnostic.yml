@@ -1,6 +1,10 @@
 name: Phase 15 Admin SDK Sync
 
 on:
+    pull_request:
+        branches: [main]
+        paths:
+            - ".github/workflows/phase15-lint-diagnostic.yml"
     push:
         branches: [agent/phase15-customer-genome]
         paths:
@@ -19,6 +23,8 @@ jobs:
         timeout-minutes: 15
         steps:
             - uses: actions/checkout@v4
+              with:
+                  ref: ${{ github.head_ref || github.ref_name }}
             - uses: pnpm/action-setup@v4
               with:
                   version: ${{ env.PNPM_VERSION }}
@@ -33,6 +39,8 @@ jobs:
                   pnpm --filter @calibra/sdk run codegen:admin
             - name: Commit generated SDK and remove temporary sync workflow
               shell: bash
+              env:
+                  HEAD_BRANCH: ${{ github.head_ref || github.ref_name }}
               run: |
                   set -euo pipefail
                   git config user.name "github-actions[bot]"
@@ -44,4 +52,4 @@ jobs:
                       exit 0
                   fi
                   git commit -m "chore(sdk): sync procurement and trust admin contract"
-                  git push origin "HEAD:${GITHUB_REF_NAME}"
+                  git push origin "HEAD:${HEAD_BRANCH}"
