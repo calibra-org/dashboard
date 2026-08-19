@@ -364,11 +364,7 @@ export class Phase17ExperimentationService {
         return this.show(experimentId);
     }
 
-    async assign(input: {
-        experiment_key: string;
-        subject_type: string;
-        subject_key: string;
-    }): Promise<{
+    async assign(input: { experiment_key: string; subject_type: string; subject_key: string }): Promise<{
         data: {
             assigned: boolean;
             reason?: string;

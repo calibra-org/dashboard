@@ -445,21 +445,19 @@ export async function authorizeAgenticAction(input: {
     }
 
     const authorization = allowed
-        ? encryption
-              .getMessageVerifier()
-              .sign(
-                  {
-                      tenantId,
-                      channelId: channel.id,
-                      principalId: principal.id,
-                      capabilityKey: input.capabilityKey,
-                      capabilityVersion: cap.version,
-                      idempotencyKey: input.idempotencyKey,
-                      inputHash,
-                  },
-                  ACTION_AUTH_TTL_MS,
-                  ACTION_PURPOSE,
-              )
+        ? encryption.getMessageVerifier().sign(
+              {
+                  tenantId,
+                  channelId: channel.id,
+                  principalId: principal.id,
+                  capabilityKey: input.capabilityKey,
+                  capabilityVersion: cap.version,
+                  idempotencyKey: input.idempotencyKey,
+                  inputHash,
+              },
+              ACTION_AUTH_TTL_MS,
+              ACTION_PURPOSE,
+          )
         : null;
     const [row] = await trx
         .table("agentic_action_ledger")

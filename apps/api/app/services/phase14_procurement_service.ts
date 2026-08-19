@@ -142,21 +142,19 @@ class Phase14ProcurementService {
                     },
                 })
                 .returning("*");
-            await trx
-                .table("purchase_order_lines")
-                .multiInsert(
-                    payload.lines.map((line: any) => ({
-                        purchase_order_id: po.id,
-                        product_id: line.product_id,
-                        variation_id: line.variation_id ?? null,
-                        sku_snapshot: line.sku ?? null,
-                        name_snapshot: line.name,
-                        ordered_quantity: line.quantity,
-                        unit_cost: line.unit_cost,
-                        line_total_minor: Math.round(line.quantity * line.unit_cost),
-                        expected_date: line.expected_date ?? payload.expected_date ?? null,
-                    })),
-                );
+            await trx.table("purchase_order_lines").multiInsert(
+                payload.lines.map((line: any) => ({
+                    purchase_order_id: po.id,
+                    product_id: line.product_id,
+                    variation_id: line.variation_id ?? null,
+                    sku_snapshot: line.sku ?? null,
+                    name_snapshot: line.name,
+                    ordered_quantity: line.quantity,
+                    unit_cost: line.unit_cost,
+                    line_total_minor: Math.round(line.quantity * line.unit_cost),
+                    expected_date: line.expected_date ?? payload.expected_date ?? null,
+                })),
+            );
             return { data: po, replayed: false };
         });
     }
@@ -231,19 +229,17 @@ class Phase14ProcurementService {
                     });
                 if (n(line.received_quantity) + received > n(line.ordered_quantity))
                     throw new Exception("Receipt exceeds ordered quantity", { status: 422, code: "E_PROCUREMENT_OVER_RECEIPT" });
-                await trx
-                    .table("purchase_order_receipt_lines")
-                    .insert({
-                        receipt_id: receipt.id,
-                        purchase_order_line_id: line.id,
-                        received_quantity: received,
-                        accepted_quantity: accepted,
-                        rejected_quantity: rejected,
-                        quarantine_quantity: quarantine,
-                        quality_reason: input.quality_reason ?? null,
-                        lot_code: input.lot_code ?? null,
-                        batch_code: input.batch_code ?? null,
-                    });
+                await trx.table("purchase_order_receipt_lines").insert({
+                    receipt_id: receipt.id,
+                    purchase_order_line_id: line.id,
+                    received_quantity: received,
+                    accepted_quantity: accepted,
+                    rejected_quantity: rejected,
+                    quarantine_quantity: quarantine,
+                    quality_reason: input.quality_reason ?? null,
+                    lot_code: input.lot_code ?? null,
+                    batch_code: input.batch_code ?? null,
+                });
                 await trx
                     .from("purchase_order_lines")
                     .where("id", line.id)
@@ -261,16 +257,14 @@ class Phase14ProcurementService {
                         trx,
                     );
                 if (rejected > 0 || quarantine > 0)
-                    await trx
-                        .table("supplier_incidents")
-                        .insert({
-                            supplier_id: po.supplier_id,
-                            purchase_order_id: id,
-                            type: "quality",
-                            severity: rejected > 0 ? "high" : "medium",
-                            summary: input.quality_reason ?? "Receiving quality exception",
-                            evidence: { receipt_id: receipt.id, line_id: line.id, rejected, quarantine },
-                        });
+                    await trx.table("supplier_incidents").insert({
+                        supplier_id: po.supplier_id,
+                        purchase_order_id: id,
+                        type: "quality",
+                        severity: rejected > 0 ? "high" : "medium",
+                        summary: input.quality_reason ?? "Receiving quality exception",
+                        evidence: { receipt_id: receipt.id, line_id: line.id, rejected, quarantine },
+                    });
             }
             const remaining = await trx
                 .from("purchase_order_lines")

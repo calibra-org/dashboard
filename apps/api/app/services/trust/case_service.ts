@@ -61,15 +61,12 @@ export async function assignTrustCase(input: {
     }
     const nextVersion = Number(row.version) + 1;
     const nextStatus = row.status === "open" ? "in_review" : row.status;
-    await currentTrx()
-        .from("fraud_cases")
-        .where("id", row.id)
-        .update({
-            assignee_user_id: input.assigneeUserId,
-            status: nextStatus,
-            version: nextVersion,
-            updated_at: DateTime.utc().toSQL(),
-        });
+    await currentTrx().from("fraud_cases").where("id", row.id).update({
+        assignee_user_id: input.assigneeUserId,
+        status: nextStatus,
+        version: nextVersion,
+        updated_at: DateTime.utc().toSQL(),
+    });
     await recordAudit({
         ctx: input.ctx,
         actorUserId: Number(input.actor.id),
