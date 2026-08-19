@@ -1,0 +1,212 @@
+name: Phase 15 Clean Sync Materializer
+
+on:
+  push:
+    branches:
+      - agent/phase15-clean-sync-20260819
+    paths:
+      - .github/workflows/phase15-clean-sync-materializer.yml
+
+permissions:
+  contents: write
+
+env:
+  NODE_VERSION: "24.14.0"
+  PNPM_VERSION: "10.32.1"
+  SOURCE_BRANCH: agent/phase15-customer-genome
+  SOURCE_BASE: ec5e38182296e9985d6fc0c5b8e9c55841e1aca9
+
+jobs:
+  materialize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: calibra
+          POSTGRES_PASSWORD: calibra
+          POSTGRES_DB: calibra
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U calibra -d calibra"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/phase15-clean-sync-20260819
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Replay Phase 15 only onto current main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "${SOURCE_BRANCH}:refs/remotes/origin/${SOURCE_BRANCH}"
+          SOURCE="origin/${SOURCE_BRANCH}"
+
+          exclusive=(
+            ".github/workflows/phase15-verify.yml"
+            "apps/admin/messages/customer-intelligence/en.json"
+            "apps/admin/messages/customer-intelligence/fa.json"
+            "apps/admin/src/app/[locale]/(authenticated)/customers/cohorts/page.tsx"
+            "apps/admin/src/app/[locale]/(authenticated)/customers/intelligence/page.tsx"
+            "apps/admin/src/app/[locale]/(authenticated)/customers/segments/page.tsx"
+            "apps/admin/src/lib/queries/customer-intelligence.ts"
+            "apps/admin/src/views/customers/cohorts/cohorts-lifecycle.tsx"
+            "apps/admin/src/views/customers/customer-workspace-nav.tsx"
+            "apps/admin/src/views/customers/detail/intelligence-card.tsx"
+            "apps/admin/src/views/customers/intelligence/intelligence-overview.tsx"
+            "apps/admin/src/views/customers/segments/segment-studio.tsx"
+            "apps/api/app/controllers/admin/customer_intelligence_controller.ts"
+            "apps/api/app/jobs/refresh_customer_intelligence_job.ts"
+            "apps/api/app/services/customer_intelligence_eligibility_service.ts"
+            "apps/api/app/services/customer_intelligence_segments_service.ts"
+            "apps/api/app/services/customer_intelligence_service.ts"
+            "apps/api/app/validators/admin/customer_intelligence_validator.ts"
+            "apps/api/database/migrations/1768000000000_create_phase15_customer_intelligence.ts"
+            "apps/api/start/routes/admin_customer_intelligence.ts"
+            "apps/api/tests/unit/customer_intelligence.spec.ts"
+            "docs/api/reference/openapi/admin.customer-intelligence.v1.yaml"
+          )
+          git checkout "$SOURCE" -- "${exclusive[@]}"
+
+          shared=(
+            "apps/admin/src/app/[locale]/(authenticated)/customers/page.tsx"
+            "apps/admin/src/icons/index.ts"
+            "apps/admin/src/lib/i18n/request.ts"
+            "apps/admin/src/lib/api.ts"
+            "apps/admin/src/views/customers/detail/customers-detail.tsx"
+            "apps/api/app/controllers/admin/customer_segments_controller.ts"
+            "apps/api/start/routes.ts"
+            "apps/api/start/routes/admin_customer_segments.ts"
+            "docs/api/scripts/merge-for-tests.js"
+          )
+
+          for path in "${shared[@]}"; do
+            patch="/tmp/phase15-$(echo "$path" | tr '/[]() ' '_______').patch"
+            git diff --binary "$SOURCE_BASE" "$SOURCE" -- "$path" > "$patch"
+            test -s "$patch"
+            git apply --3way --index "$patch"
+          done
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              p = Path(path)
+              text = p.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected exactly one match, got {count}: {old!r}")
+              p.write_text(text.replace(old, new, 1))
+
+          package = Path("docs/api/package.json")
+          text = package.read_text()
+          if '"build:json:admin-customer-intelligence"' not in text:
+              replace_once(
+                  "docs/api/package.json",
+                  '        "build:json:admin-completion": "redocly bundle reference/openapi/admin.completion.v1.yaml -o dist/admin.completion.v1.json --ext json",',
+                  '        "build:json:admin-customer-intelligence": "redocly bundle reference/openapi/admin.customer-intelligence.v1.yaml -o dist/admin.customer-intelligence.v1.json --ext json",\n        "build:json:admin-completion": "redocly bundle reference/openapi/admin.completion.v1.yaml -o dist/admin.completion.v1.json --ext json",',
+              )
+              replace_once(
+                  "docs/api/package.json",
+                  '&& pnpm build:json:admin-phase13 && pnpm build:json:admin-completion',
+                  '&& pnpm build:json:admin-phase13 && pnpm build:json:admin-customer-intelligence && pnpm build:json:admin-completion',
+              )
+
+          merge = Path("docs/api/scripts/merge-admin-spec.js")
+          text = merge.read_text()
+          if 'admin.customer-intelligence.v1.json' not in text:
+              replace_once(
+                  "docs/api/scripts/merge-admin-spec.js",
+                  'const phase13 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase13.v1.json"), "utf8"));',
+                  'const phase13 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase13.v1.json"), "utf8"));\nconst customerIntelligence = JSON.parse(readFileSync(resolve(root, "dist/admin.customer-intelligence.v1.json"), "utf8"));',
+              )
+              replace_once(
+                  "docs/api/scripts/merge-admin-spec.js",
+                  '    [phase13, "Phase13PlanningOverlay"],',
+                  '    [phase13, "Phase13PlanningOverlay"],\n    [customerIntelligence, "CustomerIntelligenceOverlay"],',
+              )
+          PY
+
+          git diff --check
+          git status --short
+
+      - name: Build Admin OpenAPI and regenerate SDK
+        run: |
+          pnpm --filter @calibra/api-docs run build:json:admin
+          node -e "const fs=require('node:fs');const s=fs.readFileSync('docs/api/dist/admin.v1.json','utf8');for(const k of ['historical_contribution_ltv_minor','contribution_coverage_ratio','economics.historical_contribution_ltv_minor'])if(!s.includes(k))throw new Error('Missing Phase 15 contract key: '+k)"
+          pnpm --filter @calibra/sdk run codegen:admin
+          pnpm --filter @calibra/sdk run typecheck
+          pnpm --filter @calibra/sdk run build
+      - name: Typecheck API and Admin
+        run: |
+          pnpm --filter @calibra/api run typecheck
+          pnpm --filter @calibra/admin run typecheck
+      - name: Build Admin
+        run: pnpm --filter @calibra/admin run build
+      - name: Run Phase 15 unit tests
+        env:
+          PGPASSWORD: calibra
+        run: |
+          psql -h localhost -U calibra -d calibra -c "CREATE DATABASE calibra_test OWNER calibra;" || true
+          pnpm --filter @calibra/api test -- --files "tests/unit/customer_intelligence.spec.ts"
+      - name: Validate scoped formatting
+        run: |
+          pnpm exec biome check \
+            apps/api/app/controllers/admin/customer_intelligence_controller.ts \
+            apps/api/app/controllers/admin/customer_segments_controller.ts \
+            apps/api/app/jobs/refresh_customer_intelligence_job.ts \
+            apps/api/app/services/customer_intelligence_eligibility_service.ts \
+            apps/api/app/services/customer_intelligence_segments_service.ts \
+            apps/api/app/services/customer_intelligence_service.ts \
+            apps/api/app/validators/admin/customer_intelligence_validator.ts \
+            apps/api/database/migrations/1768000000000_create_phase15_customer_intelligence.ts \
+            apps/api/start/routes/admin_customer_intelligence.ts \
+            apps/api/start/routes/admin_customer_segments.ts \
+            apps/api/tests/unit/customer_intelligence.spec.ts \
+            apps/admin/src/lib/api.ts \
+            apps/admin/src/lib/i18n/request.ts \
+            apps/admin/src/lib/queries/customer-intelligence.ts \
+            apps/admin/src/views/customers/customer-workspace-nav.tsx \
+            apps/admin/src/views/customers/cohorts/cohorts-lifecycle.tsx \
+            apps/admin/src/views/customers/detail/customers-detail.tsx \
+            apps/admin/src/views/customers/detail/intelligence-card.tsx \
+            apps/admin/src/views/customers/intelligence/intelligence-overview.tsx \
+            apps/admin/src/views/customers/segments/segment-studio.tsx \
+            apps/admin/messages/customer-intelligence/en.json \
+            apps/admin/messages/customer-intelligence/fa.json \
+            docs/api/reference/openapi/admin.customer-intelligence.v1.yaml \
+            docs/api/scripts/merge-admin-spec.js
+      - name: Commit validated clean Phase 15 source and self-remove
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm .github/workflows/phase15-clean-sync-materializer.yml
+          git add -A
+          git diff --cached --check
+          git commit -m "feat(phase15): clean-sync Customer Genome"
+          git push origin HEAD:agent/phase15-clean-sync-20260819
