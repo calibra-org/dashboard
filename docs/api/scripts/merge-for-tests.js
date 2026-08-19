@@ -86,6 +86,8 @@ console.log(`✓ Wrote ${outPath} (${Object.keys(merged.paths).length} paths)`);
  *
  * Conversions:
  *   - `type: ["X", "null"]` (3.1 nullable shorthand) becomes `type: "X", nullable: true`.
+ *   - Numeric `exclusiveMinimum` / `exclusiveMaximum` bounds (3.1) become the OAS 3.0
+ *     boolean exclusivity flag paired with `minimum` / `maximum`.
  *   - Multi-type unions such as `type: ["string", "integer", "null"]` become an OAS 3.0
  *     `oneOf` over the non-null primitive types, with `nullable: true` when null is present.
  *   - `anyOf` / `oneOf` containing a `{ type: "null" }` branch sheds the null branch and
@@ -118,6 +120,18 @@ function downgradeTo30(node, root) {
     if (Object.hasOwn(node, "const")) {
         node.enum = [node.const];
         delete node.const;
+    }
+
+    // JSON Schema / OAS 3.1 encode exclusive bounds as numbers. OAS 3.0 uses
+    // boolean flags paired with minimum/maximum, which is what the legacy Japa
+    // validator backend expects.
+    if (typeof node.exclusiveMinimum === "number") {
+        node.minimum = node.exclusiveMinimum;
+        node.exclusiveMinimum = true;
+    }
+    if (typeof node.exclusiveMaximum === "number") {
+        node.maximum = node.exclusiveMaximum;
+        node.exclusiveMaximum = true;
     }
 
     if (Array.isArray(node.type)) {
