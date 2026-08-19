@@ -6,6 +6,7 @@ on:
       - "apps/api/app/services/agentic_gateway/**"
       - "apps/api/app/controllers/agentic_gateway_controller.ts"
       - "apps/api/app/controllers/admin/agentic_gateway_controller.ts"
+      - "apps/api/app/controllers/admin/agentic_gateway_actions_controller.ts"
       - "apps/api/app/validators/agentic_gateway/**"
       - "apps/api/app/services/phase20_trust_risk_service.ts"
       - "apps/api/database/migrations/1774000000000_create_agentic_commerce_gateway.ts"
