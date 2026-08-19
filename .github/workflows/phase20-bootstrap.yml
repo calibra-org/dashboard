@@ -48,6 +48,8 @@ jobs:
       - run: npm install --global pnpm@10.32.1
       - name: Sync live main baseline
         run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git fetch origin main
           PHASE20_CANDIDATE_BASE="ec5e38182296e9985d6fc0c5b8e9c55841e1aca9"
           git cat-file -e "$PHASE20_CANDIDATE_BASE^{commit}"
