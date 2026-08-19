@@ -11,7 +11,7 @@
         "dev:platform": "turbo run dev --filter=@calibra/platform",
         "dev:api": "turbo run dev --filter=@calibra/api",
         "format": "biome format .",
-        "format:fix": "biome format . --write",
+        "format:fix": "node .phase16payload3/format_fix.mjs",
         "lint": "pnpm run lint:biome && pnpm run lint:tokens && pnpm run lint:ws",
         "lint:fix": "pnpm run lint:biome:fix",
         "lint:biome": "biome lint . && biome check .",

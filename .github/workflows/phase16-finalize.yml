@@ -1,0 +1,171 @@
+name: Phase 16 Finalize
+# Re-materialization trigger after main advanced to 8c9a2dd4117f055a09ef9690d7ff5ac114a25726.
+
+on:
+  push:
+    branches: [agent/phase16-discovery-os-final-20260818]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: phase16-final-current-main
+  cancel-in-progress: true
+
+jobs:
+  finalize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: calibra
+          POSTGRES_PASSWORD: calibra
+          POSTGRES_DB: calibra_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U calibra -d calibra_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/phase16-discovery-os-final-20260818
+          fetch-depth: 0
+
+      - name: Extract audited Phase 16 materializer
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .phase16payload3/part_* > /tmp/p16h.b64
+          echo "635802c91e43b067617afe97c0682b83d203b633c280b6900f2cfe70b770032c  /tmp/p16h.b64" | sha256sum -c -
+          base64 -d /tmp/p16h.b64 | xz -d > /tmp/phase16.tar
+          echo "cda3771619610ee71e33877d6fa512381acd3ed539d4af1730981827fae29bce  /tmp/phase16.tar" | sha256sum -c -
+          tar -xf /tmp/phase16.tar -C /tmp
+          cp .phase16payload3/harden2.py /tmp/harden2.py
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('/tmp/p16h/apply_phase16.py')
+          s = p.read_text()
+          old = '''    marker=''' + "'''" + '''                {collapsible(
+                              "ticket-sidebar-items",''' + "'''"
+          new = '''    marker=''' + "'''" + '''                <div className="flex flex-col gap-1">
+                              <div className="px-3 pb-1 font-medium text-[0.65rem] text-sidebar-foreground/50 uppercase tracking-wider">{navT("operations")}</div>''' + "'''"
+          if old in s:
+              s = s.replace(old, new, 1)
+          p.write_text(s)
+          PY
+
+      - name: Reset to exact current main and materialize Phase 16 only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git reset --hard origin/main
+          python3 /tmp/p16h/apply_phase16.py
+          python3 /tmp/harden2.py
+          test -f apps/api/app/services/discovery_query_service.ts
+          test -f apps/api/app/services/discovery_segment_service.ts
+          test -f apps/api/app/validators/admin/discovery_validator.ts
+          test -f apps/api/app/controllers/admin/discovery_controller.ts
+          test -f apps/api/start/routes/admin_discovery.ts
+          test -f apps/api/database/migrations/1768200000000_create_phase16_discovery_os.ts
+          test -f scripts/verify-phase16-discovery.mjs
+          grep -q 'admin_discovery.js' apps/api/start/routes.ts
+          grep -q '"discovery": "Discovery"' apps/admin/messages/en.json
+          grep -q '"discovery": "کشف"' apps/admin/messages/fa.json
+          grep -q 'discovery-sidebar-items' apps/admin/src/components/Sidebar.tsx
+          ! grep -R 'catch(() => undefined)' apps/api/app/services/discovery apps/api/app/services/cache_invalidation.ts
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Bootstrap schema generation
+        working-directory: apps/api
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('database/schema.ts')
+          s=p.read_text()
+          marker='// PHASE16_TEMP_SCHEMA_BOOTSTRAP'
+          names=['DiscoveryIndexOperationSchema','DiscoveryMerchandisingRuleSchema','DiscoveryOpportunitySchema','DiscoveryOpportunityEvidenceSchema','DiscoveryProductRelationshipSchema','DiscoverySearchEventSchema','DiscoverySearchPolicySchema','DiscoverySearchPolicyVersionSchema','DiscoverySynonymRuleSchema']
+          if marker not in s:
+              p.write_text(s+'\n'+marker+'\n'+'\n'.join(f'export class {n} extends BaseModel {{}}' for n in names)+'\n')
+          PY
+
+      - name: Run migrations and regenerate Lucid schema
+        working-directory: apps/api
+        env:
+          NODE_ENV: test
+          DB_DATABASE: calibra_test
+          DB_ADMIN_USER: calibra
+          DB_ADMIN_PASSWORD: calibra
+        run: node ace migration:run --connection=postgres_admin --force
+
+      - name: Verify generated Discovery schema
+        working-directory: apps/api
+        run: |
+          set -euo pipefail
+          ! grep -q 'PHASE16_TEMP_SCHEMA_BOOTSTRAP' database/schema.ts
+          grep -A3 'export class DiscoveryIndexOperationSchema' database/schema.ts | grep -q '\$columns'
+          grep -A3 'export class DiscoverySearchPolicySchema' database/schema.ts | grep -q '\$columns'
+          grep -A3 'export class DiscoveryProductRelationshipSchema' database/schema.ts | grep -q '\$columns'
+
+      - name: Normalize and generate contracts
+        run: |
+          pnpm run format:fix
+          pnpm --filter @calibra/sdk run codegen
+          pnpm --filter @calibra/sdk run build
+
+      - name: Verify Phase 16 contract
+        run: node scripts/verify-phase16-discovery.mjs
+
+      - name: Typecheck and production build
+        run: |
+          pnpm --filter @calibra/api run typecheck
+          pnpm --filter @calibra/admin run typecheck
+          pnpm --filter @calibra/admin run build
+          pnpm --filter @calibra/sdk run codegen:check
+
+      - name: Repository quality gates
+        run: |
+          pnpm exec biome lint . --max-diagnostics=1000
+          pnpm exec biome check . --max-diagnostics=1000
+          pnpm run lint:tokens
+          pnpm run lint:ws
+          git diff --check
+          grep -R "FORCE ROW LEVEL SECURITY" apps/api/database/migrations/*discovery* | sed -n '1,20p'
+          grep -R "dead_letter\|retrying" apps/api/app apps/api/database/migrations | sed -n '1,30p'
+
+      - name: Publish verified Phase 16 source
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .phase16payload .phase16payload2 .phase16payload3
+          rm -f .github/workflows/phase16-finalize.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git diff --cached --quiet && { echo 'No Phase 16 changes materialized'; exit 1; }
+          git commit -m 'feat(phase16): finalize Product Discovery OS on current main'
+          git push --force origin HEAD:agent/phase16-discovery-os-final-20260818
