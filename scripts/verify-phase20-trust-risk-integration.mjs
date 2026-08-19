@@ -60,9 +60,7 @@ ok(
 
 const routes = read("apps/api/start/routes/admin_trust_risk.ts");
 const routeMatches = [...routes.matchAll(/router\s*\.\s*(get|post|patch|put|delete)\s*\(/g)];
-const writeRouteChains = [
-    ...routes.matchAll(/router\s*\.\s*(post|patch|put|delete)\s*\([^;]+;/gs),
-].map((match) => match[0]);
+const writeRouteChains = [...routes.matchAll(/router\s*\.\s*(post|patch|put|delete)\s*\([^;]+;/gs)].map((match) => match[0]);
 ok(routeMatches.length === 20, `expected 20 Trust admin endpoints, found ${routeMatches.length}`);
 ok(writeRouteChains.length === 11, `expected 11 Trust write endpoints, found ${writeRouteChains.length}`);
 for (const chain of writeRouteChains)
