@@ -73,6 +73,8 @@ jobs:
           pnpm --dir docs/api run build:json:admin
           pnpm --filter @calibra/sdk run codegen:admin
           git diff --exit-code -- packages/sdk/src/generated/admin.d.ts
+      - name: Prepare merged API test spec
+        run: pnpm --filter @calibra/api-docs run build:test-spec
       - name: Phase 21 contract tests
         working-directory: apps/api
         run: timeout 240s node ace test --files=tests/functional/agentic_gateway/phase21_agentic_gateway.spec.ts

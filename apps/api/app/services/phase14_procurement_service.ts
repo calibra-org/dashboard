@@ -1,8 +1,7 @@
 import { Exception } from "@adonisjs/core/exceptions";
-import db from "@adonisjs/lucid/services/db";
 
 import InventoryService from "#services/inventory_service";
-import { withTenantTransaction } from "#services/tenant_context";
+import { currentTrx, withTenantTransaction } from "#services/tenant_context";
 
 type Actor = { id?: number | string | bigint };
 const n = (value: unknown) => Number(value ?? 0);
@@ -40,15 +39,16 @@ function supplierScore(row: any) {
 
 class Phase14ProcurementService {
     async overview() {
+        const trx = currentTrx();
         const [suppliers, purchaseOrders, incidents] = await Promise.all([
-            db.from("suppliers").select("*").orderBy("updated_at", "desc"),
-            db
+            trx.from("suppliers").select("*").orderBy("updated_at", "desc"),
+            trx
                 .from("purchase_orders as po")
                 .leftJoin("suppliers as s", "s.id", "po.supplier_id")
                 .select("po.*", "s.display_name as supplier_name")
                 .orderBy("po.updated_at", "desc")
                 .limit(50),
-            db.from("supplier_incidents").where("status", "open").count("id as total").first(),
+            trx.from("supplier_incidents").where("status", "open").count("id as total").first(),
         ]);
         const scored = suppliers.map((supplier: any) => ({ ...supplier, score: supplierScore(supplier) }));
         const open = purchaseOrders.filter((po: any) => !["closed", "cancelled", "received"].includes(po.status));
@@ -75,12 +75,12 @@ class Phase14ProcurementService {
     }
 
     async suppliers() {
-        const rows = await db.from("suppliers").select("*").orderBy("display_name");
+        const rows = await currentTrx().from("suppliers").select("*").orderBy("display_name");
         return { data: rows.map((row: any) => ({ ...row, score: supplierScore(row) })) };
     }
 
     async createSupplier(payload: any) {
-        const [row] = await db
+        const [row] = await currentTrx()
             .table("suppliers")
             .insert({ ...payload, currency: payload.currency ?? "IRR", criticality: payload.criticality ?? "normal" })
             .returning("*");
@@ -89,7 +89,7 @@ class Phase14ProcurementService {
 
     async purchaseOrders() {
         return {
-            data: await db
+            data: await currentTrx()
                 .from("purchase_orders as po")
                 .join("suppliers as s", "s.id", "po.supplier_id")
                 .select("po.*", "s.display_name as supplier_name")
@@ -287,7 +287,7 @@ class Phase14ProcurementService {
     }
 
     async recommendations() {
-        const rows = await db
+        const rows = await currentTrx()
             .from("planning_replenishment_recommendations as r")
             .leftJoin("supplier_products as sp", (join) =>
                 join.on("sp.product_id", "=", "r.product_id").andOnVal("sp.active", "=", true),
@@ -334,7 +334,7 @@ class Phase14ProcurementService {
     }
 
     async health() {
-        const result = await db.rawQuery(
+        const result = await currentTrx().rawQuery(
             `SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('suppliers','purchase_orders','purchase_order_receipts','supplier_incidents')`,
         );
         return {
