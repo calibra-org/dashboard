@@ -46,15 +46,50 @@ jobs:
         with:
           node-version: "24.14.0"
       - run: npm install --global pnpm@10.32.1
+      - name: Sync live main baseline
+        run: |
+          git fetch origin main
+          PHASE20_MERGE_BASE="$(git merge-base HEAD origin/main)"
+          test -n "$PHASE20_MERGE_BASE"
+          echo "PHASE20_MERGE_BASE=$PHASE20_MERGE_BASE" >> "$GITHUB_ENV"
+          echo "Phase 20 merge base: $PHASE20_MERGE_BASE"
+          echo "Live main: $(git rev-parse origin/main)"
+          git merge --no-edit origin/main
       - name: Recover verified Phase 20 candidate
         run: |
+          set -euo pipefail
+          mkdir -p /tmp/phase20-merge
           cp .phase20completion/PHASE20_EXECUTION_PROMPT_FA_FINAL.md /tmp/PHASE20_EXECUTION_PROMPT_FA_FINAL.md
           cat .phase20completion/payload.* > /tmp/phase20.b64
           base64 -d /tmp/phase20.b64 > /tmp/phase20.tar.xz
           echo "cd77aec08d9c2a0a5e6832739a0ee7c5afee8930f619078098cd89823b2e9a01  /tmp/phase20.tar.xz" | sha256sum -c -
           xz -d -c /tmp/phase20.tar.xz > /tmp/phase20.tar
-          tar -tf /tmp/phase20.tar | head -80
+          tar -tf /tmp/phase20.tar | sed 's#^\./##' | sort -u > /tmp/phase20-merge/payload-files.txt
+          git diff --name-only "$PHASE20_MERGE_BASE"..origin/main | sort -u > /tmp/phase20-merge/main-files.txt
+          comm -12 /tmp/phase20-merge/payload-files.txt /tmp/phase20-merge/main-files.txt > /tmp/phase20-merge/overlap.txt
+          printf '%s\n' '.github/workflows/phase20-trust-risk-check.yml' 'apps/admin/src/components/Sidebar.tsx' | sort -u > /tmp/phase20-merge/expected-overlap.txt
+          echo 'Phase 20/main overlapping files:'
+          cat /tmp/phase20-merge/overlap.txt
+          diff -u /tmp/phase20-merge/expected-overlap.txt /tmp/phase20-merge/overlap.txt
+          git show "origin/main:.github/workflows/phase20-trust-risk-check.yml" > /tmp/phase20-merge/main-phase20-check.yml
+          git show "$PHASE20_MERGE_BASE:.github/workflows/phase20-trust-risk-check.yml" > /tmp/phase20-merge/base-phase20-check.yml
+          git show "origin/main:apps/admin/src/components/Sidebar.tsx" > /tmp/phase20-merge/main-sidebar.tsx
+          git show "$PHASE20_MERGE_BASE:apps/admin/src/components/Sidebar.tsx" > /tmp/phase20-merge/base-sidebar.tsx
           tar -xf /tmp/phase20.tar
+          cp .github/workflows/phase20-trust-risk-check.yml /tmp/phase20-merge/candidate-phase20-check.yml
+          cp apps/admin/src/components/Sidebar.tsx /tmp/phase20-merge/candidate-sidebar.tsx
+          if ! git merge-file -p /tmp/phase20-merge/candidate-phase20-check.yml /tmp/phase20-merge/base-phase20-check.yml /tmp/phase20-merge/main-phase20-check.yml > /tmp/phase20-merge/merged-phase20-check.yml; then
+            echo 'Conflict while reconciling phase20-trust-risk-check.yml with live main'
+            cat /tmp/phase20-merge/merged-phase20-check.yml
+            exit 1
+          fi
+          mv /tmp/phase20-merge/merged-phase20-check.yml .github/workflows/phase20-trust-risk-check.yml
+          if ! git merge-file -p /tmp/phase20-merge/candidate-sidebar.tsx /tmp/phase20-merge/base-sidebar.tsx /tmp/phase20-merge/main-sidebar.tsx > /tmp/phase20-merge/merged-sidebar.tsx; then
+            echo 'Conflict while reconciling Sidebar.tsx with live main'
+            cat /tmp/phase20-merge/merged-sidebar.tsx
+            exit 1
+          fi
+          mv /tmp/phase20-merge/merged-sidebar.tsx apps/admin/src/components/Sidebar.tsx
           install -Dm644 /tmp/PHASE20_EXECUTION_PROMPT_FA_FINAL.md docs/calibra/PHASE20_EXECUTION_PROMPT_FA.md
           cat >> docs/calibra/PHASE20_EXECUTION_PROMPT_FA.md <<'EOF'
 
