@@ -9,7 +9,6 @@ function replaceRequired(content, before, after, label) {
     return content.replace(before, after);
 }
 
-// Phase 14 tenant/RLS correctness: every tenant-table query must ride the request transaction.
 const phase14Path = "apps/api/app/services/phase14_procurement_service.ts";
 let phase14 = read(phase14Path);
 phase14 = phase14.replace('import db from "@adonisjs/lucid/services/db";\n', "");
@@ -23,7 +22,6 @@ phase14 = phase14.replaceAll("db.", "currentTrx().");
 if (phase14.includes("db.")) throw new Error("Bare global db reference remains in Phase 14 procurement service");
 write(phase14Path, phase14);
 
-// Resolve the remaining lint blockers in the already-shipped Phase 14/20 UI without unsafe transforms.
 const procurementWorkspacePath = "apps/admin/src/features/procurement/ProcurementWorkspace.tsx";
 let procurementWorkspace = read(procurementWorkspacePath);
 procurementWorkspace = replaceRequired(
@@ -38,6 +36,16 @@ procurementWorkspace = replaceRequired(
     "recommendations.map((r)=><article key={String(r.id)}",
     "Phase 14 recommendation stable key",
 );
+procurementWorkspace = procurementWorkspace
+    .replaceAll("text-cyan-300", "text-info")
+    .replaceAll("border-emerald-400/20", "border-success/20")
+    .replaceAll("bg-emerald-400/10", "bg-success/10")
+    .replaceAll("text-emerald-200", "text-success")
+    .replaceAll("bg-gradient-to-l from-cyan-500 via-blue-500 to-violet-500", "bg-info")
+    .replaceAll("bg-emerald-500/10", "bg-success/10")
+    .replaceAll("text-emerald-600", "text-success")
+    .replaceAll("bg-blue-500/10", "bg-info/10")
+    .replaceAll("text-blue-600", "text-info");
 write(procurementWorkspacePath, procurementWorkspace);
 
 const trustWorkspacePath = "apps/admin/src/features/trust/TrustWorkspace.tsx";
@@ -56,7 +64,6 @@ trustWorkspace = replaceRequired(
 );
 write(trustWorkspacePath, trustWorkspace);
 
-// Preserve Phase 20's current navigation while restoring the Phase 18 entry on the latest main baseline.
 const sidebarPath = "apps/admin/src/components/Sidebar.tsx";
 let sidebar = read(sidebarPath);
 sidebar = replaceRequired(
