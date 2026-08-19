@@ -1,27 +1,311 @@
-import { Exception } from "@adonisjs/core/exceptions";
 import type { HttpContext } from "@adonisjs/core/http";
+
 import { recordAudit } from "#services/admin_audit_log_service";
 import { requireRecentIdentityStepUp } from "#services/identity/step_up";
-import { phase20TrustRiskService } from "#services/phase20_trust_risk_service";
-import { addFraudCaseNoteValidator, assignFraudCaseValidator, createFraudCaseValidator, createRiskModelValidator, createRiskModelVersionValidator, createSubjectControlValidator, evaluateRiskValidator, updateFraudCaseStatusValidator } from "#validators/admin/phase20_trust_risk_validator";
-function id(value: unknown) { const parsed = Number(value); if (!Number.isSafeInteger(parsed) || parsed < 1) throw new Exception("Invalid identifier", { status: 422, code: "E_TRUST_ID" }); return parsed; }
-function key(ctx: HttpContext) { const value = ctx.request.header("Idempotency-Key")?.trim(); return value ? value.slice(0, 180) : null; }
+import {
+    createTrustPolicyVersion,
+    listTrustCases,
+    listTrustModels,
+    listTrustPolicies,
+    listTrustSignals,
+    registerTrustModel,
+    simulateTrustPolicy,
+    trustCaseDetail,
+    trustGraph,
+    trustOutcomeSummary,
+    trustOverview,
+    updateTrustModelRollout,
+} from "#services/trust/admin_service";
+import { appealTrustCase, assignTrustCase, decideTrustCase, recordTrustOutcome } from "#services/trust/case_service";
+import { applyTrustPreset, hasTrustPermission, listTrustAccess, requireTrustPermission } from "#services/trust/permissions";
+import { scanCanonicalTrustSources } from "#services/trust/signal_service";
+import {
+    trustAccessPresetValidator,
+    trustAppealValidator,
+    trustCaseAssignValidator,
+    trustCaseDecisionValidator,
+    trustCaseListValidator,
+    trustGraphValidator,
+    trustModelRegisterValidator,
+    trustModelRolloutValidator,
+    trustOutcomeValidator,
+    trustPolicySimulationValidator,
+    trustPolicyValidator,
+    trustSignalListValidator,
+} from "#validators/admin/phase20_trust_risk_validator";
 
-export default class TrustRiskController {
-    overview() { return phase20TrustRiskService.overview(); }
-    cases() { return phase20TrustRiskService.cases(); }
-    signals() { return phase20TrustRiskService.signals(); }
-    models() { return phase20TrustRiskService.models(); }
-    health() { return phase20TrustRiskService.health(); }
-    async evaluate(ctx: HttpContext) { const payload = await ctx.request.validateUsing(evaluateRiskValidator); const result = await phase20TrustRiskService.evaluate({ ...payload, idempotency_key: payload.idempotency_key ?? key(ctx) }); ctx.response.status(result.replayed ? 200 : 201); if (!result.replayed) await recordAudit({ ctx, action: "trust.risk.evaluate", entityKind: "fraud_risk_score", entityId: result.data.score.id, payload: { subject_type: payload.subject_type, subject_id: payload.subject_id, band: result.data.score.band } }); return result; }
-    async createModel(ctx: HttpContext) { const payload = await ctx.request.validateUsing(createRiskModelValidator); const actor = await ctx.auth.authenticate(); const result = await phase20TrustRiskService.createModel(payload, actor); ctx.response.status(201); await recordAudit({ ctx, action: "trust.model.create", entityKind: "fraud_risk_model", entityId: result.data.id, payload: { model_id: payload.model_id } }); return result; }
-    async createModelVersion(ctx: HttpContext) { const payload = await ctx.request.validateUsing(createRiskModelVersionValidator); const actor = await ctx.auth.authenticate(); const result = await phase20TrustRiskService.createModelVersion(id(ctx.params.id), payload, actor); ctx.response.status(201); await recordAudit({ ctx, action: "trust.model.version.create", entityKind: "fraud_risk_model_version", entityId: result.data.id, payload: { version: payload.version } }); return result; }
-    async promoteChampion(ctx: HttpContext) { const actor = await ctx.auth.authenticate(); await requireRecentIdentityStepUp(Number(actor.id), "trust.model.promote"); const versionId = id(ctx.params.id); const result = await phase20TrustRiskService.promoteChampion(versionId, actor, key(ctx)); if (!result.replayed) await recordAudit({ ctx, action: "trust.model.promote_champion", entityKind: "fraud_risk_model_version", entityId: versionId, payload: {} }); return result; }
-    async createCase(ctx: HttpContext) { const payload = await ctx.request.validateUsing(createFraudCaseValidator); const actor = await ctx.auth.authenticate(); const result = await phase20TrustRiskService.createCase(payload, actor); ctx.response.status(201); await recordAudit({ ctx, action: "trust.case.create", entityKind: "fraud_case", entityId: result.data.id, payload: { subject_type: payload.subject_type, subject_id: payload.subject_id } }); return result; }
-    async assignCase(ctx: HttpContext) { const payload = await ctx.request.validateUsing(assignFraudCaseValidator); const actor = await ctx.auth.authenticate(); const caseId = id(ctx.params.id); const result = await phase20TrustRiskService.assignCase(caseId, payload.assignee_user_id ?? null, actor); await recordAudit({ ctx, action: "trust.case.assign", entityKind: "fraud_case", entityId: caseId, payload: { assignee_user_id: payload.assignee_user_id ?? null } }); return result; }
-    async updateCaseStatus(ctx: HttpContext) { const payload = await ctx.request.validateUsing(updateFraudCaseStatusValidator); const actor = await ctx.auth.authenticate(); const caseId = id(ctx.params.id); if (["resolved", "closed"].includes(payload.status)) await requireRecentIdentityStepUp(Number(actor.id), "trust.case.resolve"); const result = await phase20TrustRiskService.updateCaseStatus(caseId, payload, actor); await recordAudit({ ctx, action: `trust.case.${payload.status}`, entityKind: "fraud_case", entityId: caseId, payload: {} }); return result; }
-    async addCaseNote(ctx: HttpContext) { const payload = await ctx.request.validateUsing(addFraudCaseNoteValidator); const actor = await ctx.auth.authenticate(); const caseId = id(ctx.params.id); const result = await phase20TrustRiskService.addCaseNote(caseId, payload.note, actor); await recordAudit({ ctx, action: "trust.case.note", entityKind: "fraud_case", entityId: caseId, payload: { note_length: payload.note.length } }); return result; }
-    async createControl(ctx: HttpContext) { const payload = await ctx.request.validateUsing(createSubjectControlValidator); const actor = await ctx.auth.authenticate(); if (["block", "allow_override"].includes(payload.control)) await requireRecentIdentityStepUp(Number(actor.id), "trust.subject.control"); const result = await phase20TrustRiskService.createControl(payload, actor, key(ctx)); ctx.response.status(result.replayed ? 200 : 201); if (!result.replayed) await recordAudit({ ctx, action: `trust.control.${payload.control}`, entityKind: "fraud_subject_control", entityId: result.data.id, payload: { subject_type: payload.subject_type, subject_id: payload.subject_id } }); return result; }
-    async releaseControl(ctx: HttpContext) { const actor = await ctx.auth.authenticate(); await requireRecentIdentityStepUp(Number(actor.id), "trust.subject.control"); const controlId = id(ctx.params.id); const result = await phase20TrustRiskService.releaseControl(controlId, actor, key(ctx)); if (!result.replayed) await recordAudit({ ctx, action: "trust.control.release", entityKind: "fraud_subject_control", entityId: controlId, payload: {} }); return result; }
-    async blockSubject(ctx: HttpContext) { const actor = await ctx.auth.authenticate(); await requireRecentIdentityStepUp(Number(actor.id), "trust.subject.control"); const payload = await ctx.request.validateUsing(createSubjectControlValidator); const result = await phase20TrustRiskService.createControl({ ...payload, control: "block" }, actor, key(ctx)); if (!result.replayed) await recordAudit({ ctx, action: "trust.control.block", entityKind: "fraud_subject_control", entityId: result.data.id, payload: { subject_type: payload.subject_type, subject_id: payload.subject_id } }); return result; }
+export default class AdminTrustController {
+    async overview(ctx: HttpContext) {
+        const user = ctx.auth.getUserOrFail();
+        await requireTrustPermission(user, "trust.view");
+        return { data: await trustOverview() };
+    }
+
+    async cases(ctx: HttpContext) {
+        const user = ctx.auth.getUserOrFail();
+        await requireTrustPermission(user, "trust.view");
+        const payload = await ctx.request.validateUsing(trustCaseListValidator);
+        return await listTrustCases({
+            status: payload.status,
+            riskBand: payload.risk_band,
+            q: payload.q,
+            page: payload.page,
+            limit: payload.limit,
+        });
+    }
+
+    async caseDetail(ctx: HttpContext) {
+        const user = ctx.auth.getUserOrFail();
+        await requireTrustPermission(user, "trust.view");
+        const includeSensitive = await hasTrustPermission(user, "trust.sensitive.view");
+        return { data: await trustCaseDetail(String(ctx.params.publicId), includeSensitive) };
+    }
+
+    async assignCase(ctx: HttpContext) {
+        const user = ctx.auth.getUserOrFail();
+        await requireTrustPermission(user, "trust.cases.assign");
+        const payload = await ctx.request.validateUsing(trustCaseAssignValidator);
+        return {
+            data: await assignTrustCase({
+                ctx,
+                publicId: String(ctx.params.publicId),
+                assigneeUserId: payload.assignee_user_id,
+                expectedVersion: payload.expected_version,
+                actor: user,
+                reason: payload.reason,
+            }),
+        };
+    }
+
+    async decideCase(ctx: HttpContext) {
+        const user = ctx.auth.getUserOrFail();
+        await requireTrustPermission(user, "trust.cases.review");
+        const payload = await ctx.request.validateUsing(trustCaseDecisionValidator);
+        if (["hold", "block"].includes(payload.action)) await requireRecentIdentityStepUp(Number(user.id), "trust.case.enforce");
+        return {
+            data: await decideTrustCase({
+                ctx,
+                publicId: String(ctx.params.publicId),
+                action: payload.action,
+                reasonCode: payload.reason_code,
+                reason: payload.reason,
+                expectedVersion: payload.expected_version,
+                actor: user,
+                idempotencyKey: payload.idempotency_key,
+            }),
+        };
+    }
+
+    async overrideCase(ctx: HttpContext) {
+        const user = ctx.auth.getUserOrFail();
+        await requireTrustPermission(user, "trust.cases.override");
+        await requireRecentIdentityStepUp(Number(user.id), "trust.case.override");
+        const payload = await ctx.request.validateUsing(trustCaseDecisionValidator);
+        return {
+            data: await decideTrustCase({
+                ctx,
+                publicId: String(ctx.params.publicId),
+                action: payload.action,
+                reasonCode: payload.reason_code,
+                reason: payload.reason,
+                expectedVersion: payload.expected_version,
+                actor: user,
+                isOverride: true,
+                idempotencyKey: payload.idempotency_key,
+            }),
+        };
+    }
+
+    async appealCase(ctx: HttpContext) {
+        const user = ctx.auth.getUserOrFail();
+        await requireTrustPermission(user, "trust.cases.review");
+        const payload = await ctx.request.validateUsing(trustAppealValidator);
+        return {
+            data: await appealTrustCase({
+                ctx,
+                publicId: String(ctx.params.publicId),
+                reason: payload.reason,
+                expectedVersion: payload.expected_version,
+                actor: user,
+            }),
+        };
+    }
+
+    async outcome(ctx: HttpContext) {
+        const user = ctx.auth.getUserOrFail();
+        await requireTrustPermission(user, "trust.outcomes.record");
+        const payload = await ctx.request.validateUsing(trustOutcomeValidator);
+        return {
+            data: await recordTrustOutcome({
+                ctx,
+                publicId: String(ctx.params.publicId),
+                outcome: payload.outcome,
+                isFalsePositive: payload.is_false_positive,
+                appealOutcome: payload.appeal_outcome,
+                baseline: payload.baseline,
+                predictedP10Minor: payload.predicted_p10_minor,
+                predictedP50Minor: payload.predicted_p50_minor,
+                predictedP90Minor: payload.predicted_p90_minor,
+                actualLossMinor: payload.actual_loss_minor,
+                incrementalEffectMinor: payload.incremental_effect_minor,
+                preventedLossMinor: payload.prevented_loss_minor,
+                guardrails: payload.guardrails,
+                finalAssessment: payload.final_assessment,
+                measurementConfidenceBp: payload.measurement_confidence_bp,
+                unexpectedEffects: payload.unexpected_effects,
+                notes: payload.notes,
+                actor: user,
+            }),
+        };
+    }
+
+    async graph(ctx: HttpContext) {
+        const user = ctx.auth.getUserOrFail();
+        await requireTrustPermission(user, "trust.view");
+        const payload = await ctx.request.validateUsing(trustGraphValidator);
+        return {
+            data: await trustGraph({
+                subjectType: payload.subject_type,
+                subjectId: payload.subject_id,
+                casePublicId: payload.case_id,
+                depth: payload.depth,
+            }),
+        };
+    }
+
+    async signals(ctx: HttpContext) {
+        const user = ctx.auth.getUserOrFail();
+        await requireTrustPermission(user, "trust.view");
+        const payload = await ctx.request.validateUsing(trustSignalListValidator);
+        return {
+            data: await listTrustSignals({ riskBand: payload.risk_band, source: payload.source, signalType: payload.signal_type, limit: payload.limit }),
+        };
+    }
+
+    async scan(ctx: HttpContext) {
+        const user = ctx.auth.getUserOrFail();
+        await requireTrustPermission(user, "trust.scan.run");
+        const result = await scanCanonicalTrustSources();
+        await recordAudit({
+            ctx,
+            actorUserId: Number(user.id),
+            action: "trust.scan.run",
+            entityKind: "trust_scan",
+            entityId: null,
+            payload: result,
+            strict: true,
+        });
+        return { data: result };
+    }
+
+    async policies(ctx: HttpContext) {
+        const user = ctx.auth.getUserOrFail();
+        await requireTrustPermission(user, "trust.view");
+        return { data: await listTrustPolicies() };
+    }
+
+    async createPolicy(ctx: HttpContext) {
+        const user = ctx.auth.getUserOrFail();
+        await requireTrustPermission(user, "trust.policies.manage");
+        await requireRecentIdentityStepUp(Number(user.id), "trust.policy.manage");
+        const payload = await ctx.request.validateUsing(trustPolicyValidator);
+        return {
+            data: await createTrustPolicyVersion({
+                ctx,
+                actor: user,
+                policyKey: payload.policy_key,
+                status: payload.status,
+                scope: payload.scope,
+                conditions: payload.conditions,
+                effect: payload.effect,
+                approvalRequired: payload.approval_required,
+                reason: payload.reason,
+            }),
+        };
+    }
+
+    async simulatePolicy(ctx: HttpContext) {
+        const user = ctx.auth.getUserOrFail();
+        await requireTrustPermission(user, "trust.view");
+        const payload = await ctx.request.validateUsing(trustPolicySimulationValidator);
+        return { data: await simulateTrustPolicy({ policyKey: payload.policy_key, version: payload.version, context: payload.context }) };
+    }
+
+    async models(ctx: HttpContext) {
+        const user = ctx.auth.getUserOrFail();
+        await requireTrustPermission(user, "trust.view");
+        return { data: await listTrustModels() };
+    }
+
+    async registerModel(ctx: HttpContext) {
+        const user = ctx.auth.getUserOrFail();
+        await requireTrustPermission(user, "trust.models.manage");
+        await requireRecentIdentityStepUp(Number(user.id), "trust.model.manage");
+        const payload = await ctx.request.validateUsing(trustModelRegisterValidator);
+        return {
+            data: await registerTrustModel({
+                ctx,
+                actor: user,
+                modelId: payload.model_id,
+                version: payload.version,
+                purpose: payload.purpose,
+                owner: payload.owner,
+                features: payload.features,
+                privacyControls: payload.privacy_controls,
+                evaluation: payload.evaluation,
+                calibration: payload.calibration,
+                deployment: payload.deployment,
+                limitations: payload.limitations,
+                rollbackVersion: payload.rollback_version,
+                reason: payload.reason,
+            }),
+        };
+    }
+
+    async updateModelRollout(ctx: HttpContext) {
+        const user = ctx.auth.getUserOrFail();
+        await requireTrustPermission(user, "trust.models.manage");
+        await requireRecentIdentityStepUp(Number(user.id), "trust.model.manage");
+        const payload = await ctx.request.validateUsing(trustModelRolloutValidator);
+        return {
+            data: await updateTrustModelRollout({
+                ctx,
+                actor: user,
+                publicId: String(ctx.params.publicId),
+                status: payload.status,
+                rolloutPercent: payload.rollout_percent,
+                reason: payload.reason,
+            }),
+        };
+    }
+
+    async outcomes(ctx: HttpContext) {
+        const user = ctx.auth.getUserOrFail();
+        await requireTrustPermission(user, "trust.view");
+        return { data: await trustOutcomeSummary() };
+    }
+
+    async access(ctx: HttpContext) {
+        const user = ctx.auth.getUserOrFail();
+        await requireTrustPermission(user, "trust.view");
+        return { data: await listTrustAccess() };
+    }
+
+    async applyAccessPreset(ctx: HttpContext) {
+        const user = ctx.auth.getUserOrFail();
+        await requireTrustPermission(user, "trust.access.manage");
+        await requireRecentIdentityStepUp(Number(user.id), "trust.access.manage");
+        const payload = await ctx.request.validateUsing(trustAccessPresetValidator);
+        await applyTrustPreset(Number(user.id), payload.user_id, payload.preset);
+        await recordAudit({
+            ctx,
+            actorUserId: Number(user.id),
+            action: "trust.access.preset.apply",
+            entityKind: "admin_user",
+            entityId: payload.user_id,
+            payload: { preset: payload.preset, reason: payload.reason },
+            strict: true,
+        });
+        return { data: { updated: true } };
+    }
 }

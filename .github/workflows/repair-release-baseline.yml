@@ -1,9 +1,6 @@
 name: Repair Release Baseline
 
 on:
-  push:
-    branches:
-      - agent/phase18-pricing-promotion-main-20260818
   pull_request:
     branches:
       - main
@@ -15,7 +12,7 @@ jobs:
   repair:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
         with:
@@ -26,19 +23,19 @@ jobs:
           node-version: '24.14.0'
       - run: npm install --global pnpm@10.32.1
       - run: pnpm install --frozen-lockfile
-      - name: Repair tenant scoping and OpenAPI composition
+      - name: Repair release baseline sources
         run: node scripts/repair-release-baseline.mjs
-      - name: Apply canonical formatting and safe Biome fixes
-        run: |
-          pnpm run format:fix
-          pnpm run lint:biome:fix
-          pnpm run format:fix
+      - name: Apply canonical formatting
+        run: pnpm run format:fix
       - name: Regenerate OpenAPI-derived SDK declarations
         run: pnpm --filter @calibra/sdk run codegen
       - name: Format generated output
         run: pnpm run format:fix
-      - name: Verify generated tree is syntactically clean
-        run: git diff --check
+      - name: Validate format and lint before committing
+        run: |
+          pnpm run format
+          pnpm run lint
+          git diff --check
       - name: Commit generated repair
         run: |
           git config user.name "calibra-ci"

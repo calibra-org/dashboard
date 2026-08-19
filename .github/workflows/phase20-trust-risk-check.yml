@@ -4,16 +4,29 @@ on:
   pull_request:
     paths:
       - "apps/api/app/services/phase20_trust_risk_service.ts"
+      - "apps/api/app/services/trust/**"
       - "apps/api/app/controllers/admin/trust_risk_controller.ts"
       - "apps/api/app/validators/admin/phase20_trust_risk_validator.ts"
       - "apps/api/database/migrations/1767600000000_create_phase20_trust_risk_os.ts"
+      - "apps/api/database/migrations/1773000000000_harden_phase20_trust_risk_os.ts"
       - "apps/api/start/routes/admin_trust_risk.ts"
       - "apps/api/start/routes.ts"
       - "apps/api/app/controllers/checkout/submit_controller.ts"
-      - "apps/api/tests/unit/trust/phase20_trust_risk.spec.ts"
+      - "apps/api/tests/unit/trust/**"
+      - "apps/api/tests/functional/trust/**"
+      - "apps/admin/messages/trust/**"
       - "apps/admin/src/features/trust/**"
-      - "apps/admin/src/lib/queries/trust-risk.ts"
+      - "apps/admin/src/lib/queries/trust.ts"
       - "apps/admin/src/app/**/trust/**"
+      - "apps/admin/src/app/**/quality-trust/**"
+      - "apps/admin/src/components/Sidebar.tsx"
+      - "docs/api/reference/openapi/admin.trust.v1.yaml"
+      - "docs/api/scripts/merge-admin-spec.js"
+      - "docs/api/package.json"
+      - "docs/calibra/PHASE20_EXECUTION_PROMPT_FA.md"
+      - "docs/calibra/phase20-trust-risk-os.md"
+      - "packages/sdk/src/generated/admin.d.ts"
+      - "scripts/verify-phase20-trust-integration.mjs"
       - "scripts/verify-phase20-trust-risk-integration.mjs"
       - ".github/workflows/phase20-trust-risk-check.yml"
   push:
@@ -25,7 +38,7 @@ permissions:
 jobs:
   integrity:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 35
     services:
       postgres:
         image: postgres:17-alpine
@@ -54,14 +67,47 @@ jobs:
           node-version: "24.14.0"
       - run: npm install --global pnpm@10.32.1
       - run: pnpm install --frozen-lockfile
+      - name: Admin OpenAPI and SDK
+        run: |
+          pnpm --dir docs/api run build:json:admin
+          pnpm --filter @calibra/sdk run codegen:admin
+          git diff --exit-code -- packages/sdk/src/generated/admin.d.ts
       - name: Phase 20 static contract
         run: node scripts/verify-phase20-trust-risk-integration.mjs
-      - name: Phase 20 unit tests
+      - name: Build API test specification once
+        run: pnpm --filter @calibra/api-docs run build:test-spec
+      - name: Validate merged OpenAPI 3.0 contract
+        run: |
+          VALIDATOR_DIR="$(find "$PWD/node_modules/.pnpm" -type d -path '*/node_modules/openapi-schema-validator' | head -1)"
+          test -n "$VALIDATOR_DIR" || { echo 'openapi-schema-validator not found'; exit 1; }
+          node - "$VALIDATOR_DIR" <<'NODE'
+          const fs = require('node:fs')
+          const validatorDir = process.argv[2]
+          const loaded = require(validatorDir)
+          const OpenAPISchemaValidator = loaded.default || loaded
+          const spec = JSON.parse(fs.readFileSync('docs/api/dist/_merged.test.json', 'utf8'))
+          const validator = new OpenAPISchemaValidator({ version: 3 })
+          const result = validator.validate(spec)
+          if (result.errors?.length) {
+            console.error(JSON.stringify(result.errors, null, 2))
+            process.exit(1)
+          }
+          console.log('Merged OpenAPI 3.0 schema validator: PASS')
+          NODE
+      - name: Phase 20 legacy unit tests
         working-directory: apps/api
-        run: pnpm test --files=tests/unit/trust/phase20_trust_risk.spec.ts
+        run: timeout 180s node ace test --files=tests/unit/trust/phase20_trust_risk.spec.ts
+      - name: Phase 20 contract unit tests
+        working-directory: apps/api
+        run: timeout 180s node ace test --files=tests/unit/trust/phase20_contracts.spec.ts
+      - name: Phase 20 functional tests
+        working-directory: apps/api
+        run: timeout 240s node ace test --files=tests/functional/trust/phase20_trust.spec.ts
       - name: API typecheck
         run: pnpm --filter @calibra/api run typecheck
       - name: Admin typecheck
         run: pnpm exec turbo run typecheck --filter=@calibra/admin
       - name: Admin production build
         run: pnpm exec turbo run build --filter=@calibra/admin
+      - name: Diff hygiene
+        run: git diff --check

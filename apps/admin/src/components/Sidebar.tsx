@@ -60,10 +60,7 @@ interface NavGroup {
 }
 
 const groups: NavGroup[] = [
-    {
-        titleKey: "overview",
-        items: [{ href: "/dashboard", labelKey: "dashboard", icon: LayoutDashboard }],
-    },
+    { titleKey: "overview", items: [{ href: "/dashboard", labelKey: "dashboard", icon: LayoutDashboard }] },
     {
         titleKey: "catalog",
         items: [
@@ -101,17 +98,8 @@ const groups: NavGroup[] = [
             { href: "/planning", label: "Planning OS", icon: CalendarClock },
         ],
     },
-    {
-        titleKey: "finance",
-        items: [
-            { href: "/economics", labelKey: "economics", icon: Wallet },
-            { href: "/pricing-brain", label: "مغز قیمت‌گذاری", icon: Sparkles },
-        ],
-    },
-    {
-        titleKey: "customersSection",
-        items: [{ href: "/customers", labelKey: "customers", icon: Users }],
-    },
+    { titleKey: "finance", items: [{ href: "/economics", labelKey: "economics", icon: Wallet }] },
+    { titleKey: "customersSection", items: [{ href: "/customers", labelKey: "customers", icon: Users }] },
     {
         titleKey: "configuration",
         items: [
@@ -172,6 +160,15 @@ const ticketItems: NavItem[] = [
     { href: "/tickets/settings", labelKey: "ticketSettings", icon: SlidersHorizontal },
 ];
 
+const trustItems: NavItem[] = [
+    { href: "/quality-trust/overview", labelKey: "trustOverview", icon: LayoutDashboard },
+    { href: "/quality-trust/cases", labelKey: "trustCases", icon: ShieldCheck },
+    { href: "/quality-trust/graph", labelKey: "trustGraph", icon: Link2 },
+    { href: "/quality-trust/policies", labelKey: "trustPolicies", icon: SlidersHorizontal },
+    { href: "/quality-trust/signals", labelKey: "trustSignals", icon: Bug },
+    { href: "/quality-trust/models", labelKey: "trustModels", icon: ChartNoAxesCombined },
+];
+
 const identityItems: NavItem[] = [
     { href: "/identity/overview", label: "نمای کلی", icon: LayoutDashboard },
     { href: "/identity/verifications", label: "تراکنش‌های تأیید", icon: FileText },
@@ -196,8 +193,7 @@ function isActive(pathname: string, href: string): boolean {
     }
     if (href === "/settings/general") return pathname === "/settings" || pathname.startsWith("/settings/");
     if (href === "/analytics") return pathname === "/analytics";
-    if (href === "/tickets/inbox")
-        return pathname === href || pathname.startsWith(`${href}/`) || /^\/tickets\/\d+(?:\/|$)/.test(pathname);
+    if (href === "/tickets/inbox") return pathname === href || pathname.startsWith(`${href}/`) || /^\/tickets\/\d+(?:\/|$)/.test(pathname);
     return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -210,33 +206,22 @@ export function Sidebar({ userId }: { userId: number }) {
     const contentActive = pathname === "/content" || pathname.startsWith("/content/");
     const seoActive = pathname === "/seo" || pathname.startsWith("/seo/");
     const ticketActive = pathname === "/tickets" || pathname.startsWith("/tickets/");
+    const trustActive = pathname === "/quality-trust" || pathname.startsWith("/quality-trust/");
     const identityActive = pathname === "/identity" || pathname.startsWith("/identity/");
     const ticketUnread = useTicketRealtime(userId);
     const [factorOpen, setFactorOpen] = useState(factorActive);
     const [contentOpen, setContentOpen] = useState(contentActive);
     const [seoOpen, setSeoOpen] = useState(seoActive);
     const [ticketOpen, setTicketOpen] = useState(ticketActive);
+    const [trustOpen, setTrustOpen] = useState(trustActive);
     const [identityOpen, setIdentityOpen] = useState(identityActive);
 
-    useEffect(() => {
-        if (factorActive) setFactorOpen(true);
-    }, [factorActive]);
-
-    useEffect(() => {
-        if (contentActive) setContentOpen(true);
-    }, [contentActive]);
-
-    useEffect(() => {
-        if (seoActive) setSeoOpen(true);
-    }, [seoActive]);
-
-    useEffect(() => {
-        if (ticketActive) setTicketOpen(true);
-    }, [ticketActive]);
-
-    useEffect(() => {
-        if (identityActive) setIdentityOpen(true);
-    }, [identityActive]);
+    useEffect(() => { if (factorActive) setFactorOpen(true); }, [factorActive]);
+    useEffect(() => { if (contentActive) setContentOpen(true); }, [contentActive]);
+    useEffect(() => { if (seoActive) setSeoOpen(true); }, [seoActive]);
+    useEffect(() => { if (ticketActive) setTicketOpen(true); }, [ticketActive]);
+    useEffect(() => { if (trustActive) setTrustOpen(true); }, [trustActive]);
+    useEffect(() => { if (identityActive) setIdentityOpen(true); }, [identityActive]);
 
     const itemLink = (item: NavItem, compact = false) => {
         const Icon = item.icon;
@@ -248,9 +233,7 @@ export function Sidebar({ userId }: { userId: number }) {
                 className={cn(
                     "flex items-center rounded-md transition-colors",
                     compact ? "gap-2.5 px-2.5 py-2 text-xs" : "gap-3 px-3 py-2",
-                    active
-                        ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-                        : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
+                    active ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground" : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
                 )}
             >
                 <Icon className={compact ? "size-3.5 shrink-0" : "size-4 shrink-0"} aria-hidden="true" />
@@ -277,9 +260,7 @@ export function Sidebar({ userId }: { userId: number }) {
                     type="button"
                     className={cn(
                         "flex w-full items-center gap-3 rounded-md px-3 py-2 text-start transition-colors",
-                        active
-                            ? "bg-sidebar-accent/80 font-medium text-sidebar-accent-foreground"
-                            : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
+                        active ? "bg-sidebar-accent/80 font-medium text-sidebar-accent-foreground" : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
                     )}
                     aria-expanded={open}
                     aria-controls={id}
@@ -299,11 +280,7 @@ export function Sidebar({ userId }: { userId: number }) {
                     <div id={id} className="ms-5 mt-1 flex flex-col gap-0.5 border-sidebar-border border-s ps-2">
                         {items.map((item, index) => (
                             <div key={item.href}>
-                                {sections?.[index] ? (
-                                    <div className="px-2.5 pt-2 pb-1 font-medium text-[0.6rem] text-sidebar-foreground/40 uppercase tracking-wider">
-                                        {sections[index]}
-                                    </div>
-                                ) : null}
+                                {sections?.[index] ? <div className="px-2.5 pt-2 pb-1 font-medium text-[0.6rem] text-sidebar-foreground/40 uppercase tracking-wider">{sections[index]}</div> : null}
                                 {itemLink(item, true)}
                             </div>
                         ))}
@@ -316,76 +293,29 @@ export function Sidebar({ userId }: { userId: number }) {
     return (
         <aside className="hidden w-64 shrink-0 flex-col gap-1 border-sidebar-border border-e bg-sidebar text-sidebar-foreground md:flex">
             <div className="flex h-14 items-center gap-2 border-sidebar-border border-b px-5">
-                <div className="grid size-7 place-items-center rounded-md bg-sidebar-primary font-bold text-sidebar-primary-foreground text-sm">
-                    <Box className="size-4" aria-hidden="true" />
-                </div>
+                <div className="grid size-7 place-items-center rounded-md bg-sidebar-primary font-bold text-sidebar-primary-foreground text-sm"><Box className="size-4" aria-hidden="true" /></div>
                 <span className="font-semibold text-sm tracking-tight">{siteT("name")}</span>
             </div>
             <nav className="flex flex-1 flex-col gap-5 overflow-y-auto px-3 py-4 text-sm">
                 {groups.slice(0, 3).map((group) => (
                     <div key={group.titleKey} className="flex flex-col gap-1">
-                        <div className="px-3 pb-1 font-medium text-[0.65rem] text-sidebar-foreground/50 uppercase tracking-wider">
-                            {navT(group.titleKey)}
-                        </div>
+                        <div className="px-3 pb-1 font-medium text-[0.65rem] text-sidebar-foreground/50 uppercase tracking-wider">{navT(group.titleKey)}</div>
                         {group.items.map((item) => itemLink(item))}
                     </div>
                 ))}
-                {collapsible(
-                    "factor-sidebar-items",
-                    factorActive,
-                    factorOpen,
-                    setFactorOpen,
-                    ReceiptText,
-                    navT("factor"),
-                    factorItems,
-                )}
-                {collapsible(
-                    "content-sidebar-items",
-                    contentActive,
-                    contentOpen,
-                    setContentOpen,
-                    PenLine,
-                    navT("content"),
-                    contentItems,
-                )}
-                {collapsible("seo-sidebar-items", seoActive, seoOpen, setSeoOpen, Search, navT("seo"), seoItems, {
-                    0: navT("seoSectionControl"),
-                    2: navT("seoSectionCatalog"),
-                    6: navT("seoSectionContent"),
-                    10: navT("seoSectionMonitoring"),
-                    14: navT("seoSectionSystem"),
-                })}
-                {collapsible(
-                    "ticket-sidebar-items",
-                    ticketActive,
-                    ticketOpen,
-                    setTicketOpen,
-                    MessageSquare,
-                    navT("tickets"),
-                    ticketItems,
-                    undefined,
-                    ticketUnread,
-                )}
+                {collapsible("factor-sidebar-items", factorActive, factorOpen, setFactorOpen, ReceiptText, navT("factor"), factorItems)}
+                {collapsible("content-sidebar-items", contentActive, contentOpen, setContentOpen, PenLine, navT("content"), contentItems)}
+                {collapsible("seo-sidebar-items", seoActive, seoOpen, setSeoOpen, Search, navT("seo"), seoItems, { 0: navT("seoSectionControl"), 2: navT("seoSectionCatalog"), 6: navT("seoSectionContent"), 10: navT("seoSectionMonitoring"), 14: navT("seoSectionSystem") })}
+                <div className="flex flex-col gap-1">
+                    <div className="px-3 pb-1 font-medium text-[0.65rem] text-sidebar-foreground/50 uppercase tracking-wider">{navT("operations")}</div>
+                    {collapsible("ticket-sidebar-items", ticketActive, ticketOpen, setTicketOpen, MessageSquare, navT("tickets"), ticketItems, undefined, ticketUnread)}
+                    {collapsible("trust-sidebar-items", trustActive, trustOpen, setTrustOpen, ShieldCheck, navT("trust"), trustItems, { 0: navT("trustSectionReview"), 2: navT("trustSectionControl"), 4: navT("trustSectionIntelligence") })}
+                </div>
                 {groups.slice(3).map((group) => (
                     <div key={group.titleKey} className="flex flex-col gap-1">
-                        <div className="px-3 pb-1 font-medium text-[0.65rem] text-sidebar-foreground/50 uppercase tracking-wider">
-                            {navT(group.titleKey)}
-                        </div>
+                        <div className="px-3 pb-1 font-medium text-[0.65rem] text-sidebar-foreground/50 uppercase tracking-wider">{navT(group.titleKey)}</div>
                         {group.items.map((item) => itemLink(item))}
-                        {group.titleKey === "configuration" ? (
-                            <div className="mt-1">
-                                {collapsible(
-                                    "identity-sidebar-items",
-                                    identityActive,
-                                    identityOpen,
-                                    setIdentityOpen,
-                                    ShieldCheck,
-                                    "هویت و امنیت",
-                                    identityItems,
-                                    { 12: "تنظیمات" },
-                                )}
-                            </div>
-                        ) : null}
+                        {group.titleKey === "configuration" ? <div className="mt-1">{collapsible("identity-sidebar-items", identityActive, identityOpen, setIdentityOpen, ShieldCheck, "هویت و امنیت", identityItems, { 12: "تنظیمات" })}</div> : null}
                     </div>
                 ))}
             </nav>

@@ -8780,14 +8780,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/pricing-brain/overview": {
+    "/api/v1/admin/trust/overview": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["adminPricingBrainOverview"];
+        /** Read evidence-backed trust command-center data */
+        get: operations["adminTrustOverview"];
         put?: never;
         post?: never;
         delete?: never;
@@ -8796,23 +8797,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/pricing-brain/policies": {
+    "/api/v1/admin/trust/cases": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["adminPricingBrainPolicies"];
+        /** List trust review cases */
+        get: operations["adminTrustCases"];
         put?: never;
-        post: operations["adminPricingBrainCreatePolicy"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/pricing-brain/policies/{id}/versions": {
+    "/api/v1/admin/trust/cases/{publicId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read a trust case with role-redacted evidence and ledgers */
+        get: operations["adminTrustCase"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/cases/{publicId}/assign": {
         parameters: {
             query?: never;
             header?: never;
@@ -8821,14 +8840,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["adminPricingBrainCreatePolicyVersion"];
+        /** Assign or unassign a trust case with optimistic concurrency */
+        post: operations["adminTrustCaseAssign"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/pricing-brain/policies/{id}/actions/{action}": {
+    "/api/v1/admin/trust/cases/{publicId}/decision": {
         parameters: {
             query?: never;
             header?: never;
@@ -8837,14 +8857,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["adminPricingBrainTransitionPolicy"];
+        /** Record and execute an idempotent trust decision */
+        post: operations["adminTrustCaseDecision"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/pricing-brain/policies/{id}/freeze": {
+    "/api/v1/admin/trust/cases/{publicId}/override": {
         parameters: {
             query?: never;
             header?: never;
@@ -8853,30 +8874,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["adminPricingBrainFreezePolicy"];
+        /** Override a trust decision with fresh scoped step-up and strict audit */
+        post: operations["adminTrustCaseOverride"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/pricing-brain/proposals": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["adminPricingBrainProposals"];
-        put?: never;
-        post: operations["adminPricingBrainCreateProposal"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/pricing-brain/simulate": {
+    "/api/v1/admin/trust/cases/{publicId}/appeal": {
         parameters: {
             query?: never;
             header?: never;
@@ -8885,7 +8891,197 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["adminPricingBrainSimulate"];
+        /** Reopen a trust case for appeal without deleting history */
+        post: operations["adminTrustCaseAppeal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/cases/{publicId}/outcome": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record a measured post-decision outcome and false-positive label */
+        post: operations["adminTrustCaseOutcome"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/graph": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Traverse governed trust graph edges up to three hops */
+        get: operations["adminTrustGraph"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/signals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List normalized trust signals with lineage and privacy class */
+        get: operations["adminTrustSignals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/scan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Idempotently derive trust signals from canonical Calibra ledgers */
+        post: operations["adminTrustScan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/policies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List versioned trust policies */
+        get: operations["adminTrustPolicies"];
+        put?: never;
+        /** Create a new trust policy version */
+        post: operations["adminTrustPolicyCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/policies/simulate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dry-run a stored policy against explicit context with no side effects */
+        post: operations["adminTrustPolicySimulate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List explicit trust model versions and measured quality */
+        get: operations["adminTrustModels"];
+        put?: never;
+        /** Register an immutable trust model version */
+        post: operations["adminTrustModelRegister"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/models/{publicId}/rollout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Change a model version rollout state under fresh step-up */
+        patch: operations["adminTrustModelRollout"];
+        trace?: never;
+    };
+    "/api/v1/admin/trust/outcomes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read measured trust outcome and false-positive summary */
+        get: operations["adminTrustOutcomes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read backend-enforced trust permission matrix */
+        get: operations["adminTrustAccess"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/access/preset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Apply a backend trust permission preset */
+        post: operations["adminTrustAccessPreset"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12324,264 +12520,46 @@ export interface components {
             /** @enum {string} */
             decision: "approved" | "rejected";
         };
-        PricingBrainOverview: {
-            catalog: {
-                products: number;
-                priced_products: number;
-                sale_products: number;
-                pricing_coverage_percent: number;
-            };
-            promotions: {
-                coupons: number;
-                active_coupons: number;
-                /** @constant */
-                authority: "shared_discounter";
-            };
-            economics: {
-                covered_products: number;
-                coverage_percent: number;
-                latest_cost_evidence_at: string | null;
-                /** @enum {string} */
-                status: "available" | "unavailable";
-                /** @constant */
-                authority: "phase12_economics";
-            };
-            evidence: {
-                elasticity: components["schemas"]["PricingEvidenceState"];
-                experimentation: components["schemas"]["PricingEvidenceState"];
-            };
-            runtime: {
-                base_price_resolver: string;
-                promotion_engine: string;
-                economics_source: string;
-                simulation_engine: string;
-                autonomy_level: number;
-                activation_enabled: boolean;
-            };
-            policies: components["schemas"]["PricingPolicySummary"][];
-            proposals: components["schemas"]["PricingProposal"][];
-        };
-        PricingEvidenceState: {
-            /** @enum {string} */
-            status: "available" | "unavailable" | "insufficient_evidence" | "stale";
-            reason: string;
-        };
-        PricingPolicySummary: {
-            id: number;
-            policy_key: string;
-            name: string;
-            objective?: string | null;
-            /** @enum {string} */
-            status: "active" | "frozen";
-            frozen_at?: string | null;
-            freeze_reason?: string | null;
-            updated_at?: string;
-            latest_version: components["schemas"]["PricingPolicyVersion"] | null;
-        } & {
-            [key: string]: unknown;
-        };
-        PricingPolicyVersion: {
-            id: number;
-            policy_id: number;
-            version: number;
-            /** @enum {string} */
-            state: "draft" | "review" | "approved" | "scheduled" | "active" | "paused" | "stopped" | "rolled_back";
-            currency: string;
-            product_id?: number | null;
-            variation_id?: number | null;
-            guardrails?: {
-                [key: string]: unknown;
-            };
-            evidence?: {
-                [key: string]: unknown;
-            };
-            scheduled_at?: string | null;
-            activated_at?: string | null;
-            approved_by?: number | null;
-            proposed_by?: number | null;
-        } & {
-            [key: string]: unknown;
-        };
-        PricingProposal: {
-            id: number;
-            policy_id: number;
-            policy_version_id?: number | null;
-            product_id: number;
-            variation_id?: number | null;
-            reference_price_minor: number;
-            candidate_price_minor: number;
-            currency: string;
-            status: string;
-            objective?: string | null;
-            rationale?: string | null;
-            evidence?: {
-                [key: string]: unknown;
-            };
-        } & {
-            [key: string]: unknown;
-        };
-        PricingAction: {
-            id: number;
-            policy_id: number;
-            policy_version_id?: number | null;
-            action: string;
-            from_state?: string | null;
-            to_state?: string | null;
-            actor_user_id?: number | null;
-            reason?: string | null;
-            evidence?: {
-                [key: string]: unknown;
-            };
-            correlation_id?: string | null;
-            idempotency_key?: string | null;
-        } & {
-            [key: string]: unknown;
-        };
-        PricingPolicyListEnvelope: {
-            data: components["schemas"]["PricingPolicySummary"][];
-        };
-        PricingProposalListEnvelope: {
-            data: components["schemas"]["PricingProposal"][];
-        };
-        PricingPolicyCreateEnvelope: {
+        TrustEnvelope: {
             data: {
-                policy: {
-                    [key: string]: unknown;
-                };
-                version: components["schemas"]["PricingPolicyVersion"];
-            };
-        };
-        PricingVersionEnvelope: {
-            data: components["schemas"]["PricingPolicyVersion"];
-        };
-        PricingProposalEnvelope: {
-            data: components["schemas"]["PricingProposal"];
-        };
-        PricingTransitionEnvelope: {
-            data: ({
-                version: components["schemas"]["PricingPolicyVersion"];
-                action: components["schemas"]["PricingAction"];
-            } & {
-                [key: string]: unknown;
-            }) | components["schemas"]["PricingAction"];
-            replayed: boolean;
-        };
-        PricingActionEnvelope: {
-            data: components["schemas"]["PricingAction"];
-            replayed: boolean;
-        };
-        CreatePricingPolicyRequest: {
-            policy_key: string;
-            name: string;
-            objective?: string | null;
-            currency: string;
-            product_id?: number | null;
-            variation_id?: number | null;
-            scope?: {
-                [key: string]: unknown;
-            };
-            guardrails?: {
-                [key: string]: unknown;
-            };
-            evidence?: {
-                [key: string]: unknown;
-            };
-            reason?: string | null;
-        };
-        CreatePricingVersionRequest: {
-            currency?: string;
-            product_id?: number | null;
-            variation_id?: number | null;
-            scope?: {
-                [key: string]: unknown;
-            };
-            guardrails?: {
-                [key: string]: unknown;
-            };
-            evidence?: {
-                [key: string]: unknown;
-            };
-            reason?: string | null;
-        };
-        CreatePricingProposalRequest: {
-            policy_id: number;
-            policy_version_id?: number | null;
-            product_id: number;
-            variation_id?: number | null;
-            reference_price_minor: number;
-            candidate_price_minor: number;
-            currency: string;
-            objective?: string | null;
-            rationale?: string | null;
-            evidence?: {
                 [key: string]: unknown;
             };
         };
-        PricingTransitionRequest: {
+        TrustListEnvelope: {
+            data: {
+                [key: string]: unknown;
+            }[];
+        };
+        TrustPageEnvelope: {
+            data: {
+                [key: string]: unknown;
+            }[];
+            meta: {
+                [key: string]: unknown;
+            };
+        };
+        TrustDecisionInput: {
+            /** @enum {string} */
+            action: "allow" | "monitor" | "step_up" | "hold" | "block" | "dismiss";
+            reason_code: string;
+            reason: string;
             expected_version: number;
-            reason: string;
-            evidence?: {
+            idempotency_key: string;
+        };
+        TrustPolicyInput: {
+            policy_key: string;
+            /** @enum {string} */
+            status: "draft" | "active";
+            scope: {
                 [key: string]: unknown;
             };
-            correlation_id?: string | null;
-            idempotency_key?: string | null;
-            /** Format: date-time */
-            scheduled_at?: string | null;
-            rollback_to_version?: number | null;
-        };
-        PricingFreezeRequest: {
-            frozen: boolean;
+            conditions: {
+                [key: string]: unknown;
+            }[];
+            /** @enum {string} */
+            effect: "allow" | "monitor" | "step_up" | "hold" | "block";
+            approval_required: boolean;
             reason: string;
-            idempotency_key?: string | null;
-        };
-        PricingSimulationRequest: {
-            reference_price: number;
-            candidate_price: number;
-            quantity?: number;
-            promotion_discount?: number;
-            product_id?: number;
-            variation_id?: number | null;
-            floor_price?: number | null;
-            cogs?: number | null;
-            minimum_margin_percent?: number | null;
-            maximum_discount_percent?: number | null;
-        };
-        PricingSimulationResponse: {
-            decision: components["schemas"]["PricingDecision"];
-            economics: components["schemas"]["PricingCogsEvidence"];
-        };
-        PricingDecision: {
-            accepted: boolean;
-            referencePrice: number;
-            candidatePrice: number;
-            effectivePrice: number;
-            quantity: number;
-            promotionDiscount: number;
-            candidateGrossRevenue: number;
-            candidateNetRevenue: number;
-            netRevenue: number;
-            grossRevenue: number;
-            estimatedGrossProfit: number | null;
-            discountPercent: number;
-            marginPercent: number | null;
-            /** @enum {string} */
-            economicsState: "available" | "not_required" | "unavailable";
-            violations: components["schemas"]["PricingGuardrailViolation"][];
-        };
-        PricingGuardrailViolation: {
-            /** @enum {string} */
-            code: "below_floor" | "below_margin" | "discount_too_deep" | "invalid_price" | "missing_economics";
-            message: string;
-            actual: number | null;
-            required: number;
-        };
-        PricingCogsEvidence: {
-            value: number | null;
-            /** @enum {string} */
-            source: "explicit" | "realized_snapshot" | "cost_layer" | "unavailable";
-            /** @enum {string} */
-            quality: "operator_input" | "realized" | "inventory_evidence" | "unavailable";
-            observedAt: string | null;
         };
     };
     responses: {
@@ -12672,7 +12650,8 @@ export interface components {
         IdempotencyKey: string;
         PlanningRunIdQuery: number;
         PlanningId: number;
-        PricingPolicyId: number;
+        CasePublicId: string;
+        ModelPublicId: string;
     };
     requestBodies: never;
     headers: never;
@@ -27258,7 +27237,7 @@ export interface operations {
             };
         };
     };
-    adminPricingBrainOverview: {
+    adminTrustOverview: {
         parameters: {
             query?: never;
             header?: never;
@@ -27267,20 +27246,272 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Phase 18 catalog, promotion, economics, evidence, policy and runtime status. */
+            /** @description Trust overview */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        data: components["schemas"]["PricingBrainOverview"];
-                    };
+                    "application/json": components["schemas"]["TrustEnvelope"];
+                };
+            };
+            /** @description Trust permission denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTrustCases: {
+        parameters: {
+            query?: {
+                status?: string;
+                risk_band?: string;
+                q?: string;
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Paged trust case queue */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrustPageEnvelope"];
                 };
             };
         };
     };
-    adminPricingBrainPolicies: {
+    adminTrustCase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["CasePublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Trust case detail */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrustEnvelope"];
+                };
+            };
+            /** @description Trust case not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTrustCaseAssign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["CasePublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    assignee_user_id: number | null;
+                    expected_version: number;
+                    reason: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Updated case assignment */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrustEnvelope"];
+                };
+            };
+            /** @description Case version conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTrustCaseDecision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["CasePublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrustDecisionInput"];
+            };
+        };
+        responses: {
+            /** @description Decision and action ledger result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrustEnvelope"];
+                };
+            };
+            /** @description Permission or fresh step-up required for enforcing actions */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Version or canonical state conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTrustCaseOverride: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["CasePublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrustDecisionInput"];
+            };
+        };
+        responses: {
+            /** @description Override recorded and executed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrustEnvelope"];
+                };
+            };
+            /** @description Override permission or fresh step-up required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTrustCaseAppeal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["CasePublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    reason: string;
+                    expected_version: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Appealed case */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrustEnvelope"];
+                };
+            };
+        };
+    };
+    adminTrustCaseOutcome: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["CasePublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Measured trust outcome */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrustEnvelope"];
+                };
+            };
+        };
+    };
+    adminTrustGraph: {
+        parameters: {
+            query?: {
+                subject_type?: string;
+                subject_id?: string;
+                case_id?: string;
+                depth?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Trust graph nodes, edges, provenance, and confidence */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrustEnvelope"];
+                };
+            };
+        };
+    };
+    adminTrustSignals: {
         parameters: {
             query?: never;
             header?: never;
@@ -27289,219 +27520,18 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Tenant-scoped pricing policies with their latest version. */
+            /** @description Trust signal ledger */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PricingPolicyListEnvelope"];
+                    "application/json": components["schemas"]["TrustListEnvelope"];
                 };
-            };
-            /** @description Pricing view permission denied */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };
-    adminPricingBrainCreatePolicy: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreatePricingPolicyRequest"];
-            };
-        };
-        responses: {
-            /** @description Pricing policy and immutable draft version created. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PricingPolicyCreateEnvelope"];
-                };
-            };
-            /** @description Pricing propose permission denied */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation failed */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    adminPricingBrainCreatePolicyVersion: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["PricingPolicyId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreatePricingVersionRequest"];
-            };
-        };
-        responses: {
-            /** @description New draft version created under the existing policy. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PricingVersionEnvelope"];
-                };
-            };
-            /** @description Pricing propose permission denied */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Policy not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Policy frozen */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation failed */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    adminPricingBrainTransitionPolicy: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["PricingPolicyId"];
-                action: "submit" | "approve" | "schedule" | "activate" | "pause" | "stop" | "rollback";
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PricingTransitionRequest"];
-            };
-        };
-        responses: {
-            /** @description Idempotent policy version lifecycle transition result. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PricingTransitionEnvelope"];
-                };
-            };
-            /** @description Required pricing permission denied */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Policy, version, action or rollback target not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Frozen policy, stale version or invalid lifecycle transition */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation, self-approval, schedule or rollback guard failed */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    adminPricingBrainFreezePolicy: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["PricingPolicyId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PricingFreezeRequest"];
-            };
-        };
-        responses: {
-            /** @description Emergency freeze or explicit unfreeze action recorded. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PricingActionEnvelope"];
-                };
-            };
-            /** @description Pricing freeze permission denied */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Policy not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation failed */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    adminPricingBrainProposals: {
+    adminTrustScan: {
         parameters: {
             query?: never;
             header?: never;
@@ -27510,16 +27540,16 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Tenant-scoped pricing proposals ordered by recency. */
+            /** @description Scan counts by source */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PricingProposalListEnvelope"];
+                    "application/json": components["schemas"]["TrustEnvelope"];
                 };
             };
-            /** @description Pricing view permission denied */
+            /** @description Scan permission denied */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -27528,7 +27558,27 @@ export interface operations {
             };
         };
     };
-    adminPricingBrainCreateProposal: {
+    adminTrustPolicies: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Trust policy registry */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrustListEnvelope"];
+                };
+            };
+        };
+    };
+    adminTrustPolicyCreate: {
         parameters: {
             query?: never;
             header?: never;
@@ -27537,42 +27587,21 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreatePricingProposalRequest"];
+                "application/json": components["schemas"]["TrustPolicyInput"];
             };
         };
         responses: {
-            /** @description Proposal recorded without mutating canonical catalog pricing. */
+            /** @description New policy version */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PricingProposalEnvelope"];
+                    "application/json": components["schemas"]["TrustEnvelope"];
                 };
             };
-            /** @description Pricing propose permission denied */
+            /** @description Permission or fresh step-up required */
             403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Policy not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Policy frozen */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation failed */
-            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -27580,7 +27609,7 @@ export interface operations {
             };
         };
     };
-    adminPricingBrainSimulate: {
+    adminTrustPolicySimulate: {
         parameters: {
             query?: never;
             header?: never;
@@ -27589,30 +27618,177 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PricingSimulationRequest"];
+                "application/json": {
+                    [key: string]: unknown;
+                };
             };
         };
         responses: {
-            /** @description Deterministic pricing candidate simulation using Phase 18 guardrails, optional canonical promotion allocation, and Phase 12 cost evidence when available. */
+            /** @description Pure simulation result */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        data: components["schemas"]["PricingSimulationResponse"];
-                    };
+                    "application/json": components["schemas"]["TrustEnvelope"];
                 };
             };
-            /** @description Pricing simulate permission denied */
+        };
+    };
+    adminTrustModels: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Model registry */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrustListEnvelope"];
+                };
+            };
+        };
+    };
+    adminTrustModelRegister: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Registered model version */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrustEnvelope"];
+                };
+            };
+            /** @description Permission or fresh step-up required */
             403: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            /** @description Validation failed */
-            422: {
+        };
+    };
+    adminTrustModelRollout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["ModelPublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Model rollout updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrustEnvelope"];
+                };
+            };
+            /** @description Permission or fresh step-up required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTrustOutcomes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Measured outcome quality */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrustEnvelope"];
+                };
+            };
+        };
+    };
+    adminTrustAccess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Trust access matrix */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrustListEnvelope"];
+                };
+            };
+        };
+    };
+    adminTrustAccessPreset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Access preset applied */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrustEnvelope"];
+                };
+            };
+            /** @description Permission or fresh step-up required */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
