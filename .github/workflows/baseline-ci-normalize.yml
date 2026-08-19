@@ -1,0 +1,62 @@
+name: Baseline CI Normalize
+
+on:
+  push:
+    branches:
+      - agent/baseline-ci-repair-20260819
+    paths:
+      - .github/workflows/baseline-ci-normalize.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: baseline-ci-normalize
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "24.14.0"
+  PNPM_VERSION: "10.32.1"
+
+jobs:
+  normalize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout baseline repair branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/baseline-ci-repair-20260819
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - run: npm install --global pnpm@${PNPM_VERSION}
+      - run: pnpm install --frozen-lockfile
+
+      - name: Normalize source formatting
+        run: pnpm exec biome format --write .
+
+      - name: Regenerate all composed OpenAPI SDK types
+        run: pnpm --filter @calibra/sdk run codegen
+
+      - name: Normalize generated artifacts
+        run: pnpm exec biome format --write .
+
+      - name: Self-clean and publish normalized baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/baseline-ci-normalize.yml
+          git diff --check
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Baseline already normalized"
+            exit 0
+          fi
+          git config user.name "calibra-dev"
+          git config user.email "keshavarz20.com@gmail.com"
+          git commit -m "fix(ci): normalize shared baseline formatting and SDK"
+          git push origin HEAD:agent/baseline-ci-repair-20260819
