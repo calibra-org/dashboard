@@ -59,6 +59,24 @@ jobs:
           pnpm --filter @calibra/sdk run codegen:admin
       - name: Build API test specification
         run: pnpm --filter @calibra/api-docs run build:test-spec
+      - name: Validate merged OpenAPI 3.0 contract
+        run: |
+          VALIDATOR_DIR="$(find "$PWD/node_modules/.pnpm" -type d -path '*/node_modules/openapi-schema-validator' | head -1)"
+          test -n "$VALIDATOR_DIR" || { echo 'openapi-schema-validator not found'; exit 1; }
+          node - "$VALIDATOR_DIR" <<'NODE'
+          const fs = require('node:fs')
+          const validatorDir = process.argv[2]
+          const loaded = require(validatorDir)
+          const OpenAPISchemaValidator = loaded.default || loaded
+          const spec = JSON.parse(fs.readFileSync('docs/api/dist/_merged.test.json', 'utf8'))
+          const validator = new OpenAPISchemaValidator({ version: 3 })
+          const result = validator.validate(spec)
+          if (result.errors?.length) {
+            console.error(JSON.stringify(result.errors, null, 2))
+            process.exit(1)
+          }
+          console.log('Merged OpenAPI 3.0 schema validator: PASS')
+          NODE
       - name: Phase 21 contract tests
         working-directory: apps/api
         run: timeout 240s node ace test --files=tests/functional/agentic_gateway/phase21_agentic_gateway.spec.ts
