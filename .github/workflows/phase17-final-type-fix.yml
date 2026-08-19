@@ -1,0 +1,52 @@
+name: Phase 17 Final Type Fix
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.head_ref == 'agent/phase17-main-sync-v3' && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/phase17-main-sync-v3
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Apply exact assignment contract fix
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('apps/api/app/services/phase17_experimentation_service.ts')
+          text = path.read_text()
+          old = 'async assign(input: { experiment_key: string; subject_type: string; subject_key: string }): Promise<{ data: Record<string, unknown> }> {'
+          new = 'async assign(input: { experiment_key: string; subject_type: string; subject_key: string }): Promise<{ data: { assigned: boolean; reason?: string; assignment_id?: number; experiment_key?: string; variant_key?: string; variant_name?: string; payload?: Record<string, unknown>; sticky?: boolean } }> {'
+          count = text.count(old)
+          if count != 1:
+              raise SystemExit(f'expected exactly one assignment signature, found {count}')
+          path.write_text(text.replace(old, new, 1))
+          PY
+          git diff --check
+          pnpm --filter @calibra/api typecheck
+      - name: Commit validated fix and self-remove
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/api/app/services/phase17_experimentation_service.ts
+          git rm .github/workflows/phase17-final-type-fix.yml
+          git commit -m "fix(phase17): preserve typed assignment contract"
+          git push origin HEAD:agent/phase17-main-sync-v3
