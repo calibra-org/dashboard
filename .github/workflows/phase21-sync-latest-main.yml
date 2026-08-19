@@ -1,0 +1,137 @@
+name: Phase 21 Sync Latest Main
+
+on:
+  push:
+    branches:
+      - agent/phase21-agentic-commerce-gateway
+    paths:
+      - .github/workflows/phase21-sync-latest-main.yml
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      NODE_VERSION: 24.14.0
+      PNPM_VERSION: 10.32.1
+    steps:
+      - name: Checkout Phase 21 branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/phase21-agentic-commerce-gateway
+          fetch-depth: 0
+
+      - name: Merge latest main and preserve both Phase 15 and Phase 21 wiring
+        shell: bash
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+
+          set +e
+          git merge --no-commit origin/main
+          merge_status=$?
+          set -e
+
+          if [ "$merge_status" -ne 0 ]; then
+            conflicts="$(git diff --name-only --diff-filter=U)"
+            while IFS= read -r file; do
+              [ -z "$file" ] && continue
+              case "$file" in
+                apps/admin/src/lib/i18n/request.ts|apps/api/start/routes.ts|docs/api/package.json|docs/api/scripts/merge-admin-spec.js|packages/sdk/src/generated/admin.d.ts)
+                  git checkout --theirs -- "$file"
+                  git add -- "$file"
+                  ;;
+                *)
+                  echo "Unexpected merge conflict: $file"
+                  exit 1
+                  ;;
+              esac
+            done <<< "$conflicts"
+          fi
+
+          if [ -n "$(git diff --name-only --diff-filter=U)" ]; then
+            echo "Unresolved conflicts remain"
+            git diff --name-only --diff-filter=U
+            exit 1
+          fi
+
+          git add -A
+          git commit --no-edit
+
+          node <<'NODE'
+          const fs = require('node:fs');
+
+          const i18nPath = 'apps/admin/src/lib/i18n/request.ts';
+          let i18n = fs.readFileSync(i18nPath, 'utf8');
+          if (!i18n.includes('const agenticGateway =')) {
+            i18n = i18n.replace(
+              '    const trust = (await import(`../../../messages/trust/${locale}.json`)).default;\n',
+              '    const trust = (await import(`../../../messages/trust/${locale}.json`)).default;\n    const agenticGateway = (await import(`../../../messages/agentic_gateway/${locale}.json`)).default;\n',
+            );
+          }
+          if (!i18n.includes('            ...agenticGateway,')) {
+            i18n = i18n.replaceAll('            ...trust,\n', '            ...trust,\n            ...agenticGateway,\n');
+          }
+          fs.writeFileSync(i18nPath, i18n);
+
+          const routesPath = 'apps/api/start/routes.ts';
+          let routes = fs.readFileSync(routesPath, 'utf8');
+          if (!routes.includes('./routes/agentic_gateway.js')) {
+            routes = routes.replace(
+              'await import("./routes/storefront.js");\n',
+              'await import("./routes/storefront.js");\nawait import("./routes/agentic_gateway.js");\n',
+            );
+          }
+          if (!routes.includes('./routes/admin_agentic_gateway.js')) {
+            routes = routes.replace(
+              'await import("./routes/admin_trust_risk.js");\n',
+              'await import("./routes/admin_trust_risk.js");\nawait import("./routes/admin_agentic_gateway.js");\n',
+            );
+          }
+          fs.writeFileSync(routesPath, routes);
+
+          const packagePath = 'docs/api/package.json';
+          const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+          pkg.scripts['build:json:admin-agentic-commerce'] =
+            'redocly bundle reference/openapi/admin.agentic-commerce.v1.yaml -o dist/admin.agentic-commerce.v1.json --ext json';
+          if (!pkg.scripts['build:json:admin'].includes('build:json:admin-agentic-commerce')) {
+            pkg.scripts['build:json:admin'] = pkg.scripts['build:json:admin'].replace(
+              'pnpm build:json:admin-trust &&',
+              'pnpm build:json:admin-trust && pnpm build:json:admin-agentic-commerce &&',
+            );
+          }
+          fs.writeFileSync(packagePath, `${JSON.stringify(pkg, null, 4)}\n`);
+
+          const mergePath = 'docs/api/scripts/merge-admin-spec.js';
+          let merge = fs.readFileSync(mergePath, 'utf8');
+          if (!merge.includes('const agenticCommerce =')) {
+            merge = merge.replace(
+              'const trust = JSON.parse(readFileSync(resolve(root, "dist/admin.trust.v1.json"), "utf8"));\n',
+              'const trust = JSON.parse(readFileSync(resolve(root, "dist/admin.trust.v1.json"), "utf8"));\nconst agenticCommerce = JSON.parse(readFileSync(resolve(root, "dist/admin.agentic-commerce.v1.json"), "utf8"));\n',
+            );
+          }
+          if (!merge.includes('[agenticCommerce, "AgenticCommerceOverlay"]')) {
+            merge = merge.replace(
+              '    [trust, "TrustOverlay"],\n',
+              '    [trust, "TrustOverlay"],\n    [agenticCommerce, "AgenticCommerceOverlay"],\n',
+            );
+          }
+          fs.writeFileSync(mergePath, merge);
+          NODE
+
+          npm install --global pnpm@${PNPM_VERSION}
+          pnpm install --frozen-lockfile
+          pnpm exec biome check --write apps/admin/src/lib/i18n/request.ts apps/api/start/routes.ts docs/api/package.json docs/api/scripts/merge-admin-spec.js
+          pnpm --filter @calibra/sdk run codegen
+
+          rm -f .github/workflows/phase21-sync-latest-main.yml
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: finalize Phase 21 on latest main"
+          fi
+          git push origin HEAD:agent/phase21-agentic-commerce-gateway
