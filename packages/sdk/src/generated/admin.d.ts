@@ -8780,6 +8780,118 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/procurement/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminProcurementOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/procurement/suppliers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminProcurementSuppliers"];
+        put?: never;
+        post: operations["adminProcurementSupplierCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/procurement/purchase-orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminProcurementPurchaseOrders"];
+        put?: never;
+        post: operations["adminProcurementPurchaseOrderCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/procurement/purchase-orders/{id}/transition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminProcurementPurchaseOrderTransition"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/procurement/purchase-orders/{id}/receipts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminProcurementPurchaseOrderReceive"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/procurement/recommendations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminProcurementRecommendations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/procurement/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminProcurementHealth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/customer-intelligence/summary": {
         parameters: {
             query?: never;
@@ -8928,6 +9040,230 @@ export interface paths {
         get: operations["adminCustomerSegmentMembers"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminTrustOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/cases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminTrustCases"];
+        put?: never;
+        post: operations["adminTrustCaseCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/signals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminTrustSignals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminTrustModels"];
+        put?: never;
+        post: operations["adminTrustModelCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminTrustHealth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/evaluate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminTrustEvaluate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/models/{id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminTrustModelVersionCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/model-versions/{id}/promote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminTrustModelVersionPromote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/cases/{id}/assign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminTrustCaseAssign"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/cases/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminTrustCaseStatusUpdate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/cases/{id}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminTrustCaseNoteCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/controls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminTrustControlCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/controls/{id}/release": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminTrustControlRelease"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/trust/controls/block": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminTrustControlBlock"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12366,6 +12702,55 @@ export interface components {
             /** @enum {string} */
             decision: "approved" | "rejected";
         };
+        SupplierCreateInput: {
+            code: string;
+            legal_name: string;
+            display_name: string;
+            /** Format: email */
+            email?: string;
+            phone?: string;
+            currency?: string;
+            payment_terms?: string;
+            default_lead_time_days?: number;
+            /** @enum {string} */
+            criticality?: "low" | "normal" | "high" | "critical";
+        };
+        PurchaseOrderLineInput: {
+            product_id: number;
+            variation_id?: number;
+            sku?: string;
+            name: string;
+            quantity: number;
+            unit_cost: number;
+            expected_date?: string;
+        };
+        PurchaseOrderCreateInput: {
+            supplier_id: number;
+            currency?: string;
+            expected_date?: string;
+            payment_terms?: string;
+            planning_recommendation_id?: number;
+            lines: components["schemas"]["PurchaseOrderLineInput"][];
+        };
+        PurchaseOrderTransitionInput: {
+            /** @enum {string} */
+            status: "approval" | "sent" | "acknowledged" | "partially_shipped" | "closed" | "cancelled";
+            expected_version: number;
+        };
+        PurchaseOrderReceiptLineInput: {
+            purchase_order_line_id: number;
+            received_quantity: number;
+            accepted_quantity: number;
+            rejected_quantity?: number;
+            quarantine_quantity?: number;
+            quality_reason?: string;
+            lot_code?: string;
+            batch_code?: string;
+        };
+        PurchaseOrderReceiptInput: {
+            notes?: string;
+            lines: components["schemas"]["PurchaseOrderReceiptLineInput"][];
+        };
         CustomerIntelligenceProfile: {
             /** Format: int64 */
             customer_id: number;
@@ -12477,6 +12862,71 @@ export interface components {
             /** Format: date-time */
             evaluated_at: string;
         };
+        RiskSignalInput: {
+            code: string;
+            /** @enum {string} */
+            severity?: "low" | "medium" | "high" | "critical";
+            value?: number;
+            evidence?: {
+                [key: string]: unknown;
+            };
+            dedupe_key?: string;
+        };
+        RiskEvaluationInput: {
+            /** @enum {string} */
+            subject_type: "order" | "customer" | "session" | "payment" | "coupon" | "refund" | "account";
+            subject_id: string;
+            signals?: components["schemas"]["RiskSignalInput"][];
+            idempotency_key?: string;
+        };
+        RiskModelCreateInput: {
+            model_id: string;
+            purpose?: string;
+            owner?: string;
+            description?: string;
+        };
+        RiskModelVersionCreateInput: {
+            version: string;
+            /** @enum {string} */
+            deployment_state?: "draft" | "shadow" | "candidate";
+            thresholds?: {
+                [key: string]: unknown;
+            };
+            weights?: {
+                [key: string]: unknown;
+            };
+            validation_metrics?: {
+                [key: string]: unknown;
+            };
+            known_limitations?: string;
+            validated?: boolean;
+        };
+        FraudCaseCreateInput: {
+            subject_type: string;
+            subject_id: string;
+            /** @enum {string} */
+            priority?: "low" | "medium" | "high" | "critical";
+            summary?: string;
+        };
+        FraudCaseAssignInput: {
+            assignee_user_id?: number;
+        };
+        FraudCaseStatusInput: {
+            /** @enum {string} */
+            status: "open" | "investigating" | "waiting" | "resolved" | "closed";
+            resolution?: string;
+        };
+        FraudCaseNoteInput: {
+            note: string;
+        };
+        SubjectControlCreateInput: {
+            subject_type: string;
+            subject_id: string;
+            /** @enum {string} */
+            control: "block" | "challenge" | "review" | "allow_override";
+            reason: string;
+            expires_at?: string;
+        };
     };
     responses: {
         /** @description Unauthorized (401) — the request did not include a valid bearer token, or the token has been revoked. */
@@ -12534,6 +12984,28 @@ export interface components {
                 };
             };
         };
+        /** @description Procurement operation result */
+        ProcurementOk: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        /** @description Trust and risk operation result */
+        TrustOk: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
     };
     parameters: {
         /** @description 1-indexed page number. Defaults to 1. */
@@ -12566,6 +13038,9 @@ export interface components {
         IdempotencyKey: string;
         PlanningRunIdQuery: number;
         PlanningId: number;
+        ProcurementId: number;
+        Phase14ProcurementOverlayIdempotencyKey: string;
+        TrustId: number;
     };
     requestBodies: never;
     headers: never;
@@ -27151,6 +27626,182 @@ export interface operations {
             };
         };
     };
+    adminProcurementOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ProcurementOk"];
+        };
+    };
+    adminProcurementSuppliers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ProcurementOk"];
+        };
+    };
+    adminProcurementSupplierCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SupplierCreateInput"];
+            };
+        };
+        responses: {
+            201: components["responses"]["ProcurementOk"];
+            /** @description Invalid supplier payload */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminProcurementPurchaseOrders: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ProcurementOk"];
+        };
+    };
+    adminProcurementPurchaseOrderCreate: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: components["parameters"]["Phase14ProcurementOverlayIdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PurchaseOrderCreateInput"];
+            };
+        };
+        responses: {
+            200: components["responses"]["ProcurementOk"];
+            201: components["responses"]["ProcurementOk"];
+            /** @description Invalid purchase-order payload */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminProcurementPurchaseOrderTransition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ProcurementId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PurchaseOrderTransitionInput"];
+            };
+        };
+        responses: {
+            200: components["responses"]["ProcurementOk"];
+            /** @description Optimistic version conflict or invalid transition */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid transition payload */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminProcurementPurchaseOrderReceive: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: components["parameters"]["Phase14ProcurementOverlayIdempotencyKey"];
+            };
+            path: {
+                id: components["parameters"]["ProcurementId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PurchaseOrderReceiptInput"];
+            };
+        };
+        responses: {
+            200: components["responses"]["ProcurementOk"];
+            201: components["responses"]["ProcurementOk"];
+            /** @description Receipt conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid receipt payload */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminProcurementRecommendations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ProcurementOk"];
+        };
+    };
+    adminProcurementHealth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["ProcurementOk"];
+        };
+    };
     adminCustomerIntelligenceSummary: {
         parameters: {
             query?: never;
@@ -27547,6 +28198,333 @@ export interface operations {
             };
             /** @description Segment not found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTrustOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["TrustOk"];
+        };
+    };
+    adminTrustCases: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["TrustOk"];
+        };
+    };
+    adminTrustCaseCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FraudCaseCreateInput"];
+            };
+        };
+        responses: {
+            201: components["responses"]["TrustOk"];
+            /** @description Invalid case payload */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTrustSignals: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["TrustOk"];
+        };
+    };
+    adminTrustModels: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["TrustOk"];
+        };
+    };
+    adminTrustModelCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RiskModelCreateInput"];
+            };
+        };
+        responses: {
+            201: components["responses"]["TrustOk"];
+            /** @description Invalid risk-model payload */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTrustHealth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["TrustOk"];
+        };
+    };
+    adminTrustEvaluate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RiskEvaluationInput"];
+            };
+        };
+        responses: {
+            200: components["responses"]["TrustOk"];
+            201: components["responses"]["TrustOk"];
+            /** @description Invalid risk-evaluation payload */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTrustModelVersionCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["TrustId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RiskModelVersionCreateInput"];
+            };
+        };
+        responses: {
+            201: components["responses"]["TrustOk"];
+            /** @description Invalid model-version payload */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTrustModelVersionPromote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["TrustId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["TrustOk"];
+            /** @description Promotion conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid identifier or promotion state */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTrustCaseAssign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["TrustId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FraudCaseAssignInput"];
+            };
+        };
+        responses: {
+            200: components["responses"]["TrustOk"];
+            /** @description Invalid assignment payload */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTrustCaseStatusUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["TrustId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FraudCaseStatusInput"];
+            };
+        };
+        responses: {
+            200: components["responses"]["TrustOk"];
+            /** @description Invalid case-status payload */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTrustCaseNoteCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["TrustId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FraudCaseNoteInput"];
+            };
+        };
+        responses: {
+            200: components["responses"]["TrustOk"];
+            201: components["responses"]["TrustOk"];
+            /** @description Invalid case-note payload */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTrustControlCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubjectControlCreateInput"];
+            };
+        };
+        responses: {
+            201: components["responses"]["TrustOk"];
+            /** @description Invalid subject-control payload */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTrustControlRelease: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["TrustId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["TrustOk"];
+            /** @description Invalid identifier */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminTrustControlBlock: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubjectControlCreateInput"];
+            };
+        };
+        responses: {
+            200: components["responses"]["TrustOk"];
+            201: components["responses"]["TrustOk"];
+            /** @description Invalid block payload */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
