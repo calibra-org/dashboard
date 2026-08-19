@@ -56,6 +56,13 @@ jobs:
           tar -tf /tmp/phase20.tar | head -80
           tar -xf /tmp/phase20.tar
           install -Dm644 /tmp/PHASE20_EXECUTION_PROMPT_FA_FINAL.md docs/calibra/PHASE20_EXECUTION_PROMPT_FA.md
+          cat >> docs/calibra/PHASE20_EXECUTION_PROMPT_FA.md <<'EOF'
+
+          ## قرارداد شمارشی اجرای Phase 20
+          - قرارداد API این completion شامل **20 endpoint** است و باید با route/OpenAPI/SDK زنده هم‌راستا بماند.
+          - از این قرارداد **11 مسیر write** هستند و تمام writeها باید auth، permission، tenant/RLS، audit و limiter/step-up لازم را حفظ کنند.
+          - merge فقط پس از **CI سبز** روی همان candidate commit مجاز است؛ هیچ gate نباید bypass یا سبز فرض شود.
+          EOF
           rm -rf .phase20completion
       - run: pnpm install --frozen-lockfile
       - name: Admin OpenAPI and SDK
