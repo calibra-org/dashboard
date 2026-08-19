@@ -1,0 +1,68 @@
+openapi: 3.1.0
+info:
+  title: Calibra Admin Phase 14 Procurement API
+  version: 1.0.0
+paths:
+  /api/v1/admin/procurement/overview:
+    get:
+      tags: [Phase14Procurement]
+      operationId: phase14ProcurementOverview
+      responses:
+        "200": { description: Procurement command overview }
+  /api/v1/admin/procurement/suppliers:
+    get:
+      tags: [Phase14Procurement]
+      operationId: phase14ProcurementSuppliers
+      responses:
+        "200": { description: Supplier registry }
+    post:
+      tags: [Phase14Procurement]
+      operationId: phase14ProcurementSupplierCreate
+      responses:
+        "201": { description: Supplier created }
+        "422": { description: Supplier validation failed }
+  /api/v1/admin/procurement/purchase-orders:
+    get:
+      tags: [Phase14Procurement]
+      operationId: phase14ProcurementPurchaseOrders
+      responses:
+        "200": { description: Purchase order registry }
+    post:
+      tags: [Phase14Procurement]
+      operationId: phase14ProcurementPurchaseOrderCreate
+      responses:
+        "201": { description: Purchase order created }
+        "422": { description: Purchase order validation failed }
+  /api/v1/admin/procurement/purchase-orders/{id}/transition:
+    post:
+      tags: [Phase14Procurement]
+      operationId: phase14ProcurementPurchaseOrderTransition
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        "200": { description: Purchase order state transition applied }
+        "422": { description: Invalid purchase order transition }
+  /api/v1/admin/procurement/purchase-orders/{id}/receipts:
+    post:
+      tags: [Phase14Procurement]
+      operationId: phase14ProcurementPurchaseOrderReceipt
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        "200": { description: Purchase order receipt recorded }
+        "422": { description: Receipt validation failed }
+  /api/v1/admin/procurement/recommendations:
+    get:
+      tags: [Phase14Procurement]
+      operationId: phase14ProcurementRecommendations
+      responses:
+        "200": { description: Procurement recommendations }
+  /api/v1/admin/procurement/health:
+    get:
+      tags: [Phase14Procurement]
+      operationId: phase14ProcurementHealth
+      responses:
+        "200": { description: Procurement service health }
+tags:
+  - name: Phase14Procurement
+    description: Supplier intelligence, purchase orders, receipts, recommendations, and procurement health.
