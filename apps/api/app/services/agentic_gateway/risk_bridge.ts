@@ -1,5 +1,6 @@
 import { isMutationCapability } from "#services/agentic_gateway/contracts";
 import { phase20TrustRiskService } from "#services/phase20_trust_risk_service";
+import { currentTenantId, currentTrx } from "#services/tenant_context";
 
 export async function assertAgenticTrustAllowed(input: {
     principalPublicId: string;
@@ -7,6 +8,21 @@ export async function assertAgenticTrustAllowed(input: {
     idempotencyKey: string;
 }) {
     if (!isMutationCapability(input.capabilityKey)) return null;
+
+    const principal = await currentTrx()
+        .from("agentic_principals")
+        .where({
+            tenant_id: Number(currentTenantId()),
+            public_id: input.principalPublicId,
+            status: "active",
+        })
+        .first();
+    if (!principal) {
+        throw Object.assign(new Error("Active agent principal not found"), {
+            status: 404,
+            code: "E_AGENTIC_PRINCIPAL_NOT_FOUND",
+        });
+    }
 
     const result = await phase20TrustRiskService.evaluate({
         subject_type: "agent_principal",
