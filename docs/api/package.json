@@ -16,7 +16,7 @@
         "build:json:admin-runtime-sync": "redocly bundle reference/openapi/admin.runtime-sync.v1.yaml -o dist/admin.runtime-sync.v1.json --ext json",
         "build:json:admin-completion": "redocly bundle reference/openapi/admin.completion.v1.yaml -o dist/admin.completion.v1.json --ext json",
         "build:json:admin-merge": "node scripts/merge-admin-spec.js",
-        "build:json:admin": "pnpm build:json:admin-base && pnpm build:json:admin-tickets && pnpm build:json:admin-ticket-omnichannel && pnpm build:json:admin-phase5 && pnpm build:json:admin-phase6 && pnpm build:json:admin-runtime-sync && pnpm build:json:admin-identity && pnpm build:json:admin-phase9 && pnpm build:json:admin-phase10 && pnpm build:json:admin-phase11 && pnpm build:json:admin-phase12 && pnpm build:json:admin-phase13 && pnpm build:json:admin-phase14 && pnpm build:json:admin-phase17 && pnpm build:json:admin-phase18 && pnpm build:json:admin-trust && pnpm build:json:admin-completion && pnpm build:json:admin-merge",
+        "build:json:admin": "pnpm build:json:admin-base && pnpm build:json:admin-tickets && pnpm build:json:admin-ticket-omnichannel && pnpm build:json:admin-phase5 && pnpm build:json:admin-phase6 && pnpm build:json:admin-runtime-sync && pnpm build:json:admin-identity && pnpm build:json:admin-phase9 && pnpm build:json:admin-phase10 && pnpm build:json:admin-phase11 && pnpm build:json:admin-phase12 && pnpm build:json:admin-phase13 && pnpm build:json:admin-phase14 && pnpm build:json:admin-phase17 && pnpm build:json:admin-phase18 && pnpm build:json:admin-trust && pnpm build:json:admin-agentic-commerce && pnpm build:json:admin-completion && pnpm build:json:admin-merge",
         "build:json:platform": "redocly bundle reference/openapi/platform.v1.yaml -o dist/platform.v1.json --ext json",
         "build:json": "pnpm build:json:storefront && pnpm build:json:admin && pnpm build:json:platform",
         "build:test-spec": "pnpm build:json && node scripts/merge-for-tests.js",
@@ -40,10 +40,10 @@
         "build:json:admin-phase9": "redocly bundle reference/openapi/admin.phase9.v1.yaml -o dist/admin.phase9.v1.json --ext json",
         "build:json:admin-phase13": "redocly bundle reference/openapi/admin.phase13.v1.yaml -o dist/admin.phase13.v1.json --ext json",
         "build:json:admin-trust": "redocly bundle reference/openapi/admin.trust.v1.yaml -o dist/admin.trust.v1.json --ext json",
-        "build:json:storefront-phase17": "redocly bundle reference/openapi/storefront.phase17.v1.yaml -o dist/storefront.phase17.v1.json --ext json",
         "build:json:admin-phase14": "redocly bundle reference/openapi/admin.phase14.v1.yaml -o dist/admin.phase14.v1.json --ext json",
         "build:json:admin-phase17": "redocly bundle reference/openapi/admin.phase17.v1.yaml -o dist/admin.phase17.v1.json --ext json",
-        "build:json:admin-phase18": "redocly bundle reference/openapi/admin.phase18.v1.yaml -o dist/admin.phase18.v1.json --ext json"
+        "build:json:admin-phase18": "redocly bundle reference/openapi/admin.phase18.v1.yaml -o dist/admin.phase18.v1.json --ext json",
+        "build:json:admin-agentic-commerce": "redocly bundle reference/openapi/admin.agentic-commerce.v1.yaml -o dist/admin.agentic-commerce.v1.json --ext json"
     },
     "devDependencies": {
         "@redocly/cli": "^2.14.6",
