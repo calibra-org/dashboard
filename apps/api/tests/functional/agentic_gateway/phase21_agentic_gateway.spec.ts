@@ -1,4 +1,5 @@
 import { test } from "@japa/runner";
+
 import { isMutationCapability, weightedReadiness } from "../../../app/services/agentic_gateway/contracts.js";
 
 const dimension = (key: string, scoreBp: number, weightBp = 1250) => ({ key, scoreBp, weightBp, missing: [] as string[] });

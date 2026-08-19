@@ -1,7 +1,8 @@
 import { createHash, randomUUID } from "node:crypto";
 import encryption from "@adonisjs/core/services/encryption";
+
+import { type ChannelMode, isMutationCapability } from "#services/agentic_gateway/contracts";
 import { currentTenantId, currentTrx } from "#services/tenant_context";
-import { isMutationCapability, type ChannelMode } from "#services/agentic_gateway/contracts";
 
 const PURPOSE = "calibra.agentic.capability.v1";
 const ACTION_PURPOSE = "calibra.agentic.action.v1";
@@ -241,7 +242,7 @@ export async function runConformance(input: { channelPublicId: string; actorUser
         .whereIn("status", ["draft", "verified", "active"])
         .orderBy("capability_key");
     const checks = [
-        { key: "channel_not_killed", pass: !Boolean(channel.kill_switch) },
+        { key: "channel_not_killed", pass: !channel.kill_switch },
         { key: "capabilities_present", pass: capabilities.length > 0 },
         { key: "schemas_present", pass: capabilities.every((row) => row.input_schema && row.output_schema) },
         { key: "signed_metadata", pass: capabilities.every((row) => verifyCapabilitySignature(row, channel, tenantId)) },

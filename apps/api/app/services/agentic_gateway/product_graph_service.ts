@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
-import { currentTenantId, currentTrx } from "#services/tenant_context";
+
 import { type ProductReadinessDimension, weightedReadiness } from "#services/agentic_gateway/contracts";
+import { currentTenantId, currentTrx } from "#services/tenant_context";
 
 const EVALUATOR_VERSION = "agent-readiness-v1";
 
