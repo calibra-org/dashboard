@@ -1,0 +1,102 @@
+name: Phase 15 Verify
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/api/app/controllers/admin/customer_intelligence_controller.ts"
+      - "apps/api/app/controllers/admin/customer_segments_controller.ts"
+      - "apps/api/app/jobs/refresh_customer_intelligence_job.ts"
+      - "apps/api/app/services/customer_intelligence_*.ts"
+      - "apps/api/app/validators/admin/customer_intelligence_validator.ts"
+      - "apps/api/database/migrations/1768100000000_create_phase15_customer_intelligence.ts"
+      - "apps/api/start/routes/admin_customer_intelligence.ts"
+      - "apps/api/start/routes/admin_customer_segments.ts"
+      - "apps/api/tests/unit/customer_intelligence.spec.ts"
+      - "apps/admin/messages/customer-intelligence/**"
+      - "apps/admin/src/views/customers/**"
+      - "apps/admin/src/lib/queries/customer-intelligence.ts"
+      - "docs/api/reference/openapi/admin.customer-intelligence.v1.yaml"
+      - "docs/api/package.json"
+      - "docs/api/scripts/**"
+      - "packages/sdk/src/generated/admin.d.ts"
+      - ".github/workflows/phase15-verify.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/api/app/controllers/admin/customer_intelligence_controller.ts"
+      - "apps/api/app/controllers/admin/customer_segments_controller.ts"
+      - "apps/api/app/jobs/refresh_customer_intelligence_job.ts"
+      - "apps/api/app/services/customer_intelligence_*.ts"
+      - "apps/api/app/validators/admin/customer_intelligence_validator.ts"
+      - "apps/api/database/migrations/1768100000000_create_phase15_customer_intelligence.ts"
+      - "apps/api/start/routes/admin_customer_intelligence.ts"
+      - "apps/api/start/routes/admin_customer_segments.ts"
+      - "apps/api/tests/unit/customer_intelligence.spec.ts"
+      - "apps/admin/messages/customer-intelligence/**"
+      - "apps/admin/src/views/customers/**"
+      - "apps/admin/src/lib/queries/customer-intelligence.ts"
+      - "docs/api/reference/openapi/admin.customer-intelligence.v1.yaml"
+      - "docs/api/package.json"
+      - "docs/api/scripts/**"
+      - "packages/sdk/src/generated/admin.d.ts"
+      - ".github/workflows/phase15-verify.yml"
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "24.14.0"
+  PNPM_VERSION: "10.32.1"
+
+jobs:
+  phase15:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: calibra
+          POSTGRES_PASSWORD: calibra
+          POSTGRES_DB: calibra
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U calibra -d calibra"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - run: npm install --global pnpm@${PNPM_VERSION}
+      - run: pnpm install --frozen-lockfile
+      - name: Phase 15 focused lint
+        run: pnpm exec biome check apps/api/app/controllers/admin/customer_intelligence_controller.ts apps/api/app/controllers/admin/customer_segments_controller.ts apps/api/app/jobs/refresh_customer_intelligence_job.ts apps/api/app/services/customer_intelligence_eligibility_service.ts apps/api/app/services/customer_intelligence_segments_service.ts apps/api/app/services/customer_intelligence_service.ts apps/api/app/validators/admin/customer_intelligence_validator.ts apps/api/start/routes/admin_customer_intelligence.ts apps/api/start/routes/admin_customer_segments.ts apps/api/tests/unit/customer_intelligence.spec.ts apps/admin/src/lib/queries/customer-intelligence.ts apps/admin/src/views/customers
+      - name: API typecheck
+        run: pnpm --filter @calibra/api run typecheck
+      - name: Admin typecheck
+        run: pnpm exec turbo run typecheck --filter=@calibra/admin
+      - name: Create canonical test database
+        env:
+          PGPASSWORD: calibra
+        run: psql -h localhost -U calibra -d calibra -c "CREATE DATABASE calibra_test OWNER calibra;"
+      - name: Customer intelligence unit tests
+        working-directory: apps/api
+        run: pnpm test --files=tests/unit/customer_intelligence.spec.ts
+      - name: OpenAPI and SDK drift check
+        run: pnpm --filter @calibra/sdk run codegen:check
+      - name: Admin production build
+        run: pnpm exec turbo run build --filter=@calibra/admin
