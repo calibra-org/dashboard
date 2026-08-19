@@ -31,6 +31,6 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: node scripts/verify-phase17-experimentation-integration.mjs
       - run: pnpm --filter @calibra/api typecheck
-      - run: pnpm --filter @calibra/admin typecheck
+      - run: pnpm exec turbo run typecheck --filter=@calibra/admin
       - run: pnpm --filter @calibra/api test -- --files "tests/unit/experimentation/phase17_statistics.spec.ts"
       - run: pnpm --filter @calibra/api test -- --files "tests/functional/admin/phase17_experimentation.spec.ts"
