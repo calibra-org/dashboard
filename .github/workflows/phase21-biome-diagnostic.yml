@@ -11,18 +11,35 @@ on:
       - ".github/workflows/phase21-biome-diagnostic.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  biome-diagnostic:
+  sync-main:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout branch
+        uses: actions/checkout@v4
         with:
-          node-version: "24.14.0"
-      - run: npm install --global pnpm@10.32.1
-      - run: pnpm install --frozen-lockfile
-      - name: Print complete Biome diagnostics
-        run: pnpm exec biome lint --max-diagnostics=1000 .
+          ref: agent/phase21-agentic-commerce-gateway
+          fetch-depth: 0
+
+      - name: Merge latest main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          set +e
+          git merge -X theirs --no-edit origin/main
+          merge_status=$?
+          set -e
+          if [ "$merge_status" -ne 0 ]; then
+            conflicts="$(git diff --name-only --diff-filter=U)"
+            git merge --abort
+            printf '%s\n' "$conflicts" > .phase21-merge-conflicts.txt
+            git add .phase21-merge-conflicts.txt
+            git commit -m "chore(ci): record Phase 21 main sync conflicts"
+            git push origin HEAD:agent/phase21-agentic-commerce-gateway
+            exit 1
+          fi
+          git push origin HEAD:agent/phase21-agentic-commerce-gateway
