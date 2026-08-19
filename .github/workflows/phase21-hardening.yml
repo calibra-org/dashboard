@@ -5,6 +5,11 @@ on:
     branches: [agent/phase21-agentic-commerce-gateway]
     paths:
       - ".github/workflows/phase21-hardening.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/phase21-hardening.yml"
+      - ".phase21-hardening/**"
   workflow_dispatch:
 
 permissions:
@@ -80,12 +85,12 @@ jobs:
           gate = Path(".github/workflows/phase21-agentic-commerce-check.yml")
           s = gate.read_text()
           additions = [
-              '                - "apps/api/app/controllers/agentic_gateway_controller.ts"',
-              '                - "apps/api/start/routes/agentic_gateway.ts"',
-              '                - "apps/api/app/services/phase20_trust_risk_service.ts"',
-              '                - "apps/admin/src/components/Sidebar.tsx"',
+              '      - "apps/api/app/controllers/agentic_gateway_controller.ts"',
+              '      - "apps/api/start/routes/agentic_gateway.ts"',
+              '      - "apps/api/app/services/phase20_trust_risk_service.ts"',
+              '      - "apps/admin/src/components/Sidebar.tsx"',
           ]
-          anchor = '                - "apps/api/app/controllers/admin/agentic_gateway_controller.ts"'
+          anchor = '      - "apps/api/app/controllers/admin/agentic_gateway_controller.ts"'
           if anchor not in s:
               raise SystemExit("Phase 21 workflow path anchor not found")
           for line in reversed(additions):
@@ -115,6 +120,7 @@ jobs:
       - name: Diff hygiene
         run: git diff --check
       - name: Commit hardened Phase 21 source
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         shell: bash
         run: |
           set -euo pipefail
