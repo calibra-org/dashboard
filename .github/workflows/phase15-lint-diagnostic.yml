@@ -1,26 +1,22 @@
-name: Phase 15 Gate Diagnostics
+name: Phase 15 Admin SDK Sync
 
 on:
-    pull_request:
-        branches: [main]
-        paths:
-            - ".github/workflows/phase15-lint-diagnostic.yml"
     push:
         branches: [agent/phase15-customer-genome]
         paths:
             - ".github/workflows/phase15-lint-diagnostic.yml"
 
 permissions:
-    contents: read
+    contents: write
 
 env:
     NODE_VERSION: "24.14.0"
     PNPM_VERSION: "10.32.1"
 
 jobs:
-    diagnose:
+    sync:
         runs-on: ubuntu-latest
-        timeout-minutes: 20
+        timeout-minutes: 15
         steps:
             - uses: actions/checkout@v4
             - uses: pnpm/action-setup@v4
@@ -31,43 +27,21 @@ jobs:
                   node-version: ${{ env.NODE_VERSION }}
                   cache: pnpm
             - run: pnpm install --frozen-lockfile
-            - name: Capture SDK, Biome, and merged test OpenAPI diagnostics
+            - name: Generate Admin SDK from merged contract
+              run: |
+                  pnpm --filter @calibra/api-docs run build:json:admin
+                  pnpm --filter @calibra/sdk run codegen:admin
+            - name: Commit generated SDK and remove temporary sync workflow
               shell: bash
               run: |
-                  set +e
-                  mkdir -p diagnostics
-
-                  pnpm --filter @calibra/api-docs run build:json:admin > diagnostics/admin-openapi-build.txt 2>&1
-                  echo "admin_openapi_exit=$?" >> diagnostics/status.txt
-                  pnpm --filter @calibra/sdk run codegen:admin > diagnostics/admin-sdk-codegen.txt 2>&1
-                  echo "admin_sdk_codegen_exit=$?" >> diagnostics/status.txt
-                  git diff -- packages/sdk/src/generated/admin.d.ts > diagnostics/admin-sdk.diff
-                  cp packages/sdk/src/generated/admin.d.ts diagnostics/admin.d.ts
-
-                  pnpm exec biome check . --max-diagnostics=400 > diagnostics/biome.txt 2>&1
-                  echo "biome_exit=$?" >> diagnostics/status.txt
-
-                  pnpm --filter @calibra/api-docs run build:test-spec > diagnostics/phase13-openapi.txt 2>&1
-                  echo "test_spec_build_exit=$?" >> diagnostics/status.txt
-                  builder=$(find "$PWD/node_modules/.pnpm" -path '*/node_modules/api-schema-builder/src/index.js' -print -quit)
-                  echo "builder=$builder" >> diagnostics/status.txt
-                  cat > /tmp/validate-phase13-openapi.cjs <<'NODE'
-                  const builder = require(process.env.BUILDER);
-                  try {
-                    builder.buildSchemaSync('docs/api/dist/_merged.test.json');
-                    console.log('Merged OpenAPI test schema is compatible with api-schema-builder.');
-                  } catch (error) {
-                    console.error(error?.stack ?? error);
-                    if (error?.errors) console.error(JSON.stringify(error.errors, null, 2));
-                    process.exit(1);
-                  }
-                  NODE
-                  BUILDER="$builder" node /tmp/validate-phase13-openapi.cjs >> diagnostics/phase13-openapi.txt 2>&1
-                  echo "phase13_validator_exit=$?" >> diagnostics/status.txt
-                  exit 0
-            - name: Upload gate diagnostics
-              uses: actions/upload-artifact@v4
-              with:
-                  name: phase15-gate-diagnostics
-                  path: diagnostics
-                  if-no-files-found: error
+                  set -euo pipefail
+                  git config user.name "github-actions[bot]"
+                  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+                  rm .github/workflows/phase15-lint-diagnostic.yml
+                  git add packages/sdk/src/generated/admin.d.ts .github/workflows/phase15-lint-diagnostic.yml
+                  if git diff --cached --quiet; then
+                      echo "No generated SDK drift remains."
+                      exit 0
+                  fi
+                  git commit -m "chore(sdk): sync procurement and trust admin contract"
+                  git push origin "HEAD:${GITHUB_REF_NAME}"
