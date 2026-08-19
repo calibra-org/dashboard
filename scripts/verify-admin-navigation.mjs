@@ -28,11 +28,13 @@ function messages(locale) {
     const operationsPath = `apps/admin/messages/operations/${locale}.json`;
     const personalizationPath = `apps/admin/messages/personalization/${locale}.json`;
     const trustPath = `apps/admin/messages/trust/${locale}.json`;
+    const agenticGatewayPath = `apps/admin/messages/agentic_gateway/${locale}.json`;
     const transactions = exists(transactionsPath) ? JSON.parse(read(transactionsPath)) : {};
     const tickets = exists(ticketsPath) ? JSON.parse(read(ticketsPath)) : {};
     const operations = exists(operationsPath) ? JSON.parse(read(operationsPath)) : {};
     const personalization = exists(personalizationPath) ? JSON.parse(read(personalizationPath)) : {};
     const trust = exists(trustPath) ? JSON.parse(read(trustPath)) : {};
+    const agenticGateway = exists(agenticGatewayPath) ? JSON.parse(read(agenticGatewayPath)) : {};
     return {
         ...base,
         ...transactions,
@@ -40,6 +42,7 @@ function messages(locale) {
         ...operations,
         ...personalization,
         ...trust,
+        ...agenticGateway,
         Nav: {
             ...base.Nav,
             ...(transactions.Nav ?? {}),
@@ -47,6 +50,7 @@ function messages(locale) {
             ...(operations.Nav ?? {}),
             ...(personalization.Nav ?? {}),
             ...(trust.Nav ?? {}),
+            ...(agenticGateway.Nav ?? {}),
         },
     };
 }

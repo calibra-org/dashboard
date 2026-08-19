@@ -1,0 +1,111 @@
+openapi: 3.1.0
+info:
+  title: Calibra Agentic Commerce Gateway Phase 21
+  version: 1.0.0
+paths:
+  /.well-known/calibra-agentic-commerce:
+    get:
+      operationId: getAgenticCommerceProfile
+      summary: Discover verified Agentic Commerce channels and capability manifests
+      security: []
+      responses:
+        "200": { description: Machine-readable verified capability profile }
+  /api/v1/agentic/products/{productId}:
+    get:
+      operationId: getAgenticProductGraph
+      summary: Read the canonical machine-safe product graph through a governed agent principal
+      security: []
+      parameters:
+        - { in: path, name: productId, required: true, schema: { type: integer, minimum: 1 } }
+        - { in: query, name: channel_public_id, required: true, schema: { type: string, format: uuid } }
+        - { in: query, name: locale, required: false, schema: { type: string } }
+        - { in: header, name: X-Calibra-Agent-Principal, required: true, schema: { type: string, format: uuid } }
+        - { in: header, name: X-Idempotency-Key, required: true, schema: { type: string, minLength: 8 } }
+      responses:
+        "200": { description: Canonical product graph }
+        "401": { description: Invalid agent principal credential }
+        "403": { description: Capability policy denied }
+        "409": { description: Trust review or idempotency conflict }
+        "422": { description: Invalid request contract }
+  /api/v1/agentic/actions/authorize:
+    post:
+      operationId: authorizeAgenticAction
+      summary: "Authorize a governed Agentic Commerce action using verified capability scope, rate limits, idempotency and canonical Trust Risk"
+      security: []
+      responses:
+        "200": { description: Authorization ledger entry }
+        "401": { description: Invalid agent principal credential }
+        "403": { description: Trust or policy block }
+        "409": { description: Trust review or idempotency conflict }
+        "422": { description: Invalid request contract }
+  /api/v1/agentic/events:
+    post:
+      operationId: recordAgenticEvent
+      summary: Record idempotent redacted Agentic Commerce telemetry
+      security: []
+      responses:
+        "200": { description: Channel event ledger entry }
+        "401": { description: Invalid agent principal credential }
+        "409": { description: Event idempotency conflict }
+        "422": { description: Invalid event contract }
+  /api/v1/admin/agentic-commerce/overview:
+    get:
+      operationId: adminAgenticCommerceOverview
+      summary: Agentic commerce overview
+      responses: { "200": { description: OK } }
+  /api/v1/admin/agentic-commerce/channels:
+    get:
+      operationId: adminAgenticCommerceChannels
+      summary: List channels and principals
+      responses: { "200": { description: OK } }
+    post:
+      operationId: adminSaveAgenticCommerceChannel
+      summary: Create or update a governed channel
+      responses:
+        "200": { description: OK }
+        "422": { description: Conformance required for live mode }
+  /api/v1/admin/agentic-commerce/principals:
+    post:
+      operationId: adminSaveAgenticPrincipal
+      summary: Create or update an agent principal with scopes and bounded rate-limit policy
+      responses:
+        "200": { description: OK }
+        "422": { description: Invalid rate-limit policy }
+  /api/v1/admin/agentic-commerce/actions:
+    get:
+      operationId: adminAgenticCommerceActions
+      summary: List the safe Agentic Commerce action-ledger projection without raw authorization tokens
+      responses: { "200": { description: Action ledger } }
+  /api/v1/admin/agentic-commerce/actions/authorize:
+    post:
+      operationId: adminAuthorizeAgenticAction
+      summary: "Authorize a capability action with scope, mode, canonical Trust Risk, idempotency and principal rate-limit enforcement"
+      responses:
+        "200": { description: Authorization ledger entry }
+        "403": { description: Trust or policy block }
+        "409": { description: Trust review or idempotency conflict }
+  /api/v1/admin/agentic-commerce/capabilities:
+    post:
+      operationId: adminCreateAgenticCapability
+      summary: Create a versioned capability
+      responses: { "200": { description: OK } }
+  /api/v1/admin/agentic-commerce/conformance:
+    post:
+      operationId: adminRunAgenticConformance
+      summary: Run deterministic conformance gate
+      responses: { "200": { description: OK } }
+  /api/v1/admin/agentic-commerce/readiness:
+    get:
+      operationId: adminListAgenticReadiness
+      summary: List product readiness
+      responses: { "200": { description: OK } }
+  /api/v1/admin/agentic-commerce/readiness/refresh:
+    post:
+      operationId: adminRefreshAgenticReadiness
+      summary: Refresh product readiness snapshot
+      responses: { "200": { description: OK } }
+  /api/v1/admin/agentic-commerce/product-graph:
+    get:
+      operationId: adminGetAgenticProductGraph
+      summary: Read machine-safe product graph
+      responses: { "200": { description: OK } }

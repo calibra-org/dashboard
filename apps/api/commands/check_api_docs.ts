@@ -36,6 +36,9 @@ const HTTP_METHODS = new Set(["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"
 /** Paths the lint deliberately excludes (operational endpoints we never expose to API consumers). */
 const PATH_EXCLUSIONS = new Set(["/health"]);
 
+/** Documented public entrypoints that intentionally live outside the versioned `/api/v1/` tree. */
+const EXPLICIT_PUBLIC_PATHS = new Set(["/.well-known/calibra-agentic-commerce"]);
+
 /**
  * Acknowledged drift carried over from before the lint was wired up — listed in
  * `.check-api-docs-known-drift.json`. Entries here suppress the corresponding `Issue` so CI only
@@ -274,7 +277,7 @@ export default class CheckApiDocs extends BaseCommand {
         return resolve(this.app.makePath(), ".check-api-docs-known-drift.json");
     }
 
-    /** Returns every router entry under `/api/v1/`, normalised, with operational paths excluded. */
+    /** Returns every documented public router entry, normalised, with operational paths excluded. */
     private collectCodeRoutes(): CodeRoute[] {
         router.commit();
         const out: CodeRoute[] = [];
@@ -283,7 +286,7 @@ export default class CheckApiDocs extends BaseCommand {
             for (const route of routes) {
                 const path = normalisePath(route.pattern);
                 if (PATH_EXCLUSIONS.has(path)) continue;
-                if (!path.startsWith("/api/v1/")) continue;
+                if (!path.startsWith("/api/v1/") && !EXPLICIT_PUBLIC_PATHS.has(path)) continue;
                 for (const method of route.methods) {
                     const upper = method.toUpperCase();
                     if (!HTTP_METHODS.has(upper)) continue;
