@@ -1,0 +1,126 @@
+name: Phase 21 Hardening Materializer
+
+on:
+  push:
+    branches: [agent/phase21-agentic-commerce-gateway]
+    paths:
+      - ".github/workflows/phase21-hardening.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  harden:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: calibra
+          POSTGRES_PASSWORD: calibra
+          POSTGRES_DB: calibra_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U calibra -d calibra_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/phase21-agentic-commerce-gateway
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.14.0"
+      - name: Apply audited hardening overlay
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 -d .phase21-hardening/payload.b64 > /tmp/phase21-hardening.tgz
+          echo "2bcf92de70b2f913e3ced8b704b1cbe5fdb2c7c6c5d3c2f38e953f67510efcd0  /tmp/phase21-hardening.tgz" | sha256sum -c -
+          tar -xzf /tmp/phase21-hardening.tgz -C .
+      - name: Wire public gateway, navigation and permanent gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          routes = Path("apps/api/start/routes.ts")
+          s = routes.read_text()
+          public_import = 'await import("./routes/agentic_gateway.js");'
+          if public_import not in s:
+              anchor = 'await import("./routes/experiments.js");'
+              if anchor not in s:
+                  raise SystemExit("public route anchor not found")
+              s = s.replace(anchor, anchor + "\n" + public_import, 1)
+          routes.write_text(s)
+
+          sidebar = Path("apps/admin/src/components/Sidebar.tsx")
+          s = sidebar.read_text()
+          nav = '            { href: "/agentic-commerce/overview", label: "Agentic Commerce", icon: Bot },'
+          if nav not in s:
+              anchor = '            { href: "/experiments", label: "آزمایشگاه آزمایش‌ها", icon: Sparkles },'
+              if anchor not in s:
+                  raise SystemExit("sidebar analytics anchor not found")
+              s = s.replace(anchor, anchor + "\n" + nav, 1)
+          sidebar.write_text(s)
+
+          gate = Path(".github/workflows/phase21-agentic-commerce-check.yml")
+          s = gate.read_text()
+          additions = [
+              '                - "apps/api/app/controllers/agentic_gateway_controller.ts"',
+              '                - "apps/api/start/routes/agentic_gateway.ts"',
+              '                - "apps/api/app/services/phase20_trust_risk_service.ts"',
+              '                - "apps/admin/src/components/Sidebar.tsx"',
+          ]
+          anchor = '                - "apps/api/app/controllers/admin/agentic_gateway_controller.ts"'
+          if anchor not in s:
+              raise SystemExit("Phase 21 workflow path anchor not found")
+          for line in reversed(additions):
+              if line not in s:
+                  s = s.replace(anchor, anchor + "\n" + line, 1)
+          gate.write_text(s)
+          PY
+      - run: npm install --global pnpm@10.32.1
+      - run: pnpm install --frozen-lockfile
+      - name: Phase 21 hardened static contract
+        run: node scripts/verify-phase21-agentic-gateway.mjs
+      - name: OpenAPI and SDK synchronization
+        run: |
+          pnpm --dir docs/api run build:json:admin
+          pnpm --filter @calibra/sdk run codegen:admin
+      - name: Build API test specification once
+        run: pnpm --filter @calibra/api-docs run build:test-spec
+      - name: Phase 21 contract tests
+        working-directory: apps/api
+        run: timeout 180s node ace test --files=tests/functional/agentic_gateway/phase21_agentic_gateway.spec.ts
+      - name: API typecheck
+        run: pnpm --filter @calibra/api run typecheck
+      - name: Admin typecheck with workspace dependencies
+        run: pnpm exec turbo run typecheck --filter=@calibra/admin
+      - name: Admin production build
+        run: pnpm exec turbo run build --filter=@calibra/admin
+      - name: Diff hygiene
+        run: git diff --check
+      - name: Commit hardened Phase 21 source
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .phase21-hardening .github/workflows/phase21-hardening.yml
+          git config user.name "calibra-dev"
+          git config user.email "keshavarz20.com@gmail.com"
+          git add -A
+          git commit -m "feat(phase21): harden agentic commerce data plane"
+          git push origin HEAD:agent/phase21-agentic-commerce-gateway
