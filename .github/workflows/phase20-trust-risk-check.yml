@@ -62,6 +62,6 @@ jobs:
       - name: API typecheck
         run: pnpm --filter @calibra/api run typecheck
       - name: Admin typecheck
-        run: pnpm --filter @calibra/admin run typecheck
+        run: pnpm exec turbo run typecheck --filter=@calibra/admin
       - name: Admin production build
-        run: pnpm --filter @calibra/admin run build
+        run: pnpm exec turbo run build --filter=@calibra/admin
