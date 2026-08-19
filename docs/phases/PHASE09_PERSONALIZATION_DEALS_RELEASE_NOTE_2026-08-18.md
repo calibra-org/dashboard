@@ -1,6 +1,8 @@
 # Phase 9 — Personalization & Deals
 
-Release date: 2026-08-18
+Release date: 2026-08-18  
+Status: LANDED — merged via PR #36  
+Merge commit: `bbe7cdc10c6d19dde084c0a0567d8e69d44ad2c2`
 
 Phase 9 adds the tenant-safe personalization and deals foundation to Calibra while preserving the existing canonical pricing stack.
 
@@ -14,8 +16,12 @@ Phase 9 adds the tenant-safe personalization and deals foundation to Calibra whi
 - Successful-order reservation consumption inside order finalization.
 - Tenant RLS migrations, admin personalization/deals workspace, storefront Amazing Deals surface, OpenAPI overlays and regenerated SDK contracts.
 
-## Release gates
+## Release evidence
 
-Phase-specific finalization validates formatting/lint, TypeScript typechecking, fresh database migrations, SDK generation and the Phase 9 integration verifier. Standard repository Check and SEO workflows remain the merge gates for the final PR head.
+- The final Phase 9 PR head `7acf839b00bba415b05d874df1fa9f843b743512` completed repository `Check`, `SEO Engines`, and `Phase 13 Planning Integrity` successfully before merge.
+- The release candidate was reconciled with the then-current `main` before those final gates ran.
+- Generated SDK declarations were synchronized from the composed OpenAPI contracts before release.
 
-The release candidate is reconciled with the current main line before those final merge gates run. Generated SDK declarations are synchronized from the final merged OpenAPI contracts before release.
+## Current integration boundary
+
+Phase 9 is present on `main`. Downstream phases must not describe Phase 9 itself as an unlanded dependency. A downstream subsystem may still truthfully report that it does not directly consume Phase 9 data until that specific integration is implemented and verified.
