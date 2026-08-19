@@ -5,8 +5,12 @@ import { getRequestConfig } from "next-intl/server";
 import { routing } from "./routing";
 
 /**
- * Per-request locale + message-catalog loader. Feature catalogs stay independent so operational
- * workspaces can evolve without duplicating the base catalog.
+ * Per-request locale + message-catalog loader. Wired into Next.js via the `createNextIntlPlugin`
+ * call in `next.config.ts`.
+ *
+ * Feature catalogs may live in their own files so large operational surfaces can be maintained
+ * independently without duplicating the base catalog. Their namespaces are merged here before
+ * next-intl receives the request messages.
  */
 export default getRequestConfig(async ({ requestLocale }) => {
     const requested = await requestLocale;
@@ -17,7 +21,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
     const operations = (await import(`../../../messages/operations/${locale}.json`)).default;
     const personalization = (await import(`../../../messages/personalization/${locale}.json`)).default;
     const trust = (await import(`../../../messages/trust/${locale}.json`)).default;
-    const agenticGateway = (await import(`../../../messages/agentic_gateway/${locale}.json`)).default;
+    const customerIntelligence = (await import(`../../../messages/customer-intelligence/${locale}.json`)).default;
 
     return {
         locale,
@@ -28,14 +32,13 @@ export default getRequestConfig(async ({ requestLocale }) => {
             ...operations,
             ...personalization,
             ...trust,
-            ...agenticGateway,
+            ...customerIntelligence,
             Nav: {
                 ...base.Nav,
                 ...transactions.Nav,
                 ...tickets.Nav,
                 ...personalization.Nav,
                 ...trust.Nav,
-                ...agenticGateway.Nav,
             },
         },
     };

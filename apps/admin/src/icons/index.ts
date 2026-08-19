@@ -7,3 +7,4 @@
  * `dir="rtl"` still lives in each app's `styles/globals.css`.
  */
 export * from "@calibra/panel-kit/icons";
+export { BrainCircuit } from "lucide-react";

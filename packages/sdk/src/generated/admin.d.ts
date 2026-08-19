@@ -8892,6 +8892,160 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/customer-intelligence/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read the customer intelligence summary */
+        get: operations["adminCustomerIntelligenceSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/customer-intelligence/cohorts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List lifecycle cohorts */
+        get: operations["adminCustomerIntelligenceCohorts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/customer-intelligence/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Recompute all eligible customer intelligence profiles */
+        post: operations["adminCustomerIntelligenceRefreshAll"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/customer-intelligence/customers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read one customer intelligence profile */
+        get: operations["adminCustomerIntelligenceShow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/customer-intelligence/customers/{id}/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Recompute one customer intelligence profile */
+        post: operations["adminCustomerIntelligenceRefresh"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/customer-segments/{id}/intelligence-definition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read the dynamic intelligence definition for an owned customer segment */
+        get: operations["adminCustomerSegmentIntelligenceDefinition"];
+        /** Save a versioned dynamic segment definition */
+        put: operations["adminCustomerSegmentIntelligenceDefinitionUpdate"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/customer-segments/{id}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview dynamic segment membership without materializing it */
+        post: operations["adminCustomerSegmentPreview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/customer-segments/{id}/evaluate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Evaluate and materialize dynamic segment membership */
+        post: operations["adminCustomerSegmentEvaluate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/customer-segments/{id}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List materialized members of an owned dynamic segment */
+        get: operations["adminCustomerSegmentMembers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/experiments/overview": {
         parameters: {
             query?: never;
@@ -13110,6 +13264,117 @@ export interface components {
         PlanningOverrideReviewInput: {
             /** @enum {string} */
             decision: "approved" | "rejected";
+        };
+        CustomerIntelligenceProfile: {
+            /** Format: int64 */
+            customer_id: number;
+            /** @enum {string} */
+            lifecycle_state: "never_purchased" | "first_purchase" | "active_repeat" | "at_risk" | "lapsed" | "reactivated";
+            lifecycle_reason: string;
+            recency_days?: number | null;
+            frequency_365d: number;
+            /** Format: int64 */
+            monetary_365d_minor: number;
+            rfm_recency_score?: number | null;
+            rfm_frequency_score?: number | null;
+            rfm_monetary_score?: number | null;
+            rfm_score?: number | null;
+            /** @enum {string} */
+            value_band: "unknown" | "developing" | "core" | "high_value";
+            /** @enum {string} */
+            risk_band: "unknown" | "low" | "medium" | "high";
+            /** Format: int64 */
+            historical_revenue_ltv_minor: number | null;
+            /** Format: int64 */
+            historical_contribution_ltv_minor: number | null;
+            /** Format: date-time */
+            expected_next_purchase_from?: string | null;
+            /** Format: date-time */
+            expected_next_purchase_to?: string | null;
+            signals: {
+                [key: string]: unknown;
+            };
+            prediction_meta: {
+                [key: string]: unknown;
+            };
+            nba_candidates: {
+                [key: string]: unknown;
+            }[];
+            quality_status: string;
+            engine_version: string;
+            /** Format: date-time */
+            calculated_at: string;
+            /** Format: date-time */
+            stale_at?: string | null;
+        };
+        CustomerIntelligenceSummary: {
+            total: number;
+            active_repeat: number;
+            at_risk: number;
+            lapsed: number;
+            high_risk: number;
+            high_value: number;
+            /** Format: int64 */
+            historical_revenue_ltv_minor: number;
+            /** Format: int64 */
+            historical_contribution_ltv_minor: number;
+            contribution_customer_count: number;
+            contribution_coverage_ratio: number;
+            /** Format: date-time */
+            generated_at: string | null;
+            engine_version: string;
+            /** @enum {string} */
+            predictive_status: "not_calibrated";
+            /** @enum {string} */
+            contribution_status: "available" | "partial" | "unavailable";
+        };
+        LifecycleCohort: {
+            cohort: string;
+            lifecycle_state: string;
+            customers: number;
+            /** Format: int64 */
+            revenue_ltv_minor: number;
+            /** Format: int64 */
+            contribution_ltv_minor: number | null;
+        };
+        SegmentCondition: {
+            /** @enum {string} */
+            feature: "lifecycle.state" | "risk.band" | "value.band" | "rfm.score" | "rfm.recency_days" | "rfm.frequency_365d" | "rfm.monetary_365d_minor" | "economics.historical_revenue_ltv_minor" | "economics.historical_contribution_ltv_minor" | "consent.email" | "consent.sms";
+            /** @enum {string} */
+            operator: "eq" | "neq" | "gt" | "gte" | "lt" | "lte" | "in";
+            value: unknown;
+        };
+        SegmentDefinition: {
+            /** @constant */
+            version: 1;
+            /** @enum {string} */
+            op: "and" | "or";
+            conditions: components["schemas"]["SegmentCondition"][];
+        };
+        SegmentIntelligenceDefinition: {
+            /** Format: int64 */
+            segment_id: number;
+            /** @enum {string} */
+            kind: "saved_view" | "rule_based" | "rfm" | "cohort" | "lifecycle" | "predictive";
+            definition?: components["schemas"]["SegmentDefinition"] | null;
+            /** @enum {string} */
+            refresh_policy: "manual" | "event_driven";
+            definition_version: number;
+            status: string;
+            member_count?: number | null;
+            /** Format: date-time */
+            last_evaluated_at?: string | null;
+        };
+        SegmentMember: {
+            /** Format: int64 */
+            id: number;
+            first_name?: string | null;
+            last_name?: string | null;
+            phone?: string | null;
+            /** Format: date-time */
+            matched_at: string;
+            /** Format: date-time */
+            evaluated_at: string;
         };
         Phase17VariantCreate: {
             key: string;
@@ -28295,6 +28560,409 @@ export interface operations {
         responses: {
             /** @description Procurement data-plane readiness */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminCustomerIntelligenceSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Customer intelligence summary. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CustomerIntelligenceSummary"];
+                    };
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Admin access required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminCustomerIntelligenceCohorts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Cohort rows. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LifecycleCohort"][];
+                    };
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Admin access required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminCustomerIntelligenceRefreshAll: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recompute result. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            refreshed: number;
+                            purged: number;
+                        };
+                    };
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Admin access required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminCustomerIntelligenceShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Customer intelligence profile. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CustomerIntelligenceProfile"];
+                    };
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Admin access required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Customer not found or ineligible */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminCustomerIntelligenceRefresh: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Refreshed customer intelligence profile. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CustomerIntelligenceProfile"];
+                    };
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Admin access required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Customer not found or ineligible */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminCustomerSegmentIntelligenceDefinition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Segment intelligence definition or saved-view compatibility state. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SegmentIntelligenceDefinition"];
+                    };
+                };
+            };
+            /** @description Segment not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminCustomerSegmentIntelligenceDefinitionUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    kind: "rule_based" | "rfm" | "cohort" | "lifecycle" | "predictive";
+                    definition: components["schemas"]["SegmentDefinition"];
+                    /** @enum {string} */
+                    refresh_policy: "manual" | "event_driven";
+                };
+            };
+        };
+        responses: {
+            /** @description Saved definition. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SegmentIntelligenceDefinition"];
+                    };
+                };
+            };
+            /** @description Segment not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid or unsupported definition */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminCustomerSegmentPreview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Preview count and sample customer identifiers. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            count: number;
+                            sample_customer_ids: number[];
+                        };
+                    };
+                };
+            };
+            /** @description Segment not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Segment is still a legacy saved view */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminCustomerSegmentEvaluate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Evaluation result. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            member_count: number;
+                            /** Format: date-time */
+                            evaluated_at: string;
+                        };
+                    };
+                };
+            };
+            /** @description Segment not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Segment is still a legacy saved view */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminCustomerSegmentMembers: {
+        parameters: {
+            query?: {
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Paginated dynamic-segment members. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SegmentMember"][];
+                        meta: {
+                            page: number;
+                            limit: number;
+                            total: number;
+                            last_page: number;
+                        };
+                    };
+                };
+            };
+            /** @description Segment not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

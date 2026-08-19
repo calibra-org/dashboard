@@ -3,8 +3,16 @@ import type { HttpContext } from "@adonisjs/core/http";
 import { DateTime } from "luxon";
 
 import CustomerSegment from "#models/customer_segment";
+import {
+    evaluateSegment,
+    getSegmentDefinition,
+    listSegmentMembers,
+    previewSegment,
+    saveSegmentDefinition,
+} from "#services/customer_intelligence_segments_service";
 import { adminCustomerSegmentsView } from "#table_views/admin/customer_segments";
 import CustomerSegmentTransformer from "#transformers/customer_segment_transformer";
+import { customerSegmentDefinitionValidator } from "#validators/admin/customer_intelligence_validator";
 import { adminCustomerSegmentValidator } from "#validators/admin/customer_validator";
 
 const adminCustomerSegmentsListValidator = adminCustomerSegmentsView.compileStrict({ defaultLimit: 100 });
@@ -43,6 +51,46 @@ export default class AdminCustomerSegmentsController {
         segment.lastUsedAt = DateTime.utc();
         await segment.save();
         return { data: new CustomerSegmentTransformer(segment).toObject() };
+    }
+
+    async definition(ctx: HttpContext) {
+        const segment = await this.findOwnedOrFail(ctx);
+        const auth = await ctx.auth.authenticate();
+        return { data: await getSegmentDefinition(Number(segment.id), Number(auth.id)) };
+    }
+
+    async saveDefinition(ctx: HttpContext) {
+        const segment = await this.findOwnedOrFail(ctx);
+        const auth = await ctx.auth.authenticate();
+        const payload = await ctx.request.validateUsing(customerSegmentDefinitionValidator);
+        const data = await saveSegmentDefinition({
+            segmentId: Number(segment.id),
+            userId: Number(auth.id),
+            kind: payload.kind,
+            definition: payload.definition,
+            refreshPolicy: payload.refresh_policy,
+        });
+        return { data };
+    }
+
+    async preview(ctx: HttpContext) {
+        const segment = await this.findOwnedOrFail(ctx);
+        const auth = await ctx.auth.authenticate();
+        return { data: await previewSegment(Number(segment.id), Number(auth.id)) };
+    }
+
+    async evaluate(ctx: HttpContext) {
+        const segment = await this.findOwnedOrFail(ctx);
+        const auth = await ctx.auth.authenticate();
+        return { data: await evaluateSegment(Number(segment.id), Number(auth.id)) };
+    }
+
+    async members(ctx: HttpContext) {
+        const segment = await this.findOwnedOrFail(ctx);
+        const auth = await ctx.auth.authenticate();
+        const page = Math.max(1, Number(ctx.request.input("page", 1)) || 1);
+        const limit = Math.max(1, Math.min(100, Number(ctx.request.input("limit", 25)) || 25));
+        return await listSegmentMembers(Number(segment.id), Number(auth.id), page, limit);
     }
 
     async destroy(ctx: HttpContext) {
