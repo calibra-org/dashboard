@@ -78,12 +78,25 @@ jobs:
           tar -xf /tmp/phase20.tar
           cp .github/workflows/phase20-trust-risk-check.yml /tmp/phase20-merge/candidate-phase20-check.yml
           cp apps/admin/src/components/Sidebar.tsx /tmp/phase20-merge/candidate-sidebar.tsx
-          if ! git merge-file -p /tmp/phase20-merge/candidate-phase20-check.yml /tmp/phase20-merge/base-phase20-check.yml /tmp/phase20-merge/main-phase20-check.yml > /tmp/phase20-merge/merged-phase20-check.yml; then
-            echo 'Conflict while reconciling phase20-trust-risk-check.yml with live main'
-            cat /tmp/phase20-merge/merged-phase20-check.yml
-            exit 1
-          fi
-          mv /tmp/phase20-merge/merged-phase20-check.yml .github/workflows/phase20-trust-risk-check.yml
+
+          grep -Fq 'POSTGRES_DB: calibra_test' /tmp/phase20-merge/main-phase20-check.yml
+          grep -Fq -- '--health-cmd "pg_isready -U calibra -d calibra_test"' /tmp/phase20-merge/main-phase20-check.yml
+          grep -Fq 'run: pnpm exec turbo run typecheck --filter=@calibra/admin' /tmp/phase20-merge/main-phase20-check.yml
+          grep -Fq 'run: pnpm exec turbo run build --filter=@calibra/admin' /tmp/phase20-merge/main-phase20-check.yml
+          grep -Fq 'run: pnpm --filter @calibra/admin run build' /tmp/phase20-merge/candidate-phase20-check.yml
+          grep -Fq 'run: git diff --check' /tmp/phase20-merge/candidate-phase20-check.yml
+
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('.github/workflows/phase20-trust-risk-check.yml')
+          text = path.read_text()
+          old = '        run: pnpm --filter @calibra/admin run build\n'
+          new = '        run: pnpm exec turbo run build --filter=@calibra/admin\n'
+          if text.count(old) != 1:
+              raise SystemExit('unexpected Phase 20 Admin production build shape')
+          path.write_text(text.replace(old, new))
+          PY
+
           if ! git merge-file -p /tmp/phase20-merge/candidate-sidebar.tsx /tmp/phase20-merge/base-sidebar.tsx /tmp/phase20-merge/main-sidebar.tsx > /tmp/phase20-merge/merged-sidebar.tsx; then
             echo 'Conflict while reconciling Sidebar.tsx with live main'
             cat /tmp/phase20-merge/merged-sidebar.tsx
@@ -138,9 +151,9 @@ jobs:
       - name: API typecheck
         run: pnpm --filter @calibra/api run typecheck
       - name: Admin typecheck
-        run: pnpm --filter @calibra/admin run typecheck
+        run: pnpm exec turbo run typecheck --filter=@calibra/admin
       - name: Admin build
-        run: pnpm --filter @calibra/admin run build
+        run: pnpm exec turbo run build --filter=@calibra/admin
       - name: Working tree contract
         run: git diff --check
       - name: Commit verified Phase 20
