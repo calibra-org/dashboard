@@ -154,25 +154,8 @@ jobs:
             "policy list normalization",
           )
           replaceOnce(
-            `    async listProposals() {
-              return {
-                  data: await currentTrx()
-                      .from("pricing_proposals")
-                      .where("tenant_id", tenantId())
-                      .select("*")
-                      .orderBy("created_at", "desc")
-                      .limit(200),
-              };
-          }`,
-            `    async listProposals() {
-              const proposals = await currentTrx()
-                  .from("pricing_proposals")
-                  .where("tenant_id", tenantId())
-                  .select("*")
-                  .orderBy("created_at", "desc")
-                  .limit(200);
-              return { data: proposals.map((row) => normalizePricingRow(row)) };
-          }`,
+            '                .orderBy("created_at", "desc")\n                .limit(200),\n        };\n    }\n\n    async createPolicy',
+            '                .orderBy("created_at", "desc")\n                .limit(200)\n                .then((rows) => rows.map((row) => normalizePricingRow(row))),\n        };\n    }\n\n    async createPolicy',
             "proposal list normalization",
           )
           replaceOnce(
