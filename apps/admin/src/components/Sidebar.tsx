@@ -372,9 +372,7 @@ export function Sidebar({ userId }: { userId: number }) {
                     14: navT("seoSectionSystem"),
                 })}
                 <div className="flex flex-col gap-1">
-                    <div className="px-3 pb-1 font-medium text-[0.65rem] text-sidebar-foreground/50 uppercase tracking-wider">
-                        {navT("operations")}
-                    </div>
+                    <div className="px-3 pb-1 font-medium text-[0.65rem] text-sidebar-foreground/50 uppercase tracking-wider">{navT("operations")}</div>
                     {collapsible(
                         "ticket-sidebar-items",
                         ticketActive,
