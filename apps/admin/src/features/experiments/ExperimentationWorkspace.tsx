@@ -674,7 +674,7 @@ export function ExperimentationWorkspace() {
     return (
         <div className="space-y-6 pb-12" dir="rtl">
             <section className="relative overflow-hidden rounded-[2rem] border bg-gradient-to-bl from-card via-card to-primary/[0.07] p-6 shadow-sm lg:p-8">
-                <div className="pointer-events-none absolute -left-20 -top-24 size-72 rounded-full bg-primary/10 blur-3xl" />
+                <div className="pointer-events-none absolute -top-24 -left-20 size-72 rounded-full bg-primary/10 blur-3xl" />
                 <div className="relative flex flex-col justify-between gap-6 xl:flex-row xl:items-end">
                     <div className="max-w-3xl">
                         <div className="mb-3 flex items-center gap-2 text-primary text-sm">

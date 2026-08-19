@@ -97,6 +97,12 @@ export const cancelExport = Bouncer.ability((user: User, row: ProductExport) => 
 /** Generate a signed-URL download for a completed export. Owner only. */
 export const downloadExport = Bouncer.ability((user: User, row: ProductExport) => Number(row.userId) === Number(user.id));
 
+/** Read the Phase 18 Pricing & Promotion Brain. Kept semantic so role policy can evolve independently. */
+export const viewPricingBrain = Bouncer.ability((user: User) => isAdmin(user));
+
+/** Run a Phase 18 pricing simulation. Separate from viewing so future operators can be scoped safely. */
+export const simulatePricing = Bouncer.ability((user: User) => isAdmin(user));
+
 /**
  * Generic admin gate for endpoints with no per-row owner — duplicates `admin_middleware`'s
  * role check at the controller layer so policies can compose with it (e.g. an audit endpoint

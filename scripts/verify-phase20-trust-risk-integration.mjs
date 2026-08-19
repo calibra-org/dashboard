@@ -59,11 +59,12 @@ ok(
 );
 
 const routes = read("apps/api/start/routes/admin_trust_risk.ts");
-const routeLines = routes.split("\n").filter((line) => /router\.(get|post|patch|put|delete)\(/.test(line));
-const writeRouteLines = routeLines.filter((line) => /router\.(post|patch|put|delete)\(/.test(line));
-ok(routeLines.length === 20, `expected 20 Trust admin endpoints, found ${routeLines.length}`);
-ok(writeRouteLines.length === 11, `expected 11 Trust write endpoints, found ${writeRouteLines.length}`);
-for (const line of writeRouteLines) ok(line.includes("adminWriteLimiter"), `write route missing limiter: ${line.trim()}`);
+const routeMatches = [...routes.matchAll(/router\s*\.\s*(get|post|patch|put|delete)\s*\(/g)];
+const writeRouteChains = [...routes.matchAll(/router\s*\.\s*(post|patch|put|delete)\s*\([^;]+;/gs)].map((match) => match[0]);
+ok(routeMatches.length === 20, `expected 20 Trust admin endpoints, found ${routeMatches.length}`);
+ok(writeRouteChains.length === 11, `expected 11 Trust write endpoints, found ${writeRouteChains.length}`);
+for (const chain of writeRouteChains)
+    ok(chain.includes("adminWriteLimiter"), `write route missing limiter: ${chain.replace(/\s+/g, " ").trim()}`);
 ok(
     read("apps/api/start/routes.ts").includes('await import("./routes/admin_trust_risk.js")'),
     "Trust route registry import missing",
@@ -186,5 +187,5 @@ if (failures.length) {
     process.exit(1);
 }
 console.log(
-    `Phase 20 completion verifier: PASS (${legacyTables.length + additiveTables.length} tenant tables, ${routeLines.length} endpoints, ${writeRouteLines.length} writes, ${pages.length + 1} UI routes)`,
+    `Phase 20 completion verifier: PASS (${legacyTables.length + additiveTables.length} tenant tables, ${routeMatches.length} endpoints, ${writeRouteChains.length} writes, ${pages.length + 1} UI routes)`,
 );

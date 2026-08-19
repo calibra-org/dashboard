@@ -56,22 +56,22 @@ export function TrustRiskWorkspace({
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_12%,color-mix(in_oklab,var(--primary)_18%,transparent),transparent_24%),radial-gradient(circle_at_18%_85%,color-mix(in_oklab,var(--accent)_18%,transparent),transparent_25%)]" />
                     <div className="relative flex flex-wrap items-end justify-between gap-6">
                         <div className="max-w-4xl">
-                            <p className="text-xs font-semibold tracking-[.24em] text-primary">CALIBRA · PHASE 20</p>
-                            <h1 className="mt-2 text-3xl font-black md:text-5xl">Trust, Fraud & Risk Command Center</h1>
-                            <p className="mt-4 max-w-3xl text-sm leading-7 text-background/70">
+                            <p className="font-semibold text-primary text-xs tracking-[.24em]">CALIBRA · PHASE 20</p>
+                            <h1 className="mt-2 font-black text-3xl md:text-5xl">Trust, Fraud & Risk Command Center</h1>
+                            <p className="mt-4 max-w-3xl text-background/70 text-sm leading-7">
                                 تصمیم ریسک قابل‌توضیح، صف بررسی انسانی، کنترل سوءاستفاده و اقدام حساس با احراز هویت تکمیلی؛ بدون
                                 امتیاز یا وضعیت ساختگی.
                             </p>
                         </div>
                         <div className="grid min-w-[280px] grid-cols-2 gap-3">
                             <div className="rounded-2xl border border-background/20 bg-background/10 p-4">
-                                <div className="text-xs text-background/70">Policy</div>
+                                <div className="text-background/70 text-xs">Policy</div>
                                 <div className="mt-1 font-black">
                                     {champion?.version ? `Champion ${champion.version}` : "Rule v1"}
                                 </div>
                             </div>
                             <div className="rounded-2xl border border-background/20 bg-background/10 p-4">
-                                <div className="text-xs text-background/70">Evidence</div>
+                                <div className="text-background/70 text-xs">Evidence</div>
                                 <div className="mt-1 font-black">Redacted</div>
                             </div>
                         </div>
@@ -90,8 +90,8 @@ export function TrustRiskWorkspace({
                             key={String(label)}
                             className="rounded-[26px] border bg-background/90 p-5 shadow-sm backdrop-blur"
                         >
-                            <div className="text-xs text-muted-foreground">{label}</div>
-                            <div className="mt-2 text-3xl font-black tabular-nums">{fmt(Number(value))}</div>
+                            <div className="text-muted-foreground text-xs">{label}</div>
+                            <div className="mt-2 font-black text-3xl tabular-nums">{fmt(Number(value))}</div>
                         </article>
                     ))}
                 </div>
@@ -102,7 +102,7 @@ export function TrustRiskWorkspace({
                             key={key}
                             type="button"
                             onClick={() => setTab(key)}
-                            className={`whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-bold transition ${tab === key ? "bg-foreground text-background shadow-lg" : "hover:bg-muted"}`}
+                            className={`whitespace-nowrap rounded-xl px-4 py-2.5 font-bold text-sm transition ${tab === key ? "bg-foreground text-background shadow-lg" : "hover:bg-muted"}`}
                         >
                             {label}
                         </button>
@@ -114,8 +114,8 @@ export function TrustRiskWorkspace({
                         <section className="rounded-[30px] border bg-background/90 p-6 shadow-sm">
                             <div className="flex items-start justify-between gap-4">
                                 <div>
-                                    <h2 className="text-lg font-black">Risk Score Pulse</h2>
-                                    <p className="mt-1 text-xs text-muted-foreground">
+                                    <h2 className="font-black text-lg">Risk Score Pulse</h2>
+                                    <p className="mt-1 text-muted-foreground text-xs">
                                         آخرین ارزیابی‌های واقعی؛ بازه امتیاز ۰ تا ۱۰۰۰
                                     </p>
                                 </div>
@@ -145,15 +145,15 @@ export function TrustRiskWorkspace({
                                         </AreaChart>
                                     </ResponsiveContainer>
                                 ) : (
-                                    <div className="grid h-full place-items-center rounded-2xl border border-dashed text-sm text-muted-foreground">
+                                    <div className="grid h-full place-items-center rounded-2xl border border-dashed text-muted-foreground text-sm">
                                         هنوز ارزیابی ریسک ثبت نشده است.
                                     </div>
                                 )}
                             </div>
                         </section>
                         <section className="rounded-[30px] border bg-foreground p-6 text-background shadow-xl">
-                            <h2 className="text-lg font-black">Risk Distribution</h2>
-                            <p className="mt-1 text-xs text-background/50">توزیع ۳۰ روز اخیر بر اساس band</p>
+                            <h2 className="font-black text-lg">Risk Distribution</h2>
+                            <p className="mt-1 text-background/50 text-xs">توزیع ۳۰ روز اخیر بر اساس band</p>
                             <div className="mt-6 space-y-4">
                                 {["critical", "high", "medium", "low"].map((band) => {
                                     const value = Number(data.bands[band] ?? 0);
@@ -179,7 +179,7 @@ export function TrustRiskWorkspace({
                                     );
                                 })}
                             </div>
-                            <div className="mt-7 rounded-2xl border border-background/15 bg-background/5 p-4 text-xs leading-6 text-background/70">
+                            <div className="mt-7 rounded-2xl border border-background/15 bg-background/5 p-4 text-background/70 text-xs leading-6">
                                 امتیاز بدون reason code معتبر در این Workspace نمایش داده نمی‌شود. Evidence حساس پیش از ذخیره‌سازی
                                 redacted می‌شود.
                             </div>
@@ -191,7 +191,7 @@ export function TrustRiskWorkspace({
                     <section className="overflow-hidden rounded-[30px] border bg-background/90 shadow-sm">
                         <div className="border-b p-5">
                             <h2 className="font-black">Human Review Queue</h2>
-                            <p className="mt-1 text-xs text-muted-foreground">
+                            <p className="mt-1 text-muted-foreground text-xs">
                                 پرونده‌های واقعی تولیدشده از تصمیم‌های Review / Challenge / Block
                             </p>
                         </div>
@@ -222,7 +222,7 @@ export function TrustRiskWorkspace({
                                             </td>
                                             <td className="p-4">{row.status}</td>
                                             <td className="max-w-[460px] p-4 text-muted-foreground">{row.summary ?? "—"}</td>
-                                            <td className="p-4 text-xs text-muted-foreground">
+                                            <td className="p-4 text-muted-foreground text-xs">
                                                 {new Date(row.opened_at).toLocaleString("fa-IR")}
                                             </td>
                                         </tr>
@@ -246,13 +246,13 @@ export function TrustRiskWorkspace({
                             <article key={signal.id} className="rounded-[26px] border bg-background/90 p-5 shadow-sm">
                                 <div className="flex items-start justify-between gap-4">
                                     <div>
-                                        <div className="font-mono text-sm font-bold">{signal.code}</div>
-                                        <div className="mt-1 text-xs text-muted-foreground">
+                                        <div className="font-bold font-mono text-sm">{signal.code}</div>
+                                        <div className="mt-1 text-muted-foreground text-xs">
                                             {signal.subject_type}:{signal.subject_id}
                                         </div>
                                     </div>
                                     <span
-                                        className={`rounded-full px-2.5 py-1 text-xs font-bold ${bandTone[signal.severity] ?? "bg-muted"}`}
+                                        className={`rounded-full px-2.5 py-1 font-bold text-xs ${bandTone[signal.severity] ?? "bg-muted"}`}
                                     >
                                         {bandLabel[signal.severity] ?? signal.severity}
                                     </span>
@@ -283,13 +283,13 @@ export function TrustRiskWorkspace({
                             >
                                 <div className="flex flex-wrap items-start justify-between gap-4">
                                     <div>
-                                        <div className="text-lg font-black">{model.model_id}</div>
-                                        <div className="mt-1 text-xs text-muted-foreground">
+                                        <div className="font-black text-lg">{model.model_id}</div>
+                                        <div className="mt-1 text-muted-foreground text-xs">
                                             {model.purpose} · {model.owner ?? "owner not configured"}
                                         </div>
                                     </div>
                                     <span
-                                        className={`rounded-full px-3 py-1.5 text-xs font-bold ${model.deployment_state === "champion" ? "bg-primary/10 text-primary" : "bg-muted"}`}
+                                        className={`rounded-full px-3 py-1.5 font-bold text-xs ${model.deployment_state === "champion" ? "bg-primary/10 text-primary" : "bg-muted"}`}
                                     >
                                         {model.deployment_state ?? "no version"}
                                     </span>

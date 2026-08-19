@@ -41,14 +41,14 @@ class Phase14ProcurementService {
     async overview() {
         const trx = currentTrx();
         const [suppliers, purchaseOrders, incidents] = await Promise.all([
-            trx.from("suppliers").select("*").orderBy("updated_at", "desc"),
-            trx
+            currentTrx().from("suppliers").select("*").orderBy("updated_at", "desc"),
+            currentTrx()
                 .from("purchase_orders as po")
                 .leftJoin("suppliers as s", "s.id", "po.supplier_id")
                 .select("po.*", "s.display_name as supplier_name")
                 .orderBy("po.updated_at", "desc")
                 .limit(50),
-            trx.from("supplier_incidents").where("status", "open").count("id as total").first(),
+            currentTrx().from("supplier_incidents").where("status", "open").count("id as total").first(),
         ]);
         const scored = suppliers.map((supplier: any) => ({ ...supplier, score: supplierScore(supplier) }));
         const open = purchaseOrders.filter((po: any) => !["closed", "cancelled", "received"].includes(po.status));

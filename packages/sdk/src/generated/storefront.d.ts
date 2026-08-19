@@ -6394,15 +6394,8 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Deterministic experiment assignment */
+            /** @description Deterministic assignment result */
             200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Assignment contract validation failed */
-            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6419,15 +6412,8 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Exposure recorded */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Exposure contract validation failed */
-            422: {
+            /** @description Exposure accepted or deduplicated */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6444,15 +6430,8 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Experiment observation recorded */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Observation contract validation failed */
-            422: {
+            /** @description Observation accepted or deduplicated */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };

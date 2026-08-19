@@ -8,22 +8,19 @@ paths:
       tags: [Phase17Experimentation]
       operationId: phase17ExperimentAssign
       responses:
-        "200": { description: Deterministic experiment assignment }
-        "422": { description: Assignment contract validation failed }
+        "200": { description: Deterministic assignment result }
   /api/v1/experiments/exposures:
     post:
       tags: [Phase17Experimentation]
       operationId: phase17ExperimentExposure
       responses:
-        "201": { description: Exposure recorded }
-        "422": { description: Exposure contract validation failed }
+        "200": { description: Exposure accepted or deduplicated }
   /api/v1/experiments/observations:
     post:
       tags: [Phase17Experimentation]
       operationId: phase17ExperimentObservation
       responses:
-        "201": { description: Experiment observation recorded }
-        "422": { description: Observation contract validation failed }
+        "200": { description: Observation accepted or deduplicated }
 tags:
   - name: Phase17Experimentation
-    description: Public deterministic assignment, exposure, and outcome observation endpoints.
+    description: Deterministic assignment, exposure logging and outcome observation.

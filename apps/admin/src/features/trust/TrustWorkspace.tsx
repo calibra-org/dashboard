@@ -1,7 +1,7 @@
 "use client";
 
-import { type ReactNode, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
+import { type ReactNode, useMemo, useState } from "react";
 
 import { PageHeader } from "#/components/PageHeader";
 import { StatusBadge, type StatusTone } from "#/components/StatusBadge";
@@ -306,7 +306,7 @@ function MetricCard({ label, help, value, tone }: { label: string; help: string;
     return (
         <Card title={<InfoTitle title={label} help={help} />} className="min-h-28 border-border/80 bg-card/95 shadow-sm">
             <div className="flex items-center justify-between gap-3">
-                <strong className="font-semibold text-2xl tracking-tight tabular-nums">{value}</strong>
+                <strong className="font-semibold text-2xl tabular-nums tracking-tight">{value}</strong>
                 {tone ? <StatusBadge tone={tone}>{label}</StatusBadge> : null}
             </div>
         </Card>
@@ -525,7 +525,7 @@ function Overview() {
                                 >
                                     <span className="min-w-0">
                                         <span className="block truncate">{signalLabel(row.signal_type)}</span>
-                                        <span className="block truncate text-muted-foreground text-[11px]" dir="ltr">
+                                        <span className="block truncate text-[11px] text-muted-foreground" dir="ltr">
                                             {row.signal_type}
                                         </span>
                                     </span>
@@ -851,9 +851,9 @@ function CaseDetail({ publicId }: { publicId: string }) {
                                                 String((a.item as JsonRecord).created_at ?? ""),
                                             ),
                                         )
-                                        .map((entry, index) => (
+                                        .map((entry) => (
                                             <div
-                                                key={`${entry.kind}-${index}`}
+                                                key={`${entry.kind}-${String(entry.item.id ?? entry.item.public_id ?? entry.item.created_at ?? entry.item.action ?? entry.item.action_type ?? entry.item.reason_code ?? "event")}`}
                                                 className="grid gap-2 rounded-lg border border-border/80 p-3 sm:grid-cols-[7rem_1fr_auto] sm:items-center"
                                             >
                                                 <StatusBadge tone={entry.kind === "اقدام" ? "info" : "neutral"}>
@@ -1741,9 +1741,16 @@ function Models() {
                             />
                         </div>
                         <div className="space-y-2">
-                            {((outcomes.data?.rows as JsonRecord[] | undefined) ?? []).slice(0, 20).map((row, index) => (
+                            {((outcomes.data?.rows as JsonRecord[] | undefined) ?? []).slice(0, 20).map((row) => (
                                 <div
-                                    key={index}
+                                    key={String(
+                                        row.id ??
+                                            row.public_id ??
+                                            row.created_at ??
+                                            row.final_assessment ??
+                                            row.outcome ??
+                                            "outcome",
+                                    )}
                                     className="grid gap-2 rounded-lg border border-border/80 p-3 sm:grid-cols-[1fr_auto_auto] sm:items-center"
                                 >
                                     <div>

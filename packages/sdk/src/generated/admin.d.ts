@@ -8803,9 +8803,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["phase14ProcurementSuppliers"];
+        get: operations["phase14SupplierList"];
         put?: never;
-        post: operations["phase14ProcurementSupplierCreate"];
+        post: operations["phase14SupplierCreate"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8819,9 +8819,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["phase14ProcurementPurchaseOrders"];
+        get: operations["phase14PurchaseOrderList"];
         put?: never;
-        post: operations["phase14ProcurementPurchaseOrderCreate"];
+        post: operations["phase14PurchaseOrderCreate"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8837,7 +8837,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["phase14ProcurementPurchaseOrderTransition"];
+        post: operations["phase14PurchaseOrderTransition"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8853,7 +8853,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["phase14ProcurementPurchaseOrderReceipt"];
+        post: operations["phase14PurchaseOrderReceive"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9014,6 +9014,118 @@ export interface paths {
         get: operations["phase17CausalKnowledge"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pricing-brain/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminPricingBrainOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pricing-brain/policies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminPricingBrainPolicies"];
+        put?: never;
+        post: operations["adminPricingBrainCreatePolicy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pricing-brain/policies/{id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminPricingBrainCreatePolicyVersion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pricing-brain/policies/{id}/actions/{action}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminPricingBrainTransitionPolicy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pricing-brain/policies/{id}/freeze": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminPricingBrainFreezePolicy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pricing-brain/proposals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminPricingBrainProposals"];
+        put?: never;
+        post: operations["adminPricingBrainCreateProposal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pricing-brain/simulate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminPricingBrainSimulate"];
         delete?: never;
         options?: never;
         head?: never;
@@ -13033,6 +13145,265 @@ export interface components {
             approval_reference?: string | null;
             variants: components["schemas"]["Phase17VariantCreate"][];
         };
+        PricingBrainOverview: {
+            catalog: {
+                products: number;
+                priced_products: number;
+                sale_products: number;
+                pricing_coverage_percent: number;
+            };
+            promotions: {
+                coupons: number;
+                active_coupons: number;
+                /** @constant */
+                authority: "shared_discounter";
+            };
+            economics: {
+                covered_products: number;
+                coverage_percent: number;
+                latest_cost_evidence_at: string | null;
+                /** @enum {string} */
+                status: "available" | "unavailable";
+                /** @constant */
+                authority: "phase12_economics";
+            };
+            evidence: {
+                elasticity: components["schemas"]["PricingEvidenceState"];
+                experimentation: components["schemas"]["PricingEvidenceState"];
+            };
+            runtime: {
+                base_price_resolver: string;
+                promotion_engine: string;
+                economics_source: string;
+                simulation_engine: string;
+                autonomy_level: number;
+                activation_enabled: boolean;
+            };
+            policies: components["schemas"]["PricingPolicySummary"][];
+            proposals: components["schemas"]["PricingProposal"][];
+        };
+        PricingEvidenceState: {
+            /** @enum {string} */
+            status: "available" | "unavailable" | "insufficient_evidence" | "stale";
+            reason: string;
+        };
+        PricingPolicySummary: {
+            id: number;
+            policy_key: string;
+            name: string;
+            objective?: string | null;
+            /** @enum {string} */
+            status: "active" | "frozen";
+            frozen_at?: string | null;
+            freeze_reason?: string | null;
+            updated_at?: string;
+            latest_version: components["schemas"]["PricingPolicyVersion"] | null;
+        } & {
+            [key: string]: unknown;
+        };
+        PricingPolicyVersion: {
+            id: number;
+            policy_id: number;
+            version: number;
+            /** @enum {string} */
+            state: "draft" | "review" | "approved" | "scheduled" | "active" | "paused" | "stopped" | "rolled_back";
+            currency: string;
+            product_id?: number | null;
+            variation_id?: number | null;
+            guardrails?: {
+                [key: string]: unknown;
+            };
+            evidence?: {
+                [key: string]: unknown;
+            };
+            scheduled_at?: string | null;
+            activated_at?: string | null;
+            approved_by?: number | null;
+            proposed_by?: number | null;
+        } & {
+            [key: string]: unknown;
+        };
+        PricingProposal: {
+            id: number;
+            policy_id: number;
+            policy_version_id?: number | null;
+            product_id: number;
+            variation_id?: number | null;
+            reference_price_minor: number;
+            candidate_price_minor: number;
+            currency: string;
+            status: string;
+            objective?: string | null;
+            rationale?: string | null;
+            evidence?: {
+                [key: string]: unknown;
+            };
+        } & {
+            [key: string]: unknown;
+        };
+        PricingAction: {
+            id: number;
+            policy_id: number;
+            policy_version_id?: number | null;
+            action: string;
+            from_state?: string | null;
+            to_state?: string | null;
+            actor_user_id?: number | null;
+            reason?: string | null;
+            evidence?: {
+                [key: string]: unknown;
+            };
+            correlation_id?: string | null;
+            idempotency_key?: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        PricingPolicyListEnvelope: {
+            data: components["schemas"]["PricingPolicySummary"][];
+        };
+        PricingProposalListEnvelope: {
+            data: components["schemas"]["PricingProposal"][];
+        };
+        PricingPolicyCreateEnvelope: {
+            data: {
+                policy: {
+                    [key: string]: unknown;
+                };
+                version: components["schemas"]["PricingPolicyVersion"];
+            };
+        };
+        PricingVersionEnvelope: {
+            data: components["schemas"]["PricingPolicyVersion"];
+        };
+        PricingProposalEnvelope: {
+            data: components["schemas"]["PricingProposal"];
+        };
+        PricingTransitionEnvelope: {
+            data: ({
+                version: components["schemas"]["PricingPolicyVersion"];
+                action: components["schemas"]["PricingAction"];
+            } & {
+                [key: string]: unknown;
+            }) | components["schemas"]["PricingAction"];
+            replayed: boolean;
+        };
+        PricingActionEnvelope: {
+            data: components["schemas"]["PricingAction"];
+            replayed: boolean;
+        };
+        CreatePricingPolicyRequest: {
+            policy_key: string;
+            name: string;
+            objective?: string | null;
+            currency: string;
+            product_id?: number | null;
+            variation_id?: number | null;
+            scope?: {
+                [key: string]: unknown;
+            };
+            guardrails?: {
+                [key: string]: unknown;
+            };
+            evidence?: {
+                [key: string]: unknown;
+            };
+            reason?: string | null;
+        };
+        CreatePricingVersionRequest: {
+            currency?: string;
+            product_id?: number | null;
+            variation_id?: number | null;
+            scope?: {
+                [key: string]: unknown;
+            };
+            guardrails?: {
+                [key: string]: unknown;
+            };
+            evidence?: {
+                [key: string]: unknown;
+            };
+            reason?: string | null;
+        };
+        CreatePricingProposalRequest: {
+            policy_id: number;
+            policy_version_id?: number | null;
+            product_id: number;
+            variation_id?: number | null;
+            reference_price_minor: number;
+            candidate_price_minor: number;
+            currency: string;
+            objective?: string | null;
+            rationale?: string | null;
+            evidence?: {
+                [key: string]: unknown;
+            };
+        };
+        PricingTransitionRequest: {
+            expected_version: number;
+            reason: string;
+            evidence?: {
+                [key: string]: unknown;
+            };
+            correlation_id?: string | null;
+            idempotency_key?: string | null;
+            /** Format: date-time */
+            scheduled_at?: string | null;
+            rollback_to_version?: number | null;
+        };
+        PricingFreezeRequest: {
+            frozen: boolean;
+            reason: string;
+            idempotency_key?: string | null;
+        };
+        PricingSimulationRequest: {
+            reference_price: number;
+            candidate_price: number;
+            quantity?: number;
+            promotion_discount?: number;
+            product_id?: number;
+            variation_id?: number | null;
+            floor_price?: number | null;
+            cogs?: number | null;
+            minimum_margin_percent?: number | null;
+            maximum_discount_percent?: number | null;
+        };
+        PricingSimulationResponse: {
+            decision: components["schemas"]["PricingDecision"];
+            economics: components["schemas"]["PricingCogsEvidence"];
+        };
+        PricingDecision: {
+            accepted: boolean;
+            referencePrice: number;
+            candidatePrice: number;
+            effectivePrice: number;
+            quantity: number;
+            promotionDiscount: number;
+            candidateGrossRevenue: number;
+            candidateNetRevenue: number;
+            netRevenue: number;
+            grossRevenue: number;
+            estimatedGrossProfit: number | null;
+            discountPercent: number;
+            marginPercent: number | null;
+            /** @enum {string} */
+            economicsState: "available" | "not_required" | "unavailable";
+            violations: components["schemas"]["PricingGuardrailViolation"][];
+        };
+        PricingGuardrailViolation: {
+            /** @enum {string} */
+            code: "below_floor" | "below_margin" | "discount_too_deep" | "invalid_price" | "missing_economics";
+            message: string;
+            actual: number | null;
+            required: number;
+        };
+        PricingCogsEvidence: {
+            value: number | null;
+            /** @enum {string} */
+            source: "explicit" | "realized_snapshot" | "cost_layer" | "unavailable";
+            /** @enum {string} */
+            quality: "operator_input" | "realized" | "inventory_evidence" | "unavailable";
+            observedAt: string | null;
+        };
         TrustEnvelope: {
             data: {
                 [key: string]: unknown;
@@ -13163,6 +13534,7 @@ export interface components {
         IdempotencyKey: string;
         PlanningRunIdQuery: number;
         PlanningId: number;
+        PricingPolicyId: number;
         CasePublicId: string;
         ModelPublicId: string;
     };
@@ -27759,7 +28131,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Procurement command overview */
+            /** @description Procurement portfolio overview */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -27768,7 +28140,7 @@ export interface operations {
             };
         };
     };
-    phase14ProcurementSuppliers: {
+    phase14SupplierList: {
         parameters: {
             query?: never;
             header?: never;
@@ -27786,7 +28158,7 @@ export interface operations {
             };
         };
     };
-    phase14ProcurementSupplierCreate: {
+    phase14SupplierCreate: {
         parameters: {
             query?: never;
             header?: never;
@@ -27802,16 +28174,9 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Supplier validation failed */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
         };
     };
-    phase14ProcurementPurchaseOrders: {
+    phase14PurchaseOrderList: {
         parameters: {
             query?: never;
             header?: never;
@@ -27829,7 +28194,7 @@ export interface operations {
             };
         };
     };
-    phase14ProcurementPurchaseOrderCreate: {
+    phase14PurchaseOrderCreate: {
         parameters: {
             query?: never;
             header?: never;
@@ -27838,6 +28203,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Idempotent replay */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Purchase order created */
             201: {
                 headers: {
@@ -27845,16 +28217,9 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Purchase order validation failed */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
         };
     };
-    phase14ProcurementPurchaseOrderTransition: {
+    phase14PurchaseOrderTransition: {
         parameters: {
             query?: never;
             header?: never;
@@ -27865,15 +28230,8 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Purchase order state transition applied */
+            /** @description Purchase order state changed */
             200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Invalid purchase order transition */
-            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -27881,7 +28239,7 @@ export interface operations {
             };
         };
     };
-    phase14ProcurementPurchaseOrderReceipt: {
+    phase14PurchaseOrderReceive: {
         parameters: {
             query?: never;
             header?: never;
@@ -27892,15 +28250,15 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Purchase order receipt recorded */
+            /** @description Idempotent replay */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            /** @description Receipt validation failed */
-            422: {
+            /** @description Goods receipt recorded */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -27917,7 +28275,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Procurement recommendations */
+            /** @description Replenishment recommendations */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -27935,7 +28293,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Procurement service health */
+            /** @description Procurement data-plane readiness */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -28148,6 +28506,368 @@ export interface operations {
         responses: {
             /** @description Evidence-graded causal knowledge */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPricingBrainOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Phase 18 catalog, promotion, economics, evidence, policy and runtime status. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PricingBrainOverview"];
+                    };
+                };
+            };
+        };
+    };
+    adminPricingBrainPolicies: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tenant-scoped pricing policies with their latest version. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PricingPolicyListEnvelope"];
+                };
+            };
+            /** @description Pricing view permission denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPricingBrainCreatePolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePricingPolicyRequest"];
+            };
+        };
+        responses: {
+            /** @description Pricing policy and immutable draft version created. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PricingPolicyCreateEnvelope"];
+                };
+            };
+            /** @description Pricing propose permission denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPricingBrainCreatePolicyVersion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["PricingPolicyId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePricingVersionRequest"];
+            };
+        };
+        responses: {
+            /** @description New draft version created under the existing policy. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PricingVersionEnvelope"];
+                };
+            };
+            /** @description Pricing propose permission denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Policy not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Policy frozen */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPricingBrainTransitionPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["PricingPolicyId"];
+                action: "submit" | "approve" | "schedule" | "activate" | "pause" | "stop" | "rollback";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PricingTransitionRequest"];
+            };
+        };
+        responses: {
+            /** @description Idempotent policy version lifecycle transition result. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PricingTransitionEnvelope"];
+                };
+            };
+            /** @description Required pricing permission denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Policy, version, action or rollback target not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Frozen policy, stale version or invalid lifecycle transition */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation, self-approval, schedule or rollback guard failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPricingBrainFreezePolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["PricingPolicyId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PricingFreezeRequest"];
+            };
+        };
+        responses: {
+            /** @description Emergency freeze or explicit unfreeze action recorded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PricingActionEnvelope"];
+                };
+            };
+            /** @description Pricing freeze permission denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Policy not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPricingBrainProposals: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tenant-scoped pricing proposals ordered by recency. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PricingProposalListEnvelope"];
+                };
+            };
+            /** @description Pricing view permission denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPricingBrainCreateProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePricingProposalRequest"];
+            };
+        };
+        responses: {
+            /** @description Proposal recorded without mutating canonical catalog pricing. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PricingProposalEnvelope"];
+                };
+            };
+            /** @description Pricing propose permission denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Policy not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Policy frozen */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminPricingBrainSimulate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PricingSimulationRequest"];
+            };
+        };
+        responses: {
+            /** @description Deterministic pricing candidate simulation using Phase 18 guardrails, optional canonical promotion allocation, and Phase 12 cost evidence when available. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PricingSimulationResponse"];
+                    };
+                };
+            };
+            /** @description Pricing simulate permission denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation failed */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

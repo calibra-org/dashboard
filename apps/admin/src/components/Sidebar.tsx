@@ -98,7 +98,13 @@ const groups: NavGroup[] = [
             { href: "/planning", label: "Planning OS", icon: CalendarClock },
         ],
     },
-    { titleKey: "finance", items: [{ href: "/economics", labelKey: "economics", icon: Wallet }] },
+    {
+        titleKey: "finance",
+        items: [
+            { href: "/economics", labelKey: "economics", icon: Wallet },
+            { href: "/pricing-brain", label: "مغز قیمت‌گذاری", icon: Sparkles },
+        ],
+    },
     { titleKey: "customersSection", items: [{ href: "/customers", labelKey: "customers", icon: Users }] },
     {
         titleKey: "configuration",
@@ -241,9 +247,6 @@ export function Sidebar({ userId }: { userId: number }) {
     useEffect(() => {
         if (trustActive) setTrustOpen(true);
     }, [trustActive]);
-    useEffect(() => {
-        if (agenticActive) setAgenticOpen(true);
-    }, [agenticActive]);
     useEffect(() => {
         if (identityActive) setIdentityOpen(true);
     }, [identityActive]);
@@ -389,15 +392,6 @@ export function Sidebar({ userId }: { userId: number }) {
                         navT("trust"),
                         trustItems,
                         { 0: navT("trustSectionReview"), 2: navT("trustSectionControl"), 4: navT("trustSectionIntelligence") },
-                    )}
-                    {collapsible(
-                        "agentic-sidebar-items",
-                        agenticActive,
-                        agenticOpen,
-                        setAgenticOpen,
-                        Bot,
-                        navT("agenticCommerce"),
-                        agenticItems,
                     )}
                 </div>
                 {groups.slice(3).map((group) => (

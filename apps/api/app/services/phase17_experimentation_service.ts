@@ -2,7 +2,6 @@ import { randomBytes } from "node:crypto";
 import { DateTime } from "luxon";
 
 import { BusinessRuleException, ResourceNotFoundException } from "#exceptions/domain_exceptions";
-import { currentTenantId, currentTrx } from "#services/tenant_context";
 import {
     chiSquareStatistic,
     deterministicBucket,
@@ -11,6 +10,7 @@ import {
     type VariantAggregate,
     variantEffect,
 } from "#services/phase17_statistics";
+import { currentTenantId, currentTrx } from "#services/tenant_context";
 
 interface VariantInput {
     key: string;
