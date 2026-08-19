@@ -15,11 +15,17 @@ rewrite("apps/admin/src/components/Sidebar.tsx", (source) => {
     }
     const oldActive = '    const trustActive = pathname === "/quality-trust" || pathname.startsWith("/quality-trust/");';
     if (next.includes(oldActive)) {
-        next = next.replace(oldActive, '    const trustActive =\n        pathname === "/quality-trust" ||\n        pathname.startsWith("/quality-trust/") ||\n        pathname === "/quality" ||\n        pathname.startsWith("/quality/");');
+        next = next.replace(
+            oldActive,
+            '    const trustActive =\n        pathname === "/quality-trust" ||\n        pathname.startsWith("/quality-trust/") ||\n        pathname === "/quality" ||\n        pathname.startsWith("/quality/");',
+        );
     }
     const oldSections = '{ 0: navT("trustSectionReview"), 2: navT("trustSectionControl"), 4: navT("trustSectionIntelligence") }';
     if (next.includes(oldSections)) {
-        next = next.replace(oldSections, '{ 0: navT("trustSectionReview"), 2: navT("trustSectionControl"), 4: navT("trustSectionIntelligence"), 6: navT("trustSectionQuality") }');
+        next = next.replace(
+            oldSections,
+            '{ 0: navT("trustSectionReview"), 2: navT("trustSectionControl"), 4: navT("trustSectionIntelligence"), 6: navT("trustSectionQuality") }',
+        );
     }
     return next;
 });
@@ -64,11 +70,15 @@ rewrite("apps/admin/src/lib/queries/api-client.ts", (source) => {
 
 const packagePath = "docs/api/package.json";
 const packageJson = JSON.parse(readFileSync(packagePath, "utf8"));
-packageJson.scripts["build:json:admin-quality"] = "redocly bundle reference/openapi/admin.quality.v1.yaml -o dist/admin.quality.v1.json --ext json";
+packageJson.scripts["build:json:admin-quality"] =
+    "redocly bundle reference/openapi/admin.quality.v1.yaml -o dist/admin.quality.v1.json --ext json";
 if (!packageJson.scripts["build:json:admin"].includes("build:json:admin-quality")) {
     const anchor = " && pnpm build:json:admin-trust";
     if (!packageJson.scripts["build:json:admin"].includes(anchor)) throw new Error("Admin Trust OpenAPI build anchor missing");
-    packageJson.scripts["build:json:admin"] = packageJson.scripts["build:json:admin"].replace(anchor, `${anchor} && pnpm build:json:admin-quality`);
+    packageJson.scripts["build:json:admin"] = packageJson.scripts["build:json:admin"].replace(
+        anchor,
+        `${anchor} && pnpm build:json:admin-quality`,
+    );
 }
 writeFileSync(packagePath, `${JSON.stringify(packageJson, null, 4)}\n`, "utf8");
 
@@ -77,7 +87,10 @@ rewrite("docs/api/scripts/merge-admin-spec.js", (source) => {
     if (!next.includes("const quality = ")) {
         const anchor = 'const trust = JSON.parse(readFileSync(resolve(root, "dist/admin.trust.v1.json"), "utf8"));\n';
         if (!next.includes(anchor)) throw new Error("Trust OpenAPI merge anchor missing");
-        next = next.replace(anchor, `${anchor}const quality = JSON.parse(readFileSync(resolve(root, "dist/admin.quality.v1.json"), "utf8"));\n`);
+        next = next.replace(
+            anchor,
+            `${anchor}const quality = JSON.parse(readFileSync(resolve(root, "dist/admin.quality.v1.json"), "utf8"));\n`,
+        );
     }
     if (!next.includes('[quality, "QualityOverlay"]')) {
         const anchor = '    [trust, "TrustOverlay"],\n';

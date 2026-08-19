@@ -100,8 +100,19 @@ function randomOperationKey(): string {
 }
 
 function automaticKeySignature(method: MutationMethod, path: string, body: unknown): string | null {
-    if (method !== "POST" || !/^\/?orders\/\d+\/refunds\/?$/.test(path)) return null;
-    return `${method}:${path.replace(/^\/+|\/+$/g, "")}:${stableJson(body ?? null)}`;
+    if (method !== "POST") return null;
+    const cleaned = path.replace(/^\/+|\/+$/g, "");
+    const supported = [
+        /^orders\/\d+\/refunds$/,
+        /^quality\/cases$/,
+        /^order-returns\/\d+\/items\/\d+\/inspection$/,
+        /^quality\/cases\/\d+\/findings$/,
+        /^quality\/voc\/classifications$/,
+        /^quality\/actions$/,
+        /^quality\/outcomes$/,
+    ].some((pattern) => pattern.test(cleaned));
+    if (!supported) return null;
+    return `${method}:${cleaned}:${stableJson(body ?? null)}`;
 }
 
 function pruneAutomaticKeys(now: number): void {

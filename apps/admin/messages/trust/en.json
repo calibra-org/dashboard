@@ -10,7 +10,9 @@
         "trustModels": "Models & Outcomes",
         "trustSectionReview": "Review & decide",
         "trustSectionControl": "Control & policy",
-        "trustSectionIntelligence": "Data & quality"
+        "trustSectionIntelligence": "Data & quality",
+        "qualityVoc": "Product Quality & VOC",
+        "trustSectionQuality": "Quality & VOC"
     },
     "Trust": {
         "eyebrow": "Trust, fraud & abuse",

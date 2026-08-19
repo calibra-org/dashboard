@@ -22,6 +22,7 @@ const customerIntelligence = JSON.parse(readFileSync(resolve(root, "dist/admin.c
 const phase17 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase17.v1.json"), "utf8"));
 const phase18 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase18.v1.json"), "utf8"));
 const trust = JSON.parse(readFileSync(resolve(root, "dist/admin.trust.v1.json"), "utf8"));
+const quality = JSON.parse(readFileSync(resolve(root, "dist/admin.quality.v1.json"), "utf8"));
 const agenticCommerce = JSON.parse(readFileSync(resolve(root, "dist/admin.agentic-commerce.v1.json"), "utf8"));
 
 function mergeRecord(baseRecord = {}, overlayRecord = {}, label, allowIdentical = false) {
@@ -110,6 +111,7 @@ for (const [overlaySource, namespace] of [
     [phase17, "Phase17ExperimentationOverlay"],
     [phase18, "Phase18PricingOverlay"],
     [trust, "TrustOverlay"],
+    [quality, "QualityOverlay"],
     [agenticCommerce, "AgenticCommerceOverlay"],
 ]) {
     const overlay = namespaceConflictingComponents(overlaySource, namespace);
