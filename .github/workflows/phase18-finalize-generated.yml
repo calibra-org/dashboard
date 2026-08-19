@@ -72,6 +72,149 @@ jobs:
           NODE
           node /tmp/phase18-source-fix.cjs
 
+      - name: Normalize Phase 18 bigint response fields to the documented integer contract
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs")
+          const path = "apps/api/app/services/pricing_policy_service.ts"
+          let source = fs.readFileSync(path, "utf8")
+
+          function replaceOnce(oldValue, newValue, label) {
+            if (!source.includes(oldValue)) throw new Error(`Phase 18 response normalization could not find ${label}`)
+            source = source.replace(oldValue, newValue)
+          }
+
+          function replaceCount(oldValue, newValue, expected, label) {
+            const parts = source.split(oldValue)
+            const count = parts.length - 1
+            if (count !== expected) throw new Error(`Phase 18 response normalization expected ${expected} ${label}, found ${count}`)
+            source = parts.join(newValue)
+          }
+
+          replaceOnce(
+            'function jsonObject(value: unknown): JsonObject {\n    return value && typeof value === "object" && !Array.isArray(value) ? (value as JsonObject) : {};\n}\n\nfunction guardrailsFrom(value: unknown): PricingGuardrails {',
+            `function jsonObject(value: unknown): JsonObject {
+              return value && typeof value === "object" && !Array.isArray(value) ? (value as JsonObject) : {};
+          }
+
+          const PRICING_POSITIVE_INTEGER_FIELDS = new Set([
+              "id",
+              "tenant_id",
+              "policy_id",
+              "policy_version_id",
+              "product_id",
+              "variation_id",
+              "actor_user_id",
+              "created_by",
+              "frozen_by",
+              "proposed_by",
+              "reviewed_by",
+              "approved_by",
+              "scheduled_by",
+              "activated_by",
+              "rollback_of_version_id",
+              "version",
+          ]);
+          const PRICING_NON_NEGATIVE_INTEGER_FIELDS = new Set(["reference_price_minor", "candidate_price_minor"]);
+
+          function normalizePricingRow<T extends Record<string, unknown>>(row: T): T {
+              const normalized = { ...row } as Record<string, unknown>;
+              for (const key of PRICING_POSITIVE_INTEGER_FIELDS) {
+                  if (!(key in normalized) || normalized[key] === null || normalized[key] === undefined) continue;
+                  const value = Number(normalized[key]);
+                  if (!Number.isSafeInteger(value) || value < 1) {
+                      fail(\`\${key} is outside the supported API integer range\`, 500, "E_PRICING_IDENTIFIER_RANGE");
+                  }
+                  normalized[key] = value;
+              }
+              for (const key of PRICING_NON_NEGATIVE_INTEGER_FIELDS) {
+                  if (!(key in normalized) || normalized[key] === null || normalized[key] === undefined) continue;
+                  const value = Number(normalized[key]);
+                  if (!Number.isSafeInteger(value) || value < 0) {
+                      fail(\`\${key} is outside the supported API integer range\`, 500, "E_PRICING_INTEGER_RANGE");
+                  }
+                  normalized[key] = value;
+              }
+              return normalized as T;
+          }
+
+          function guardrailsFrom(value: unknown): PricingGuardrails {`,
+            "response integer normalizer",
+          )
+
+          replaceOnce(
+            "        for (const row of versions) if (!latest.has(Number(row.policy_id))) latest.set(Number(row.policy_id), row);",
+            "        for (const row of versions) if (!latest.has(Number(row.policy_id))) latest.set(Number(row.policy_id), normalizePricingRow(row));",
+            "latest version normalization",
+          )
+          replaceOnce(
+            "                ...policy,\n                latest_version: latest.get(Number(policy.id)) ?? null,",
+            "                ...normalizePricingRow(policy),\n                latest_version: latest.get(Number(policy.id)) ?? null,",
+            "policy list normalization",
+          )
+          replaceOnce(
+            `    async listProposals() {
+              return {
+                  data: await currentTrx()
+                      .from("pricing_proposals")
+                      .where("tenant_id", tenantId())
+                      .select("*")
+                      .orderBy("created_at", "desc")
+                      .limit(200),
+              };
+          }`,
+            `    async listProposals() {
+              const proposals = await currentTrx()
+                  .from("pricing_proposals")
+                  .where("tenant_id", tenantId())
+                  .select("*")
+                  .orderBy("created_at", "desc")
+                  .limit(200);
+              return { data: proposals.map((row) => normalizePricingRow(row)) };
+          }`,
+            "proposal list normalization",
+          )
+          replaceOnce(
+            "            return { data: { policy, version } };",
+            "            return { data: { policy: normalizePricingRow(policy), version: normalizePricingRow(version) } };",
+            "created policy normalization",
+          )
+          replaceOnce(
+            "            return { data: version };",
+            "            return { data: normalizePricingRow(version) };",
+            "created version normalization",
+          )
+          replaceOnce(
+            "            return { data: proposal };",
+            "            return { data: normalizePricingRow(proposal) };",
+            "created proposal normalization",
+          )
+          replaceCount(
+            "                if (replay) return { data: replay, replayed: true };",
+            "                if (replay) return { data: normalizePricingRow(replay), replayed: true };",
+            2,
+            "idempotent replay normalizers",
+          )
+          replaceOnce(
+            "            return { data: { version: updated, action: event }, replayed: false };",
+            "            return { data: { version: normalizePricingRow(updated), action: event }, replayed: false };",
+            "transition version normalization",
+          )
+          replaceOnce(
+            "        return { data: { version: restored, action: event }, replayed: false };",
+            "        return { data: { version: normalizePricingRow(restored), action: event }, replayed: false };",
+            "rollback version normalization",
+          )
+          replaceOnce(
+            "        return event;\n    }\n}",
+            "        return normalizePricingRow(event);\n    }\n}",
+            "action response normalization",
+          )
+
+          fs.writeFileSync(path, source)
+          NODE
+
       - name: Remove the one remaining unused governance parameter
         shell: bash
         run: |
@@ -187,6 +330,7 @@ jobs:
             apps/api/tests/functional/pricing/phase18_pricing_governance.spec.ts \
             docs/api/reference/openapi/admin.phase18.v1.yaml \
             packages/sdk/src/generated/admin.d.ts
+          git rm .github/workflows/phase18-diagnostics.yml .github/workflows/phase18-finalize-generated.yml
           git status --short
           if git diff --cached --quiet; then
             echo "No Phase 18 finalizer changes to commit"
