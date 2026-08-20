@@ -187,12 +187,17 @@ jobs:
         working-directory: apps/api
         run: node ace check:api-docs
 
-      - name: Typecheck and production build
-        run: |
-          pnpm --filter @calibra/api run typecheck
-          pnpm --filter @calibra/admin run typecheck
-          pnpm --filter @calibra/admin run build
-          pnpm --filter @calibra/sdk run codegen:check
+      - name: API typecheck
+        run: pnpm --filter @calibra/api run typecheck
+
+      - name: Admin typecheck
+        run: pnpm --filter @calibra/admin run typecheck
+
+      - name: Admin production build
+        run: pnpm --filter @calibra/admin run build
+
+      - name: SDK codegen drift
+        run: pnpm --filter @calibra/sdk run codegen:check
 
       - name: Phase 16 normalizer unit test
         working-directory: apps/api
