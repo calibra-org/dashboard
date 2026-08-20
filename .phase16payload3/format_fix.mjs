@@ -21,7 +21,7 @@ const phase16Targets = [
     "apps/api/start/routes/admin_discovery.ts",
     "apps/api/start/routes/discovery_storefront.ts",
     "apps/api/tests/unit/discovery",
-    "scripts/verify-phase16-discovery-integration.mjs"
+    "scripts/verify-phase16-discovery-integration.mjs",
 ];
 
 const run = (args) => {

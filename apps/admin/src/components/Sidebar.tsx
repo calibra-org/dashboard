@@ -173,6 +173,7 @@ const trustItems: NavItem[] = [
     { href: "/quality-trust/policies", labelKey: "trustPolicies", icon: SlidersHorizontal },
     { href: "/quality-trust/signals", labelKey: "trustSignals", icon: Bug },
     { href: "/quality-trust/models", labelKey: "trustModels", icon: ChartNoAxesCombined },
+    { href: "/quality/overview", labelKey: "qualityVoc", icon: Package },
 ];
 
 const agenticItems: NavItem[] = [
@@ -220,7 +221,11 @@ export function Sidebar({ userId }: { userId: number }) {
     const contentActive = pathname === "/content" || pathname.startsWith("/content/");
     const seoActive = pathname === "/seo" || pathname.startsWith("/seo/");
     const ticketActive = pathname === "/tickets" || pathname.startsWith("/tickets/");
-    const trustActive = pathname === "/quality-trust" || pathname.startsWith("/quality-trust/");
+    const trustActive =
+        pathname === "/quality-trust" ||
+        pathname.startsWith("/quality-trust/") ||
+        pathname === "/quality" ||
+        pathname.startsWith("/quality/");
     const agenticActive = pathname === "/agentic-commerce" || pathname.startsWith("/agentic-commerce/");
     const identityActive = pathname === "/identity" || pathname.startsWith("/identity/");
     const ticketUnread = useTicketRealtime(userId);
@@ -372,7 +377,9 @@ export function Sidebar({ userId }: { userId: number }) {
                     14: navT("seoSectionSystem"),
                 })}
                 <div className="flex flex-col gap-1">
-                    <div className="px-3 pb-1 font-medium text-[0.65rem] text-sidebar-foreground/50 uppercase tracking-wider">{navT("operations")}</div>
+                    <div className="px-3 pb-1 font-medium text-[0.65rem] text-sidebar-foreground/50 uppercase tracking-wider">
+                        {navT("operations")}
+                    </div>
                     {collapsible(
                         "ticket-sidebar-items",
                         ticketActive,
@@ -392,7 +399,12 @@ export function Sidebar({ userId }: { userId: number }) {
                         ShieldCheck,
                         navT("trust"),
                         trustItems,
-                        { 0: navT("trustSectionReview"), 2: navT("trustSectionControl"), 4: navT("trustSectionIntelligence") },
+                        {
+                            0: navT("trustSectionReview"),
+                            2: navT("trustSectionControl"),
+                            4: navT("trustSectionIntelligence"),
+                            6: navT("trustSectionQuality"),
+                        },
                     )}
                     {collapsible(
                         "agentic-sidebar-items",

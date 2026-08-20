@@ -181,6 +181,8 @@ jobs:
             apps/api/tests/unit/discovery \
             --write --max-diagnostics=1000
           pnpm --filter @calibra/sdk run codegen
+          pnpm --filter @calibra/sdk run gen:v3
+          git add packages/sdk/src/generated/
           pnpm --filter @calibra/sdk run build
 
       - name: Verify OpenAPI route parity
