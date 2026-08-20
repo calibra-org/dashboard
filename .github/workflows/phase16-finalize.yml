@@ -69,14 +69,21 @@ jobs:
           p.write_text(s)
           PY
 
-      - name: Reset to exact current main and materialize Phase 16 only
-        shell: bash
+      - name: Reset to exact current main
         run: |
           set -euo pipefail
           git fetch origin main
           git reset --hard origin/main
-          python3 /tmp/p16h/apply_phase16.py
-          python3 /tmp/harden2.py
+
+      - name: Apply canonical Phase 16
+        run: python3 /tmp/p16h/apply_phase16.py
+
+      - name: Apply Phase 16 hardening
+        run: python3 /tmp/harden2.py
+
+      - name: Verify materialized Phase 16 files
+        run: |
+          set -euxo pipefail
           test -f apps/api/app/services/discovery_query_service.ts
           test -f apps/api/app/services/discovery_segment_service.ts
           test -f apps/api/app/validators/admin/discovery_validator.ts
@@ -84,6 +91,10 @@ jobs:
           test -f apps/api/start/routes/admin_discovery.ts
           test -f apps/api/database/migrations/1768200000000_create_phase16_discovery_os.ts
           test -f scripts/verify-phase16-discovery.mjs
+
+      - name: Verify materialized Phase 16 wiring
+        run: |
+          set -euxo pipefail
           grep -q 'admin_discovery.js' apps/api/start/routes.ts
           grep -q '"discovery": "Discovery"' apps/admin/messages/en.json
           grep -q '"discovery": "کشف"' apps/admin/messages/fa.json
@@ -172,7 +183,7 @@ jobs:
         run: |
           set -euo pipefail
           rm -rf .phase16payload .phase16payload2 .phase16payload3
-          rm -f .github/workflows/phase16-finalize.yml
+          rm -f .github/workflows/phase16-finalize.yml .github/workflows/phase16-materialize-diag.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
