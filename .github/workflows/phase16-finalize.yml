@@ -194,14 +194,21 @@ jobs:
           pnpm --filter @calibra/admin run build
           pnpm --filter @calibra/sdk run codegen:check
 
-      - name: Run focused Phase 16 and RLS tests
+      - name: Phase 16 normalizer unit test
         working-directory: apps/api
-        run: >-
-          pnpm test
-          --files=tests/unit/discovery/normalizer.spec.ts
-          --files=tests/unit/discovery/merchandising_engine.spec.ts
-          --files=tests/functional/storefront/discovery_events.spec.ts
-          --files=tests/functional/foundation/rls_isolation.spec.ts
+        run: pnpm test --files=tests/unit/discovery/normalizer.spec.ts
+
+      - name: Phase 16 merchandising engine unit test
+        working-directory: apps/api
+        run: pnpm test --files=tests/unit/discovery/merchandising_engine.spec.ts
+
+      - name: Phase 16 storefront discovery events test
+        working-directory: apps/api
+        run: pnpm test --files=tests/functional/storefront/discovery_events.spec.ts
+
+      - name: RLS isolation regression test
+        working-directory: apps/api
+        run: pnpm test --files=tests/functional/foundation/rls_isolation.spec.ts
 
       - name: Quality gates
         run: |
