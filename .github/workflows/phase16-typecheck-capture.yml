@@ -1,0 +1,156 @@
+name: Phase 16 Typecheck Capture
+
+on:
+  push:
+    branches: [agent/phase16-discovery-os-final-20260818]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: phase16-typecheck-capture
+  cancel-in-progress: true
+
+jobs:
+  capture:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      NODE_ENV: test
+      PORT: 3333
+      HOST: 127.0.0.1
+      APP_NAME: calibra-api-test
+      APP_KEY: phase16-test-app-key-0123456789abcdef
+      LOG_LEVEL: silent
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_USER: calibra
+      DB_PASSWORD: calibra
+      DB_DATABASE: calibra_test
+      DB_ADMIN_USER: calibra
+      DB_ADMIN_PASSWORD: calibra
+      MAIL_FROM_ADDRESS: ops@calibra.local
+      MAIL_FROM_NAME: Calibra
+      MAIL_NOTIFICATIONS_ENABLED: "false"
+      SMTP_HOST: localhost
+      SMTP_PORT: 11025
+      QUEUE_DRIVER: sync
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+      TRANSMIT_TRANSPORT: none
+      LIMITER_STORE: memory
+      CACHE_DRIVER: memory
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: calibra
+          POSTGRES_PASSWORD: calibra
+          POSTGRES_DB: calibra_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U calibra -d calibra_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/phase16-discovery-os-final-20260818
+          fetch-depth: 0
+      - name: Materialize exact Phase 16 on current main
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .phase16payload3/part_* > /tmp/p16h.b64
+          base64 -d /tmp/p16h.b64 | xz -d > /tmp/phase16.tar
+          tar -xf /tmp/phase16.tar -C /tmp
+          cp .phase16payload3/harden2.py /tmp/harden2.py
+          cp .phase16payload3/route_names.py /tmp/route_names.py
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p = Path('/tmp/p16h/apply_phase16.py')
+          s = p.read_text()
+          pattern = r'''    marker=''' + "'''" + r'''[ \t]*\{collapsible\(\n[ \t]*"ticket-sidebar-items",''' + "'''"
+          replacement = '''    marker=''' + "'''" + '''                    {collapsible(\n                        "ticket-sidebar-items",''' + "'''"
+          s, count = re.subn(pattern, replacement, s, count=1)
+          if count != 1:
+              raise SystemExit('Phase 16 materializer ticket marker definition missing')
+          p.write_text(s)
+          PY
+          git fetch origin main
+          git reset --hard origin/main
+          python3 /tmp/p16h/apply_phase16.py
+          python3 /tmp/harden2.py
+          python3 /tmp/route_names.py
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Prepare generated schema/contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd apps/api
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('database/schema.ts')
+          s=p.read_text()
+          marker='// PHASE16_TEMP_SCHEMA_BOOTSTRAP'
+          names=['DiscoveryIndexOperationSchema','DiscoveryMerchandisingRuleSchema','DiscoveryOpportunitySchema','DiscoveryOpportunityEvidenceSchema','DiscoveryProductRelationshipSchema','DiscoverySearchEventSchema','DiscoverySearchPolicySchema','DiscoverySearchPolicyVersionSchema','DiscoverySynonymRuleSchema']
+          if marker not in s:
+              p.write_text(s+'\n'+marker+'\n'+'\n'.join(f'export class {n} extends BaseModel {{}}' for n in names)+'\n')
+          PY
+          node ace migration:run --connection=postgres_admin --force
+          cd ../..
+          pnpm run format:fix
+          pnpm exec biome check "apps/admin/src/app/[locale]/(authenticated)/discovery" apps/admin/src/features/discovery apps/api/app/controllers/admin/discovery_controller.ts apps/api/app/controllers/storefront/discovery_controller.ts apps/api/app/jobs/discovery_index_projection_job.ts apps/api/app/services/cache_invalidation.ts apps/api/app/services/discovery apps/api/app/validators/admin/discovery_validator.ts apps/api/start/routes/admin_discovery.ts apps/api/start/routes/discovery_storefront.ts apps/api/tests/unit/discovery --write --max-diagnostics=1000
+          pnpm --filter @calibra/sdk run codegen
+          pnpm --filter @calibra/sdk run build
+      - name: Capture typecheck and build output
+        id: checks
+        shell: bash
+        run: |
+          set +e
+          : > /tmp/phase16-typecheck-diagnostic.txt
+          run_check() {
+            echo "===== $1 =====" | tee -a /tmp/phase16-typecheck-diagnostic.txt
+            shift
+            "$@" 2>&1 | tee -a /tmp/phase16-typecheck-diagnostic.txt
+            status=${PIPESTATUS[0]}
+            echo "EXIT=$status" | tee -a /tmp/phase16-typecheck-diagnostic.txt
+            echo | tee -a /tmp/phase16-typecheck-diagnostic.txt
+            return $status
+          }
+          failed=0
+          run_check "API TYPECHECK" pnpm --filter @calibra/api run typecheck || failed=1
+          run_check "ADMIN TYPECHECK" pnpm --filter @calibra/admin run typecheck || failed=1
+          run_check "ADMIN BUILD" pnpm --filter @calibra/admin run build || failed=1
+          run_check "SDK CODEGEN CHECK" pnpm --filter @calibra/sdk run codegen:check || failed=1
+          echo "FAILED=$failed" >> /tmp/phase16-typecheck-diagnostic.txt
+          exit 0
+      - name: Commit diagnostic output to carrier branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard agent/phase16-discovery-os-final-20260818
+          cp /tmp/phase16-typecheck-diagnostic.txt .phase16-typecheck-diagnostic.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .phase16-typecheck-diagnostic.txt
+          git commit -m 'ci(phase16): capture typecheck diagnostic' || true
+          git push origin HEAD:agent/phase16-discovery-os-final-20260818
