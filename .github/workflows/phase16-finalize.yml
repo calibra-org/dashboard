@@ -89,7 +89,9 @@ jobs:
           test -f apps/api/app/validators/admin/discovery_validator.ts
           test -f apps/api/app/controllers/admin/discovery_controller.ts
           test -f apps/api/start/routes/admin_discovery.ts
-          test -f apps/api/database/migrations/1768200000000_create_phase16_discovery_os.ts
+          discovery_migration="$(grep -l 'discovery_search_policies' apps/api/database/migrations/*.ts | head -n 1)"
+          test -n "$discovery_migration"
+          grep -q 'FORCE ROW LEVEL SECURITY' "$discovery_migration"
           test -f scripts/verify-phase16-discovery-integration.mjs
 
       - name: Verify materialized Phase 16 wiring
