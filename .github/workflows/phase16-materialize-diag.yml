@@ -1,0 +1,67 @@
+name: Phase 16 Materialize Diagnostics
+
+on:
+  push:
+    branches: [agent/phase16-discovery-os-final-20260818]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phase16-materialize-diag
+  cancel-in-progress: true
+
+jobs:
+  diagnose:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/phase16-discovery-os-final-20260818
+          fetch-depth: 0
+      - name: Extract audited Phase 16 materializer
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .phase16payload3/part_* > /tmp/p16h.b64
+          echo "635802c91e43b067617afe97c0682b83d203b633c280b6900f2cfe70b770032c  /tmp/p16h.b64" | sha256sum -c -
+          base64 -d /tmp/p16h.b64 | xz -d > /tmp/phase16.tar
+          echo "cda3771619610ee71e33877d6fa512381acd3ed539d4af1730981827fae29bce  /tmp/phase16.tar" | sha256sum -c -
+          tar -xf /tmp/phase16.tar -C /tmp
+          cp .phase16payload3/harden2.py /tmp/harden2.py
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p = Path('/tmp/p16h/apply_phase16.py')
+          s = p.read_text()
+          pattern = r'''    marker=''' + "'''" + r'''[ \t]*\{collapsible\(\n[ \t]*"ticket-sidebar-items",''' + "'''"
+          replacement = '''    marker=''' + "'''" + '''                    {collapsible(\n                        "ticket-sidebar-items",''' + "'''"
+          s, count = re.subn(pattern, replacement, s, count=1)
+          if count != 1:
+              raise SystemExit('Phase 16 materializer ticket marker definition missing')
+          p.write_text(s)
+          PY
+      - name: Materialize on exact current main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git reset --hard origin/main
+          python3 /tmp/p16h/apply_phase16.py
+          python3 /tmp/harden2.py
+      - name: Print Discovery route sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '===== apps/api/start/routes/admin_discovery.ts ====='
+          nl -ba apps/api/start/routes/admin_discovery.ts
+          echo '===== apps/api/start/routes/discovery_storefront.ts ====='
+          nl -ba apps/api/start/routes/discovery_storefront.ts
+          echo '===== Discovery imports in routes.ts ====='
+          grep -n 'discovery' apps/api/start/routes.ts || true
+          echo '===== All overview route-name declarations ====='
+          grep -RIn --include='*.ts' -E '\.as\(["'"']([^"'"']*\.)?overview["'"']\)' apps/api/start/routes || true
+          echo '===== All bare overview route paths ====='
+          grep -RIn --include='*.ts' -E 'router\.(get|post|put|patch|delete)\(["'"']/overview["'"']' apps/api/start/routes || true
