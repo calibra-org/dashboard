@@ -69,8 +69,6 @@ async function waitForSuccessfulTask(
 
     s, existed = replace_function(s, 'waitForSuccessfulTask', helper)
     if not existed:
-        # The canonical overlay has direct waits. Redirect them before inserting the helper,
-        # so the helper body itself cannot be rewritten recursively.
         s, wait_count = re.subn(r'await\s+meili\.tasks\.waitForTask\(([^;]+)\);', r'await waitForSuccessfulTask(meili, \1);', s)
         if wait_count < 1:
             raise RuntimeError('neither existing task helper nor direct task waits found')
@@ -84,7 +82,6 @@ async function waitForSuccessfulTask(
         end += 3
         s = s[:end] + '\n' + helper.strip('\n') + '\n' + s[end:]
 
-    # Any direct waits left outside the helper are routed through the strict helper.
     hs = s.find('async function waitForSuccessfulTask(')
     hb = s.find('{', hs)
     depth = 0
@@ -121,6 +118,24 @@ def controller_patch(s):
     return s
 
 
+def namespace_route_names(s, namespace):
+    def repl_double(match):
+        name = match.group(1)
+        if name.startswith(f'{namespace}.'):
+            return match.group(0)
+        return f'.as("{namespace}.{name}")'
+
+    def repl_single(match):
+        name = match.group(1)
+        if name.startswith(f'{namespace}.'):
+            return match.group(0)
+        return f".as('{namespace}.{name}')"
+
+    s = re.sub(r'\.as\("([^"]+)"\)', repl_double, s)
+    s = re.sub(r"\.as\('([^']+)'\)", repl_single, s)
+    return s
+
+
 edit('apps/api/app/services/cache_invalidation.ts', cache_patch)
 edit('apps/api/app/services/discovery/search_service.ts', search_patch)
 edit('apps/api/app/controllers/admin/discovery_controller.ts', controller_patch)
@@ -128,6 +143,9 @@ edit('apps/api/app/services/discovery/index_projection.ts', lambda s: s.replace(
 edit('apps/api/app/validators/admin/discovery_validator.ts', lambda s: s.replace('DISCOVERY_EVENT_TYPES, OPPORTUNITY_TYPES, RELATION_STATES, RELATION_TYPES', 'DISCOVERY_EVENT_TYPES, RELATION_STATES, RELATION_TYPES'))
 edit('apps/api/app/services/phase14_procurement_service.ts', lambda s: s.replace('type Actor = { id?: number | string };', 'type Actor = { id?: bigint | number | string };'))
 edit('apps/api/app/services/phase20_trust_risk_service.ts', lambda s: s.replace('type Actor = { id?: number | string };', 'type Actor = { id?: bigint | number | string };').replace('customerId?: number | string | null;', 'customerId?: bigint | number | string | null;'))
+edit('apps/api/start/routes/admin_discovery.ts', lambda s: namespace_route_names(s, 'discovery.admin'))
+edit('apps/api/start/routes/discovery_storefront.ts', lambda s: namespace_route_names(s, 'discovery.storefront'))
+
 p = Path('apps/api/start/routes/admin_discovery.ts')
 s = p.read_text()
 if '/index/operations/:id/retry' not in s:
