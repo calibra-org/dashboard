@@ -146,15 +146,26 @@ jobs:
           pnpm --filter @calibra/admin run build
           pnpm --filter @calibra/sdk run codegen:check
 
-      - name: Repository quality gates
-        run: |
-          pnpm exec biome lint . --max-diagnostics=1000
-          pnpm exec biome check . --max-diagnostics=1000
-          pnpm run lint:tokens
-          pnpm run lint:ws
-          git diff --check
-          grep -R "FORCE ROW LEVEL SECURITY" apps/api/database/migrations/*discovery* | sed -n '1,20p'
-          grep -R "dead_letter\|retrying" apps/api/app apps/api/database/migrations | sed -n '1,30p'
+      - name: Quality gate - Biome lint
+        run: pnpm exec biome lint . --max-diagnostics=1000
+
+      - name: Quality gate - Biome check
+        run: pnpm exec biome check . --max-diagnostics=1000
+
+      - name: Quality gate - design tokens
+        run: pnpm run lint:tokens
+
+      - name: Quality gate - workspace boundaries
+        run: pnpm run lint:ws
+
+      - name: Quality gate - whitespace
+        run: git diff --check
+
+      - name: Quality gate - Discovery RLS
+        run: grep -R "FORCE ROW LEVEL SECURITY" apps/api/database/migrations/*discovery* | sed -n '1,20p'
+
+      - name: Quality gate - retry and DLQ
+        run: grep -R "dead_letter\|retrying" apps/api/app apps/api/database/migrations | sed -n '1,30p'
 
       - name: Publish verified Phase 16 source
         shell: bash
