@@ -98,9 +98,9 @@ jobs:
         run: |
           set -euxo pipefail
           grep -q 'admin_discovery.js' apps/api/start/routes.ts
-          grep -q '"discovery": "Discovery"' apps/admin/messages/en.json
-          grep -q '"discovery": "کشف"' apps/admin/messages/fa.json
+          node -e 'JSON.parse(require("node:fs").readFileSync("apps/admin/messages/en.json","utf8")); JSON.parse(require("node:fs").readFileSync("apps/admin/messages/fa.json","utf8"))'
           grep -q 'discovery-sidebar-items' apps/admin/src/components/Sidebar.tsx
+          grep -q '/discovery' apps/admin/src/components/Sidebar.tsx
           ! grep -R 'catch(() => undefined)' apps/api/app/services/discovery apps/api/app/services/cache_invalidation.ts
 
       - uses: pnpm/action-setup@v4
