@@ -58,14 +58,14 @@ jobs:
           cp .phase16payload3/harden2.py /tmp/harden2.py
           python3 - <<'PY'
           from pathlib import Path
+          import re
           p = Path('/tmp/p16h/apply_phase16.py')
           s = p.read_text()
-          old = '''    marker=''' + "'''" + '''                {collapsible(
-                              "ticket-sidebar-items",''' + "'''"
-          new = '''    marker=''' + "'''" + '''                <div className="flex flex-col gap-1">
-                              <div className="px-3 pb-1 font-medium text-[0.65rem] text-sidebar-foreground/50 uppercase tracking-wider">{navT("operations")}</div>''' + "'''"
-          if old in s:
-              s = s.replace(old, new, 1)
+          pattern = r'''    marker=''' + "'''" + r'''[ \t]*\{collapsible\(\n[ \t]*"ticket-sidebar-items",''' + "'''"
+          replacement = '''    marker=''' + "'''" + '''                    {collapsible(\n                        "ticket-sidebar-items",''' + "'''"
+          s, count = re.subn(pattern, replacement, s, count=1)
+          if count != 1:
+              raise SystemExit('Phase 16 materializer ticket marker definition missing')
           p.write_text(s)
           PY
 
