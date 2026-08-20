@@ -33,6 +33,7 @@ jobs:
           echo "cda3771619610ee71e33877d6fa512381acd3ed539d4af1730981827fae29bce  /tmp/phase16.tar" | sha256sum -c -
           tar -xf /tmp/phase16.tar -C /tmp
           cp .phase16payload3/harden2.py /tmp/harden2.py
+          cp .phase16payload3/route_names.py /tmp/route_names.py
           python3 - <<'PY'
           from pathlib import Path
           import re
@@ -53,17 +54,16 @@ jobs:
           git reset --hard origin/main
           python3 /tmp/p16h/apply_phase16.py
           python3 /tmp/harden2.py
-      - name: Print Discovery route sources
+          python3 /tmp/route_names.py
+      - name: Print Discovery route and OpenAPI sources
         shell: bash
         run: |
           set -euo pipefail
-          echo '===== apps/api/start/routes/admin_discovery.ts ====='
-          nl -ba apps/api/start/routes/admin_discovery.ts
-          echo '===== apps/api/start/routes/discovery_storefront.ts ====='
+          echo '===== STOREFRONT ROUTES ====='
           nl -ba apps/api/start/routes/discovery_storefront.ts
-          echo '===== Discovery imports in routes.ts ====='
-          grep -n 'discovery' apps/api/start/routes.ts || true
-          echo '===== All overview route-name declarations ====='
-          grep -RIn --include='*.ts' -E '\.as\(["'"']([^"'"']*\.)?overview["'"']\)' apps/api/start/routes || true
-          echo '===== All bare overview route paths ====='
-          grep -RIn --include='*.ts' -E 'router\.(get|post|put|patch|delete)\(["'"']/overview["'"']' apps/api/start/routes || true
+          echo '===== STOREFRONT OPENAPI ====='
+          nl -ba docs/api/reference/openapi/storefront.discovery.v1.yaml
+          echo '===== STOREFRONT PATH KEYS ====='
+          grep -n '^  /' docs/api/reference/openapi/storefront.discovery.v1.yaml || true
+          echo '===== ADMIN PATH KEYS ====='
+          grep -n '^  /' docs/api/reference/openapi/admin.discovery.v1.yaml || true
