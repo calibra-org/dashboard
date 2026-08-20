@@ -1,5 +1,5 @@
 name: Phase 16 Finalize
-# Re-materialization trigger after main advanced to 8c9a2dd4117f055a09ef9690d7ff5ac114a25726.
+# Re-materialization trigger after main advanced; always rebuild on exact current main.
 
 on:
   push:
@@ -144,6 +144,20 @@ jobs:
       - name: Normalize and generate contracts
         run: |
           pnpm run format:fix
+          pnpm exec biome check \
+            "apps/admin/src/app/[locale]/(authenticated)/discovery" \
+            apps/admin/src/features/discovery \
+            apps/api/app/controllers/admin/discovery_controller.ts \
+            apps/api/app/controllers/storefront/discovery_controller.ts \
+            apps/api/app/jobs/discovery_index_projection_job.ts \
+            apps/api/app/services/cache_invalidation.ts \
+            apps/api/app/services/discovery \
+            apps/api/app/validators/admin/discovery_validator.ts \
+            apps/api/start/routes/admin_discovery.ts \
+            apps/api/start/routes/discovery_storefront.ts \
+            apps/api/tests/unit/discovery \
+            scripts/verify-phase16-discovery-integration.mjs \
+            --write --max-diagnostics=1000
           pnpm --filter @calibra/sdk run codegen
           pnpm --filter @calibra/sdk run build
 
