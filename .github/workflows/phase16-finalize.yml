@@ -92,7 +92,11 @@ jobs:
           discovery_migration="$(grep -l 'discovery_search_policies' apps/api/database/migrations/*.ts | head -n 1)"
           test -n "$discovery_migration"
           grep -q 'FORCE ROW LEVEL SECURITY' "$discovery_migration"
-          test -f scripts/verify-phase16-discovery-integration.mjs
+          test ! -e apps/admin/src/features/discovery/mock.ts
+          if find . -path '*/calibra_phase16_ui/*' -o -name 'Calibra_Phase16_UI_Prototype_v1.zip' | grep -q .; then
+            echo 'Prototype artifact entered runtime tree'
+            exit 1
+          fi
 
       - name: Verify materialized Phase 16 wiring
         run: |
@@ -158,13 +162,13 @@ jobs:
             apps/api/start/routes/admin_discovery.ts \
             apps/api/start/routes/discovery_storefront.ts \
             apps/api/tests/unit/discovery \
-            scripts/verify-phase16-discovery-integration.mjs \
             --write --max-diagnostics=1000
           pnpm --filter @calibra/sdk run codegen
           pnpm --filter @calibra/sdk run build
 
-      - name: Verify Phase 16 contract
-        run: node scripts/verify-phase16-discovery-integration.mjs
+      - name: Verify OpenAPI route parity
+        working-directory: apps/api
+        run: node ace check:api-docs
 
       - name: Typecheck and production build
         run: |
@@ -172,6 +176,20 @@ jobs:
           pnpm --filter @calibra/admin run typecheck
           pnpm --filter @calibra/admin run build
           pnpm --filter @calibra/sdk run codegen:check
+
+      - name: Run focused Phase 16 and RLS tests
+        working-directory: apps/api
+        env:
+          NODE_ENV: test
+          DB_DATABASE: calibra_test
+          DB_ADMIN_USER: calibra
+          DB_ADMIN_PASSWORD: calibra
+        run: >-
+          pnpm test
+          --files=tests/unit/discovery/normalizer.spec.ts
+          --files=tests/unit/discovery/merchandising_engine.spec.ts
+          --files=tests/functional/storefront/discovery_events.spec.ts
+          --files=tests/functional/foundation/rls_isolation.spec.ts
 
       - name: Quality gate - Biome lint
         run: pnpm exec biome lint . --max-diagnostics=1000
@@ -185,8 +203,16 @@ jobs:
       - name: Quality gate - workspace boundaries
         run: pnpm run lint:ws
 
-      - name: Quality gate - whitespace
-        run: git diff --check
+      - name: Quality gate - canonical source invariants
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          test "$(grep -R 'operationId:' docs/api/reference/openapi/admin.discovery.v1.yaml docs/api/reference/openapi/storefront.discovery.v1.yaml | sed 's/.*operationId: *//' | wc -l)" = "28"
+          test "$(grep -R 'operationId:' docs/api/reference/openapi/admin.discovery.v1.yaml docs/api/reference/openapi/storefront.discovery.v1.yaml | sed 's/.*operationId: *//' | sort -u | wc -l)" = "28"
+          if grep -R -E '(bg|text|border|ring)-(red|green|blue|amber|yellow|purple|indigo|emerald|slate|gray)-[0-9]' apps/admin/src/features/discovery; then exit 1; fi
+          if grep -R -E '\b(mr|ml|pr|pl)-' apps/admin/src/features/discovery; then exit 1; fi
+          if grep -R 'from "lucide-react"' apps/admin/src/features/discovery; then exit 1; fi
 
       - name: Quality gate - Discovery RLS
         run: grep -R "FORCE ROW LEVEL SECURITY" apps/api/database/migrations/*discovery* | sed -n '1,20p'
