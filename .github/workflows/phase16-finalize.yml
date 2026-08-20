@@ -1,5 +1,4 @@
 name: Phase 16 Finalize
-# Rebuild the audited Phase 16 source on exact current main, validate it, then self-publish clean source.
 
 on:
   push:
@@ -81,6 +80,7 @@ jobs:
           echo "cda3771619610ee71e33877d6fa512381acd3ed539d4af1730981827fae29bce  /tmp/phase16.tar" | sha256sum -c -
           tar -xf /tmp/phase16.tar -C /tmp
           cp .phase16payload3/harden2.py /tmp/harden2.py
+          cp .phase16payload3/route_names.py /tmp/route_names.py
           python3 - <<'PY'
           from pathlib import Path
           import re
@@ -94,17 +94,14 @@ jobs:
           p.write_text(s)
           PY
 
-      - name: Reset to exact current main
+      - name: Reset to exact current main and materialize
         run: |
           set -euo pipefail
           git fetch origin main
           git reset --hard origin/main
-
-      - name: Apply canonical Phase 16
-        run: python3 /tmp/p16h/apply_phase16.py
-
-      - name: Apply Phase 16 hardening
-        run: python3 /tmp/harden2.py
+          python3 /tmp/p16h/apply_phase16.py
+          python3 /tmp/harden2.py
+          python3 /tmp/route_names.py
 
       - name: Verify materialized Phase 16 files and wiring
         run: |
@@ -114,6 +111,7 @@ jobs:
           test -f apps/api/app/validators/admin/discovery_validator.ts
           test -f apps/api/app/controllers/admin/discovery_controller.ts
           test -f apps/api/start/routes/admin_discovery.ts
+          test -f apps/api/start/routes/discovery_storefront.ts
           discovery_migration="$(grep -l 'discovery_search_policies' apps/api/database/migrations/*.ts | head -n 1)"
           test -n "$discovery_migration"
           grep -q 'FORCE ROW LEVEL SECURITY' "$discovery_migration"
@@ -123,6 +121,9 @@ jobs:
             exit 1
           fi
           grep -q 'admin_discovery.js' apps/api/start/routes.ts
+          grep -q 'discovery_storefront.js' apps/api/start/routes.ts
+          grep -q 'discovery.admin.overview' apps/api/start/routes/admin_discovery.ts
+          grep -q 'discovery.storefront.search' apps/api/start/routes/discovery_storefront.ts
           node -e 'JSON.parse(require("node:fs").readFileSync("apps/admin/messages/en.json","utf8")); JSON.parse(require("node:fs").readFileSync("apps/admin/messages/fa.json","utf8"))'
           grep -q 'discovery-sidebar-items' apps/admin/src/components/Sidebar.tsx
           grep -q '/discovery' apps/admin/src/components/Sidebar.tsx
@@ -215,8 +216,8 @@ jobs:
           if grep -R -E '(bg|text|border|ring)-(red|green|blue|amber|yellow|purple|indigo|emerald|slate|gray)-[0-9]' apps/admin/src/features/discovery; then exit 1; fi
           if grep -R -E '\b(mr|ml|pr|pl)-' apps/admin/src/features/discovery; then exit 1; fi
           if grep -R 'from "lucide-react"' apps/admin/src/features/discovery; then exit 1; fi
-          grep -R "FORCE ROW LEVEL SECURITY" apps/api/database/migrations/*discovery* >/dev/null
-          grep -R "dead_letter\|retrying" apps/api/app apps/api/database/migrations >/dev/null
+          grep -R 'FORCE ROW LEVEL SECURITY' apps/api/database/migrations/*discovery* >/dev/null
+          grep -R 'dead_letter\|retrying' apps/api/app apps/api/database/migrations >/dev/null
 
       - name: Publish verified Phase 16 source
         shell: bash
