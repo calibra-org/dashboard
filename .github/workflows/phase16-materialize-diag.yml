@@ -42,6 +42,12 @@ jobs:
           p.write_text(s)
           PY
 
+      - name: Inspect materializer path contract
+        run: |
+          set -euxo pipefail
+          grep -nE 'discovery_query_service|discovery_segment_service|services/discovery|admin_discovery|create_phase16_discovery|verify-phase16-discovery' /tmp/p16h/apply_phase16.py | sed -n '1,220p' || true
+          find /tmp/p16h -maxdepth 3 -type f -print | sort | sed -n '1,220p'
+
       - name: Reset current main
         run: |
           git fetch origin main
@@ -52,6 +58,14 @@ jobs:
 
       - name: Apply Phase 16 hardening
         run: python3 /tmp/harden2.py
+
+      - name: Inspect materialized tree
+        run: |
+          set -euxo pipefail
+          find apps/api/app -maxdepth 5 -type f \( -iname '*discovery*' -o -path '*/discovery/*' \) -print | sort | sed -n '1,260p'
+          find apps/api/database/migrations -maxdepth 1 -type f -iname '*discovery*' -print | sort
+          find scripts -maxdepth 1 -type f -iname '*phase16*' -print | sort
+          git status --short | sed -n '1,320p'
 
       - name: Verify API services
         run: |
