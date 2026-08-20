@@ -84,8 +84,8 @@ jobs:
       - name: Verify materialized Phase 16 files
         run: |
           set -euxo pipefail
-          test -f apps/api/app/services/discovery_query_service.ts
-          test -f apps/api/app/services/discovery_segment_service.ts
+          test -f apps/api/app/services/discovery/search_service.ts
+          test -f apps/api/app/services/discovery/index_projection.ts
           test -f apps/api/app/validators/admin/discovery_validator.ts
           test -f apps/api/app/controllers/admin/discovery_controller.ts
           test -f apps/api/start/routes/admin_discovery.ts
