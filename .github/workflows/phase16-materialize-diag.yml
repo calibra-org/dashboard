@@ -3,6 +3,8 @@ name: Phase 16 Materialize Diagnostics
 on:
   push:
     branches: [agent/phase16-discovery-os-final-20260818]
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: read
