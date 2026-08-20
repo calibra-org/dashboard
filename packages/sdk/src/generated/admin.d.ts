@@ -7754,6 +7754,580 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/social/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminSocialSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/social/contract": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminSocialContract"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/social/contents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminSocialContents"];
+        put?: never;
+        post: operations["adminSocialContentCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/social/contents/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["SocialId"];
+            };
+            cookie?: never;
+        };
+        get: operations["adminSocialContentShow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["adminSocialContentUpdate"];
+        trace?: never;
+    };
+    "/api/v1/admin/social/contents/{id}/transition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["SocialId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminSocialContentTransition"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/social/contents/{contentId}/frames": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contentId: components["parameters"]["SocialContentId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminSocialFrameCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/social/contents/{contentId}/markers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contentId: components["parameters"]["SocialContentId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminSocialMarkerCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/social/channels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminSocialChannelCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/social/channels/{channelId}/membership": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                channelId: components["parameters"]["SocialChannelId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminSocialChannelMembership"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/social/threads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminSocialThreads"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/social/threads/{threadId}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                threadId: components["parameters"]["SocialThreadId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminSocialThreadMessage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/social/threads/{threadId}/convert-to-ticket": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                threadId: components["parameters"]["SocialThreadId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminSocialThreadConvertToTicket"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/social/moderation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminSocialModeration"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/social/moderation/{id}/actions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["SocialId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminSocialModerationAction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/social/contents/{contentId}/live": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contentId: components["parameters"]["SocialContentId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminSocialLiveCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["adminSocialLiveUpdate"];
+        trace?: never;
+    };
+    "/api/v1/admin/social/contents/{contentId}/live/emergency-stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contentId: components["parameters"]["SocialContentId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminSocialLiveEmergencyStop"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/social/contents/{contentId}/live/chat-freeze": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contentId: components["parameters"]["SocialContentId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminSocialLiveChatFreeze"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/social/contents/{contentId}/live/participants/control": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contentId: components["parameters"]["SocialContentId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminSocialLiveParticipantControl"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/social/contents/{contentId}/live/replay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contentId: components["parameters"]["SocialContentId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminSocialLiveReplay"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/social/media/upload-intents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminSocialMediaUploadIntent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/social/media/{mediaId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mediaId: components["parameters"]["SocialMediaId"];
+            };
+            cookie?: never;
+        };
+        get: operations["adminSocialMediaShow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/social/media/{mediaId}/acknowledge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mediaId: components["parameters"]["SocialMediaId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminSocialMediaAcknowledge"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/social/media/{mediaId}/tracks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mediaId: components["parameters"]["SocialMediaId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminSocialMediaTrackCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/social/media/tracks/{trackId}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                trackId: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminSocialMediaTrackReview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/social/media/{mediaId}/rights": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mediaId: components["parameters"]["SocialMediaId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminSocialMediaRightsCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/social/media/{mediaId}/security-scan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mediaId: components["parameters"]["SocialMediaId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminSocialMediaSecurityScan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/social/media/{mediaId}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mediaId: components["parameters"]["SocialMediaId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminSocialMediaRetry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/social/media/{mediaId}/publishable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mediaId: components["parameters"]["SocialMediaId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminSocialMediaPublishable"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/social/reviews/{reviewId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reviewId: number;
+            };
+            cookie?: never;
+        };
+        get: operations["adminSocialReviewShow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/social/reviews/{reviewId}/responses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reviewId: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminSocialReviewResponse"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/social/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminSocialSearch"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/social/analytics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminSocialAnalytics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/social/attributions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminSocialAttributionCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/personalization/overview": {
         parameters: {
             query?: never;
@@ -13278,6 +13852,63 @@ export interface components {
                 [key: string]: unknown;
             }[];
         };
+        /** @enum {string} */
+        SocialContentKind: "story" | "video" | "live" | "post" | "question";
+        SocialContentCreateInput: {
+            kind: components["schemas"]["SocialContentKind"];
+            title: string;
+            description?: string | null;
+            locale?: string;
+            cover_media_id?: number | null;
+            primary_media_id?: number | null;
+            duration_seconds?: number | null;
+        };
+        SocialContentUpdateInput: {
+            expected_version: number;
+            title?: string;
+            description?: string | null;
+            cover_media_id?: number | null;
+            primary_media_id?: number | null;
+        };
+        SocialTransitionInput: {
+            expected_version: number;
+            status: string;
+        };
+        SocialStoryFrameInput: {
+            sequence: number;
+            frame_type: string;
+            media_id?: number | null;
+            product_id?: number | null;
+            duration_ms?: number;
+            cta_label?: string | null;
+            cta_url?: string | null;
+            payload?: {
+                [key: string]: unknown;
+            };
+        };
+        SocialLiveEmergencyStopInput: {
+            expected_version: number;
+            reason: string;
+        };
+        SocialLiveChatFreezeInput: {
+            expected_version: number;
+            frozen: boolean;
+            reason?: string | null;
+        };
+        SocialLiveParticipantControlInput: {
+            customer_id?: number | null;
+            anonymous_id?: string | null;
+            /** @enum {string} */
+            control: "mute" | "ban";
+            active: boolean;
+            reason?: string | null;
+            /** Format: date-time */
+            expires_at?: string | null;
+        };
+        SocialLiveReplayInput: {
+            media_id: number;
+            expected_version: number;
+        };
         Phase9Envelope: {
             [key: string]: unknown;
         };
@@ -14254,6 +14885,24 @@ export interface components {
                 };
             };
         };
+        /** @description Social Commerce response */
+        SocialOk: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        /** @description Validation or canonical Media/Catalog reference failure */
+        SocialValidationError: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content?: never;
+        };
     };
     parameters: {
         /** @description 1-indexed page number. Defaults to 1. */
@@ -14280,6 +14929,11 @@ export interface components {
         ConfigurationScope: components["schemas"]["ConfigurationScope"];
         ConfigurationRevision: number;
         UserId: number;
+        SocialId: number;
+        SocialContentId: number;
+        SocialChannelId: number;
+        SocialThreadId: number;
+        SocialMediaId: number;
         IntelligenceCaseId: string;
         GovernanceApprovalReference: string;
         EconomicsId: number;
@@ -26921,6 +27575,623 @@ export interface operations {
                 };
                 content?: never;
             };
+        };
+    };
+    adminSocialSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["SocialOk"];
+        };
+    };
+    adminSocialContract: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["SocialOk"];
+        };
+    };
+    adminSocialContents: {
+        parameters: {
+            query?: {
+                page?: number;
+                limit?: number;
+                kind?: components["schemas"]["SocialContentKind"];
+                status?: string;
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["SocialOk"];
+        };
+    };
+    adminSocialContentCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SocialContentCreateInput"];
+            };
+        };
+        responses: {
+            201: components["responses"]["SocialOk"];
+            422: components["responses"]["SocialValidationError"];
+        };
+    };
+    adminSocialContentShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["SocialId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["SocialOk"];
+            /** @description Social content not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminSocialContentUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["SocialId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SocialContentUpdateInput"];
+            };
+        };
+        responses: {
+            200: components["responses"]["SocialOk"];
+            /** @description Optimistic version conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            422: components["responses"]["SocialValidationError"];
+        };
+    };
+    adminSocialContentTransition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["SocialId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SocialTransitionInput"];
+            };
+        };
+        responses: {
+            200: components["responses"]["SocialOk"];
+            /** @description Invalid transition or version conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Publication gate failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminSocialFrameCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contentId: components["parameters"]["SocialContentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SocialStoryFrameInput"];
+            };
+        };
+        responses: {
+            201: components["responses"]["SocialOk"];
+        };
+    };
+    adminSocialMarkerCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contentId: components["parameters"]["SocialContentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    product_id: number;
+                    timestamp_ms?: number;
+                    label?: string | null;
+                    metadata?: {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+        responses: {
+            201: components["responses"]["SocialOk"];
+        };
+    };
+    adminSocialChannelCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    slug: string;
+                    title: string;
+                    /** @enum {string} */
+                    visibility?: "public" | "members" | "private";
+                };
+            };
+        };
+        responses: {
+            201: components["responses"]["SocialOk"];
+        };
+    };
+    adminSocialChannelMembership: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                channelId: components["parameters"]["SocialChannelId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    customer_id: number;
+                    role: string;
+                    present: boolean;
+                };
+            };
+        };
+        responses: {
+            200: components["responses"]["SocialOk"];
+        };
+    };
+    adminSocialThreads: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["SocialOk"];
+        };
+    };
+    adminSocialThreadMessage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                threadId: components["parameters"]["SocialThreadId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    body: string;
+                };
+            };
+        };
+        responses: {
+            201: components["responses"]["SocialOk"];
+        };
+    };
+    adminSocialThreadConvertToTicket: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                threadId: components["parameters"]["SocialThreadId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["SocialOk"];
+        };
+    };
+    adminSocialModeration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["SocialOk"];
+        };
+    };
+    adminSocialModerationAction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["SocialId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    expected_version: number;
+                    /** @enum {string} */
+                    action: "limit" | "remove" | "restore" | "finalize" | "escalate" | "note";
+                    reason?: string | null;
+                    evidence?: {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+        responses: {
+            200: components["responses"]["SocialOk"];
+        };
+    };
+    adminSocialLiveCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contentId: components["parameters"]["SocialContentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: components["responses"]["SocialOk"];
+        };
+    };
+    adminSocialLiveUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contentId: components["parameters"]["SocialContentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["SocialOk"];
+        };
+    };
+    adminSocialLiveEmergencyStop: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contentId: components["parameters"]["SocialContentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SocialLiveEmergencyStopInput"];
+            };
+        };
+        responses: {
+            200: components["responses"]["SocialOk"];
+        };
+    };
+    adminSocialLiveChatFreeze: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contentId: components["parameters"]["SocialContentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SocialLiveChatFreezeInput"];
+            };
+        };
+        responses: {
+            200: components["responses"]["SocialOk"];
+        };
+    };
+    adminSocialLiveParticipantControl: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contentId: components["parameters"]["SocialContentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SocialLiveParticipantControlInput"];
+            };
+        };
+        responses: {
+            200: components["responses"]["SocialOk"];
+        };
+    };
+    adminSocialLiveReplay: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contentId: components["parameters"]["SocialContentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SocialLiveReplayInput"];
+            };
+        };
+        responses: {
+            200: components["responses"]["SocialOk"];
+        };
+    };
+    adminSocialMediaUploadIntent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: components["responses"]["SocialOk"];
+        };
+    };
+    adminSocialMediaShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mediaId: components["parameters"]["SocialMediaId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["SocialOk"];
+        };
+    };
+    adminSocialMediaAcknowledge: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mediaId: components["parameters"]["SocialMediaId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["SocialOk"];
+        };
+    };
+    adminSocialMediaTrackCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mediaId: components["parameters"]["SocialMediaId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: components["responses"]["SocialOk"];
+        };
+    };
+    adminSocialMediaTrackReview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                trackId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["SocialOk"];
+        };
+    };
+    adminSocialMediaRightsCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mediaId: components["parameters"]["SocialMediaId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: components["responses"]["SocialOk"];
+        };
+    };
+    adminSocialMediaSecurityScan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mediaId: components["parameters"]["SocialMediaId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["SocialOk"];
+        };
+    };
+    adminSocialMediaRetry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mediaId: components["parameters"]["SocialMediaId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["SocialOk"];
+            /** @description Media is not retryable */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Retry budget exhausted */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminSocialMediaPublishable: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mediaId: components["parameters"]["SocialMediaId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["SocialOk"];
+            /** @description Security/rights gate is incomplete */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminSocialReviewShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reviewId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["SocialOk"];
+        };
+    };
+    adminSocialReviewResponse: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reviewId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: components["responses"]["SocialOk"];
+        };
+    };
+    adminSocialSearch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["SocialOk"];
+        };
+    };
+    adminSocialAnalytics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["SocialOk"];
+        };
+    };
+    adminSocialAttributionCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: components["responses"]["SocialOk"];
         };
     };
     adminPhase9Overview: {

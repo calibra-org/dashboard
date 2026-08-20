@@ -154,6 +154,13 @@ export default await Env.create(new URL("../", import.meta.url), {
     PAYMENT_WEBHOOK_SECRET_PAYIR: Env.schema.string.optional(),
     PAYMENT_WEBHOOK_SECRET_ZIBAL: Env.schema.string.optional(),
 
+    /** Phase 8 video/live provider. Secrets stay server-side. */
+    SOCIAL_VIDEO_PROVIDER: Env.schema.enum.optional(["disabled", "cloudflare_stream"] as const),
+    CLOUDFLARE_STREAM_ACCOUNT_ID: Env.schema.string.optional(),
+    CLOUDFLARE_STREAM_API_TOKEN: Env.schema.string.optional(),
+    CLOUDFLARE_STREAM_CUSTOMER_CODE: Env.schema.string.optional(),
+    CLOUDFLARE_STREAM_WEBHOOK_SECRET: Env.schema.string.optional(),
+
     /**
      * Per-spin observability mode. When `true`, `config/logger.ts` adds a JSON-line
      * file target (`SPIN_API_LOG_PATH`) so Promtail can ship logs to Loki. When `false`

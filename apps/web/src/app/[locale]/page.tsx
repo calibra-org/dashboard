@@ -1,9 +1,11 @@
 import { getLocale, getTranslations, setRequestLocale } from "next-intl/server";
 
 import { AmazingDealsSection } from "#/components/amazing-deals-section";
+import { StoryRail } from "#/components/social/story-rail";
 import { apiServer } from "#/lib/api";
 import { Link } from "#/lib/i18n/navigation";
 import { formatPrice, getMoneyFormatConfig } from "#/lib/money";
+import { getStoryRail } from "#/lib/social-api";
 
 interface PageProps {
     params: Promise<{ locale: string }>;
@@ -16,9 +18,10 @@ export default async function HomePage({ params }: PageProps) {
     const t = await getTranslations("Home");
     const productsT = await getTranslations("Products");
     const api = await apiServer();
-    const [{ data }, moneyConfig] = await Promise.all([
+    const [{ data }, moneyConfig, storyRail] = await Promise.all([
         api.storefront.GET("/api/v1/products", { params: { query: { limit: 8, featured: true } } }),
         getMoneyFormatConfig(),
+        getStoryRail(locale),
     ]);
     const featured = data?.data ?? [];
 
@@ -34,6 +37,8 @@ export default async function HomePage({ params }: PageProps) {
                     {t("browseProducts")}
                 </Link>
             </header>
+
+            <StoryRail items={storyRail.data} locale={locale} />
 
             <AmazingDealsSection />
 

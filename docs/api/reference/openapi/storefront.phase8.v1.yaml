@@ -1,0 +1,138 @@
+openapi: 3.1.0
+info:
+  title: Calibra Storefront Phase 8 Social Commerce OS Overlay
+  version: 1.0.0
+  description: Story Rail, Discover, first-party interactions, social graph and community conversation contracts.
+tags:
+  - name: Social Commerce
+    description: Public and authenticated Phase 8 social-commerce surfaces.
+paths:
+  /api/v1/storefront/social/story-rail:
+    get:
+      tags: [Social Commerce]
+      operationId: storefrontSocialStoryRail
+      parameters:
+        - { in: query, name: locale, schema: { type: string } }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 40 } }
+      responses: { '200': { $ref: '#/components/responses/SocialOk' } }
+  /api/v1/storefront/social/discover:
+    get:
+      tags: [Social Commerce]
+      operationId: storefrontSocialDiscover
+      parameters:
+        - { in: query, name: tab, schema: { type: string, enum: [for_you, following, trending, latest, live, tutorials, reviews, deals, questions] } }
+        - { in: query, name: locale, schema: { type: string } }
+        - { in: query, name: page, schema: { type: integer, minimum: 1 } }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 40 } }
+      responses: { '200': { $ref: '#/components/responses/SocialOk' } }
+  /api/v1/storefront/social/interactions:
+    post:
+      tags: [Social Commerce]
+      operationId: storefrontSocialInteraction
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/SocialInteractionInput' } } } }
+      responses: { '200': { $ref: '#/components/responses/SocialOk' }, '422': { description: Invalid interaction envelope } }
+  /api/v1/storefront/social/search:
+    get:
+      tags: [Social Commerce]
+      operationId: storefrontSocialSearch
+      parameters:
+        - { in: query, name: q, schema: { type: string, maxLength: 240 } }
+        - { in: query, name: kind, schema: { type: string, enum: [story, video, live, post, question] } }
+        - { in: query, name: locale, schema: { type: string } }
+      responses: { '200': { $ref: '#/components/responses/SocialOk' } }
+  /api/v1/storefront/social/media/{mediaId}/playback:
+    parameters: [{ $ref: '#/components/parameters/SocialMediaId' }]
+    get:
+      tags: [Social Commerce]
+      operationId: storefrontSocialMediaPlayback
+      responses: { '200': { $ref: '#/components/responses/SocialOk' }, '403': { description: Playback ACL denied }, '404': { description: Media not found } }
+  /api/v1/storefront/social/contents/{contentId}/ask:
+    parameters: [{ $ref: '#/components/parameters/SocialContentId' }]
+    post:
+      tags: [Social Commerce]
+      operationId: storefrontSocialAskVideo
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [question], properties: { question: { type: string, minLength: 3, maxLength: 500 }, locale: { type: string } } } } } }
+      responses: { '200': { $ref: '#/components/responses/SocialOk' }, '422': { description: Insufficient approved transcript/caption evidence } }
+  /api/v1/storefront/social/reviews/{reviewId}:
+    parameters: [{ $ref: '#/components/parameters/SocialReviewId' }]
+    get: { tags: [Social Commerce], operationId: storefrontSocialReviewShow, responses: { '200': { $ref: '#/components/responses/SocialOk' } } }
+  /api/v1/storefront/social/contents/{contentId}/live-access:
+    parameters: [{ $ref: '#/components/parameters/SocialContentId' }]
+    get: { tags: [Social Commerce], operationId: storefrontSocialLiveAccess, responses: { '200': { $ref: '#/components/responses/SocialOk' } } }
+  /api/v1/storefront/social/provider/webhook:
+    post:
+      tags: [Social Commerce]
+      operationId: storefrontSocialProviderWebhook
+      description: Provider callback is signature-verified before tenant resolution and is idempotently consumed.
+      responses: { '200': { $ref: '#/components/responses/SocialOk' }, '401': { description: Invalid provider signature } }
+  /api/v1/storefront/social/contract:
+    get: { tags: [Social Commerce], operationId: storefrontSocialContract, responses: { '200': { $ref: '#/components/responses/SocialOk' } } }
+  /api/v1/account/social/follow:
+    post:
+      tags: [Social Commerce]
+      operationId: accountSocialFollow
+      security: [{ BearerAuth: [] }]
+      responses: { '200': { $ref: '#/components/responses/SocialOk' } }
+  /api/v1/account/social/interactions:
+    post:
+      tags: [Social Commerce]
+      operationId: accountSocialInteraction
+      security: [{ BearerAuth: [] }]
+      responses: { '200': { $ref: '#/components/responses/SocialOk' } }
+  /api/v1/account/social/channels:
+    get: { tags: [Social Commerce], operationId: accountSocialChannels, security: [{ BearerAuth: [] }], responses: { '200': { $ref: '#/components/responses/SocialOk' } } }
+  /api/v1/account/social/threads:
+    get: { tags: [Social Commerce], operationId: accountSocialThreads, security: [{ BearerAuth: [] }], responses: { '200': { $ref: '#/components/responses/SocialOk' } } }
+    post:
+      tags: [Social Commerce]
+      operationId: accountSocialThreadCreate
+      security: [{ BearerAuth: [] }]
+      responses: { '201': { $ref: '#/components/responses/SocialOk' } }
+  /api/v1/account/social/threads/{threadId}/messages:
+    parameters: [{ in: path, name: threadId, required: true, schema: { type: integer, minimum: 1 } }]
+    post: { tags: [Social Commerce], operationId: accountSocialThreadMessage, security: [{ BearerAuth: [] }], responses: { '201': { $ref: '#/components/responses/SocialOk' } } }
+  /api/v1/account/social/reports:
+    post: { tags: [Social Commerce], operationId: accountSocialReport, security: [{ BearerAuth: [] }], responses: { '201': { $ref: '#/components/responses/SocialOk' } } }
+  /api/v1/account/social/media/upload-intents:
+    post: { tags: [Social Commerce], operationId: accountSocialMediaUploadIntent, security: [{ BearerAuth: [] }], responses: { '201': { $ref: '#/components/responses/SocialOk' } } }
+  /api/v1/account/social/products/{productId}/review-verification:
+    parameters: [{ in: path, name: productId, required: true, schema: { type: integer, minimum: 1 } }]
+    get: { tags: [Social Commerce], operationId: accountSocialReviewVerification, security: [{ BearerAuth: [] }], responses: { '200': { $ref: '#/components/responses/SocialOk' } } }
+  /api/v1/account/social/reviews/{reviewId}/media:
+    parameters: [{ $ref: '#/components/parameters/SocialReviewId' }]
+    post: { tags: [Social Commerce], operationId: accountSocialReviewMedia, security: [{ BearerAuth: [] }], responses: { '200': { $ref: '#/components/responses/SocialOk' } } }
+  /api/v1/account/social/reviews/{reviewId}/helpful:
+    parameters: [{ $ref: '#/components/parameters/SocialReviewId' }]
+    put: { tags: [Social Commerce], operationId: accountSocialReviewHelpful, security: [{ BearerAuth: [] }], responses: { '200': { $ref: '#/components/responses/SocialOk' }, '422': { description: Self-vote or trust rule violation } } }
+  /api/v1/account/social/reviews/{reviewId}/report:
+    parameters: [{ $ref: '#/components/parameters/SocialReviewId' }]
+    post: { tags: [Social Commerce], operationId: accountSocialReviewReport, security: [{ BearerAuth: [] }], responses: { '201': { $ref: '#/components/responses/SocialOk' } } }
+  /api/v1/account/social/moderation/{caseId}/appeal:
+    parameters: [{ in: path, name: caseId, required: true, schema: { type: integer, minimum: 1 } }]
+    post: { tags: [Social Commerce], operationId: accountSocialModerationAppeal, security: [{ BearerAuth: [] }], responses: { '201': { $ref: '#/components/responses/SocialOk' } } }
+  /api/v1/account/social/reputation:
+    get: { tags: [Social Commerce], operationId: accountSocialReputation, security: [{ BearerAuth: [] }], responses: { '200': { $ref: '#/components/responses/SocialOk' } } }
+components:
+  securitySchemes:
+    BearerAuth: { type: http, scheme: bearer }
+  parameters:
+    SocialMediaId: { in: path, name: mediaId, required: true, schema: { type: integer, minimum: 1 } }
+    SocialContentId: { in: path, name: contentId, required: true, schema: { type: integer, minimum: 1 } }
+    SocialReviewId: { in: path, name: reviewId, required: true, schema: { type: integer, minimum: 1 } }
+  responses:
+    SocialOk:
+      description: Social Commerce response
+      content: { application/json: { schema: { type: object, additionalProperties: true } } }
+  schemas:
+    SocialInteractionInput:
+      type: object
+      required: [event_type, source_surface]
+      properties:
+        anonymous_id: { type: [string, 'null'], maxLength: 96 }
+        content_id: { type: [integer, 'null'], minimum: 1 }
+        product_id: { type: [integer, 'null'], minimum: 1 }
+        marker_id: { type: [integer, 'null'], minimum: 1 }
+        event_type: { type: string, enum: [impression, watch, like, save, share, product_tap, cart, purchase, follow, unfollow, report, question] }
+        source_surface: { type: string, maxLength: 40 }
+        watch_ms: { type: [integer, 'null'], minimum: 0 }
+        metadata: { type: object, additionalProperties: true }

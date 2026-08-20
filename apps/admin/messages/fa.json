@@ -80,7 +80,13 @@
         "seoRankTracking": "رهگیری رتبه",
         "seoCompetitorsSerp": "رقبا و SERP",
         "seoReports": "گزارش‌های سئو",
-        "seoSettings": "تنظیمات و ابزارها"
+        "seoSettings": "تنظیمات و ابزارها",
+        "social": "تجارت اجتماعی",
+        "socialOverview": "نمای کلی",
+        "socialStudio": "استودیو سازنده",
+        "socialCommunity": "جامعه و گفتگو",
+        "socialModeration": "مدیریت محتوا",
+        "socialAnalytics": "تحلیل‌ها"
     },
     "Topbar": {
         "search": "جستجو…",
