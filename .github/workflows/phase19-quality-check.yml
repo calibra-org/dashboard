@@ -28,7 +28,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   integrity:
@@ -56,19 +56,12 @@ jobs:
           --health-timeout 3s
           --health-retries 10
     steps:
-      - name: Checkout PR head
-        if: github.event_name == 'pull_request'
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          fetch-depth: 0
-          persist-credentials: true
-      - name: Checkout main push
-        if: github.event_name != 'pull_request'
+      - name: Checkout integrated candidate
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Capture checked-out head
+          persist-credentials: false
+      - name: Capture checked-out candidate
         run: echo "START_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
       - uses: actions/setup-node@v4
         with:
@@ -133,11 +126,9 @@ jobs:
           console.log(`Captured ${missing.size} pre-existing undocumented route signatures from the baseline ref`);
           NODE
           git checkout --detach "$START_SHA"
-      - name: Materialize Phase 19 integrations
-        run: node scripts/materialize-phase19-on-current-main.mjs
-      - name: Format Phase 19 release candidate
+      - name: Check Phase 19 formatting
         run: >-
-          pnpm exec biome check --write
+          pnpm exec biome check
           apps/admin/messages/trust/en.json
           apps/admin/messages/trust/fa.json
           apps/admin/src/components/Sidebar.tsx
@@ -238,31 +229,5 @@ jobs:
         run: pnpm --filter @calibra/admin run build
       - name: Diff hygiene
         run: git diff --check
-      - name: Commit generated PR release candidate
-        if: github.event_name == 'pull_request'
-        shell: bash
-        env:
-          BRANCH: ${{ github.event.pull_request.head.ref }}
-        run: |
-          set -euo pipefail
-          if git diff --quiet; then
-            echo "Phase 19 release candidate already materialized"
-            exit 0
-          fi
-          git diff --name-only | tee /tmp/phase19-files.txt
-          while IFS= read -r path; do
-            case "$path" in
-              apps/admin/messages/trust/en.json|apps/admin/messages/trust/fa.json|apps/admin/src/components/Sidebar.tsx|apps/admin/src/lib/queries/api-client.ts|apps/admin/src/features/quality/*|apps/api/app/controllers/admin/quality_trust_controller.ts|apps/api/app/services/quality_permissions.ts|apps/api/app/services/quality_trust_service.ts|apps/api/app/validators/admin/quality_trust_validator.ts|apps/api/start/routes.ts|apps/api/start/routes/admin_quality.ts|apps/api/database/migrations/1767500000000_create_phase19_quality_trust_os.ts|apps/api/tests/unit/quality/phase19_quality_trust.spec.ts|docs/api/package.json|docs/api/scripts/merge-admin-spec.js|packages/sdk/src/generated/admin.d.ts|scripts/materialize-phase19-on-current-main.mjs|scripts/verify-phase19-quality-trust.mjs) ;;
-              *) echo "Unexpected touched path: $path" >&2; exit 1 ;;
-            esac
-          done < /tmp/phase19-files.txt
-          remote_sha="$(git ls-remote origin "refs/heads/${BRANCH}" | awk '{print $1}')"
-          test "$remote_sha" = "$START_SHA"
-          git config user.name "calibra-phase19-bot"
-          git config user.email "actions@users.noreply.github.com"
-          git add -A
-          git commit -m "feat(phase19): generate quality trust integration and admin SDK"
-          git push origin "HEAD:${BRANCH}"
-      - name: Assert immutable main candidate
-        if: github.event_name != 'pull_request'
+      - name: Assert immutable integrated candidate
         run: git diff --exit-code
