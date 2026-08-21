@@ -232,20 +232,44 @@ jobs:
         run: pnpm test --files=tests/functional/foundation/rls_isolation.spec.ts
 
       - name: Quality gates
+        shell: bash
         run: |
           set -euo pipefail
-          pnpm exec biome lint . --max-diagnostics=1000
-          pnpm exec biome check . --max-diagnostics=1000
-          pnpm run lint:tokens
-          pnpm run lint:ws
-          git diff --check
-          test "$(grep -R 'operationId:' docs/api/reference/openapi/admin.discovery.v1.yaml docs/api/reference/openapi/storefront.discovery.v1.yaml | sed 's/.*operationId: *//' | wc -l)" = "28"
-          test "$(grep -R 'operationId:' docs/api/reference/openapi/admin.discovery.v1.yaml docs/api/reference/openapi/storefront.discovery.v1.yaml | sed 's/.*operationId: *//' | sort -u | wc -l)" = "28"
-          if grep -R -E '(bg|text|border|ring)-(red|green|blue|amber|yellow|purple|indigo|emerald|slate|gray)-[0-9]' apps/admin/src/features/discovery; then exit 1; fi
-          if grep -R -E '\b(mr|ml|pr|pl)-' apps/admin/src/features/discovery; then exit 1; fi
-          if grep -R 'from "lucide-react"' apps/admin/src/features/discovery; then exit 1; fi
-          grep -R 'FORCE ROW LEVEL SECURITY' apps/api/database/migrations/*discovery* >/dev/null
-          grep -R 'dead_letter\|retrying' apps/api/app apps/api/database/migrations >/dev/null
+          {
+            echo '===== biome lint ====='
+            pnpm exec biome lint . --max-diagnostics=1000
+            echo '===== biome check ====='
+            pnpm exec biome check . --max-diagnostics=1000
+            echo '===== lint tokens ====='
+            pnpm run lint:tokens
+            echo '===== lint ws ====='
+            pnpm run lint:ws
+            echo '===== git diff check ====='
+            git diff --check
+            echo '===== openapi operation count ====='
+            test "$(grep -R 'operationId:' docs/api/reference/openapi/admin.discovery.v1.yaml docs/api/reference/openapi/storefront.discovery.v1.yaml | sed 's/.*operationId: *//' | wc -l)" = "28"
+            echo '===== openapi operation uniqueness ====='
+            test "$(grep -R 'operationId:' docs/api/reference/openapi/admin.discovery.v1.yaml docs/api/reference/openapi/storefront.discovery.v1.yaml | sed 's/.*operationId: *//' | sort -u | wc -l)" = "28"
+            echo '===== discovery token color guard ====='
+            if grep -R -E '(bg|text|border|ring)-(red|green|blue|amber|yellow|purple|indigo|emerald|slate|gray)-[0-9]' apps/admin/src/features/discovery; then exit 1; fi
+            echo '===== discovery rtl logical spacing guard ====='
+            if grep -R -E '\b(mr|ml|pr|pl)-' apps/admin/src/features/discovery; then exit 1; fi
+            echo '===== discovery icon import guard ====='
+            if grep -R 'from "lucide-react"' apps/admin/src/features/discovery; then exit 1; fi
+            echo '===== discovery RLS guard ====='
+            grep -R 'FORCE ROW LEVEL SECURITY' apps/api/database/migrations/*discovery* >/dev/null
+            echo '===== retry/DLQ guard ====='
+            grep -R 'dead_letter\|retrying' apps/api/app apps/api/database/migrations >/dev/null
+          } 2>&1 | tee "${RUNNER_TEMP}/phase16-quality.log"
+
+      - name: Upload Phase 16 quality diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase16-quality-diagnostics
+          if-no-files-found: error
+          retention-days: 2
+          path: ${{ runner.temp }}/phase16-quality.log
 
       - name: Publish verified Phase 16 source
         shell: bash
