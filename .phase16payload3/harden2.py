@@ -118,6 +118,14 @@ def controller_patch(s):
     return s
 
 
+def normalizer_patch(s):
+    old = '.replace(/\\s*(?:متر|meters?|meter|m)(?=\\s|$)/gi, " m");'
+    new = '.replace(/(^|[^A-Za-z])\\s*(?:متر|meters?|meter|m)(?=\\s|$)/gi, "$1 m");'
+    if old not in s and new not in s:
+        raise RuntimeError('discovery meter normalization anchor missing')
+    return s.replace(old, new)
+
+
 def namespace_route_names(s, namespace):
     def repl_double(match):
         name = match.group(1)
@@ -138,6 +146,7 @@ def namespace_route_names(s, namespace):
 
 edit('apps/api/app/services/cache_invalidation.ts', cache_patch)
 edit('apps/api/app/services/discovery/search_service.ts', search_patch)
+edit('apps/api/app/services/discovery/normalizer.ts', normalizer_patch)
 edit('apps/api/app/controllers/admin/discovery_controller.ts', controller_patch)
 edit('apps/api/app/services/discovery/index_projection.ts', lambda s: s.replace('import { currentTenantId } from "#services/tenant_context";\n', ''))
 edit('apps/api/app/validators/admin/discovery_validator.ts', lambda s: s.replace('DISCOVERY_EVENT_TYPES, OPPORTUNITY_TYPES, RELATION_STATES, RELATION_TYPES', 'DISCOVERY_EVENT_TYPES, RELATION_STATES, RELATION_TYPES'))
