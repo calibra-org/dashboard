@@ -152,6 +152,7 @@ edit('apps/api/app/services/discovery/index_projection.ts', lambda s: s.replace(
 edit('apps/api/app/validators/admin/discovery_validator.ts', lambda s: s.replace('DISCOVERY_EVENT_TYPES, OPPORTUNITY_TYPES, RELATION_STATES, RELATION_TYPES', 'DISCOVERY_EVENT_TYPES, RELATION_STATES, RELATION_TYPES'))
 edit('apps/api/app/services/phase14_procurement_service.ts', lambda s: s.replace('type Actor = { id?: number | string };', 'type Actor = { id?: bigint | number | string };'))
 edit('apps/api/app/services/phase20_trust_risk_service.ts', lambda s: s.replace('type Actor = { id?: number | string };', 'type Actor = { id?: bigint | number | string };').replace('customerId?: number | string | null;', 'customerId?: bigint | number | string | null;'))
+edit('scripts/verify-phase16-discovery-integration.mjs', lambda s: s.replace('import { readFileSync, existsSync } from "node:fs";', 'import { existsSync, readFileSync } from "node:fs";'))
 edit('apps/api/start/routes/admin_discovery.ts', lambda s: namespace_route_names(s, 'discovery.admin'))
 edit('apps/api/start/routes/discovery_storefront.ts', lambda s: namespace_route_names(s, 'discovery.storefront'))
 
