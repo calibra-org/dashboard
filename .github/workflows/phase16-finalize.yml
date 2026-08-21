@@ -247,9 +247,9 @@ jobs:
             echo '===== git diff check ====='
             git diff --check
             echo '===== openapi operation count ====='
-            test "$(grep -R 'operationId:' docs/api/reference/openapi/admin.discovery.v1.yaml docs/api/reference/openapi/storefront.discovery.v1.yaml | sed 's/.*operationId: *//' | wc -l)" = "28"
+            test "$(grep -R 'operationId:' docs/api/reference/openapi/admin.discovery.v1.yaml docs/api/reference/openapi/storefront.discovery.v1.yaml | sed 's/.*operationId: *//' | wc -l)" = "29"
             echo '===== openapi operation uniqueness ====='
-            test "$(grep -R 'operationId:' docs/api/reference/openapi/admin.discovery.v1.yaml docs/api/reference/openapi/storefront.discovery.v1.yaml | sed 's/.*operationId: *//' | sort -u | wc -l)" = "28"
+            test "$(grep -R 'operationId:' docs/api/reference/openapi/admin.discovery.v1.yaml docs/api/reference/openapi/storefront.discovery.v1.yaml | sed 's/.*operationId: *//' | sort -u | wc -l)" = "29"
             echo '===== discovery token color guard ====='
             if grep -R -E '(bg|text|border|ring)-(red|green|blue|amber|yellow|purple|indigo|emerald|slate|gray)-[0-9]' apps/admin/src/features/discovery; then exit 1; fi
             echo '===== discovery rtl logical spacing guard ====='
