@@ -202,7 +202,22 @@ jobs:
 
       - name: Phase 16 normalizer unit test
         working-directory: apps/api
-        run: pnpm test --files=tests/unit/discovery/normalizer.spec.ts
+        shell: bash
+        run: |
+          set -o pipefail
+          pnpm test --files=tests/unit/discovery/normalizer.spec.ts 2>&1 | tee "${RUNNER_TEMP}/phase16-normalizer.log"
+
+      - name: Upload Phase 16 normalizer diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase16-normalizer-diagnostics
+          if-no-files-found: error
+          retention-days: 2
+          path: |
+            ${{ runner.temp }}/phase16-normalizer.log
+            apps/api/tests/unit/discovery/normalizer.spec.ts
+            apps/api/app/services/discovery
 
       - name: Phase 16 merchandising engine unit test
         working-directory: apps/api
