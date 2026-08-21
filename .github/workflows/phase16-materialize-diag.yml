@@ -55,6 +55,15 @@ jobs:
           python3 /tmp/p16h/apply_phase16.py
           python3 /tmp/harden2.py
           python3 /tmp/route_names.py
+      - name: Export materialized normalizer sources
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase16-materialized-normalizer
+          if-no-files-found: error
+          retention-days: 2
+          path: |
+            apps/api/tests/unit/discovery/normalizer.spec.ts
+            apps/api/app/services/discovery
       - name: Print Discovery route and OpenAPI sources
         shell: bash
         run: |
