@@ -81,6 +81,7 @@ jobs:
 
           rm -rf .phase16payload .phase16payload2 .phase16payload3
           rm -f .github/workflows/phase16-finalize.yml .github/workflows/phase16-materialize-diag.yml
+          rm -f .github/workflows/phase16-discovery-check.yml
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
