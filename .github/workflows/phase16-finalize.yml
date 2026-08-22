@@ -1,71 +1,22 @@
-name: Phase 16 Generate Finalized Schema
+name: Phase 16 Sync Finalized SDK
 
 on:
   push:
     branches:
       - agent/phase16-discovery-os-final-20260818
-  pull_request:
-    branches:
-      - main
 
 permissions:
   contents: write
 
 concurrency:
-  group: phase16-generate-finalized-schema
+  group: phase16-sync-finalized-sdk
   cancel-in-progress: true
 
 jobs:
-  generate-schema:
+  regenerate-sdk:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
-    env:
-      NODE_ENV: test
-      PORT: 3333
-      HOST: 127.0.0.1
-      APP_NAME: calibra-api-test
-      APP_KEY: phase16-test-app-key-0123456789abcdef
-      LOG_LEVEL: silent
-      DB_HOST: localhost
-      DB_PORT: 5432
-      DB_USER: calibra
-      DB_PASSWORD: calibra
-      DB_DATABASE: calibra_test
-      DB_ADMIN_USER: calibra
-      DB_ADMIN_PASSWORD: calibra
-      MAIL_FROM_ADDRESS: ops@calibra.local
-      MAIL_FROM_NAME: Calibra
-      MAIL_NOTIFICATIONS_ENABLED: "false"
-      SMTP_HOST: localhost
-      SMTP_PORT: 11025
-      QUEUE_DRIVER: sync
-      REDIS_HOST: localhost
-      REDIS_PORT: 6379
-      TRANSMIT_TRANSPORT: none
-      LIMITER_STORE: memory
-      CACHE_DRIVER: memory
-    services:
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_USER: calibra
-          POSTGRES_PASSWORD: calibra
-          POSTGRES_DB: calibra_test
-        ports: ["5432:5432"]
-        options: >-
-          --health-cmd "pg_isready -U calibra -d calibra_test"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-      redis:
-        image: redis:7-alpine
-        ports: ["6379:6379"]
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 5s
-          --health-timeout 3s
-          --health-retries 10
     steps:
       - uses: actions/checkout@v4
         with:
@@ -83,72 +34,25 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Bootstrap Discovery schema generation
-        working-directory: apps/api
+      - name: Regenerate Admin OpenAPI SDK
         shell: bash
         run: |
           set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path('database/schema.ts')
-          s = p.read_text()
-          marker = '// PHASE16_TEMP_SCHEMA_BOOTSTRAP'
-          names = [
-              'DiscoveryIndexOperationSchema',
-              'DiscoveryMerchandisingRuleSchema',
-              'DiscoveryOpportunitySchema',
-              'DiscoveryOpportunityEvidenceSchema',
-              'DiscoveryProductRelationshipSchema',
-              'DiscoverySearchEventSchema',
-              'DiscoverySearchPolicySchema',
-              'DiscoverySearchPolicyVersionSchema',
-              'DiscoverySynonymRuleSchema',
-          ]
-          if marker not in s:
-              p.write_text(s + '\n' + marker + '\n' + '\n'.join(f'export class {n} extends BaseModel {{}}' for n in names) + '\n')
-          PY
-
-      - name: Run migrations and regenerate Lucid schema
-        working-directory: apps/api
-        run: node ace migration:run --connection=postgres_admin --force
-
-      - name: Verify generated Discovery schema
-        working-directory: apps/api
-        shell: bash
-        run: |
-          set -euo pipefail
-          ! grep -q 'PHASE16_TEMP_SCHEMA_BOOTSTRAP' database/schema.ts
-          for name in \
-            DiscoveryIndexOperationSchema \
-            DiscoveryMerchandisingRuleSchema \
-            DiscoveryOpportunitySchema \
-            DiscoveryOpportunityEvidenceSchema \
-            DiscoveryProductRelationshipSchema \
-            DiscoverySearchEventSchema \
-            DiscoverySearchPolicySchema \
-            DiscoverySearchPolicyVersionSchema \
-            DiscoverySynonymRuleSchema
-          do
-            grep -A4 "export class ${name}" database/schema.ts | grep -q '\$columns'
-          done
-
-      - name: Verify generated schema diff
-        shell: bash
-        run: |
-          set -euo pipefail
+          pnpm --dir docs/api run build:json:admin
+          pnpm --filter @calibra/sdk run codegen:admin
           git diff --check
 
-      - name: Guard schema-only change and publish
+      - name: Guard generated-only change and publish
         shell: bash
         env:
           TARGET_BRANCH: agent/phase16-finalized-source-20260822
         run: |
           set -euo pipefail
           changed="$(git diff --name-only)"
-          test "$changed" = "apps/api/database/schema.ts"
+          test "$changed" = "packages/sdk/src/generated/admin.d.ts"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add apps/api/database/schema.ts
+          git add packages/sdk/src/generated/admin.d.ts
           git diff --cached --check
-          git commit -m 'chore(phase16): regenerate Lucid discovery schema'
+          git commit -m 'chore(phase16): regenerate admin SDK contract'
           git push origin "HEAD:${TARGET_BRANCH}"
