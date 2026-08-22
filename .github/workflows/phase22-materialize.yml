@@ -101,12 +101,12 @@ jobs:
           mapfile -t files < <(
             { git diff --name-only; git ls-files --others --exclude-standard; } \
               | sort -u \
-              | grep -E '\.(ts|tsx|js|mjs|json)$' \
+              | grep -E '\.(ts|tsx|js|jsx|mjs|cjs|json)$' \
               | grep -v '^apps/api/database/schema\.ts$' \
               | grep -v '^packages/sdk/src/generated/' || true
           )
           if [ "${#files[@]}" -gt 0 ]; then
-            pnpm exec biome check --write "${files[@]}"
+            pnpm exec biome check --write --unsafe "${files[@]}"
             pnpm exec biome check "${files[@]}"
           fi
           git diff --check
