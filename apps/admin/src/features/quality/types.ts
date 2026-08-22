@@ -1,9 +1,12 @@
-export type QualityRecord = Record<string, any>;
+export type QualityValue = string | number | boolean | null | QualityValue[] | { [key: string]: QualityValue };
+export type QualityRecord = Record<string, QualityValue>;
+
 export interface PageMeta {
     page: number;
     limit: number;
     total: number;
 }
+
 export interface QualityCase extends QualityRecord {
     id: number;
     reference: string;
@@ -14,6 +17,7 @@ export interface QualityCase extends QualityRecord {
     version: number;
     updated_at: string;
 }
+
 export interface QualityOverview {
     data: {
         open_cases: number;
@@ -24,7 +28,9 @@ export interface QualityOverview {
         inspection_coverage: number | null;
     };
 }
+
 export interface QualityCaseDetail extends QualityCase {
+    verification_status?: string | null;
     sources: QualityRecord[];
     evidence: QualityRecord[];
     findings: QualityRecord[];
