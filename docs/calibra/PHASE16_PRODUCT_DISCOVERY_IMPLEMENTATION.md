@@ -69,6 +69,7 @@ Before merge:
 - migrations + generated schema committed on the finalized source branch
 - OpenAPI merge + lint
 - SDK codegen + sync check
+- generated Admin SDK declaration synchronized from the merged Admin OpenAPI contract on the finalized source branch
 - API typecheck
 - Admin typecheck/build
 - Phase 16 unit tests
