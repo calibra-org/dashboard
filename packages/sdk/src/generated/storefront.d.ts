@@ -2290,6 +2290,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/storefront/discovery/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["storefrontDiscoverySearch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/storefront/discovery/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["storefrontDiscoveryEvent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3405,6 +3437,44 @@ export interface components {
             schema_version: 1;
         } & {
             [key: string]: unknown;
+        };
+        DiscoverySearchRequest: {
+            query: string;
+            /** @enum {string} */
+            locale?: "fa" | "en";
+            limit?: number;
+            category_id?: number;
+        };
+        DiscoverySearchResponse: {
+            data: components["schemas"]["DiscoverySearchResult"][];
+            meta: {
+                [key: string]: unknown;
+            };
+        };
+        DiscoveryEventInput: {
+            /** Format: uuid */
+            event_key: string;
+            /** @enum {string} */
+            event_type: "search_performed" | "results_served" | "result_clicked" | "zero_result" | "no_click" | "reformulated" | "filter_applied" | "sort_changed" | "add_to_cart" | "purchase" | "exit";
+            query?: string;
+            /** @enum {string} */
+            locale?: "fa" | "en";
+            surface?: string;
+            session_key?: string;
+            result_count?: number;
+            product_id?: number;
+            position?: number;
+            /** Format: date-time */
+            occurred_at?: string;
+        };
+        DiscoverySearchResult: {
+            id: number;
+            sku?: string | null;
+            name: string;
+            slug?: string | null;
+            price_minor?: number | null;
+            status: string;
+            catalog_visibility: string;
         };
     };
     responses: {
@@ -6432,6 +6502,59 @@ export interface operations {
         responses: {
             /** @description Observation accepted or deduplicated */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    storefrontDiscoverySearch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscoverySearchRequest"];
+            };
+        };
+        responses: {
+            /** @description Search results */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoverySearchResponse"];
+                };
+            };
+        };
+    };
+    storefrontDiscoveryEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscoveryEventInput"];
+            };
+        };
+        responses: {
+            /** @description Idempotent duplicate accepted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Accepted */
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
