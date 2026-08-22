@@ -10969,6 +10969,134 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/digital-twin/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getDigitalTwinOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/digital-twin/scenarios": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listDigitalTwinScenarios"];
+        put?: never;
+        post: operations["createDigitalTwinScenario"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/digital-twin/scenarios/{publicId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["updateDigitalTwinScenario"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/digital-twin/scenarios/{publicId}/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["runDigitalTwinScenario"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/digital-twin/runs/{publicId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getDigitalTwinRun"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/digital-twin/compare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["compareDigitalTwinRuns"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/digital-twin/runs/{publicId}/sensitivity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getDigitalTwinSensitivity"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/digital-twin/runs/{publicId}/decision-brief": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getDigitalTwinDecisionBrief"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -15032,6 +15160,27 @@ export interface components {
             actual_value?: number | null;
             assessment: string;
         };
+        DigitalTwinAssumptions: {
+            demand_multiplier: number;
+            price_multiplier: number;
+            cost_multiplier: number;
+            lead_time_multiplier: number;
+            capacity_multiplier: number;
+            capital_limit_minor?: number | null;
+            campaign_lift?: number;
+            service_level_target?: number;
+        };
+        DigitalTwinScenarioInput: {
+            title: string;
+            objective: string;
+            assumptions: components["schemas"]["DigitalTwinAssumptions"];
+            source_refs?: {
+                [key: string]: unknown;
+            };
+        };
+        DigitalTwinEnvelope: {
+            data: unknown;
+        };
     };
     responses: {
         /** @description Unauthorized (401) — the request did not include a valid bearer token, or the token has been revoked. */
@@ -15132,6 +15281,7 @@ export interface components {
         ModelPublicId: string;
         Id: number;
         QualityOverlayIdempotencyKey: string;
+        DigitalTwinPublicId: string;
     };
     requestBodies: never;
     headers: never;
@@ -33198,6 +33348,211 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getDigitalTwinOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Digital twin overview. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DigitalTwinEnvelope"];
+                };
+            };
+        };
+    };
+    listDigitalTwinScenarios: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Scenario list. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    createDigitalTwinScenario: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DigitalTwinScenarioInput"];
+            };
+        };
+        responses: {
+            /** @description Scenario created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    updateDigitalTwinScenario: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["DigitalTwinPublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DigitalTwinScenarioInput"];
+            };
+        };
+        responses: {
+            /** @description Scenario updated and version incremented. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Scenario not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    runDigitalTwinScenario: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["DigitalTwinPublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    seed?: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Reproducible simulation completed or existing identical run returned. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getDigitalTwinRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["DigitalTwinPublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Run, scenario and result bands. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Run not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    compareDigitalTwinRuns: {
+        parameters: {
+            query: {
+                /** @description Comma-separated run public IDs, maximum six. */
+                runs: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Run comparison. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getDigitalTwinSensitivity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["DigitalTwinPublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One-at-a-time sensitivity analysis against revenue. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getDigitalTwinDecisionBrief: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["DigitalTwinPublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recommendation-only decision brief with risk, service and capital trade-offs. */
             200: {
                 headers: {
                     [name: string]: unknown;

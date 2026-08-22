@@ -1,0 +1,156 @@
+openapi: 3.1.0
+info:
+  title: Calibra Admin Phase 23 Digital Twin API
+  version: 1.0.0
+tags:
+  - name: Digital Twin
+    description: Deterministic recommendation-only commerce scenario simulation.
+paths:
+  /api/v1/admin/digital-twin/overview:
+    get:
+      tags: [Digital Twin]
+      operationId: getDigitalTwinOverview
+      responses:
+        "200":
+          description: Digital twin overview.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DigitalTwinEnvelope"
+  /api/v1/admin/digital-twin/scenarios:
+    get:
+      tags: [Digital Twin]
+      operationId: listDigitalTwinScenarios
+      responses:
+        "200":
+          description: Scenario list.
+    post:
+      tags: [Digital Twin]
+      operationId: createDigitalTwinScenario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DigitalTwinScenarioInput"
+      responses:
+        "201":
+          description: Scenario created.
+  /api/v1/admin/digital-twin/scenarios/{publicId}:
+    put:
+      tags: [Digital Twin]
+      operationId: updateDigitalTwinScenario
+      parameters:
+        - $ref: "#/components/parameters/DigitalTwinPublicId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DigitalTwinScenarioInput"
+      responses:
+        "200":
+          description: Scenario updated and version incremented.
+        "404":
+          description: Scenario not found.
+  /api/v1/admin/digital-twin/scenarios/{publicId}/run:
+    post:
+      tags: [Digital Twin]
+      operationId: runDigitalTwinScenario
+      parameters:
+        - $ref: "#/components/parameters/DigitalTwinPublicId"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                seed:
+                  type: integer
+                  minimum: 1
+                  maximum: 2147483647
+      responses:
+        "201":
+          description: Reproducible simulation completed or existing identical run returned.
+  /api/v1/admin/digital-twin/runs/{publicId}:
+    get:
+      tags: [Digital Twin]
+      operationId: getDigitalTwinRun
+      parameters:
+        - $ref: "#/components/parameters/DigitalTwinPublicId"
+      responses:
+        "200":
+          description: Run, scenario and result bands.
+        "404":
+          description: Run not found.
+  /api/v1/admin/digital-twin/compare:
+    get:
+      tags: [Digital Twin]
+      operationId: compareDigitalTwinRuns
+      parameters:
+        - name: runs
+          in: query
+          required: true
+          description: Comma-separated run public IDs, maximum six.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Run comparison.
+  /api/v1/admin/digital-twin/runs/{publicId}/sensitivity:
+    get:
+      tags: [Digital Twin]
+      operationId: getDigitalTwinSensitivity
+      parameters:
+        - $ref: "#/components/parameters/DigitalTwinPublicId"
+      responses:
+        "200":
+          description: One-at-a-time sensitivity analysis against revenue.
+  /api/v1/admin/digital-twin/runs/{publicId}/decision-brief:
+    get:
+      tags: [Digital Twin]
+      operationId: getDigitalTwinDecisionBrief
+      parameters:
+        - $ref: "#/components/parameters/DigitalTwinPublicId"
+      responses:
+        "200":
+          description: Recommendation-only decision brief with risk, service and capital trade-offs.
+components:
+  parameters:
+    DigitalTwinPublicId:
+      name: publicId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    DigitalTwinAssumptions:
+      type: object
+      required: [demand_multiplier, price_multiplier, cost_multiplier, lead_time_multiplier, capacity_multiplier]
+      properties:
+        demand_multiplier: { type: number, minimum: 0.1, maximum: 5 }
+        price_multiplier: { type: number, minimum: 0.5, maximum: 2 }
+        cost_multiplier: { type: number, minimum: 0.5, maximum: 3 }
+        lead_time_multiplier: { type: number, minimum: 0.25, maximum: 4 }
+        capacity_multiplier: { type: number, minimum: 0.1, maximum: 5 }
+        capital_limit_minor: { type: [number, "null"], minimum: 0 }
+        campaign_lift: { type: number, minimum: -0.9, maximum: 5 }
+        service_level_target: { type: number, minimum: 0.5, maximum: 0.999 }
+    DigitalTwinScenarioInput:
+      type: object
+      required: [title, objective, assumptions]
+      properties:
+        title: { type: string, minLength: 3, maxLength: 180 }
+        objective: { type: string, minLength: 8, maxLength: 2000 }
+        assumptions:
+          $ref: "#/components/schemas/DigitalTwinAssumptions"
+        source_refs:
+          type: object
+          additionalProperties: true
+    DigitalTwinEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: {}
