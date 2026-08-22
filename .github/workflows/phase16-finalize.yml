@@ -1,92 +1,74 @@
-name: Phase 16 Resume Publish
+name: Phase 16 Format Finalized Source
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - agent/phase16-discovery-os-final-20260818
-  pull_request:
-    branches:
-      - main
 
 permissions:
   contents: write
 
 concurrency:
-  group: phase16-resume-publish-current-main
+  group: phase16-format-finalized-source
   cancel-in-progress: true
 
 jobs:
-  resume-publish:
+  format-finalized-source:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: agent/phase16-discovery-os-final-20260818
+          ref: agent/phase16-finalized-source-20260822
           fetch-depth: 0
 
-      - name: Extract audited Phase 16 materializer
+      - name: Capture allowed Phase 16 paths
         shell: bash
         run: |
           set -euo pipefail
-          cat .phase16payload3/part_* > /tmp/p16h.b64
-          echo "635802c91e43b067617afe97c0682b83d203b633c280b6900f2cfe70b770032c  /tmp/p16h.b64" | sha256sum -c -
-          base64 -d /tmp/p16h.b64 | xz -d > /tmp/phase16.tar
-          echo "cda3771619610ee71e33877d6fa512381acd3ed539d4af1730981827fae29bce  /tmp/phase16.tar" | sha256sum -c -
-          tar -xf /tmp/phase16.tar -C /tmp
-          cp .phase16payload3/harden2.py /tmp/harden2.py
-          cp .phase16payload3/route_names.py /tmp/route_names.py
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-          p = Path('/tmp/p16h/apply_phase16.py')
-          s = p.read_text()
-          pattern = r'''    marker=''' + "'''" + r'''[ \t]*\{collapsible\(\n[ \t]*"ticket-sidebar-items",''' + "'''"
-          replacement = '''    marker=''' + "'''" + '''                    {collapsible(\n                        "ticket-sidebar-items",''' + "'''"
-          s, count = re.subn(pattern, replacement, s, count=1)
-          if count != 1:
-              raise SystemExit('Phase 16 materializer ticket marker definition missing')
-          p.write_text(s)
-          PY
+          git fetch origin main
+          git diff --name-only origin/main...HEAD | sort -u > "${RUNNER_TEMP}/phase16-allowed.txt"
+          test -s "${RUNNER_TEMP}/phase16-allowed.txt"
 
-      - name: Materialize from exact current main
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Apply formatting only
         shell: bash
         run: |
           set -euo pipefail
-          git fetch --prune origin main
-          git reset --hard origin/main
-          python3 /tmp/p16h/apply_phase16.py
-          python3 /tmp/harden2.py
-          python3 /tmp/route_names.py
+          pnpm run format:fix
+          pnpm run format
+          git diff --check
 
-      - name: Verify resume payload and publish clean branch
+      - name: Guard formatting scope and publish
         shell: bash
         env:
-          PHASE16_PUBLISH_BRANCH: agent/phase16-finalized-source-20260822
+          TARGET_BRANCH: agent/phase16-finalized-source-20260822
         run: |
           set -euo pipefail
-          test -f apps/api/app/services/discovery/search_service.ts
-          test -f apps/api/app/services/discovery/index_projection.ts
-          test -f apps/api/app/validators/admin/discovery_validator.ts
-          test -f apps/api/app/controllers/admin/discovery_controller.ts
-          test -f apps/api/start/routes/admin_discovery.ts
-          test -f apps/api/start/routes/discovery_storefront.ts
-          test ! -e apps/admin/src/features/discovery/mock.ts
-          grep -q 'admin_discovery.js' apps/api/start/routes.ts
-          grep -q 'discovery_storefront.js' apps/api/start/routes.ts
-          grep -q 'discovery-sidebar-items' apps/admin/src/components/Sidebar.tsx
-          grep -q '/discovery' apps/admin/src/components/Sidebar.tsx
+          git diff --name-only | sort -u > "${RUNNER_TEMP}/phase16-formatted.txt"
+          test -s "${RUNNER_TEMP}/phase16-formatted.txt"
 
-          rm -rf .phase16payload .phase16payload2 .phase16payload3
-          rm -f .github/workflows/phase16-finalize.yml .github/workflows/phase16-materialize-diag.yml
-          rm -f .github/workflows/phase16-discovery-check.yml
+          unexpected="$(comm -23 "${RUNNER_TEMP}/phase16-formatted.txt" "${RUNNER_TEMP}/phase16-allowed.txt")"
+          if [ -n "$unexpected" ]; then
+            echo 'Formatter changed files outside the Phase 16 PR scope:'
+            printf '%s\n' "$unexpected"
+            exit 1
+          fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git diff --cached --check
-          git diff --cached --quiet && { echo 'No Phase 16 changes materialized'; exit 1; }
-          git commit -m 'feat(phase16): finalize Product Discovery OS on current main'
-          git push origin "HEAD:${PHASE16_PUBLISH_BRANCH}"
+          git commit -m 'style(phase16): normalize finalized source'
+          git push origin "HEAD:${TARGET_BRANCH}"
