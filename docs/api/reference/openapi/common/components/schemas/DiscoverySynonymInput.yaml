@@ -1,0 +1,28 @@
+type: object
+required:
+- locale
+- term
+- synonyms
+- mode
+properties:
+  locale:
+    type: string
+    enum:
+    - fa
+    - en
+  term:
+    type: string
+  synonyms:
+    type: array
+    minItems: 1
+    items:
+      type: string
+  mode:
+    type: string
+    enum:
+    - equivalent
+    - directional
+  category_id:
+    type: integer
+  enabled:
+    type: boolean

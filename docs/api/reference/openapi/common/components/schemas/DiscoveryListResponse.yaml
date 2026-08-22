@@ -1,0 +1,12 @@
+type: object
+required:
+- data
+properties:
+  data:
+    type: array
+    items:
+      type: object
+      additionalProperties: true
+  meta:
+    type: object
+    additionalProperties: true

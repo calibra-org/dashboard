@@ -80,7 +80,21 @@
         "seoRankTracking": "رهگیری رتبه",
         "seoCompetitorsSerp": "رقبا و SERP",
         "seoReports": "گزارش‌های سئو",
-        "seoSettings": "تنظیمات و ابزارها"
+        "seoSettings": "تنظیمات و ابزارها",
+        "growth": "رشد",
+        "discovery": "کشف و فرصت محصول",
+        "discoveryOverview": "مرکز فرمان کشف",
+        "discoveryQueries": "هوش جست‌وجو",
+        "discoveryZeroResults": "کیفیت و بدون نتیجه",
+        "discoverySimulator": "شبیه‌ساز و Explainability",
+        "discoveryMerchandising": "Merchandising و Ranking",
+        "discoveryCompatibility": "گراف سازگاری",
+        "discoveryOpportunities": "فرصت‌های محصول",
+        "discoveryGovernance": "حاکمیت و سلامت Index",
+        "discoverySectionInsight": "تحلیل و تشخیص",
+        "discoverySectionControl": "کنترل نمایش و رتبه‌بندی",
+        "discoverySectionKnowledge": "دانش و فرصت",
+        "discoverySectionSystem": "سیستم و بازیابی"
     },
     "Topbar": {
         "search": "جستجو…",
@@ -4241,6 +4255,40 @@
                 "title": "تنظیمات و ابزارهای فنی",
                 "description": "K20/K21، robots.txt، Sitemap، Schema، IndexNow و اتصال سرویس‌های رسمی"
             }
+        }
+    },
+    "Discovery": {
+        "overview": {
+            "title": "مرکز فرمان کشف و فرصت محصول",
+            "description": "تقاضای واقعی، کیفیت پیدا شدن محصول، قوانین نمایش، سازگاری و فرصت‌های قابل اقدام را در یک Workspace کنترل کنید."
+        },
+        "queries": {
+            "title": "هوش جست‌وجو و Query Explorer",
+            "description": "عبارت‌های واقعی و outcomeها را با ذخیره‌سازی حداقلی و حریم خصوصی بررسی کنید."
+        },
+        "zeroResults": {
+            "title": "کیفیت جست‌وجو و بدون نتیجه‌ها",
+            "description": "کمبود محصول را از شکاف ویژگی، synonym، relevance و drift ایندکس تفکیک کنید."
+        },
+        "simulator": {
+            "title": "شبیه‌ساز و Explainability",
+            "description": "همان evaluator تولید را read-only با trace نرمال‌سازی، retrieval، eligibility و rule اجرا کنید."
+        },
+        "merchandising": {
+            "title": "Merchandising و Ranking Policies",
+            "description": "Boost، Bury، Pin و Hide را نسخه‌دار، زمان‌بندی‌شده، قابل ممیزی و rollback مدیریت کنید."
+        },
+        "compatibility": {
+            "title": "Knowledge & Compatibility Graph",
+            "description": "روابط سازگار، ناسازگار و نامشخص را فقط با provenance و evidence ثبت کنید."
+        },
+        "opportunities": {
+            "title": "مرکز فرصت محصول",
+            "description": "شواهد بدون نتیجه و شکاف بازیابی را به workflow قابل پیگیری تبدیل کنید، بدون درآمد یا confidence ساختگی."
+        },
+        "governance": {
+            "title": "حاکمیت Search و سلامت Index",
+            "description": "نسخه سیاست، typo، fallback، صف projection، retry، dead-letter، lag و rebuild را کنترل کنید."
         }
     }
 }

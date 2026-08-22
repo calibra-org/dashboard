@@ -1,0 +1,12 @@
+type: object
+required:
+- data
+- meta
+properties:
+  data:
+    type: array
+    items:
+      $ref: ./DiscoverySearchResult.yaml
+  meta:
+    type: object
+    additionalProperties: true

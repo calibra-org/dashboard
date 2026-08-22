@@ -1,0 +1,17 @@
+import { createTableView } from "#lib/table_view/create_table_view";
+import type { InferTableViewQuery } from "#lib/table_view/types";
+import DiscoverySynonymRule from "#models/discovery_synonym_rule";
+export const adminDiscoverySynonymsView = createTableView({
+    model: DiscoverySynonymRule,
+    columns: {
+        id: { type: "bigint", filterable: true, orderable: true },
+        locale: { type: "string", filterable: true, orderable: true },
+        term: { type: "string", filterable: true, orderable: true },
+        mode: { type: "string", filterable: true, orderable: true },
+        category_id: { type: "bigint", filterable: true, orderable: false },
+        enabled: { type: "boolean", filterable: true, orderable: true },
+        created_at: { type: "datetime", filterable: true, orderable: true },
+    },
+    defaultSort: [["created_at", "desc"]],
+});
+export type AdminDiscoverySynonymsViewQuery = InferTableViewQuery<typeof adminDiscoverySynonymsView>;

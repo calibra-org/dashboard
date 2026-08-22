@@ -1,0 +1,30 @@
+type: object
+required:
+- subject_product_id
+- relation_type
+- object_product_id
+- state
+- confidence_class
+- source_type
+properties:
+  subject_product_id:
+    type: integer
+  relation_type:
+    type: string
+  object_product_id:
+    type: integer
+  state:
+    type: string
+    enum:
+    - compatible
+    - not_compatible
+    - unknown
+  confidence_class:
+    type: string
+  source_type:
+    type: string
+  source_ref:
+    type: string
+  evidence:
+    type: object
+    additionalProperties: true

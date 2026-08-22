@@ -80,7 +80,21 @@
         "seoRankTracking": "Rank tracking",
         "seoCompetitorsSerp": "Competitors and SERP",
         "seoReports": "SEO reports",
-        "seoSettings": "Settings and tools"
+        "seoSettings": "Settings and tools",
+        "growth": "Growth",
+        "discovery": "Storefront & Discovery",
+        "discoveryOverview": "Discovery command center",
+        "discoveryQueries": "Query intelligence",
+        "discoveryZeroResults": "Search quality & zero results",
+        "discoverySimulator": "Simulator & explainability",
+        "discoveryMerchandising": "Merchandising & ranking",
+        "discoveryCompatibility": "Compatibility graph",
+        "discoveryOpportunities": "Product opportunities",
+        "discoveryGovernance": "Governance & index health",
+        "discoverySectionInsight": "Insights & diagnosis",
+        "discoverySectionControl": "Presentation & ranking",
+        "discoverySectionKnowledge": "Knowledge & opportunity",
+        "discoverySectionSystem": "System & recovery"
     },
     "Topbar": {
         "search": "Search…",
@@ -4241,6 +4255,40 @@
                 "title": "Settings and Technical Tools",
                 "description": "K20/K21, robots.txt, Sitemap, Schema, IndexNow, and official service integrations."
             }
+        }
+    },
+    "Discovery": {
+        "overview": {
+            "title": "Product discovery command center",
+            "description": "Control real demand, findability, merchandising, compatibility and actionable opportunities in one workspace."
+        },
+        "queries": {
+            "title": "Query intelligence",
+            "description": "Inspect real queries and outcomes with privacy-minimized storage."
+        },
+        "zeroResults": {
+            "title": "Search quality & zero results",
+            "description": "Separate assortment gaps from index drift, attributes, synonyms and relevance."
+        },
+        "simulator": {
+            "title": "Simulator & explainability",
+            "description": "Run the same production evaluator read-only and expose its trace."
+        },
+        "merchandising": {
+            "title": "Merchandising & ranking policies",
+            "description": "Manage Boost, Bury, Pin and Hide with versioning, validity windows, audit and rollback."
+        },
+        "compatibility": {
+            "title": "Knowledge & compatibility graph",
+            "description": "Record compatible, incompatible and unknown relationships only with provenance and evidence."
+        },
+        "opportunities": {
+            "title": "Product opportunity center",
+            "description": "Turn real evidence into trackable work without invented revenue or confidence."
+        },
+        "governance": {
+            "title": "Search governance & index health",
+            "description": "Control policy versions, typo settings, fallback, projection queue, retry, dead-letter, lag and rebuild."
         }
     }
 }

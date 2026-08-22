@@ -1,0 +1,11 @@
+type: object
+required:
+- subject_product_id
+- object_product_id
+properties:
+  subject_product_id:
+    type: integer
+    minimum: 1
+  object_product_id:
+    type: integer
+    minimum: 1

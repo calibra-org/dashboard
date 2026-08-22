@@ -1,0 +1,18 @@
+import { createTableView } from "#lib/table_view/create_table_view";
+import type { InferTableViewQuery } from "#lib/table_view/types";
+import DiscoveryProductRelationship from "#models/discovery_product_relationship";
+export const adminDiscoveryRelationshipsView = createTableView({
+    model: DiscoveryProductRelationship,
+    columns: {
+        id: { type: "bigint", filterable: true, orderable: true },
+        subject_product_id: { type: "bigint", filterable: true, orderable: true },
+        relation_type: { type: "string", filterable: true, orderable: true },
+        object_product_id: { type: "bigint", filterable: true, orderable: true },
+        state: { type: "string", filterable: true, orderable: true },
+        confidence_class: { type: "string", filterable: true, orderable: true },
+        status: { type: "string", filterable: true, orderable: true },
+        updated_at: { type: "datetime", filterable: true, orderable: true },
+    },
+    defaultSort: [["updated_at", "desc"]],
+});
+export type AdminDiscoveryRelationshipsViewQuery = InferTableViewQuery<typeof adminDiscoveryRelationshipsView>;

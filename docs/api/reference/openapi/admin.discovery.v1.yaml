@@ -1,0 +1,549 @@
+openapi: 3.1.0
+info:
+  title: Calibra Admin Discovery Overlay
+  version: 1.0.0
+tags:
+- name: Discovery
+  description: Phase 16 product discovery, search intelligence, merchandising, compatibility
+    and opportunity operations.
+paths:
+  /api/v1/admin/discovery/capabilities:
+    get:
+      tags:
+      - Discovery
+      operationId: adminDiscoveryCapabilities
+      responses:
+        '200':
+          description: Capabilities
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryObjectResponse'
+  /api/v1/admin/discovery/overview:
+    get:
+      tags:
+      - Discovery
+      operationId: adminDiscoveryOverview
+      responses:
+        '200':
+          description: Overview
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryObjectResponse'
+  /api/v1/admin/discovery/queries:
+    get:
+      tags:
+      - Discovery
+      operationId: adminDiscoveryQueries
+      parameters:
+      - $ref: '#/components/parameters/DiscoveryPage'
+      - $ref: '#/components/parameters/DiscoveryLimit'
+      - $ref: '#/components/parameters/DiscoveryFilter'
+      - $ref: '#/components/parameters/DiscoveryFilterOr'
+      - $ref: '#/components/parameters/DiscoverySort'
+      - in: query
+        name: q
+        schema:
+          type: string
+          maxLength: 255
+      responses:
+        '200':
+          description: Search events
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryListResponse'
+  /api/v1/admin/discovery/zero-results:
+    get:
+      tags:
+      - Discovery
+      operationId: adminDiscoveryZeroResults
+      parameters:
+      - $ref: '#/components/parameters/DiscoveryPage'
+      - $ref: '#/components/parameters/DiscoveryLimit'
+      - $ref: '#/components/parameters/DiscoveryFilter'
+      - $ref: '#/components/parameters/DiscoveryFilterOr'
+      - $ref: '#/components/parameters/DiscoverySort'
+      - in: query
+        name: q
+        schema:
+          type: string
+          maxLength: 255
+      responses:
+        '200':
+          description: Zero-result events
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryListResponse'
+  /api/v1/admin/discovery/simulate:
+    post:
+      tags:
+      - Discovery
+      operationId: adminDiscoverySimulate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiscoverySearchRequest'
+      responses:
+        '200':
+          description: Explainable simulation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryObjectResponse'
+  /api/v1/admin/discovery/synonyms:
+    get:
+      tags:
+      - Discovery
+      operationId: adminDiscoverySynonyms
+      parameters:
+      - $ref: '#/components/parameters/DiscoveryPage'
+      - $ref: '#/components/parameters/DiscoveryLimit'
+      - $ref: '#/components/parameters/DiscoveryFilter'
+      - $ref: '#/components/parameters/DiscoveryFilterOr'
+      - $ref: '#/components/parameters/DiscoverySort'
+      responses:
+        '200':
+          description: Synonyms
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryListResponse'
+    post:
+      tags:
+      - Discovery
+      operationId: adminDiscoveryCreateSynonym
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiscoverySynonymInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryObjectResponse'
+        '409':
+          description: Duplicate
+  /api/v1/admin/discovery/synonyms/{id}/toggle:
+    post:
+      tags:
+      - Discovery
+      operationId: adminDiscoveryToggleSynonym
+      parameters:
+      - $ref: '#/components/parameters/DiscoveryId'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryObjectResponse'
+  /api/v1/admin/discovery/merchandising:
+    get:
+      tags:
+      - Discovery
+      operationId: adminDiscoveryMerchandisingRules
+      parameters:
+      - $ref: '#/components/parameters/DiscoveryPage'
+      - $ref: '#/components/parameters/DiscoveryLimit'
+      - $ref: '#/components/parameters/DiscoveryFilter'
+      - $ref: '#/components/parameters/DiscoveryFilterOr'
+      - $ref: '#/components/parameters/DiscoverySort'
+      responses:
+        '200':
+          description: Rules
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryListResponse'
+    post:
+      tags:
+      - Discovery
+      operationId: adminDiscoveryCreateMerchandisingRule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiscoveryMerchandisingInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryObjectResponse'
+  /api/v1/admin/discovery/merchandising/{id}/status:
+    post:
+      tags:
+      - Discovery
+      operationId: adminDiscoverySetMerchandisingStatus
+      parameters:
+      - $ref: '#/components/parameters/DiscoveryId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiscoveryMerchandisingStatusInput'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryObjectResponse'
+  /api/v1/admin/discovery/relationships:
+    get:
+      tags:
+      - Discovery
+      operationId: adminDiscoveryRelationships
+      parameters:
+      - $ref: '#/components/parameters/DiscoveryPage'
+      - $ref: '#/components/parameters/DiscoveryLimit'
+      - $ref: '#/components/parameters/DiscoveryFilter'
+      - $ref: '#/components/parameters/DiscoveryFilterOr'
+      - $ref: '#/components/parameters/DiscoverySort'
+      responses:
+        '200':
+          description: Product relationships
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryListResponse'
+    post:
+      tags:
+      - Discovery
+      operationId: adminDiscoveryCreateRelationship
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiscoveryRelationshipInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryObjectResponse'
+  /api/v1/admin/discovery/relationships/{id}/resolve:
+    post:
+      tags:
+      - Discovery
+      operationId: adminDiscoveryResolveRelationship
+      parameters:
+      - $ref: '#/components/parameters/DiscoveryId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiscoveryRelationshipResolveInput'
+      responses:
+        '200':
+          description: Resolved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryObjectResponse'
+        '409':
+          description: Version conflict
+  /api/v1/admin/discovery/relationships/{id}/revoke:
+    post:
+      tags:
+      - Discovery
+      operationId: adminDiscoveryRevokeRelationship
+      parameters:
+      - $ref: '#/components/parameters/DiscoveryId'
+      responses:
+        '200':
+          description: Revoked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryObjectResponse'
+  /api/v1/admin/discovery/compatibility/resolve:
+    post:
+      tags:
+      - Discovery
+      operationId: adminDiscoveryCompatibilityResolve
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiscoveryCompatibilityInput'
+      responses:
+        '200':
+          description: Tri-state compatibility result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryObjectResponse'
+  /api/v1/admin/discovery/opportunities:
+    get:
+      tags:
+      - Discovery
+      operationId: adminDiscoveryOpportunities
+      parameters:
+      - $ref: '#/components/parameters/DiscoveryPage'
+      - $ref: '#/components/parameters/DiscoveryLimit'
+      - $ref: '#/components/parameters/DiscoveryFilter'
+      - $ref: '#/components/parameters/DiscoveryFilterOr'
+      - $ref: '#/components/parameters/DiscoverySort'
+      responses:
+        '200':
+          description: Opportunities
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryListResponse'
+  /api/v1/admin/discovery/opportunities/detect:
+    post:
+      tags:
+      - Discovery
+      operationId: adminDiscoveryDetectOpportunities
+      responses:
+        '200':
+          description: Detection summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryObjectResponse'
+  /api/v1/admin/discovery/opportunities/{id}/action:
+    post:
+      tags:
+      - Discovery
+      operationId: adminDiscoveryOpportunityAction
+      parameters:
+      - $ref: '#/components/parameters/DiscoveryId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiscoveryOpportunityActionInput'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryObjectResponse'
+        '409':
+          description: Version conflict
+  /api/v1/admin/discovery/policies:
+    get:
+      tags:
+      - Discovery
+      operationId: adminDiscoveryPolicies
+      parameters:
+      - $ref: '#/components/parameters/DiscoveryPage'
+      - $ref: '#/components/parameters/DiscoveryLimit'
+      - $ref: '#/components/parameters/DiscoveryFilter'
+      - $ref: '#/components/parameters/DiscoveryFilterOr'
+      - $ref: '#/components/parameters/DiscoverySort'
+      responses:
+        '200':
+          description: Policies
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryListResponse'
+    post:
+      tags:
+      - Discovery
+      operationId: adminDiscoveryCreatePolicy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiscoveryPolicyInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryObjectResponse'
+  /api/v1/admin/discovery/policies/{id}/versions:
+    post:
+      tags:
+      - Discovery
+      operationId: adminDiscoveryCreatePolicyVersion
+      parameters:
+      - $ref: '#/components/parameters/DiscoveryId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiscoveryPolicyVersionInput'
+      responses:
+        '200':
+          description: Version created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryObjectResponse'
+        '409':
+          description: Version conflict
+  /api/v1/admin/discovery/policies/{id}/activate:
+    post:
+      tags:
+      - Discovery
+      operationId: adminDiscoveryActivatePolicy
+      parameters:
+      - $ref: '#/components/parameters/DiscoveryId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiscoveryPolicyActivationInput'
+      responses:
+        '200':
+          description: Activated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryObjectResponse'
+  /api/v1/admin/discovery/policies/{id}/rollback:
+    post:
+      tags:
+      - Discovery
+      operationId: adminDiscoveryRollbackPolicy
+      parameters:
+      - $ref: '#/components/parameters/DiscoveryId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiscoveryPolicyActivationInput'
+      responses:
+        '200':
+          description: Rolled back by activating an existing immutable version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryObjectResponse'
+  /api/v1/admin/discovery/index/health:
+    get:
+      tags:
+      - Discovery
+      operationId: adminDiscoveryIndexHealth
+      responses:
+        '200':
+          description: Search projection health
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryObjectResponse'
+  /api/v1/admin/discovery/index/rebuild:
+    post:
+      tags:
+      - Discovery
+      operationId: adminDiscoveryRebuildIndex
+      responses:
+        '200':
+          description: Atomic rebuild requested/completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryObjectResponse'
+  /api/v1/admin/discovery/index/operations/{id}/retry:
+    post:
+      tags:
+      - Discovery
+      operationId: adminDiscoveryRetryIndexOperation
+      parameters:
+      - $ref: '#/components/parameters/DiscoveryId'
+      responses:
+        '200':
+          description: Projection operation requeued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryObjectResponse'
+components:
+  parameters:
+    DiscoveryId:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    DiscoveryPage:
+      in: query
+      name: page
+      schema:
+        type: integer
+        minimum: 1
+    DiscoveryLimit:
+      in: query
+      name: limit
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+    DiscoveryFilter:
+      in: query
+      name: filter[]
+      schema:
+        type: array
+        items:
+          type: string
+    DiscoveryFilterOr:
+      in: query
+      name: filterOr[]
+      schema:
+        type: array
+        items:
+          type: string
+    DiscoverySort:
+      in: query
+      name: sort[]
+      schema:
+        type: array
+        items:
+          type: string
+  schemas:
+    DiscoveryObjectResponse:
+      $ref: ./common/components/schemas/DiscoveryObjectResponse.yaml
+    DiscoveryListResponse:
+      $ref: ./common/components/schemas/DiscoveryListResponse.yaml
+    DiscoverySearchRequest:
+      $ref: ./common/components/schemas/DiscoverySearchRequest.yaml
+    DiscoverySynonymInput:
+      $ref: ./common/components/schemas/DiscoverySynonymInput.yaml
+    DiscoveryMerchandisingInput:
+      $ref: ./common/components/schemas/DiscoveryMerchandisingInput.yaml
+    DiscoveryRelationshipInput:
+      $ref: ./common/components/schemas/DiscoveryRelationshipInput.yaml
+    DiscoveryRelationshipResolveInput:
+      $ref: ./common/components/schemas/DiscoveryRelationshipResolveInput.yaml
+    DiscoveryOpportunityActionInput:
+      $ref: ./common/components/schemas/DiscoveryOpportunityActionInput.yaml
+    DiscoveryPolicyInput:
+      $ref: ./common/components/schemas/DiscoveryPolicyInput.yaml
+    DiscoveryPolicyVersionInput:
+      $ref: ./common/components/schemas/DiscoveryPolicyVersionInput.yaml
+    DiscoveryMerchandisingStatusInput:
+      $ref: ./common/components/schemas/DiscoveryMerchandisingStatusInput.yaml
+    DiscoveryCompatibilityInput:
+      $ref: ./common/components/schemas/DiscoveryCompatibilityInput.yaml
+    DiscoveryPolicyActivationInput:
+      $ref: ./common/components/schemas/DiscoveryPolicyActivationInput.yaml

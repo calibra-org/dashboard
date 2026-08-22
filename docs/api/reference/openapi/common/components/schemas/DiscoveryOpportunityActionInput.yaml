@@ -1,0 +1,26 @@
+type: object
+required:
+- action
+- expected_version
+properties:
+  action:
+    type: string
+    enum:
+    - triage
+    - accept
+    - reject
+    - assign
+    - start
+    - implement
+    - measure
+    - validate
+    - close
+    - insufficient_evidence
+    - duplicate
+  assigned_to_user_id:
+    type: integer
+  note:
+    type: string
+  expected_version:
+    type: integer
+    minimum: 1

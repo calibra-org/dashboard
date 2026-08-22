@@ -1,0 +1,27 @@
+type: object
+required:
+- id
+- name
+- status
+- catalog_visibility
+properties:
+  id:
+    type: integer
+  sku:
+    type:
+    - string
+    - 'null'
+  name:
+    type: string
+  slug:
+    type:
+    - string
+    - 'null'
+  price_minor:
+    type:
+    - integer
+    - 'null'
+  status:
+    type: string
+  catalog_visibility:
+    type: string

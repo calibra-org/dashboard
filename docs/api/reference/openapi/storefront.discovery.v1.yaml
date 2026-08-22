@@ -1,0 +1,49 @@
+openapi: 3.1.0
+info:
+  title: Calibra Storefront Discovery Overlay
+  version: 1.0.0
+tags:
+- name: Discovery
+paths:
+  /api/v1/storefront/discovery/search:
+    post:
+      tags:
+      - Discovery
+      operationId: storefrontDiscoverySearch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiscoverySearchRequest'
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoverySearchResponse'
+  /api/v1/storefront/discovery/events:
+    post:
+      tags:
+      - Discovery
+      operationId: storefrontDiscoveryEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiscoveryEventInput'
+      responses:
+        '202':
+          description: Accepted
+        '200':
+          description: Idempotent duplicate accepted
+components:
+  schemas:
+    DiscoverySearchRequest:
+      $ref: ./common/components/schemas/DiscoverySearchRequest.yaml
+    DiscoverySearchResponse:
+      $ref: ./common/components/schemas/DiscoverySearchResponse.yaml
+    DiscoveryEventInput:
+      $ref: ./common/components/schemas/DiscoveryEventInput.yaml
