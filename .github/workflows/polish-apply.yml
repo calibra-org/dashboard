@@ -1,0 +1,53 @@
+name: Apply Main Polish Batch
+
+on:
+    push:
+        branches: ["agent/main-polish-20260822"]
+
+permissions:
+    contents: write
+
+concurrency:
+    group: main-polish-apply
+    cancel-in-progress: true
+
+jobs:
+    validate-and-apply:
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+        steps:
+            - uses: actions/checkout@v7
+              with:
+                  fetch-depth: 0
+            - uses: pnpm/action-setup@v4.4.0
+              with:
+                  version: 10.32.1
+                  run_install: false
+            - uses: actions/setup-node@v7
+              with:
+                  node-version: 22
+                  cache: pnpm
+            - name: Decode and validate patch
+              run: |
+                  base64 --decode scripts/main-polish.patch.gz.b64 | gzip --decompress > /tmp/main-polish.patch
+                  git apply --check /tmp/main-polish.patch
+                  git apply /tmp/main-polish.patch
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+            - name: Lint
+              run: pnpm lint
+            - name: Typecheck
+              run: pnpm typecheck
+            - name: Unit and integration tests
+              run: pnpm test
+            - name: Build
+              run: pnpm build
+            - name: Commit validated polish batch
+              run: |
+                  git rm scripts/main-polish.patch.gz.b64
+                  git config user.name "github-actions[bot]"
+                  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+                  git add -A
+                  git diff --cached --check
+                  git commit -m "chore: complete main polish sweep"
+                  git push origin HEAD:agent/main-polish-20260822
