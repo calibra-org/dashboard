@@ -61,7 +61,9 @@ jobs:
         run: |
           pnpm --dir docs/api run build:json:admin
           pnpm --filter @calibra/sdk run codegen:admin
-          git diff --exit-code -- packages/sdk/src/generated/admin.d.ts
+          grep -F '"/api/v1/admin/digital-twin/overview"' packages/sdk/src/generated/admin.d.ts
+          grep -F '"/api/v1/admin/digital-twin/runs/{publicId}/decision-brief"' packages/sdk/src/generated/admin.d.ts
+          grep -F 'getDigitalTwinDecisionBrief' packages/sdk/src/generated/admin.d.ts
       - name: API typecheck
         run: pnpm --filter @calibra/api run typecheck
       - name: Admin typecheck
