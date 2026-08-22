@@ -1,275 +1,63 @@
-name: Phase 22 Production Materializer
+name: Phase 22 Resume Format Fix
 
 on:
-  workflow_dispatch:
   pull_request:
     branches:
       - main
     paths:
-      - ".phase22payload/**"
       - ".github/workflows/phase22-materialize.yml"
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: phase22-production-materializer
+  group: phase22-resume-format-fix
   cancel-in-progress: true
 
 jobs:
-  materialize:
+  format-migration:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
-    env:
-      NODE_ENV: test
-      PORT: 3333
-      HOST: 127.0.0.1
-      APP_NAME: calibra-api-test
-      APP_KEY: phase22-test-app-key-0123456789abcdef
-      LOG_LEVEL: silent
-      DB_HOST: localhost
-      DB_PORT: 5432
-      DB_USER: calibra
-      DB_PASSWORD: calibra
-      DB_DATABASE: calibra_test
-      DB_ADMIN_USER: calibra
-      DB_ADMIN_PASSWORD: calibra
-      MAIL_FROM_ADDRESS: ops@calibra.local
-      MAIL_FROM_NAME: Calibra
-      MAIL_NOTIFICATIONS_ENABLED: "false"
-      SMTP_HOST: localhost
-      SMTP_PORT: 11025
-      QUEUE_DRIVER: sync
-      REDIS_HOST: localhost
-      REDIS_PORT: 6379
-      TRANSMIT_TRANSPORT: none
-      LIMITER_STORE: memory
-      TARGET_BRANCH: agent/phase22-multi-agent-orchestrator-20260822
-    services:
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_USER: calibra
-          POSTGRES_PASSWORD: calibra
-          POSTGRES_DB: calibra_test
-        ports: ["5432:5432"]
-        options: >-
-          --health-cmd "pg_isready -U calibra -d calibra_test"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-      redis:
-        image: redis:7-alpine
-        ports: ["6379:6379"]
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 5s
-          --health-timeout 3s
-          --health-retries 10
-
+    timeout-minutes: 15
     steps:
-      - name: Checkout carrier
-        uses: actions/checkout@v4
-        with:
-          path: carrier
-          fetch-depth: 1
-
       - name: Checkout clean Phase 22 target
         uses: actions/checkout@v4
         with:
           ref: agent/phase22-multi-agent-orchestrator-20260822
-          path: work
           fetch-depth: 0
-
-      - name: Guard exact current-main baseline
-        working-directory: work
-        shell: bash
-        run: |
-          set -euo pipefail
-          git fetch origin main
-          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
-          test -z "$(git status --porcelain)"
-
-      - name: Decode audited Phase 22 overlay
-        shell: bash
-        run: |
-          set -euo pipefail
-          cat carrier/.phase22payload/chunk_* | base64 -d > /tmp/phase22-overlay.tar.xz
-          echo "2453e4af2a85310b755d3838c1cd171319e755a553c4853c5a6092298abc9eac  /tmp/phase22-overlay.tar.xz" | sha256sum -c -
-          rm -rf /tmp/phase22-overlay
-          mkdir -p /tmp/phase22-overlay
-          tar -xJf /tmp/phase22-overlay.tar.xz -C /tmp/phase22-overlay
-
-      - name: Materialize source and current-main compatibility
-        working-directory: work
-        shell: bash
-        run: |
-          set -euo pipefail
-          rsync -a --exclude shared_patch.py /tmp/phase22-overlay/ ./
-          python3 - <<'PY'
-          from pathlib import Path
-
-          helper = Path('/tmp/phase22-overlay/shared_patch.py')
-          text = helper.read_text()
-          gateway_old = 'await import("#start/routes/admin_agentic_gateway");'
-          orchestrator_old = 'await import("#start/routes/admin_agent_orchestrator");'
-          if text.count(gateway_old) != 2 or text.count(orchestrator_old) != 1:
-              raise SystemExit('Phase 22 helper route compatibility literals changed unexpectedly')
-          text = text.replace(gateway_old, 'await import("./routes/admin_agentic_gateway.js");')
-          text = text.replace(orchestrator_old, 'await import("./routes/admin_agent_orchestrator.js");')
-          helper.write_text(text)
-          PY
-          python3 /tmp/phase22-overlay/shared_patch.py
-
-          python3 - <<'PY'
-          from pathlib import Path
-
-          workspace = Path('apps/admin/src/features/agent_orchestrator/AgentOrchestratorWorkspace.tsx')
-          text = workspace.read_text()
-          replacements = {
-              'import { ShieldAlert,SlidersHorizontal,UserRoundCheck,ScanSearch } from "#/icons";':
-                  'import { Search as ScanSearch,ShieldAlert,SlidersHorizontal,UserCheck as UserRoundCheck } from "#/icons";',
-              'onValueChange={setSpecialty}': 'onValueChange={(value)=>setSpecialty(String(value))}',
-              'onValueChange={setHandlerKey}': 'onValueChange={(value)=>setHandlerKey(String(value))}',
-              'onValueChange={setRisk}': 'onValueChange={(value)=>setRisk(String(value))}',
-              'onValueChange={setAgentId}': 'onValueChange={(value)=>setAgentId(String(value))}',
-          }
-          for old, new in replacements.items():
-              count = text.count(old)
-              if count != 1:
-                  raise SystemExit(f'expected one Phase 22 admin marker, got {count}: {old}')
-              text = text.replace(old, new, 1)
-          workspace.write_text(text)
-
-          query = Path('apps/admin/src/lib/queries/agent-orchestrator.ts')
-          query.write_text('''"use client";
-
-          import type { Locale } from "@calibra/shared/i18n";
-          import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-          import { useLocale } from "next-intl";
-
-          import { apiGet, apiMutate, type MutationMethod } from "#/lib/queries/api-client";
-
-          const base = "agentic-commerce/orchestrator";
-
-          export function useAgentOrchestratorResource<T>(path: string, enabled = true) {
-              const locale = useLocale() as Locale;
-              return useQuery<{ data: T }, Error, T>({
-                  queryKey: ["admin", "agentic-commerce", "orchestrator", path, { locale }],
-                  queryFn: () => apiGet<{ data: T }>(`${base}/${path}`, { locale }),
-                  select: (payload) => payload.data,
-                  enabled,
-                  staleTime: 8_000,
-              });
-          }
-
-          export function useAgentOrchestratorMutation<T = unknown, B = Record<string, unknown>>(
-              method: MutationMethod = "POST",
-          ) {
-              const locale = useLocale() as Locale;
-              const queryClient = useQueryClient();
-              return useMutation<T, Error, { path: string; body: B }>({
-                  mutationFn: async ({ path, body }) => {
-                      const payload = await apiMutate<{ data: T }>(method, `${base}/${path}`, { locale, body });
-                      return payload.data;
-                  },
-                  onSuccess: () =>
-                      queryClient.invalidateQueries({ queryKey: ["admin", "agentic-commerce", "orchestrator"] }),
-              });
-          }
-          ''')
-          PY
-
-          test -f apps/api/database/migrations/1775000000000_create_multi_agent_orchestrator.ts
-          test ! -e apps/api/database/migrations/1764200000000_create_multi_agent_orchestrator.ts
-          grep -Fq 'admin_agent_orchestrator' apps/api/start/routes.ts
-          grep -Fq '/agentic-commerce/orchestrator/overview' apps/admin/src/components/Sidebar.tsx
-          grep -Fq 'Search as ScanSearch' apps/admin/src/features/agent_orchestrator/AgentOrchestratorWorkspace.tsx
-          grep -Fq 'apiGet' apps/admin/src/lib/queries/agent-orchestrator.ts
-          grep -Fq 'admin.agent-orchestrator.v1.json' docs/api/scripts/merge-admin-spec.js
-          git diff --check
 
       - uses: actions/setup-node@v4
         with:
           node-version: "24.14.0"
 
-      - name: Install workspace dependencies
-        working-directory: work
+      - name: Install pnpm and workspace dependencies
         run: |
           npm install --global pnpm@10.32.1
           pnpm install --frozen-lockfile
 
-      - name: Normalize Phase 22 source only
-        working-directory: work
+      - name: Format only Phase 22 migration
         shell: bash
         run: |
           set -euo pipefail
-          pnpm exec biome check --write \
-            apps/api/app/services/agent_orchestrator \
-            apps/api/app/controllers/admin/agent_orchestrator_controller.ts \
-            apps/api/app/validators/agent_orchestrator \
-            apps/api/start/routes/admin_agent_orchestrator.ts \
-            apps/api/start/routes.ts \
-            apps/api/tests/functional/agent_orchestrator \
-            apps/admin/src/features/agent_orchestrator \
-            apps/admin/src/lib/queries/agent-orchestrator.ts \
-            "apps/admin/src/app/[locale]/(authenticated)/agentic-commerce/orchestrator" \
-            apps/admin/src/components/Sidebar.tsx \
-            apps/admin/src/lib/i18n/request.ts \
-            apps/admin/messages/agent_orchestrator \
-            apps/admin/messages/en.json \
-            apps/admin/messages/fa.json \
-            docs/api/package.json \
-            docs/api/scripts/merge-admin-spec.js \
-            package.json \
-            scripts/verify-phase22-agent-orchestrator.mjs
+          FILE=apps/api/database/migrations/1775000000000_create_multi_agent_orchestrator.ts
+          before="$(sha256sum "$FILE" | awk '{print $1}')"
+          pnpm exec biome format --write "$FILE"
           git diff --check
+          changed="$(git diff --name-only)"
+          test "$changed" = "$FILE"
+          after="$(sha256sum "$FILE" | awk '{print $1}')"
+          test "$before" != "$after"
 
-      - name: Phase 22 static production gate
-        working-directory: work
-        run: node scripts/verify-phase22-agent-orchestrator.mjs
-
-      - name: Admin typecheck preflight
-        working-directory: work
-        run: pnpm exec turbo run typecheck --filter=@calibra/admin
-
-      - name: Regenerate database schema from full migration chain
-        working-directory: work/apps/api
-        run: node ace migration:run --connection=postgres_admin --force
-
-      - name: Regenerate merged Admin OpenAPI and SDK
-        working-directory: work
+      - name: Publish format-only fix
         shell: bash
         run: |
           set -euo pipefail
-          pnpm --dir docs/api run build:json:admin
-          pnpm --filter @calibra/sdk run codegen:admin
-
-      - name: Admin production build
-        working-directory: work
-        run: pnpm exec turbo run build --filter=@calibra/admin
-
-      - name: Final source and generated-output guards
-        working-directory: work
-        shell: bash
-        run: |
-          set -euo pipefail
-          node scripts/verify-phase22-agent-orchestrator.mjs
-          git diff --check
-          git add -A
-          git diff --cached --check
-          test -n "$(git diff --cached --name-only)"
-          ! git diff --cached --name-only | grep -E '^\.github/workflows/'
-          ! git diff --cached --name-only | grep -E '^\.phase22payload/'
-          git diff --cached --name-only
-
-      - name: Publish validated Phase 22 source
-        working-directory: work
-        shell: bash
-        run: |
-          set -euo pipefail
+          FILE=apps/api/database/migrations/1775000000000_create_multi_agent_orchestrator.ts
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "feat(phase22): implement multi-agent commerce orchestrator"
-          git push origin "HEAD:${TARGET_BRANCH}"
+          git add "$FILE"
+          git diff --cached --check
+          test "$(git diff --cached --name-only)" = "$FILE"
+          git commit -m "style(phase22): format orchestrator migration"
+          git push origin HEAD:agent/phase22-multi-agent-orchestrator-20260822
