@@ -1,6 +1,5 @@
 "use client";
 
-import { LogOut, User } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useTransition } from "react";
 
@@ -12,6 +11,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
+import { LogOut, User } from "#/icons";
 import { logoutAction } from "#/lib/auth-actions";
 
 interface UserMenuProps {
