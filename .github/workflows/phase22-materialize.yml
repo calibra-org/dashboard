@@ -2,9 +2,9 @@ name: Phase 22 Production Materializer
 
 on:
   workflow_dispatch:
-  push:
+  pull_request:
     branches:
-      - agent/phase22-materializer-20260822
+      - main
     paths:
       - ".phase22payload/**"
       - ".github/workflows/phase22-materialize.yml"
