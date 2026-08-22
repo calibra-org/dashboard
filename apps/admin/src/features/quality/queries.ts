@@ -63,8 +63,7 @@ export const useAddEvidence = (id: number) => useQualityMutation(() => `quality/
 export const useAddFinding = (id: number) => useQualityMutation(() => `quality/cases/${id}/findings`);
 export const useAdjudicate = (id: number) =>
     useQualityMutation((value) => `quality/cases/${id}/findings/${value.findingId}`, "PATCH");
-export const useInspect = () =>
-    useQualityMutation((value) => `order-returns/${value.returnId}/items/${value.itemId}/inspection`);
+export const useInspect = () => useQualityMutation((value) => `order-returns/${value.returnId}/items/${value.itemId}/inspection`);
 export const useClassify = () => useQualityMutation(() => "quality/voc/classifications");
 export const useEvaluate = () => useQualityMutation(() => "quality/signals/evaluate");
 export const useSignalTransition = () => useQualityMutation((value) => `quality/signals/${value.id}/${value.action}`);
