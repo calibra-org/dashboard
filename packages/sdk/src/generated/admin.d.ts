@@ -8780,6 +8780,374 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/discovery/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminDiscoveryCapabilities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/discovery/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminDiscoveryOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/discovery/queries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminDiscoveryQueries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/discovery/zero-results": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminDiscoveryZeroResults"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/discovery/simulate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminDiscoverySimulate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/discovery/synonyms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminDiscoverySynonyms"];
+        put?: never;
+        post: operations["adminDiscoveryCreateSynonym"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/discovery/synonyms/{id}/toggle": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminDiscoveryToggleSynonym"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/discovery/merchandising": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminDiscoveryMerchandisingRules"];
+        put?: never;
+        post: operations["adminDiscoveryCreateMerchandisingRule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/discovery/merchandising/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminDiscoverySetMerchandisingStatus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/discovery/relationships": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminDiscoveryRelationships"];
+        put?: never;
+        post: operations["adminDiscoveryCreateRelationship"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/discovery/relationships/{id}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminDiscoveryResolveRelationship"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/discovery/relationships/{id}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminDiscoveryRevokeRelationship"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/discovery/compatibility/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminDiscoveryCompatibilityResolve"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/discovery/opportunities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminDiscoveryOpportunities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/discovery/opportunities/detect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminDiscoveryDetectOpportunities"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/discovery/opportunities/{id}/action": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminDiscoveryOpportunityAction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/discovery/policies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminDiscoveryPolicies"];
+        put?: never;
+        post: operations["adminDiscoveryCreatePolicy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/discovery/policies/{id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminDiscoveryCreatePolicyVersion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/discovery/policies/{id}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminDiscoveryActivatePolicy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/discovery/policies/{id}/rollback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminDiscoveryRollbackPolicy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/discovery/index/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminDiscoveryIndexHealth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/discovery/index/rebuild": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminDiscoveryRebuildIndex"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/discovery/index/operations/{id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminDiscoveryRetryIndexOperation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/procurement/overview": {
         parameters: {
             query?: never;
@@ -13673,6 +14041,113 @@ export interface components {
             /** @enum {string} */
             decision: "approved" | "rejected";
         };
+        DiscoveryObjectResponse: {
+            data: {
+                [key: string]: unknown;
+            };
+        };
+        DiscoveryListResponse: {
+            data: {
+                [key: string]: unknown;
+            }[];
+            meta?: {
+                [key: string]: unknown;
+            };
+        };
+        DiscoverySearchRequest: {
+            query: string;
+            /** @enum {string} */
+            locale?: "fa" | "en";
+            limit?: number;
+            category_id?: number;
+        };
+        DiscoverySynonymInput: {
+            /** @enum {string} */
+            locale: "fa" | "en";
+            term: string;
+            synonyms: string[];
+            /** @enum {string} */
+            mode: "equivalent" | "directional";
+            category_id?: number;
+            enabled?: boolean;
+        };
+        DiscoveryMerchandisingInput: {
+            name: string;
+            /** @enum {string} */
+            action: "boost" | "bury" | "pin" | "hide";
+            query_pattern?: string;
+            product_id?: number;
+            category_id?: number;
+            boost_factor?: number;
+            pin_position?: number;
+            priority?: number;
+            /** Format: date-time */
+            starts_at?: string;
+            /** Format: date-time */
+            ends_at?: string;
+            reason: string;
+        };
+        DiscoveryRelationshipInput: {
+            subject_product_id: number;
+            relation_type: string;
+            object_product_id: number;
+            /** @enum {string} */
+            state: "compatible" | "not_compatible" | "unknown";
+            confidence_class: string;
+            source_type: string;
+            source_ref?: string;
+            evidence?: {
+                [key: string]: unknown;
+            };
+        };
+        DiscoveryRelationshipResolveInput: {
+            /** @enum {string} */
+            state: "compatible" | "not_compatible" | "unknown";
+            confidence_class: string;
+            source_ref?: string;
+            evidence?: {
+                [key: string]: unknown;
+            };
+            expected_version: number;
+        };
+        DiscoveryOpportunityActionInput: {
+            /** @enum {string} */
+            action: "triage" | "accept" | "reject" | "assign" | "start" | "implement" | "measure" | "validate" | "close" | "insufficient_evidence" | "duplicate";
+            assigned_to_user_id?: number;
+            note?: string;
+            expected_version: number;
+        };
+        DiscoveryPolicyInput: {
+            name: string;
+            max_results: number;
+            typo_tolerance: boolean;
+            typo_max_edits: number;
+            ranking_weights?: {
+                [key: string]: number;
+            };
+            reason?: string;
+        };
+        DiscoveryPolicyVersionInput: {
+            max_results: number;
+            typo_tolerance: boolean;
+            typo_max_edits: number;
+            ranking_weights?: {
+                [key: string]: number;
+            };
+            reason?: string;
+            expected_version: number;
+        };
+        DiscoveryMerchandisingStatusInput: {
+            /** @enum {string} */
+            status: "active" | "paused" | "archived";
+        };
+        DiscoveryCompatibilityInput: {
+            subject_product_id: number;
+            object_product_id: number;
+        };
+        DiscoveryPolicyActivationInput: {
+            version: number;
+        };
         CustomerIntelligenceProfile: {
             /** Format: int64 */
             customer_id: number;
@@ -14286,6 +14761,12 @@ export interface components {
         IdempotencyKey: string;
         PlanningRunIdQuery: number;
         PlanningId: number;
+        DiscoveryId: number;
+        DiscoveryPage: number;
+        DiscoveryLimit: number;
+        DiscoveryFilter: string[];
+        DiscoveryFilterOr: string[];
+        DiscoverySort: string[];
         PricingPolicyId: number;
         CasePublicId: string;
         ModelPublicId: string;
@@ -28872,6 +29353,684 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PlanningHealthEnvelope"];
+                };
+            };
+        };
+    };
+    adminDiscoveryCapabilities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Capabilities */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoveryObjectResponse"];
+                };
+            };
+        };
+    };
+    adminDiscoveryOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Overview */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoveryObjectResponse"];
+                };
+            };
+        };
+    };
+    adminDiscoveryQueries: {
+        parameters: {
+            query?: {
+                page?: components["parameters"]["DiscoveryPage"];
+                limit?: components["parameters"]["DiscoveryLimit"];
+                "filter[]"?: components["parameters"]["DiscoveryFilter"];
+                "filterOr[]"?: components["parameters"]["DiscoveryFilterOr"];
+                "sort[]"?: components["parameters"]["DiscoverySort"];
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Search events */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoveryListResponse"];
+                };
+            };
+        };
+    };
+    adminDiscoveryZeroResults: {
+        parameters: {
+            query?: {
+                page?: components["parameters"]["DiscoveryPage"];
+                limit?: components["parameters"]["DiscoveryLimit"];
+                "filter[]"?: components["parameters"]["DiscoveryFilter"];
+                "filterOr[]"?: components["parameters"]["DiscoveryFilterOr"];
+                "sort[]"?: components["parameters"]["DiscoverySort"];
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Zero-result events */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoveryListResponse"];
+                };
+            };
+        };
+    };
+    adminDiscoverySimulate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscoverySearchRequest"];
+            };
+        };
+        responses: {
+            /** @description Explainable simulation */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoveryObjectResponse"];
+                };
+            };
+        };
+    };
+    adminDiscoverySynonyms: {
+        parameters: {
+            query?: {
+                page?: components["parameters"]["DiscoveryPage"];
+                limit?: components["parameters"]["DiscoveryLimit"];
+                "filter[]"?: components["parameters"]["DiscoveryFilter"];
+                "filterOr[]"?: components["parameters"]["DiscoveryFilterOr"];
+                "sort[]"?: components["parameters"]["DiscoverySort"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Synonyms */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoveryListResponse"];
+                };
+            };
+        };
+    };
+    adminDiscoveryCreateSynonym: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscoverySynonymInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoveryObjectResponse"];
+                };
+            };
+            /** @description Duplicate */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminDiscoveryToggleSynonym: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["DiscoveryId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoveryObjectResponse"];
+                };
+            };
+        };
+    };
+    adminDiscoveryMerchandisingRules: {
+        parameters: {
+            query?: {
+                page?: components["parameters"]["DiscoveryPage"];
+                limit?: components["parameters"]["DiscoveryLimit"];
+                "filter[]"?: components["parameters"]["DiscoveryFilter"];
+                "filterOr[]"?: components["parameters"]["DiscoveryFilterOr"];
+                "sort[]"?: components["parameters"]["DiscoverySort"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Rules */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoveryListResponse"];
+                };
+            };
+        };
+    };
+    adminDiscoveryCreateMerchandisingRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscoveryMerchandisingInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoveryObjectResponse"];
+                };
+            };
+        };
+    };
+    adminDiscoverySetMerchandisingStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["DiscoveryId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscoveryMerchandisingStatusInput"];
+            };
+        };
+        responses: {
+            /** @description Updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoveryObjectResponse"];
+                };
+            };
+        };
+    };
+    adminDiscoveryRelationships: {
+        parameters: {
+            query?: {
+                page?: components["parameters"]["DiscoveryPage"];
+                limit?: components["parameters"]["DiscoveryLimit"];
+                "filter[]"?: components["parameters"]["DiscoveryFilter"];
+                "filterOr[]"?: components["parameters"]["DiscoveryFilterOr"];
+                "sort[]"?: components["parameters"]["DiscoverySort"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Product relationships */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoveryListResponse"];
+                };
+            };
+        };
+    };
+    adminDiscoveryCreateRelationship: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscoveryRelationshipInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoveryObjectResponse"];
+                };
+            };
+        };
+    };
+    adminDiscoveryResolveRelationship: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["DiscoveryId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscoveryRelationshipResolveInput"];
+            };
+        };
+        responses: {
+            /** @description Resolved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoveryObjectResponse"];
+                };
+            };
+            /** @description Version conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminDiscoveryRevokeRelationship: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["DiscoveryId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Revoked */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoveryObjectResponse"];
+                };
+            };
+        };
+    };
+    adminDiscoveryCompatibilityResolve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscoveryCompatibilityInput"];
+            };
+        };
+        responses: {
+            /** @description Tri-state compatibility result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoveryObjectResponse"];
+                };
+            };
+        };
+    };
+    adminDiscoveryOpportunities: {
+        parameters: {
+            query?: {
+                page?: components["parameters"]["DiscoveryPage"];
+                limit?: components["parameters"]["DiscoveryLimit"];
+                "filter[]"?: components["parameters"]["DiscoveryFilter"];
+                "filterOr[]"?: components["parameters"]["DiscoveryFilterOr"];
+                "sort[]"?: components["parameters"]["DiscoverySort"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Opportunities */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoveryListResponse"];
+                };
+            };
+        };
+    };
+    adminDiscoveryDetectOpportunities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Detection summary */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoveryObjectResponse"];
+                };
+            };
+        };
+    };
+    adminDiscoveryOpportunityAction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["DiscoveryId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscoveryOpportunityActionInput"];
+            };
+        };
+        responses: {
+            /** @description Updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoveryObjectResponse"];
+                };
+            };
+            /** @description Version conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminDiscoveryPolicies: {
+        parameters: {
+            query?: {
+                page?: components["parameters"]["DiscoveryPage"];
+                limit?: components["parameters"]["DiscoveryLimit"];
+                "filter[]"?: components["parameters"]["DiscoveryFilter"];
+                "filterOr[]"?: components["parameters"]["DiscoveryFilterOr"];
+                "sort[]"?: components["parameters"]["DiscoverySort"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Policies */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoveryListResponse"];
+                };
+            };
+        };
+    };
+    adminDiscoveryCreatePolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscoveryPolicyInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoveryObjectResponse"];
+                };
+            };
+        };
+    };
+    adminDiscoveryCreatePolicyVersion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["DiscoveryId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscoveryPolicyVersionInput"];
+            };
+        };
+        responses: {
+            /** @description Version created */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoveryObjectResponse"];
+                };
+            };
+            /** @description Version conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminDiscoveryActivatePolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["DiscoveryId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscoveryPolicyActivationInput"];
+            };
+        };
+        responses: {
+            /** @description Activated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoveryObjectResponse"];
+                };
+            };
+        };
+    };
+    adminDiscoveryRollbackPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["DiscoveryId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscoveryPolicyActivationInput"];
+            };
+        };
+        responses: {
+            /** @description Rolled back by activating an existing immutable version */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoveryObjectResponse"];
+                };
+            };
+        };
+    };
+    adminDiscoveryIndexHealth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Search projection health */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoveryObjectResponse"];
+                };
+            };
+        };
+    };
+    adminDiscoveryRebuildIndex: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Atomic rebuild requested/completed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoveryObjectResponse"];
+                };
+            };
+        };
+    };
+    adminDiscoveryRetryIndexOperation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["DiscoveryId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Projection operation requeued */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoveryObjectResponse"];
                 };
             };
         };
