@@ -1,21 +1,26 @@
-name: Phase 22 Materialize Final Source
+name: Phase 22 Production Materializer
 
 on:
-  pull_request:
+  workflow_dispatch:
+  push:
     branches:
-      - main
+      - agent/phase22-materializer-20260822
+    paths:
+      - ".phase22payload/**"
+      - ".github/workflows/phase22-materialize.yml"
 
 permissions:
   contents: write
 
 concurrency:
-  group: phase22-materialize-final-source-pr
+  group: phase22-production-materializer
   cancel-in-progress: true
 
 jobs:
   materialize:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
-    timeout-minutes: 40
+    timeout-minutes: 45
     env:
       NODE_ENV: test
       PORT: 3333
@@ -40,7 +45,7 @@ jobs:
       REDIS_PORT: 6379
       TRANSMIT_TRANSPORT: none
       LIMITER_STORE: memory
-      CACHE_DRIVER: memory
+      TARGET_BRANCH: agent/phase22-multi-agent-orchestrator-20260822
     services:
       postgres:
         image: postgres:17-alpine
@@ -62,78 +67,146 @@ jobs:
           --health-interval 5s
           --health-timeout 3s
           --health-retries 10
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout carrier
+        uses: actions/checkout@v4
         with:
-          ref: agent/phase22-materializer-20260822
+          path: carrier
+          fetch-depth: 1
+
+      - name: Checkout clean Phase 22 target
+        uses: actions/checkout@v4
+        with:
+          ref: agent/phase22-multi-agent-orchestrator-20260822
+          path: work
           fetch-depth: 0
 
-      - name: Preserve carrier payload and switch to clean target
+      - name: Guard exact current-main baseline
+        working-directory: work
         shell: bash
         run: |
           set -euo pipefail
-          cat .phase22/stage_00 .phase22/stage_01 .phase22/stage_02 .phase22/stage_03 > /tmp/phase22-stage.b64
-          cp .phase22/patch.py /tmp/phase22_patch.py
-          git fetch origin agent/phase22-multi-agent-orchestrator-20260822
-          git checkout -B agent/phase22-multi-agent-orchestrator-20260822 origin/agent/phase22-multi-agent-orchestrator-20260822
-          base64 -d /tmp/phase22-stage.b64 | tar -xzf - -C .
-          python3 /tmp/phase22_patch.py
-          git diff --check
+          git fetch origin main
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
+          test -z "$(git status --porcelain)"
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10.32.1
+      - name: Decode audited Phase 22 overlay
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 -d carrier/.phase22payload/overlay.tar.xz.b64 > /tmp/phase22-overlay.tar.xz
+          echo "2453e4af2a85310b755d3838c1cd171319e755a553c4853c5a6092298abc9eac  /tmp/phase22-overlay.tar.xz" | sha256sum -c -
+          rm -rf /tmp/phase22-overlay
+          mkdir -p /tmp/phase22-overlay
+          tar -xJf /tmp/phase22-overlay.tar.xz -C /tmp/phase22-overlay
+
+      - name: Materialize source and guarded shared wiring
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          rsync -a --exclude shared_patch.py /tmp/phase22-overlay/ ./
+          python3 /tmp/phase22-overlay/shared_patch.py
+          test -f apps/api/database/migrations/1775000000000_create_multi_agent_orchestrator.ts
+          test ! -e apps/api/database/migrations/1764200000000_create_multi_agent_orchestrator.ts
+          grep -Fq 'admin_agent_orchestrator' apps/api/start/routes.ts
+          grep -Fq '/agentic-commerce/orchestrator/overview' apps/admin/src/components/Sidebar.tsx
+          grep -Fq 'admin.agent-orchestrator.v1.json' docs/api/scripts/merge-admin-spec.js
+          git diff --check
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 24.14.0
-          cache: pnpm
+          node-version: "24.14.0"
 
-      - run: pnpm install --frozen-lockfile
+      - name: Install workspace dependencies
+        working-directory: work
+        run: |
+          npm install --global pnpm@10.32.1
+          pnpm install --frozen-lockfile
 
-      - name: Format changed source only
+      - name: Normalize Phase 22 source only
+        working-directory: work
         shell: bash
         run: |
           set -euo pipefail
-          mapfile -t files < <(
-            { git diff --name-only; git ls-files --others --exclude-standard; } \
-              | sort -u \
-              | grep -E '\.(ts|tsx|js|jsx|mjs|cjs|json)$' \
-              | grep -v '^apps/api/database/schema\.ts$' \
-              | grep -v '^packages/sdk/src/generated/' || true
-          )
-          if [ "${#files[@]}" -gt 0 ]; then
-            pnpm exec biome check --write --unsafe "${files[@]}"
-            pnpm exec biome check "${files[@]}"
-          fi
+          pnpm exec biome check --write \
+            apps/api/app/services/agent_orchestrator \
+            apps/api/app/controllers/admin/agent_orchestrator_controller.ts \
+            apps/api/app/validators/agent_orchestrator \
+            apps/api/start/routes/admin_agent_orchestrator.ts \
+            apps/api/start/routes.ts \
+            apps/api/tests/functional/agent_orchestrator \
+            apps/admin/src/features/agent_orchestrator \
+            apps/admin/src/lib/queries/agent-orchestrator.ts \
+            "apps/admin/src/app/[locale]/(authenticated)/agentic-commerce/orchestrator" \
+            apps/admin/src/components/Sidebar.tsx \
+            apps/admin/src/lib/i18n/request.ts \
+            apps/admin/messages/agent_orchestrator \
+            apps/admin/messages/en.json \
+            apps/admin/messages/fa.json \
+            docs/api/package.json \
+            docs/api/scripts/merge-admin-spec.js \
+            package.json \
+            scripts/verify-phase22-agent-orchestrator.mjs
           git diff --check
 
-      - name: Run migration chain and regenerate schema
-        working-directory: apps/api
+      - name: Phase 22 static production gate
+        working-directory: work
+        run: node scripts/verify-phase22-agent-orchestrator.mjs
+
+      - name: Run complete migrations and regenerate Lucid schema
+        working-directory: work/apps/api
         run: node ace migration:run --connection=postgres_admin --force
 
-      - name: OpenAPI, SDK and focused Phase 22 validation
+      - name: Build merged Admin OpenAPI and regenerate SDK
+        working-directory: work
         shell: bash
         run: |
           set -euo pipefail
           pnpm --dir docs/api run build:json:admin
           pnpm --filter @calibra/sdk run codegen:admin
-          node scripts/verify-phase22-agent-orchestrator.mjs
-          pnpm --filter @calibra/api-docs run build:test-spec
-          (cd apps/api && timeout 240s node ace test --files=tests/functional/agent_orchestrator/phase22_agent_orchestrator.spec.ts)
-          pnpm --filter @calibra/api run typecheck
-          pnpm exec turbo run typecheck --filter=@calibra/admin
-          git diff --check
 
-      - name: Guard carrier isolation and publish finalized source
+      - name: Prepare merged API test specification
+        working-directory: work
+        run: pnpm --filter @calibra/api-docs run build:test-spec
+
+      - name: Phase 22 contract tests
+        working-directory: work/apps/api
+        run: timeout 240s node ace test --files=tests/functional/agent_orchestrator/phase22_agent_orchestrator.spec.ts
+
+      - name: API typecheck
+        working-directory: work
+        run: pnpm --filter @calibra/api run typecheck
+
+      - name: Admin typecheck
+        working-directory: work
+        run: pnpm exec turbo run typecheck --filter=@calibra/admin
+
+      - name: Admin production build
+        working-directory: work
+        run: pnpm exec turbo run build --filter=@calibra/admin
+
+      - name: Final source and generated-output guards
+        working-directory: work
         shell: bash
         run: |
           set -euo pipefail
-          ! git status --short | grep -E '^.. \.phase22/'
-          ! git status --short | grep -F '.github/workflows/phase22-materialize.yml'
-          git config user.name "calibra-dev"
-          git config user.email "keshavarz20.com@gmail.com"
+          node scripts/verify-phase22-agent-orchestrator.mjs
+          git diff --check
           git add -A
           git diff --cached --check
-          git commit -m 'feat(phase22): add multi-agent commerce orchestrator'
-          git push origin HEAD:agent/phase22-multi-agent-orchestrator-20260822
+          test -n "$(git diff --cached --name-only)"
+          ! git diff --cached --name-only | grep -E '^\.github/workflows/'
+          ! git diff --cached --name-only | grep -E '^\.phase22payload/'
+          git diff --cached --name-only
+
+      - name: Publish validated Phase 22 source
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "feat(phase22): implement multi-agent commerce orchestrator"
+          git push origin "HEAD:${TARGET_BRANCH}"
