@@ -35,7 +35,10 @@ if 'agentOrchestrator' not in s:
     s=s.replace('const agenticCommerce = JSON.parse(readFileSync(resolve(root, "dist/admin.agentic-commerce.v1.json"), "utf8"));','const agenticCommerce = JSON.parse(readFileSync(resolve(root, "dist/admin.agentic-commerce.v1.json"), "utf8"));\nconst agentOrchestrator = JSON.parse(readFileSync(resolve(root, "dist/admin.agent-orchestrator.v1.json"), "utf8"));')
     s=s.replace('    [agenticCommerce, "AgenticCommerceOverlay"],','    [agenticCommerce, "AgenticCommerceOverlay"],\n    [agentOrchestrator, "AgentOrchestratorOverlay"],')
     p.write_text(s)
-p=Path('scripts/verify-phase22-agent-orchestrator.mjs'); s=p.read_text()
-if 'import path from "node:path";\n\nconst root' not in s:
-    s=s.replace('import path from "node:path";\nconst root', 'import path from "node:path";\n\nconst root', 1)
-    p.write_text(s)
+p=Path('scripts/verify-phase22-agent-orchestrator.mjs')
+lines=p.read_text().splitlines()
+if len(lines) >= 3 and lines[0].startswith('import ') and lines[1].startswith('import '):
+    while len(lines) > 2 and lines[2] == '':
+        lines.pop(2)
+    lines.insert(2, '')
+p.write_text('\n'.join(lines)+'\n')
