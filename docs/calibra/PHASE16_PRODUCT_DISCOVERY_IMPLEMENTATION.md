@@ -66,7 +66,7 @@ Rebuild uses a temporary index, waits for asynchronous Meilisearch tasks, then s
 
 Before merge:
 
-- migrations + generated schema
+- migrations + generated schema committed on the finalized source branch
 - OpenAPI merge + lint
 - SDK codegen + sync check
 - API typecheck
