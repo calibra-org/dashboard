@@ -1,4 +1,4 @@
-name: Phase 16 Sync Finalized Storefront SDK
+name: Phase 16 Normalize Finalized Source
 
 on:
   push:
@@ -9,11 +9,11 @@ permissions:
   contents: write
 
 concurrency:
-  group: phase16-sync-finalized-storefront-sdk
+  group: phase16-normalize-finalized-source
   cancel-in-progress: true
 
 jobs:
-  regenerate-sdk:
+  normalize:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -34,25 +34,43 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Regenerate Storefront OpenAPI SDK
+      - name: Apply safe Biome fixes only to Phase 16 changed source
         shell: bash
+        env:
+          BASE_SHA: 954139ddd1e2282e9cc408481fcff17a461923a5
         run: |
           set -euo pipefail
-          pnpm --dir docs/api run build:json:storefront
-          pnpm --filter @calibra/sdk run codegen:storefront
+          mapfile -t files < <(
+            git diff --name-only "${BASE_SHA}...HEAD" \
+              | grep -E '\.(ts|tsx|js|jsx|mjs|cjs|json)$' \
+              | grep -v '^packages/sdk/src/generated/' \
+              | grep -v '^apps/api/database/schema\.ts$'
+          )
+          test "${#files[@]}" -gt 0
+          pnpm exec biome check --write "${files[@]}"
+          pnpm exec biome check "${files[@]}"
           git diff --check
 
-      - name: Guard generated-only change and publish
+      - name: Guard and publish normalization
         shell: bash
         env:
           TARGET_BRANCH: agent/phase16-finalized-source-20260822
+          BASE_SHA: 954139ddd1e2282e9cc408481fcff17a461923a5
         run: |
           set -euo pipefail
-          changed="$(git diff --name-only)"
-          test "$changed" = "packages/sdk/src/generated/storefront.d.ts"
+          mapfile -t allowed < <(git diff --name-only "${BASE_SHA}...HEAD")
+          mapfile -t changed < <(git diff --name-only)
+          test "${#changed[@]}" -gt 0
+          for path in "${changed[@]}"; do
+            printf '%s\n' "${allowed[@]}" | grep -Fxq -- "$path"
+            test "$path" != "apps/api/database/schema.ts"
+            case "$path" in
+              packages/sdk/src/generated/*) exit 1 ;;
+            esac
+          done
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add packages/sdk/src/generated/storefront.d.ts
+          git add -- "${changed[@]}"
           git diff --cached --check
-          git commit -m 'chore(phase16): regenerate storefront SDK contract'
+          git commit -m 'style(phase16): normalize finalized source'
           git push origin "HEAD:${TARGET_BRANCH}"
