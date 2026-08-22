@@ -14,7 +14,7 @@
         "format:fix": "biome format . --write",
         "lint": "pnpm run lint:biome && pnpm run lint:tokens && pnpm run lint:ws",
         "lint:fix": "pnpm run lint:biome:fix",
-        "lint:biome": "biome lint . && biome check .",
+        "lint:biome": "biome lint . --max-diagnostics=1000 && biome check . --max-diagnostics=1000",
         "lint:biome:fix": "biome lint . --write && biome check . --write",
         "lint:tokens": "node scripts/lint-tokens.mjs --scope=apps/admin/src --level=error",
         "lint:ws": "pnpm dlx sherif@latest --ignore-rule root-package-dependencies",
