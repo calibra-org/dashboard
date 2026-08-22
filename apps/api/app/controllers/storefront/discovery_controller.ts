@@ -1,5 +1,6 @@
 import type { HttpContext } from "@adonisjs/core/http";
 import { DateTime } from "luxon";
+
 import DiscoverySearchEvent from "#models/discovery_search_event";
 import Product from "#models/product";
 import { normalizeDiscoveryQuery, redactDiscoveryQuery } from "#services/discovery/normalizer";

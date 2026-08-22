@@ -1,11 +1,12 @@
 import vine from "@vinejs/vine";
-import { adminDiscoverySearchEventsView } from "#table_views/admin/discovery_search_events";
-import { adminDiscoverySynonymsView } from "#table_views/admin/discovery_synonyms";
+
+import { DISCOVERY_EVENT_TYPES, RELATION_STATES, RELATION_TYPES } from "#services/discovery/domain";
 import { adminDiscoveryMerchandisingView } from "#table_views/admin/discovery_merchandising";
-import { adminDiscoveryRelationshipsView } from "#table_views/admin/discovery_relationships";
 import { adminDiscoveryOpportunitiesView } from "#table_views/admin/discovery_opportunities";
 import { adminDiscoveryPoliciesView } from "#table_views/admin/discovery_policies";
-import { DISCOVERY_EVENT_TYPES, RELATION_STATES, RELATION_TYPES } from "#services/discovery/domain";
+import { adminDiscoveryRelationshipsView } from "#table_views/admin/discovery_relationships";
+import { adminDiscoverySearchEventsView } from "#table_views/admin/discovery_search_events";
+import { adminDiscoverySynonymsView } from "#table_views/admin/discovery_synonyms";
 
 export const discoverySearchEventListValidator = vine.compile(
     vine.object({ ...adminDiscoverySearchEventsView.schema.getProperties(), q: vine.string().trim().maxLength(255).optional() }),

@@ -1,4 +1,5 @@
 import { test } from "@japa/runner";
+
 import { normalizeDiscoveryQuery, redactDiscoveryQuery } from "#services/discovery/normalizer";
 import { hashSession } from "#services/discovery/search_service";
 

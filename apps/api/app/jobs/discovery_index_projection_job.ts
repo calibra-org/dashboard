@@ -1,4 +1,5 @@
 import { Job } from "@adonisjs/queue";
+
 import { withJobTenantContext } from "#jobs/with_job_tenant_context";
 import DiscoveryIndexOperation from "#models/discovery_index_operation";
 import { runIndexOperation } from "#services/discovery/index_projection";

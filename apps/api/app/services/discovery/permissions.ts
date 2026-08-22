@@ -1,5 +1,6 @@
 import { Exception } from "@adonisjs/core/exceptions";
 import type { HttpContext } from "@adonisjs/core/http";
+
 import { DISCOVERY_PERMISSIONS, type DiscoveryPermission } from "./domain.js";
 
 function abilityName(permission: DiscoveryPermission) {

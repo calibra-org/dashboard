@@ -2,8 +2,8 @@ import { createHash } from "node:crypto";
 import { Exception } from "@adonisjs/core/exceptions";
 import type { HttpContext } from "@adonisjs/core/http";
 import { DateTime } from "luxon";
-import Product from "#models/product";
-import ProductCategory from "#models/product_category";
+
+import DiscoveryIndexOperation from "#models/discovery_index_operation";
 import DiscoveryMerchandisingRule from "#models/discovery_merchandising_rule";
 import DiscoveryOpportunity from "#models/discovery_opportunity";
 import DiscoveryOpportunityEvidence from "#models/discovery_opportunity_evidence";
@@ -12,24 +12,25 @@ import DiscoverySearchEvent from "#models/discovery_search_event";
 import DiscoverySearchPolicy from "#models/discovery_search_policy";
 import DiscoverySearchPolicyVersion from "#models/discovery_search_policy_version";
 import DiscoverySynonymRule from "#models/discovery_synonym_rule";
-import { discoveryPermissions, requireDiscoveryPermission } from "#services/discovery/permissions";
+import Product from "#models/product";
+import ProductCategory from "#models/product_category";
+import { recordAudit } from "#services/admin_audit_log_service";
+import { retryIndexOperation } from "#services/discovery/index_projection";
 import { normalizeDiscoveryQuery } from "#services/discovery/normalizer";
+import { discoveryPermissions, requireDiscoveryPermission } from "#services/discovery/permissions";
 import {
     applyActivePolicyToIndexes,
     probeSearchBackend,
     rebuildIndexes,
     searchProducts,
 } from "#services/discovery/search_service";
-import DiscoveryIndexOperation from "#models/discovery_index_operation";
-import { retryIndexOperation } from "#services/discovery/index_projection";
-import { recordAudit } from "#services/admin_audit_log_service";
 import { currentTenantId, currentTrx } from "#services/tenant_context";
-import { adminDiscoverySearchEventsView } from "#table_views/admin/discovery_search_events";
-import { adminDiscoverySynonymsView } from "#table_views/admin/discovery_synonyms";
 import { adminDiscoveryMerchandisingView } from "#table_views/admin/discovery_merchandising";
-import { adminDiscoveryRelationshipsView } from "#table_views/admin/discovery_relationships";
 import { adminDiscoveryOpportunitiesView } from "#table_views/admin/discovery_opportunities";
 import { adminDiscoveryPoliciesView } from "#table_views/admin/discovery_policies";
+import { adminDiscoveryRelationshipsView } from "#table_views/admin/discovery_relationships";
+import { adminDiscoverySearchEventsView } from "#table_views/admin/discovery_search_events";
+import { adminDiscoverySynonymsView } from "#table_views/admin/discovery_synonyms";
 import {
     discoveryMerchandisingCreateValidator,
     discoveryMerchandisingListValidator,

@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
+import { useMemo, useState } from "react";
+
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "#/components/ui/card";
@@ -36,6 +37,7 @@ import {
 } from "#/icons";
 import { useResourceResolver, useResourceSearcher } from "#/lib/queries/resource-search";
 import { cn } from "#/lib/utils";
+
 import {
     useDiscoveryCapabilities,
     useDiscoveryMutations,
@@ -598,24 +600,24 @@ function Simulator() {
                         <div className="space-y-5">
                             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                                 <div className="rounded-lg bg-muted p-3">
-                                    <p className="text-xs text-muted-foreground">نرمال‌شده</p>
+                                    <p className="text-muted-foreground text-xs">نرمال‌شده</p>
                                     <p className="mt-1 font-medium">{d.normalized_query}</p>
                                 </div>
                                 <div className="rounded-lg bg-muted p-3">
-                                    <p className="text-xs text-muted-foreground">منبع بازیابی</p>
+                                    <p className="text-muted-foreground text-xs">منبع بازیابی</p>
                                     <p className="mt-1 font-medium">{d.retrieval_source}</p>
                                 </div>
                                 <div className="rounded-lg bg-muted p-3">
-                                    <p className="text-xs text-muted-foreground">Policy</p>
+                                    <p className="text-muted-foreground text-xs">Policy</p>
                                     <p className="mt-1 font-medium">{d.policy_version}</p>
                                 </div>
                                 <div className="rounded-lg bg-muted p-3">
-                                    <p className="text-xs text-muted-foreground">نتیجه</p>
+                                    <p className="text-muted-foreground text-xs">نتیجه</p>
                                     <p className="mt-1 font-medium">{num(d.result_count)}</p>
                                 </div>
                             </div>
                             {d.degraded && (
-                                <div className="rounded-lg border border-warning/30 bg-warning/10 p-3 text-warning-foreground text-sm">
+                                <div className="rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm text-warning-foreground">
                                     Meilisearch در این اجرا در دسترس نبوده و fallback کنترل‌شده PostgreSQL استفاده شده است.
                                 </div>
                             )}
@@ -1382,7 +1384,7 @@ function Governance() {
                 />
             </div>
             {health.data?.data.degraded && (
-                <div className="rounded-lg border border-warning/30 bg-warning/10 p-4 text-warning-foreground text-sm">
+                <div className="rounded-lg border border-warning/30 bg-warning/10 p-4 text-sm text-warning-foreground">
                     <InfoTitle
                         title="حالت Degraded فعال است"
                         help="وقتی Meilisearch تنظیم یا قابل دسترس نباشد Search به PostgreSQL ILIKE برمی‌گردد؛ این وضعیت پنهان نمی‌شود."
@@ -1545,7 +1547,7 @@ function Governance() {
                             </div>
                             <div className="flex items-end justify-between rounded-lg border p-3">
                                 <div>
-                                    <div className="flex items-center gap-1.5 text-sm font-medium">
+                                    <div className="flex items-center gap-1.5 font-medium text-sm">
                                         تحمل خطای تایپی{" "}
                                         <Info>
                                             اگر فعال باشد provider می‌تواند typo tolerance محدود داشته باشد؛ مقدار در نسخه Policy

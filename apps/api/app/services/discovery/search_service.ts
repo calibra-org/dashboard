@@ -1,16 +1,15 @@
 import { createHash } from "node:crypto";
 import { DateTime } from "luxon";
 
-import Product from "#models/product";
+import { applyMerchandising, type RuntimeRule } from "./merchandising_engine.js";
+import { normalizeDiscoveryQuery } from "./normalizer.js";
 import DiscoveryMerchandisingRule from "#models/discovery_merchandising_rule";
 import DiscoverySearchPolicy from "#models/discovery_search_policy";
 import DiscoverySearchPolicyVersion from "#models/discovery_search_policy_version";
 import DiscoverySynonymRule from "#models/discovery_synonym_rule";
+import Product from "#models/product";
 import { getMeilisearch } from "#services/meilisearch";
 import { currentTenantId } from "#services/tenant_context";
-
-import { applyMerchandising, type RuntimeRule } from "./merchandising_engine.js";
-import { normalizeDiscoveryQuery } from "./normalizer.js";
 
 export interface DiscoverySearchInput {
     query: string;

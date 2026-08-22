@@ -1,8 +1,8 @@
 import cache from "@adonisjs/cache/services/main";
 
 import { CacheTags } from "#services/cache_keys";
-import { recordCacheInvalidate } from "#services/metrics/domain_metrics";
 import { enqueueProductProjection, enqueueProductsProjection } from "#services/discovery/index_projection";
+import { recordCacheInvalidate } from "#services/metrics/domain_metrics";
 
 /**
  * Acting tenant id, required on every invalidation. The tags it deletes are tenant-namespaced

@@ -1,6 +1,8 @@
 import router from "@adonisjs/core/services/router";
 import limiter from "@adonisjs/limiter/services/main";
+
 import { recordRateLimitThrottled } from "#services/metrics/domain_metrics";
+
 const Controller = () => import("#controllers/storefront/discovery_controller");
 const searchLimiter = limiter.define("discovery_public", (ctx) =>
     limiter

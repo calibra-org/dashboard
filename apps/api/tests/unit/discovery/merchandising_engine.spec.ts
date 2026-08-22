@@ -1,4 +1,5 @@
 import { test } from "@japa/runner";
+
 import { applyMerchandising } from "#services/discovery/merchandising_engine";
 
 test.group("phase16 merchandising", () => {

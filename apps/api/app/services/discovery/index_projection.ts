@@ -1,7 +1,9 @@
 import { DateTime } from "luxon";
+
+import { syncProductNow } from "./search_service.js";
 import DiscoveryIndexProjectionJob from "#jobs/discovery_index_projection_job";
 import DiscoveryIndexOperation from "#models/discovery_index_operation";
-import { syncProductNow } from "./search_service.js";
+
 const errText = (error: unknown) => (error instanceof Error ? error.message.slice(0, 2000) : String(error).slice(0, 2000));
 export async function enqueueProductProjection(productId: number): Promise<void> {
     const key = `product:${productId}:${Date.now()}`;

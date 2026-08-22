@@ -1,6 +1,8 @@
 import router from "@adonisjs/core/services/router";
+
 import { middleware } from "#start/kernel";
 import { adminWriteLimiter } from "#start/limiter";
+
 const Controller = () => import("#controllers/admin/discovery_controller");
 router
     .group(() => {

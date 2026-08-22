@@ -1,7 +1,9 @@
 "use client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocale } from "next-intl";
+
 import { apiGet, apiMutate } from "#/lib/queries/api-client";
+
 import type {
     DiscoveryOverview,
     IndexHealth,
@@ -15,6 +17,7 @@ import type {
     Simulation,
     SynonymRule,
 } from "./types";
+
 const root = ["discovery"] as const;
 const useList = <T>(path: string, query: Record<string, string | number | boolean | undefined> = {}) => {
     const locale = useLocale();
