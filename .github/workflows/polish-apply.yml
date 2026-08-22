@@ -3,6 +3,7 @@ name: Apply Main Polish Batch
 on:
     push:
         branches: ["agent/main-polish-20260822"]
+    workflow_dispatch:
 
 permissions:
     contents: write
