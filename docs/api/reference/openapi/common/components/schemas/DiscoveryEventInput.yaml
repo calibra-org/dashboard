@@ -1,0 +1,46 @@
+type: object
+required:
+- event_key
+- event_type
+properties:
+  event_key:
+    type: string
+    format: uuid
+  event_type:
+    type: string
+    enum:
+    - search_performed
+    - results_served
+    - result_clicked
+    - zero_result
+    - no_click
+    - reformulated
+    - filter_applied
+    - sort_changed
+    - add_to_cart
+    - purchase
+    - exit
+  query:
+    type: string
+    maxLength: 255
+  locale:
+    type: string
+    enum:
+    - fa
+    - en
+  surface:
+    type: string
+  session_key:
+    type: string
+  result_count:
+    type: integer
+    minimum: 0
+  product_id:
+    type: integer
+    minimum: 1
+  position:
+    type: integer
+    minimum: 1
+  occurred_at:
+    type: string
+    format: date-time

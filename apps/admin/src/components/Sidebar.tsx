@@ -155,6 +155,17 @@ const seoItems: NavItem[] = [
     { href: "/seo/settings", labelKey: "seoSettings", icon: Settings2 },
 ];
 
+const discoveryItems: NavItem[] = [
+    { href: "/discovery/overview", labelKey: "discoveryOverview", icon: BarChart3 },
+    { href: "/discovery/queries", labelKey: "discoveryQueries", icon: Search },
+    { href: "/discovery/zero-results", labelKey: "discoveryZeroResults", icon: Bug },
+    { href: "/discovery/merchandising", labelKey: "discoveryMerchandising", icon: SlidersHorizontal },
+    { href: "/discovery/compatibility", labelKey: "discoveryCompatibility", icon: Link2 },
+    { href: "/discovery/opportunities", labelKey: "discoveryOpportunities", icon: TrendingUp },
+    { href: "/discovery/simulator", labelKey: "discoverySimulator", icon: Sparkles },
+    { href: "/discovery/governance", labelKey: "discoveryGovernance", icon: Settings2 },
+];
+
 const ticketItems: NavItem[] = [
     { href: "/tickets/overview", labelKey: "ticketOverview", icon: LayoutDashboard },
     { href: "/tickets/create", labelKey: "ticketCreate", icon: PenLine },
@@ -220,6 +231,7 @@ export function Sidebar({ userId }: { userId: number }) {
     const factorActive = pathname === "/factor" || pathname.startsWith("/factor/");
     const contentActive = pathname === "/content" || pathname.startsWith("/content/");
     const seoActive = pathname === "/seo" || pathname.startsWith("/seo/");
+    const discoveryActive = pathname === "/discovery" || pathname.startsWith("/discovery/");
     const ticketActive = pathname === "/tickets" || pathname.startsWith("/tickets/");
     const trustActive =
         pathname === "/quality-trust" ||
@@ -232,6 +244,7 @@ export function Sidebar({ userId }: { userId: number }) {
     const [factorOpen, setFactorOpen] = useState(factorActive);
     const [contentOpen, setContentOpen] = useState(contentActive);
     const [seoOpen, setSeoOpen] = useState(seoActive);
+    const [discoveryOpen, setDiscoveryOpen] = useState(discoveryActive);
     const [ticketOpen, setTicketOpen] = useState(ticketActive);
     const [trustOpen, setTrustOpen] = useState(trustActive);
     const [agenticOpen, setAgenticOpen] = useState(agenticActive);
@@ -246,6 +259,10 @@ export function Sidebar({ userId }: { userId: number }) {
     useEffect(() => {
         if (seoActive) setSeoOpen(true);
     }, [seoActive]);
+    useEffect(() => {
+        if (discoveryActive) setDiscoveryOpen(true);
+    }, [discoveryActive]);
+
     useEffect(() => {
         if (ticketActive) setTicketOpen(true);
     }, [ticketActive]);
@@ -380,6 +397,17 @@ export function Sidebar({ userId }: { userId: number }) {
                     <div className="px-3 pb-1 font-medium text-[0.65rem] text-sidebar-foreground/50 uppercase tracking-wider">
                         {navT("operations")}
                     </div>
+                <div className="px-3 pt-1 pb-0 font-medium text-[0.65rem] text-sidebar-foreground/50 uppercase tracking-wider">{navT("growth")}</div>
+                {collapsible(
+                    "discovery-sidebar-items",
+                    discoveryActive,
+                    discoveryOpen,
+                    setDiscoveryOpen,
+                    Sparkles,
+                    navT("discovery"),
+                    discoveryItems,
+                    { 0: navT("discoverySectionInsight"), 3: navT("discoverySectionControl"), 4: navT("discoverySectionKnowledge"), 6: navT("discoverySectionSystem") },
+                )}
                     {collapsible(
                         "ticket-sidebar-items",
                         ticketActive,

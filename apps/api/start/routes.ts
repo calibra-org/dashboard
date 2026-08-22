@@ -85,3 +85,7 @@ await import("./routes/seo_public.js");
 await import("./routes/support_public.js");
 await import("./routes/support_channel_webhooks.js");
 await import("./routes/support_api.js");
+
+import "./routes/admin_discovery.js";
+
+import "./routes/discovery_storefront.js";

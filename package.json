@@ -30,7 +30,8 @@
         "typecheck": "turbo run typecheck",
         "verify:phase10": "node scripts/verify-phase10-decision-intelligence-integration.mjs",
         "verify:phase12": "node scripts/verify-phase12-economics-integration.mjs",
-        "verify:phase9": "node scripts/verify-phase9.mjs"
+        "verify:phase9": "node scripts/verify-phase9.mjs",
+        "verify:phase16": "node scripts/verify-phase16-discovery-integration.mjs"
     },
     "devDependencies": {
         "@biomejs/biome": "catalog:",

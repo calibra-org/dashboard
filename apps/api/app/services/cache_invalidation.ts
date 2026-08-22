@@ -2,6 +2,7 @@ import cache from "@adonisjs/cache/services/main";
 
 import { CacheTags } from "#services/cache_keys";
 import { recordCacheInvalidate } from "#services/metrics/domain_metrics";
+import { enqueueProductProjection, enqueueProductsProjection } from "#services/discovery/index_projection";
 
 /**
  * Acting tenant id, required on every invalidation. The tags it deletes are tenant-namespaced
@@ -35,6 +36,7 @@ export const CacheInvalidation = {
         const tags = [CacheTags.catalogProducts(tenantId), CacheTags.catalogProduct(tenantId, Number(productId))];
         await cache.deleteByTag({ tags });
         recordCacheInvalidate(tags);
+        await enqueueProductProjection(Number(productId));
     },
 
     /** Batch product write — invalidate the list once + each per-id tag. */
@@ -46,6 +48,7 @@ export const CacheInvalidation = {
         if (tags.length === 0) return;
         await cache.deleteByTag({ tags });
         recordCacheInvalidate(tags);
+        await enqueueProductsProjection(productIds);
     },
 
     /**

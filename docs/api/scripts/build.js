@@ -9,7 +9,7 @@ const REF_DIR = join(ROOT, "reference");
 const SPEC_DIR = join(REF_DIR, "openapi");
 const SRC_HTML = join(REF_DIR, "scalar", "index.html");
 
-const DIRECT_SPECS = ["storefront.v1.yaml", "platform.v1.yaml"];
+const DIRECT_SPECS = ["platform.v1.yaml"];
 
 main();
 function main() {
@@ -17,6 +17,7 @@ function main() {
     DIRECT_SPECS.forEach((spec) => {
         buildSpec(join(SPEC_DIR, spec), join(OUT_DIR, spec));
     });
+    buildStorefrontSpec();
     buildAdminSpec();
     copyIndex();
 }
@@ -27,6 +28,17 @@ function buildSpec(source, output) {
         console.log(`✓ Built ${source} to ${output}`);
     } catch (err) {
         console.error(`✗ Building ${source} failed:`, err.message);
+        process.exit(1);
+    }
+}
+
+function buildStorefrontSpec() {
+    try {
+        execSync("pnpm build:json:storefront", { cwd: ROOT, stdio: "inherit" });
+        copyFileSync(join(OUT_DIR, "storefront.v1.json"), join(OUT_DIR, "storefront.v1.yaml"));
+        console.log("✓ Built composed storefront spec");
+    } catch (err) {
+        console.error("✗ Building composed storefront spec failed:", err.message);
         process.exit(1);
     }
 }

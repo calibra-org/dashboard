@@ -1,0 +1,35 @@
+type: object
+required:
+- name
+- action
+- reason
+properties:
+  name:
+    type: string
+  action:
+    type: string
+    enum:
+    - boost
+    - bury
+    - pin
+    - hide
+  query_pattern:
+    type: string
+  product_id:
+    type: integer
+  category_id:
+    type: integer
+  boost_factor:
+    type: number
+  pin_position:
+    type: integer
+  priority:
+    type: integer
+  starts_at:
+    type: string
+    format: date-time
+  ends_at:
+    type: string
+    format: date-time
+  reason:
+    type: string

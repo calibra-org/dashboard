@@ -1,0 +1,22 @@
+type: object
+required:
+- state
+- confidence_class
+- expected_version
+properties:
+  state:
+    type: string
+    enum:
+    - compatible
+    - not_compatible
+    - unknown
+  confidence_class:
+    type: string
+  source_ref:
+    type: string
+  evidence:
+    type: object
+    additionalProperties: true
+  expected_version:
+    type: integer
+    minimum: 1
