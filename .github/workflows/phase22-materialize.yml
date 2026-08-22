@@ -95,7 +95,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          base64 -d carrier/.phase22payload/overlay.tar.xz.b64 > /tmp/phase22-overlay.tar.xz
+          cat carrier/.phase22payload/chunk_* | base64 -d > /tmp/phase22-overlay.tar.xz
           echo "2453e4af2a85310b755d3838c1cd171319e755a553c4853c5a6092298abc9eac  /tmp/phase22-overlay.tar.xz" | sha256sum -c -
           rm -rf /tmp/phase22-overlay
           mkdir -p /tmp/phase22-overlay
