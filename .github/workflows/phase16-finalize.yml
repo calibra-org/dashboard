@@ -1,4 +1,4 @@
-name: Phase 16 Normalize Finalized Source
+name: Phase 16 Fix Finalized Projection Ledger
 
 on:
   push:
@@ -9,68 +9,48 @@ permissions:
   contents: write
 
 concurrency:
-  group: phase16-normalize-finalized-source
+  group: phase16-fix-finalized-projection-ledger
   cancel-in-progress: true
 
 jobs:
-  normalize:
+  fix-projection-ledger:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
           ref: agent/phase16-finalized-source-20260822
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10.32.1
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24.14.0
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
-
-      - name: Apply safe Biome fixes only to Phase 16 changed source
+      - name: Remove incompatible product FK from replay ledger
         shell: bash
-        env:
-          BASE_SHA: 954139ddd1e2282e9cc408481fcff17a461923a5
         run: |
           set -euo pipefail
-          mapfile -t files < <(
-            git diff --name-only "${BASE_SHA}...HEAD" \
-              | grep -E '\.(ts|tsx|js|jsx|mjs|cjs|json)$' \
-              | grep -v '^packages/sdk/src/generated/' \
-              | grep -v '^apps/api/database/schema\.ts$'
-          )
-          test "${#files[@]}" -gt 0
-          pnpm exec biome check --write "${files[@]}"
-          pnpm exec biome check "${files[@]}"
-          git diff --check
+          python3 - <<'PY'
+          from pathlib import Path
 
-      - name: Guard and publish normalization
+          path = Path("apps/api/database/migrations/1770001600000_create_discovery_os_tables.ts")
+          text = path.read_text()
+          old = '            table.bigInteger("product_id").unsigned().nullable().references("id").inTable("products").onDelete("CASCADE");'
+          new = '''            // The projection ledger must retain the product id after a hard delete so a replay can\n            // remove the stale search document. A product FK would block or erase that delete intent.\n            table.bigInteger("product_id").unsigned().nullable();'''
+          if text.count(old) != 1:
+              raise SystemExit(f"expected exactly one projection product FK, found {text.count(old)}")
+          path.write_text(text.replace(old, new, 1))
+          PY
+          git diff --check
+          test "$(git diff --name-only)" = "apps/api/database/migrations/1770001600000_create_discovery_os_tables.ts"
+          grep -Fq 'table.bigInteger("product_id").unsigned().nullable();' apps/api/database/migrations/1770001600000_create_discovery_os_tables.ts
+
+      - name: Publish guarded migration fix
         shell: bash
         env:
           TARGET_BRANCH: agent/phase16-finalized-source-20260822
-          BASE_SHA: 954139ddd1e2282e9cc408481fcff17a461923a5
         run: |
           set -euo pipefail
-          mapfile -t allowed < <(git diff --name-only "${BASE_SHA}...HEAD")
-          mapfile -t changed < <(git diff --name-only)
-          test "${#changed[@]}" -gt 0
-          for path in "${changed[@]}"; do
-            printf '%s\n' "${allowed[@]}" | grep -Fxq -- "$path"
-            test "$path" != "apps/api/database/schema.ts"
-            case "$path" in
-              packages/sdk/src/generated/*) exit 1 ;;
-            esac
-          done
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -- "${changed[@]}"
+          git add apps/api/database/migrations/1770001600000_create_discovery_os_tables.ts
           git diff --cached --check
-          git commit -m 'style(phase16): normalize finalized source'
+          git commit -m 'fix(phase16): preserve projection intent on product delete'
           git push origin "HEAD:${TARGET_BRANCH}"
