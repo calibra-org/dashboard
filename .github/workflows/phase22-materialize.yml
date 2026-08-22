@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - agent/phase22-materializer-20260822
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
