@@ -1,0 +1,37 @@
+name: Phase 23 SDK Materialize
+
+on:
+    push:
+        branches:
+            - feat/phase23-commerce-digital-twin
+
+permissions:
+    contents: write
+
+jobs:
+    materialize:
+        if: github.actor != 'github-actions[bot]'
+        runs-on: ubuntu-latest
+        timeout-minutes: 8
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  ref: feat/phase23-commerce-digital-twin
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 24.14.0
+            - run: npm install --global pnpm@10.32.1
+            - run: pnpm install --frozen-lockfile
+            - run: pnpm --dir docs/api run build:json:admin
+            - run: pnpm --filter @calibra/sdk run codegen:admin
+            - name: Commit generated admin SDK when changed
+              run: |
+                  if git diff --quiet -- packages/sdk/src/generated/admin.d.ts; then
+                      echo "Admin SDK already synchronized"
+                      exit 0
+                  fi
+                  git config user.name "github-actions[bot]"
+                  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+                  git add packages/sdk/src/generated/admin.d.ts
+                  git commit -m "chore(phase23): sync generated admin SDK"
+                  git push origin HEAD:feat/phase23-commerce-digital-twin
