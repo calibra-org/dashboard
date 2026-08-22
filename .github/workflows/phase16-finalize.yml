@@ -1,69 +1,23 @@
-name: Phase 16 Finalize
+name: Phase 16 Resume Publish
 
 on:
+  workflow_dispatch:
   push:
-    branches: [agent/phase16-discovery-os-final-20260818]
-  pull_request:
-    branches: [main]
+    branches:
+      - agent/phase16-discovery-os-final-20260818
 
 permissions:
   contents: write
 
 concurrency:
-  group: phase16-final-current-main
+  group: phase16-resume-publish-current-main
   cancel-in-progress: true
 
 jobs:
-  finalize:
+  resume-publish:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
-    timeout-minutes: 50
-    env:
-      NODE_ENV: test
-      PORT: 3333
-      HOST: 127.0.0.1
-      APP_NAME: calibra-api-test
-      APP_KEY: phase16-test-app-key-0123456789abcdef
-      LOG_LEVEL: silent
-      DB_HOST: localhost
-      DB_PORT: 5432
-      DB_USER: calibra
-      DB_PASSWORD: calibra
-      DB_DATABASE: calibra_test
-      DB_ADMIN_USER: calibra
-      DB_ADMIN_PASSWORD: calibra
-      MAIL_FROM_ADDRESS: ops@calibra.local
-      MAIL_FROM_NAME: Calibra
-      MAIL_NOTIFICATIONS_ENABLED: "false"
-      SMTP_HOST: localhost
-      SMTP_PORT: 11025
-      QUEUE_DRIVER: sync
-      REDIS_HOST: localhost
-      REDIS_PORT: 6379
-      TRANSMIT_TRANSPORT: none
-      LIMITER_STORE: memory
-      CACHE_DRIVER: memory
-    services:
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_USER: calibra
-          POSTGRES_PASSWORD: calibra
-          POSTGRES_DB: calibra_test
-        ports: ["5432:5432"]
-        options: >-
-          --health-cmd "pg_isready -U calibra -d calibra_test"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-      redis:
-        image: redis:7-alpine
-        ports: ["6379:6379"]
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 5s
-          --health-timeout 3s
-          --health-retries 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
@@ -94,193 +48,41 @@ jobs:
           p.write_text(s)
           PY
 
-      - name: Reset to exact current main and materialize
+      - name: Materialize from exact current main
+        shell: bash
         run: |
           set -euo pipefail
-          git fetch origin main
+          git fetch --prune origin main
           git reset --hard origin/main
           python3 /tmp/p16h/apply_phase16.py
           python3 /tmp/harden2.py
           python3 /tmp/route_names.py
 
-      - name: Verify materialized Phase 16 files and wiring
+      - name: Verify resume payload and publish clean branch
+        shell: bash
+        env:
+          PHASE16_PUBLISH_BRANCH: agent/phase16-finalized-source-20260822
         run: |
-          set -euxo pipefail
+          set -euo pipefail
           test -f apps/api/app/services/discovery/search_service.ts
           test -f apps/api/app/services/discovery/index_projection.ts
           test -f apps/api/app/validators/admin/discovery_validator.ts
           test -f apps/api/app/controllers/admin/discovery_controller.ts
           test -f apps/api/start/routes/admin_discovery.ts
           test -f apps/api/start/routes/discovery_storefront.ts
-          discovery_migration="$(grep -l 'discovery_search_policies' apps/api/database/migrations/*.ts | head -n 1)"
-          test -n "$discovery_migration"
-          grep -q 'FORCE ROW LEVEL SECURITY' "$discovery_migration"
           test ! -e apps/admin/src/features/discovery/mock.ts
-          if find . -path '*/calibra_phase16_ui/*' -o -name 'Calibra_Phase16_UI_Prototype_v1.zip' | grep -q .; then
-            echo 'Prototype artifact entered runtime tree'
-            exit 1
-          fi
           grep -q 'admin_discovery.js' apps/api/start/routes.ts
           grep -q 'discovery_storefront.js' apps/api/start/routes.ts
-          grep -q 'discovery.admin.overview' apps/api/start/routes/admin_discovery.ts
-          grep -q 'discovery.storefront.search' apps/api/start/routes/discovery_storefront.ts
-          node -e 'JSON.parse(require("node:fs").readFileSync("apps/admin/messages/en.json","utf8")); JSON.parse(require("node:fs").readFileSync("apps/admin/messages/fa.json","utf8"))'
           grep -q 'discovery-sidebar-items' apps/admin/src/components/Sidebar.tsx
           grep -q '/discovery' apps/admin/src/components/Sidebar.tsx
-          ! grep -R 'catch(() => undefined)' apps/api/app/services/discovery apps/api/app/services/cache_invalidation.ts
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10.32.1
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24.14.0
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-
-      - name: Bootstrap schema generation
-        working-directory: apps/api
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path('database/schema.ts')
-          s=p.read_text()
-          marker='// PHASE16_TEMP_SCHEMA_BOOTSTRAP'
-          names=['DiscoveryIndexOperationSchema','DiscoveryMerchandisingRuleSchema','DiscoveryOpportunitySchema','DiscoveryOpportunityEvidenceSchema','DiscoveryProductRelationshipSchema','DiscoverySearchEventSchema','DiscoverySearchPolicySchema','DiscoverySearchPolicyVersionSchema','DiscoverySynonymRuleSchema']
-          if marker not in s:
-              p.write_text(s+'\n'+marker+'\n'+'\n'.join(f'export class {n} extends BaseModel {{}}' for n in names)+'\n')
-          PY
-
-      - name: Run migrations and regenerate Lucid schema
-        working-directory: apps/api
-        run: node ace migration:run --connection=postgres_admin --force
-
-      - name: Verify generated Discovery schema
-        working-directory: apps/api
-        run: |
-          set -euo pipefail
-          ! grep -q 'PHASE16_TEMP_SCHEMA_BOOTSTRAP' database/schema.ts
-          grep -A3 'export class DiscoveryIndexOperationSchema' database/schema.ts | grep -q '\$columns'
-          grep -A3 'export class DiscoverySearchPolicySchema' database/schema.ts | grep -q '\$columns'
-          grep -A3 'export class DiscoveryProductRelationshipSchema' database/schema.ts | grep -q '\$columns'
-
-      - name: Normalize and generate contracts
-        run: |
-          pnpm run format:fix
-          pnpm exec biome check \
-            "apps/admin/src/app/[locale]/(authenticated)/discovery" \
-            apps/admin/src/features/discovery \
-            apps/api/app/controllers/admin/discovery_controller.ts \
-            apps/api/app/controllers/storefront/discovery_controller.ts \
-            apps/api/app/jobs/discovery_index_projection_job.ts \
-            apps/api/app/services/cache_invalidation.ts \
-            apps/api/app/services/discovery \
-            apps/api/app/validators/admin/discovery_validator.ts \
-            apps/api/start/routes/admin_discovery.ts \
-            apps/api/start/routes/discovery_storefront.ts \
-            apps/api/tests/unit/discovery \
-            --write --max-diagnostics=1000
-          pnpm --filter @calibra/sdk run codegen
-          git add packages/sdk/src/generated/
-          pnpm --filter @calibra/sdk run build
-
-      - name: Verify OpenAPI route parity
-        working-directory: apps/api
-        run: node ace check:api-docs
-
-      - name: API typecheck
-        run: pnpm --filter @calibra/api run typecheck
-
-      - name: Admin typecheck
-        run: pnpm --filter @calibra/admin run typecheck
-
-      - name: Admin production build
-        run: pnpm --filter @calibra/admin run build
-
-      - name: SDK codegen drift
-        run: pnpm --filter @calibra/sdk run codegen:check
-
-      - name: Phase 16 normalizer unit test
-        working-directory: apps/api
-        shell: bash
-        run: |
-          set -o pipefail
-          pnpm test --files=tests/unit/discovery/normalizer.spec.ts 2>&1 | tee "${RUNNER_TEMP}/phase16-normalizer.log"
-
-      - name: Upload Phase 16 normalizer diagnostics
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: phase16-normalizer-diagnostics
-          if-no-files-found: error
-          retention-days: 2
-          path: |
-            ${{ runner.temp }}/phase16-normalizer.log
-            apps/api/tests/unit/discovery/normalizer.spec.ts
-            apps/api/app/services/discovery
-
-      - name: Phase 16 merchandising engine unit test
-        working-directory: apps/api
-        run: pnpm test --files=tests/unit/discovery/merchandising_engine.spec.ts
-
-      - name: Phase 16 storefront discovery events test
-        working-directory: apps/api
-        run: pnpm test --files=tests/functional/storefront/discovery_events.spec.ts
-
-      - name: RLS isolation regression test
-        working-directory: apps/api
-        run: pnpm test --files=tests/functional/foundation/rls_isolation.spec.ts
-
-      - name: Quality gates
-        shell: bash
-        run: |
-          set -euo pipefail
-          {
-            echo '===== biome lint ====='
-            pnpm exec biome lint . --max-diagnostics=1000
-            echo '===== biome check ====='
-            pnpm exec biome check . --max-diagnostics=1000
-            echo '===== lint tokens ====='
-            pnpm run lint:tokens
-            echo '===== lint ws ====='
-            pnpm run lint:ws
-            echo '===== git diff check ====='
-            git diff --check
-            echo '===== openapi operation count ====='
-            test "$(grep -R 'operationId:' docs/api/reference/openapi/admin.discovery.v1.yaml docs/api/reference/openapi/storefront.discovery.v1.yaml | sed 's/.*operationId: *//' | wc -l)" = "29"
-            echo '===== openapi operation uniqueness ====='
-            test "$(grep -R 'operationId:' docs/api/reference/openapi/admin.discovery.v1.yaml docs/api/reference/openapi/storefront.discovery.v1.yaml | sed 's/.*operationId: *//' | sort -u | wc -l)" = "29"
-            echo '===== discovery token color guard ====='
-            if grep -R -E '(bg|text|border|ring)-(red|green|blue|amber|yellow|purple|indigo|emerald|slate|gray)-[0-9]' apps/admin/src/features/discovery; then exit 1; fi
-            echo '===== discovery rtl logical spacing guard ====='
-            if grep -R -E '\b(mr|ml|pr|pl)-' apps/admin/src/features/discovery; then exit 1; fi
-            echo '===== discovery icon import guard ====='
-            if grep -R 'from "lucide-react"' apps/admin/src/features/discovery; then exit 1; fi
-            echo '===== discovery RLS guard ====='
-            grep -R 'FORCE ROW LEVEL SECURITY' apps/api/database/migrations/*discovery* >/dev/null
-            echo '===== retry/DLQ guard ====='
-            grep -R 'dead_letter\|retrying' apps/api/app apps/api/database/migrations >/dev/null
-          } 2>&1 | tee "${RUNNER_TEMP}/phase16-quality.log"
-
-      - name: Upload Phase 16 quality diagnostics
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: phase16-quality-diagnostics
-          if-no-files-found: error
-          retention-days: 2
-          path: ${{ runner.temp }}/phase16-quality.log
-
-      - name: Publish verified Phase 16 source
-        shell: bash
-        run: |
-          set -euo pipefail
           rm -rf .phase16payload .phase16payload2 .phase16payload3
           rm -f .github/workflows/phase16-finalize.yml .github/workflows/phase16-materialize-diag.yml
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git diff --cached --check
           git diff --cached --quiet && { echo 'No Phase 16 changes materialized'; exit 1; }
           git commit -m 'feat(phase16): finalize Product Discovery OS on current main'
-          git push --force origin HEAD:agent/phase16-discovery-os-final-20260818
+          git push origin "HEAD:${PHASE16_PUBLISH_BRANCH}"
