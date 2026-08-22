@@ -76,11 +76,10 @@ jobs:
         run: |
           set -euo pipefail
           cat .phase22/stage_00 .phase22/stage_01 .phase22/stage_02 .phase22/stage_03 > /tmp/phase22-stage.b64
-          cat .phase22/patch_00 > /tmp/phase22-patch.b64
+          cp .phase22/patch.py /tmp/phase22_patch.py
           git fetch origin agent/phase22-multi-agent-orchestrator-20260822
           git checkout -B agent/phase22-multi-agent-orchestrator-20260822 origin/agent/phase22-multi-agent-orchestrator-20260822
           base64 -d /tmp/phase22-stage.b64 | tar -xzf - -C .
-          base64 -d /tmp/phase22-patch.b64 > /tmp/phase22_patch.py
           python3 /tmp/phase22_patch.py
           git diff --check
 
