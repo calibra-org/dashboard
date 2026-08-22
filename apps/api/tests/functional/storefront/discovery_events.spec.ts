@@ -7,11 +7,7 @@ const EVENT_KEY = "11111111-1111-4111-8111-111111111116";
 
 test.group("Storefront discovery events", (group) => {
     group.each.setup(async () => {
-        await db
-            .connection("postgres_admin")
-            .from("discovery_search_events")
-            .where("tenant_id", TEST_TENANT_ID)
-            .delete();
+        await db.connection("postgres_admin").from("discovery_search_events").where("tenant_id", TEST_TENANT_ID).delete();
     });
 
     test("redacts PII, hashes session keys and accepts an idempotent retry", async ({ client, assert }) => {

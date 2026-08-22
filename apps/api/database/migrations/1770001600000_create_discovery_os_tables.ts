@@ -38,7 +38,13 @@ export default class extends BaseSchema {
             table.string("term", 191).notNullable();
             table.jsonb("synonyms").notNullable().defaultTo(this.raw("'[]'::jsonb"));
             table.string("mode", 16).notNullable().defaultTo("equivalent");
-            table.bigInteger("category_id").unsigned().nullable().references("id").inTable("product_categories").onDelete("CASCADE");
+            table
+                .bigInteger("category_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("product_categories")
+                .onDelete("CASCADE");
             table.boolean("enabled").notNullable().defaultTo(true);
             table.integer("version").notNullable().defaultTo(1);
             table.bigInteger("created_by_user_id").unsigned().nullable().references("id").inTable("users").onDelete("SET NULL");
@@ -65,12 +71,21 @@ export default class extends BaseSchema {
         this.schema.createTable("discovery_search_policy_versions", (table) => {
             table.bigIncrements("id").notNullable();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("policy_id").unsigned().notNullable().references("id").inTable("discovery_search_policies").onDelete("CASCADE");
+            table
+                .bigInteger("policy_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("discovery_search_policies")
+                .onDelete("CASCADE");
             table.integer("version_number").notNullable();
             table.integer("max_results").notNullable().defaultTo(60);
             table.boolean("typo_tolerance").notNullable().defaultTo(true);
             table.integer("typo_max_edits").notNullable().defaultTo(1);
-            table.jsonb("ranking_weights").notNullable().defaultTo(this.raw("'{\"lexical\":1,\"freshness\":0.1,\"availability\":0.2}'::jsonb"));
+            table
+                .jsonb("ranking_weights")
+                .notNullable()
+                .defaultTo(this.raw('\'{"lexical":1,"freshness":0.1,"availability":0.2}\'::jsonb'));
             table.jsonb("configuration").notNullable().defaultTo(this.raw("'{}'::jsonb"));
             table.text("reason").nullable();
             table.bigInteger("created_by_user_id").unsigned().nullable().references("id").inTable("users").onDelete("SET NULL");
@@ -86,7 +101,13 @@ export default class extends BaseSchema {
             table.string("status", 20).notNullable().defaultTo("draft");
             table.string("query_pattern", 255).nullable();
             table.bigInteger("product_id").unsigned().nullable().references("id").inTable("products").onDelete("CASCADE");
-            table.bigInteger("category_id").unsigned().nullable().references("id").inTable("product_categories").onDelete("CASCADE");
+            table
+                .bigInteger("category_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("product_categories")
+                .onDelete("CASCADE");
             table.decimal("boost_factor", 8, 3).nullable();
             table.integer("pin_position").nullable();
             table.integer("priority").notNullable().defaultTo(100);
@@ -103,9 +124,21 @@ export default class extends BaseSchema {
         this.schema.createTable("discovery_product_relationships", (table) => {
             table.bigIncrements("id").notNullable();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("subject_product_id").unsigned().notNullable().references("id").inTable("products").onDelete("CASCADE");
+            table
+                .bigInteger("subject_product_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("products")
+                .onDelete("CASCADE");
             table.string("relation_type", 40).notNullable();
-            table.bigInteger("object_product_id").unsigned().notNullable().references("id").inTable("products").onDelete("CASCADE");
+            table
+                .bigInteger("object_product_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("products")
+                .onDelete("CASCADE");
             table.string("state", 24).notNullable().defaultTo("unknown");
             table.string("confidence_class", 32).notNullable().defaultTo("unknown");
             table.string("source_type", 40).notNullable().defaultTo("operator");
@@ -167,7 +200,13 @@ export default class extends BaseSchema {
         this.schema.createTable("discovery_opportunity_evidence", (table) => {
             table.bigIncrements("id").notNullable();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("opportunity_id").unsigned().notNullable().references("id").inTable("discovery_opportunities").onDelete("CASCADE");
+            table
+                .bigInteger("opportunity_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("discovery_opportunities")
+                .onDelete("CASCADE");
             table.string("evidence_type", 48).notNullable();
             table.jsonb("payload").notNullable().defaultTo(this.raw("'{}'::jsonb"));
             table.timestamp("observed_at", { useTz: true }).notNullable().defaultTo(this.now());
@@ -208,7 +247,9 @@ export default class extends BaseSchema {
             "discovery_index_operations",
         ];
         for (const table of tables) {
-            this.schema.raw(`ALTER TABLE ${table} ALTER COLUMN tenant_id SET DEFAULT NULLIF(current_setting('app.current_tenant', true), '')::bigint`);
+            this.schema.raw(
+                `ALTER TABLE ${table} ALTER COLUMN tenant_id SET DEFAULT NULLIF(current_setting('app.current_tenant', true), '')::bigint`,
+            );
             this.schema.raw(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`);
             this.schema.raw(`ALTER TABLE ${table} FORCE ROW LEVEL SECURITY`);
             this.schema.raw(`CREATE POLICY tenant_isolation ON ${table} USING (${TENANT}) WITH CHECK (${TENANT})`);
@@ -226,6 +267,7 @@ export default class extends BaseSchema {
             "discovery_search_policies",
             "discovery_synonym_rules",
             "discovery_search_events",
-        ]) this.schema.dropTable(table);
+        ])
+            this.schema.dropTable(table);
     }
 }

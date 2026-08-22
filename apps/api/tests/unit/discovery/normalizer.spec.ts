@@ -8,9 +8,7 @@ test.group("phase16 discovery normalization", () => {
     });
 
     test("masks email, formatted mobile, IBAN and long numeric identifiers", ({ assert }) => {
-        const value = redactDiscoveryQuery(
-            "reza@example.com 0912 123 4567 IR820540102680020817909002 123456789012",
-        );
+        const value = redactDiscoveryQuery("reza@example.com 0912 123 4567 IR820540102680020817909002 123456789012");
         assert.notInclude(value, "reza@example.com");
         assert.notInclude(value, "0912 123 4567");
         assert.notInclude(value, "IR820540102680020817909002");

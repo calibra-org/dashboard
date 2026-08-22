@@ -24,7 +24,9 @@ function matches(candidate: RankedCandidate, rule: RuntimeRule): boolean {
 /** Deterministic business layer applied only after base retrieval relevance. */
 export function applyMerchandising(candidates: RankedCandidate[], rules: RuntimeRule[]): RankedCandidate[] {
     const orderedRules = [...rules].sort((a, b) => a.priority - b.priority || a.id - b.id);
-    let items = candidates.filter((candidate) => !orderedRules.some((rule) => rule.action === "hide" && matches(candidate, rule)));
+    let items = candidates.filter(
+        (candidate) => !orderedRules.some((rule) => rule.action === "hide" && matches(candidate, rule)),
+    );
     items = items.map((candidate) => ({ ...candidate }));
 
     for (const rule of orderedRules) {

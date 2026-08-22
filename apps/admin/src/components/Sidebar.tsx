@@ -397,17 +397,24 @@ export function Sidebar({ userId }: { userId: number }) {
                     <div className="px-3 pb-1 font-medium text-[0.65rem] text-sidebar-foreground/50 uppercase tracking-wider">
                         {navT("operations")}
                     </div>
-                <div className="px-3 pt-1 pb-0 font-medium text-[0.65rem] text-sidebar-foreground/50 uppercase tracking-wider">{navT("growth")}</div>
-                {collapsible(
-                    "discovery-sidebar-items",
-                    discoveryActive,
-                    discoveryOpen,
-                    setDiscoveryOpen,
-                    Sparkles,
-                    navT("discovery"),
-                    discoveryItems,
-                    { 0: navT("discoverySectionInsight"), 3: navT("discoverySectionControl"), 4: navT("discoverySectionKnowledge"), 6: navT("discoverySectionSystem") },
-                )}
+                    <div className="px-3 pt-1 pb-0 font-medium text-[0.65rem] text-sidebar-foreground/50 uppercase tracking-wider">
+                        {navT("growth")}
+                    </div>
+                    {collapsible(
+                        "discovery-sidebar-items",
+                        discoveryActive,
+                        discoveryOpen,
+                        setDiscoveryOpen,
+                        Sparkles,
+                        navT("discovery"),
+                        discoveryItems,
+                        {
+                            0: navT("discoverySectionInsight"),
+                            3: navT("discoverySectionControl"),
+                            4: navT("discoverySectionKnowledge"),
+                            6: navT("discoverySectionSystem"),
+                        },
+                    )}
                     {collapsible(
                         "ticket-sidebar-items",
                         ticketActive,

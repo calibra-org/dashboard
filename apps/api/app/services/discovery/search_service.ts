@@ -23,10 +23,7 @@ function indexName(locale: string): string {
     return `calibra_products_${currentTenantId()}_${locale === "en" ? "en" : "fa"}`;
 }
 
-async function waitForSuccessfulTask(
-    meili: NonNullable<ReturnType<typeof getMeilisearch>>,
-    taskUid: number,
-) {
+async function waitForSuccessfulTask(meili: NonNullable<ReturnType<typeof getMeilisearch>>, taskUid: number) {
     await meili.tasks.waitForTask(taskUid);
     const task = (await meili.tasks.getTask(taskUid)) as unknown as { status: string };
     if (task.status !== "succeeded") {
@@ -94,9 +91,7 @@ function richProductQuery(locale: string) {
                 .preload("attribute", (attribute) =>
                     attribute.preload("translations", (translation) => translation.where("locale", locale)),
                 )
-                .preload("terms", (term) =>
-                    term.preload("translations", (translation) => translation.where("locale", locale)),
-                ),
+                .preload("terms", (term) => term.preload("translations", (translation) => translation.where("locale", locale))),
         );
 }
 
@@ -337,7 +332,12 @@ export async function rebuildIndexes() {
         const targetIndex = meili.index(target);
         const add = await targetIndex.addDocuments(documents, { primaryKey: "id" });
         await waitForSuccessfulTask(meili, add.taskUid);
-        const filterable = await targetIndex.updateFilterableAttributes(["category_ids", "status", "catalog_visibility", "locale"]);
+        const filterable = await targetIndex.updateFilterableAttributes([
+            "category_ids",
+            "status",
+            "catalog_visibility",
+            "locale",
+        ]);
         await waitForSuccessfulTask(meili, filterable.taskUid);
         const searchable = await targetIndex.updateSearchableAttributes([
             "name",
@@ -385,6 +385,12 @@ export function hashSession(value: string | null | undefined) {
 }
 
 export async function probeSearchBackend() {
- const meili=getMeilisearch(); if(!meili)return{configured:false,reachable:false};
- try{await meili.health();return{configured:true,reachable:true};}catch(error){return{configured:true,reachable:false,error:error instanceof Error?error.message:String(error)}}
+    const meili = getMeilisearch();
+    if (!meili) return { configured: false, reachable: false };
+    try {
+        await meili.health();
+        return { configured: true, reachable: true };
+    } catch (error) {
+        return { configured: true, reachable: false, error: error instanceof Error ? error.message : String(error) };
+    }
 }

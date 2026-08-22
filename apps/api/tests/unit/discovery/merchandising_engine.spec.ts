@@ -15,7 +15,10 @@ test.group("phase16 merchandising", () => {
                 { id: 3, action: "pin", productId: 2, categoryId: null, boostFactor: null, pinPosition: 1, priority: 20 },
             ],
         );
-        assert.deepEqual(result.map((row) => row.id), [2, 3]);
+        assert.deepEqual(
+            result.map((row) => row.id),
+            [2, 3],
+        );
     });
 
     test("category rules affect every candidate in the canonical category", ({ assert }) => {
@@ -27,6 +30,9 @@ test.group("phase16 merchandising", () => {
             ],
             [{ id: 4, action: "hide", productId: null, categoryId: 10, boostFactor: null, pinPosition: null, priority: 1 }],
         );
-        assert.deepEqual(result.map((row) => row.id), [2]);
+        assert.deepEqual(
+            result.map((row) => row.id),
+            [2],
+        );
     });
 });

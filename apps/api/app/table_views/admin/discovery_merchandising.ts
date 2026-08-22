@@ -1,3 +1,23 @@
-import { createTableView } from "#lib/table_view/create_table_view"; import type { InferTableViewQuery } from "#lib/table_view/types"; import DiscoveryMerchandisingRule from "#models/discovery_merchandising_rule";
-export const adminDiscoveryMerchandisingView=createTableView({model:DiscoveryMerchandisingRule,columns:{id:{type:"bigint",filterable:true,orderable:true},name:{type:"string",filterable:true,orderable:true},action:{type:"string",filterable:true,orderable:true},status:{type:"string",filterable:true,orderable:true},product_id:{type:"bigint",filterable:true,orderable:false},category_id:{type:"bigint",filterable:true,orderable:false},priority:{type:"number",filterable:true,orderable:true},starts_at:{type:"datetime",filterable:true,orderable:true},ends_at:{type:"datetime",filterable:true,orderable:true},created_at:{type:"datetime",filterable:true,orderable:true}},defaultSort:[["priority","asc"],["created_at","desc"]]});
-export type AdminDiscoveryMerchandisingViewQuery=InferTableViewQuery<typeof adminDiscoveryMerchandisingView>;
+import { createTableView } from "#lib/table_view/create_table_view";
+import type { InferTableViewQuery } from "#lib/table_view/types";
+import DiscoveryMerchandisingRule from "#models/discovery_merchandising_rule";
+export const adminDiscoveryMerchandisingView = createTableView({
+    model: DiscoveryMerchandisingRule,
+    columns: {
+        id: { type: "bigint", filterable: true, orderable: true },
+        name: { type: "string", filterable: true, orderable: true },
+        action: { type: "string", filterable: true, orderable: true },
+        status: { type: "string", filterable: true, orderable: true },
+        product_id: { type: "bigint", filterable: true, orderable: false },
+        category_id: { type: "bigint", filterable: true, orderable: false },
+        priority: { type: "number", filterable: true, orderable: true },
+        starts_at: { type: "datetime", filterable: true, orderable: true },
+        ends_at: { type: "datetime", filterable: true, orderable: true },
+        created_at: { type: "datetime", filterable: true, orderable: true },
+    },
+    defaultSort: [
+        ["priority", "asc"],
+        ["created_at", "desc"],
+    ],
+});
+export type AdminDiscoveryMerchandisingViewQuery = InferTableViewQuery<typeof adminDiscoveryMerchandisingView>;
