@@ -94,7 +94,8 @@
         "discoverySectionInsight": "Insights & diagnosis",
         "discoverySectionControl": "Presentation & ranking",
         "discoverySectionKnowledge": "Knowledge & opportunity",
-        "discoverySectionSystem": "System & recovery"
+        "discoverySectionSystem": "System & recovery",
+        "agentOrchestration": "Agent Orchestration"
     },
     "Topbar": {
         "search": "Search…",

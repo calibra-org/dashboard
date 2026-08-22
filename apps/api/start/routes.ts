@@ -71,6 +71,7 @@ await import("./routes/admin_quality.js");
 await import("./routes/admin_experiments.js");
 await import("./routes/admin_trust_risk.js");
 await import("./routes/admin_agentic_gateway.js");
+await import("./routes/admin_agent_orchestrator.js");
 await import("./routes/admin_settings.js");
 await import("./routes/admin_personalization.js");
 await import("./routes/admin_media.js");

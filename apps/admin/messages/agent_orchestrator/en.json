@@ -1,0 +1,5 @@
+{
+    "Nav": { "orchestrator": "Agent Orchestration" },
+    "title": "Multi-Agent Orchestration",
+    "subtitle": "Bounded plans, tool registry, approval, execution and verification"
+}

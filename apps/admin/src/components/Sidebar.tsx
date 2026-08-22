@@ -192,6 +192,7 @@ const agenticItems: NavItem[] = [
     { href: "/agentic-commerce/channels", labelKey: "agenticChannels", icon: Link2 },
     { href: "/agentic-commerce/readiness", labelKey: "agenticReadiness", icon: ChartNoAxesCombined },
     { href: "/agentic-commerce/conformance", labelKey: "agenticConformance", icon: ShieldCheck },
+    { href: "/agentic-commerce/orchestrator/overview", labelKey: "agentOrchestration", icon: Bot },
 ];
 
 const identityItems: NavItem[] = [
