@@ -1,10 +1,10 @@
 "use client";
 
 import type { Locale } from "@calibra/shared/i18n";
-import { Languages } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 
 import { Button } from "#/components/ui/button";
+import { Languages } from "#/icons";
 import { getPathname, usePathname } from "#/lib/i18n/navigation";
 
 /**
