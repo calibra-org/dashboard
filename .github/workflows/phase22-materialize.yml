@@ -1,63 +1,13 @@
-name: Phase 22 Resume Format Fix
+name: Phase 22 Carrier Archive
 
 on:
-  pull_request:
-    branches:
-      - main
-    paths:
-      - ".github/workflows/phase22-materialize.yml"
   workflow_dispatch:
 
 permissions:
-  contents: write
-
-concurrency:
-  group: phase22-resume-format-fix
-  cancel-in-progress: true
+  contents: read
 
 jobs:
-  format-migration:
-    if: github.actor != 'github-actions[bot]'
+  archived:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
     steps:
-      - name: Checkout clean Phase 22 target
-        uses: actions/checkout@v4
-        with:
-          ref: agent/phase22-multi-agent-orchestrator-20260822
-          fetch-depth: 0
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "24.14.0"
-
-      - name: Install pnpm and workspace dependencies
-        run: |
-          npm install --global pnpm@10.32.1
-          pnpm install --frozen-lockfile
-
-      - name: Format only Phase 22 migration
-        shell: bash
-        run: |
-          set -euo pipefail
-          FILE=apps/api/database/migrations/1775000000000_create_multi_agent_orchestrator.ts
-          before="$(sha256sum "$FILE" | awk '{print $1}')"
-          pnpm exec biome format --write "$FILE"
-          git diff --check
-          changed="$(git diff --name-only)"
-          test "$changed" = "$FILE"
-          after="$(sha256sum "$FILE" | awk '{print $1}')"
-          test "$before" != "$after"
-
-      - name: Publish format-only fix
-        shell: bash
-        run: |
-          set -euo pipefail
-          FILE=apps/api/database/migrations/1775000000000_create_multi_agent_orchestrator.ts
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "$FILE"
-          git diff --cached --check
-          test "$(git diff --cached --name-only)" = "$FILE"
-          git commit -m "style(phase22): format orchestrator migration"
-          git push origin HEAD:agent/phase22-multi-agent-orchestrator-20260822
+      - run: echo "Phase 22 source was validated and merged through clean PR #68. This carrier is archived and must not publish source."
