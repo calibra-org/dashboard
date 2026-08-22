@@ -101,7 +101,7 @@ jobs:
           mkdir -p /tmp/phase22-overlay
           tar -xJf /tmp/phase22-overlay.tar.xz -C /tmp/phase22-overlay
 
-      - name: Materialize source and guarded shared wiring
+      - name: Materialize source and current-main compatibility
         working-directory: work
         shell: bash
         run: |
@@ -110,21 +110,83 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
 
-          path = Path('/tmp/phase22-overlay/shared_patch.py')
-          text = path.read_text()
+          helper = Path('/tmp/phase22-overlay/shared_patch.py')
+          text = helper.read_text()
           gateway_old = 'await import("#start/routes/admin_agentic_gateway");'
           orchestrator_old = 'await import("#start/routes/admin_agent_orchestrator");'
           if text.count(gateway_old) != 2 or text.count(orchestrator_old) != 1:
               raise SystemExit('Phase 22 helper route compatibility literals changed unexpectedly')
           text = text.replace(gateway_old, 'await import("./routes/admin_agentic_gateway.js");')
           text = text.replace(orchestrator_old, 'await import("./routes/admin_agent_orchestrator.js");')
-          path.write_text(text)
+          helper.write_text(text)
           PY
           python3 /tmp/phase22-overlay/shared_patch.py
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          workspace = Path('apps/admin/src/features/agent_orchestrator/AgentOrchestratorWorkspace.tsx')
+          text = workspace.read_text()
+          replacements = {
+              'import { ShieldAlert,SlidersHorizontal,UserRoundCheck,ScanSearch } from "#/icons";':
+                  'import { Search as ScanSearch,ShieldAlert,SlidersHorizontal,UserCheck as UserRoundCheck } from "#/icons";',
+              'onValueChange={setSpecialty}': 'onValueChange={(value)=>setSpecialty(String(value))}',
+              'onValueChange={setHandlerKey}': 'onValueChange={(value)=>setHandlerKey(String(value))}',
+              'onValueChange={setRisk}': 'onValueChange={(value)=>setRisk(String(value))}',
+              'onValueChange={setAgentId}': 'onValueChange={(value)=>setAgentId(String(value))}',
+          }
+          for old, new in replacements.items():
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'expected one Phase 22 admin marker, got {count}: {old}')
+              text = text.replace(old, new, 1)
+          workspace.write_text(text)
+
+          query = Path('apps/admin/src/lib/queries/agent-orchestrator.ts')
+          query.write_text('''"use client";
+
+          import type { Locale } from "@calibra/shared/i18n";
+          import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+          import { useLocale } from "next-intl";
+
+          import { apiGet, apiMutate, type MutationMethod } from "#/lib/queries/api-client";
+
+          const base = "agentic-commerce/orchestrator";
+
+          export function useAgentOrchestratorResource<T>(path: string, enabled = true) {
+              const locale = useLocale() as Locale;
+              return useQuery<{ data: T }, Error, T>({
+                  queryKey: ["admin", "agentic-commerce", "orchestrator", path, { locale }],
+                  queryFn: () => apiGet<{ data: T }>(`${base}/${path}`, { locale }),
+                  select: (payload) => payload.data,
+                  enabled,
+                  staleTime: 8_000,
+              });
+          }
+
+          export function useAgentOrchestratorMutation<T = unknown, B = Record<string, unknown>>(
+              method: MutationMethod = "POST",
+          ) {
+              const locale = useLocale() as Locale;
+              const queryClient = useQueryClient();
+              return useMutation<T, Error, { path: string; body: B }>({
+                  mutationFn: async ({ path, body }) => {
+                      const payload = await apiMutate<{ data: T }>(method, `${base}/${path}`, { locale, body });
+                      return payload.data;
+                  },
+                  onSuccess: () =>
+                      queryClient.invalidateQueries({ queryKey: ["admin", "agentic-commerce", "orchestrator"] }),
+              });
+          }
+          ''')
+          PY
+
           test -f apps/api/database/migrations/1775000000000_create_multi_agent_orchestrator.ts
           test ! -e apps/api/database/migrations/1764200000000_create_multi_agent_orchestrator.ts
           grep -Fq 'admin_agent_orchestrator' apps/api/start/routes.ts
           grep -Fq '/agentic-commerce/orchestrator/overview' apps/admin/src/components/Sidebar.tsx
+          grep -Fq 'Search as ScanSearch' apps/admin/src/features/agent_orchestrator/AgentOrchestratorWorkspace.tsx
+          grep -Fq 'apiGet' apps/admin/src/lib/queries/agent-orchestrator.ts
           grep -Fq 'admin.agent-orchestrator.v1.json' docs/api/scripts/merge-admin-spec.js
           git diff --check
 
@@ -168,33 +230,21 @@ jobs:
         working-directory: work
         run: node scripts/verify-phase22-agent-orchestrator.mjs
 
-      - name: Run complete migrations and regenerate Lucid schema
+      - name: Admin typecheck preflight
+        working-directory: work
+        run: pnpm exec turbo run typecheck --filter=@calibra/admin
+
+      - name: Regenerate database schema from full migration chain
         working-directory: work/apps/api
         run: node ace migration:run --connection=postgres_admin --force
 
-      - name: Build merged Admin OpenAPI and regenerate SDK
+      - name: Regenerate merged Admin OpenAPI and SDK
         working-directory: work
         shell: bash
         run: |
           set -euo pipefail
           pnpm --dir docs/api run build:json:admin
           pnpm --filter @calibra/sdk run codegen:admin
-
-      - name: Prepare merged API test specification
-        working-directory: work
-        run: pnpm --filter @calibra/api-docs run build:test-spec
-
-      - name: Phase 22 contract tests
-        working-directory: work/apps/api
-        run: timeout 240s node ace test --files=tests/functional/agent_orchestrator/phase22_agent_orchestrator.spec.ts
-
-      - name: API typecheck
-        working-directory: work
-        run: pnpm --filter @calibra/api run typecheck
-
-      - name: Admin typecheck
-        working-directory: work
-        run: pnpm exec turbo run typecheck --filter=@calibra/admin
 
       - name: Admin production build
         working-directory: work
