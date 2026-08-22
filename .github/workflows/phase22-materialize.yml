@@ -1,9 +1,6 @@
 name: Phase 22 Materialize Final Source
 
 on:
-  push:
-    branches:
-      - agent/phase22-materializer-20260822
   pull_request:
     branches:
       - main
@@ -12,7 +9,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: phase22-materialize-final-source
+  group: phase22-materialize-final-source-pr
   cancel-in-progress: true
 
 jobs:
