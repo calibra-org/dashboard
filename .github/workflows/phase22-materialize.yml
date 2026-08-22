@@ -107,6 +107,19 @@ jobs:
         run: |
           set -euo pipefail
           rsync -a --exclude shared_patch.py /tmp/phase22-overlay/ ./
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('/tmp/phase22-overlay/shared_patch.py')
+          text = path.read_text()
+          old = '''    'await import("#start/routes/admin_agentic_gateway");',
+              '    \'await import("#start/routes/admin_agentic_gateway");\\nawait import("#start/routes/admin_agent_orchestrator");\','''
+          new = '''    'await import("./routes/admin_agentic_gateway.js");',
+              '    \'await import("./routes/admin_agentic_gateway.js");\\nawait import("./routes/admin_agent_orchestrator.js");\','''
+          if old not in text:
+              raise SystemExit('Phase 22 helper route compatibility marker missing')
+          path.write_text(text.replace(old, new, 1))
+          PY
           python3 /tmp/phase22-overlay/shared_patch.py
           test -f apps/api/database/migrations/1775000000000_create_multi_agent_orchestrator.ts
           test ! -e apps/api/database/migrations/1764200000000_create_multi_agent_orchestrator.ts
