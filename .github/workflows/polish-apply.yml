@@ -1,6 +1,8 @@
 name: Apply Main Polish Batch
 
 on:
+    pull_request:
+        branches: ["main"]
     push:
         branches: ["agent/main-polish-20260822"]
     workflow_dispatch:
@@ -14,11 +16,13 @@ concurrency:
 
 jobs:
     validate-and-apply:
+        if: github.head_ref == 'agent/main-polish-20260822' || github.ref_name == 'agent/main-polish-20260822'
         runs-on: ubuntu-latest
         timeout-minutes: 30
         steps:
             - uses: actions/checkout@v7
               with:
+                  ref: agent/main-polish-20260822
                   fetch-depth: 0
             - uses: pnpm/action-setup@v4.4.0
               with:
