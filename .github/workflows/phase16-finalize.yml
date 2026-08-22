@@ -1,4 +1,4 @@
-name: Phase 16 Format Finalized Source
+name: Phase 16 Generate Finalized Schema
 
 on:
   push:
@@ -9,27 +9,65 @@ permissions:
   contents: write
 
 concurrency:
-  group: phase16-format-finalized-source
+  group: phase16-generate-finalized-schema
   cancel-in-progress: true
 
 jobs:
-  format-finalized-source:
+  generate-schema:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    env:
+      NODE_ENV: test
+      PORT: 3333
+      HOST: 127.0.0.1
+      APP_NAME: calibra-api-test
+      APP_KEY: phase16-test-app-key-0123456789abcdef
+      LOG_LEVEL: silent
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_USER: calibra
+      DB_PASSWORD: calibra
+      DB_DATABASE: calibra_test
+      DB_ADMIN_USER: calibra
+      DB_ADMIN_PASSWORD: calibra
+      MAIL_FROM_ADDRESS: ops@calibra.local
+      MAIL_FROM_NAME: Calibra
+      MAIL_NOTIFICATIONS_ENABLED: "false"
+      SMTP_HOST: localhost
+      SMTP_PORT: 11025
+      QUEUE_DRIVER: sync
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+      TRANSMIT_TRANSPORT: none
+      LIMITER_STORE: memory
+      CACHE_DRIVER: memory
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: calibra
+          POSTGRES_PASSWORD: calibra
+          POSTGRES_DB: calibra_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U calibra -d calibra_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
         with:
           ref: agent/phase16-finalized-source-20260822
           fetch-depth: 0
-
-      - name: Capture allowed Phase 16 paths
-        shell: bash
-        run: |
-          set -euo pipefail
-          git fetch origin main
-          git diff --name-only origin/main...HEAD | sort -u > "${RUNNER_TEMP}/phase16-allowed.txt"
-          test -s "${RUNNER_TEMP}/phase16-allowed.txt"
 
       - uses: pnpm/action-setup@v4
         with:
@@ -42,33 +80,73 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Apply formatting only
+      - name: Bootstrap Discovery schema generation
+        working-directory: apps/api
         shell: bash
         run: |
           set -euo pipefail
-          pnpm run format:fix
-          pnpm run format
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('database/schema.ts')
+          s = p.read_text()
+          marker = '// PHASE16_TEMP_SCHEMA_BOOTSTRAP'
+          names = [
+              'DiscoveryIndexOperationSchema',
+              'DiscoveryMerchandisingRuleSchema',
+              'DiscoveryOpportunitySchema',
+              'DiscoveryOpportunityEvidenceSchema',
+              'DiscoveryProductRelationshipSchema',
+              'DiscoverySearchEventSchema',
+              'DiscoverySearchPolicySchema',
+              'DiscoverySearchPolicyVersionSchema',
+              'DiscoverySynonymRuleSchema',
+          ]
+          if marker not in s:
+              p.write_text(s + '\n' + marker + '\n' + '\n'.join(f'export class {n} extends BaseModel {{}}' for n in names) + '\n')
+          PY
+
+      - name: Run migrations and regenerate Lucid schema
+        working-directory: apps/api
+        run: node ace migration:run --connection=postgres_admin --force
+
+      - name: Verify generated Discovery schema
+        working-directory: apps/api
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -q 'PHASE16_TEMP_SCHEMA_BOOTSTRAP' database/schema.ts
+          for name in \
+            DiscoveryIndexOperationSchema \
+            DiscoveryMerchandisingRuleSchema \
+            DiscoveryOpportunitySchema \
+            DiscoveryOpportunityEvidenceSchema \
+            DiscoveryProductRelationshipSchema \
+            DiscoverySearchEventSchema \
+            DiscoverySearchPolicySchema \
+            DiscoverySearchPolicyVersionSchema \
+            DiscoverySynonymRuleSchema
+          do
+            grep -A4 "export class ${name}" database/schema.ts | grep -q '\$columns'
+          done
+
+      - name: Normalize generated schema
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm exec biome format apps/api/database/schema.ts --write
           git diff --check
 
-      - name: Guard formatting scope and publish
+      - name: Guard schema-only change and publish
         shell: bash
         env:
           TARGET_BRANCH: agent/phase16-finalized-source-20260822
         run: |
           set -euo pipefail
-          git diff --name-only | sort -u > "${RUNNER_TEMP}/phase16-formatted.txt"
-          test -s "${RUNNER_TEMP}/phase16-formatted.txt"
-
-          unexpected="$(comm -23 "${RUNNER_TEMP}/phase16-formatted.txt" "${RUNNER_TEMP}/phase16-allowed.txt")"
-          if [ -n "$unexpected" ]; then
-            echo 'Formatter changed files outside the Phase 16 PR scope:'
-            printf '%s\n' "$unexpected"
-            exit 1
-          fi
-
+          changed="$(git diff --name-only)"
+          test "$changed" = "apps/api/database/schema.ts"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
+          git add apps/api/database/schema.ts
           git diff --cached --check
-          git commit -m 'style(phase16): normalize finalized source'
+          git commit -m 'chore(phase16): regenerate Lucid discovery schema'
           git push origin "HEAD:${TARGET_BRANCH}"
