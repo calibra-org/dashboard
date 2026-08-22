@@ -1,5 +1,6 @@
-import { Bell, Search } from "lucide-react";
 import { useTranslations } from "next-intl";
+
+import { Bell, Search } from "#/icons";
 
 import { LocaleSwitch } from "./LocaleSwitch";
 import { ThemeToggle } from "./ThemeToggle";
