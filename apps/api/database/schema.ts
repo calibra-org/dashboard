@@ -51,6 +51,286 @@ export class AdminPermissionSchema extends BaseModel {
   declare userId: bigint | number
 }
 
+export class AgentApprovalSchema extends BaseModel {
+  static $columns = ['createdAt', 'decidedAt', 'decidedByUserId', 'id', 'planStepId', 'publicId', 'reason', 'requestedByUserId', 'status', 'tenantId'] as const
+  $columns = AgentApprovalSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column.dateTime()
+  declare decidedAt: DateTime | null
+  @column()
+  declare decidedByUserId: number | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare planStepId: number
+  @column()
+  declare publicId: string
+  @column()
+  declare reason: string
+  @column()
+  declare requestedByUserId: number | null
+  @column()
+  declare status: string
+  @column()
+  declare tenantId: number
+}
+
+export class AgentConflictSchema extends BaseModel {
+  static $columns = ['alternatives', 'conflictSummary', 'createdAt', 'evidenceSnapshot', 'id', 'objectiveKey', 'participants', 'planId', 'priorityOrder', 'publicId', 'resolution', 'resolvedBy', 'resolvedByUserId', 'tenantId'] as const
+  $columns = AgentConflictSchema.$columns
+  @column()
+  declare alternatives: any
+  @column()
+  declare conflictSummary: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare evidenceSnapshot: any
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare objectiveKey: string
+  @column()
+  declare participants: any
+  @column()
+  declare planId: number
+  @column()
+  declare priorityOrder: any
+  @column()
+  declare publicId: string
+  @column()
+  declare resolution: any
+  @column()
+  declare resolvedBy: string
+  @column()
+  declare resolvedByUserId: number | null
+  @column()
+  declare tenantId: number
+}
+
+export class AgentIdentitySchema extends BaseModel {
+  static $columns = ['agentKey', 'budgetMinor', 'createdAt', 'createdByUserId', 'displayName', 'id', 'isActive', 'killSwitch', 'publicId', 'scopes', 'specialty', 'tenantId', 'updatedAt', 'version'] as const
+  $columns = AgentIdentitySchema.$columns
+  @column()
+  declare agentKey: string
+  @column()
+  declare budgetMinor: number
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare createdByUserId: number | null
+  @column()
+  declare displayName: string
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare isActive: boolean
+  @column()
+  declare killSwitch: boolean
+  @column()
+  declare publicId: string
+  @column()
+  declare scopes: any
+  @column()
+  declare specialty: string
+  @column()
+  declare tenantId: number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare version: number
+}
+
+export class AgentOutcomeHookSchema extends BaseModel {
+  static $columns = ['actual', 'baseline', 'createdAt', 'evaluateAfter', 'id', 'metricKey', 'planId', 'predicted', 'publicId', 'status', 'tenantId'] as const
+  $columns = AgentOutcomeHookSchema.$columns
+  @column()
+  declare actual: any | null
+  @column()
+  declare baseline: any
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column.dateTime()
+  declare evaluateAfter: DateTime
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare metricKey: string
+  @column()
+  declare planId: number
+  @column()
+  declare predicted: any
+  @column()
+  declare publicId: string
+  @column()
+  declare status: string
+  @column()
+  declare tenantId: number
+}
+
+export class AgentPlanStepSchema extends BaseModel {
+  static $columns = ['approvalRequired', 'createdAt', 'id', 'idempotencyKey', 'input', 'planId', 'publicId', 'riskClass', 'sequence', 'status', 'tenantId', 'toolKey', 'toolVersion', 'updatedAt'] as const
+  $columns = AgentPlanStepSchema.$columns
+  @column()
+  declare approvalRequired: boolean
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare idempotencyKey: string
+  @column()
+  declare input: any
+  @column()
+  declare planId: number
+  @column()
+  declare publicId: string
+  @column()
+  declare riskClass: string
+  @column()
+  declare sequence: number
+  @column()
+  declare status: string
+  @column()
+  declare tenantId: number
+  @column()
+  declare toolKey: string
+  @column()
+  declare toolVersion: number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+}
+
+export class AgentPlanSchema extends BaseModel {
+  static $columns = ['agentIdentityId', 'approvalRequirement', 'constraints', 'contextSnapshot', 'correlationId', 'createdAt', 'createdByUserId', 'evidence', 'expectedOutcomes', 'goal', 'id', 'learningPlan', 'options', 'policyEvaluation', 'publicId', 'risk', 'status', 'tenantId', 'updatedAt', 'verificationPlan', 'version'] as const
+  $columns = AgentPlanSchema.$columns
+  @column()
+  declare agentIdentityId: number
+  @column()
+  declare approvalRequirement: string
+  @column()
+  declare constraints: any
+  @column()
+  declare contextSnapshot: any
+  @column()
+  declare correlationId: string | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare createdByUserId: number | null
+  @column()
+  declare evidence: any
+  @column()
+  declare expectedOutcomes: any
+  @column()
+  declare goal: string
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare learningPlan: any
+  @column()
+  declare options: any
+  @column()
+  declare policyEvaluation: any
+  @column()
+  declare publicId: string
+  @column()
+  declare risk: any
+  @column()
+  declare status: string
+  @column()
+  declare tenantId: number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare verificationPlan: any
+  @column()
+  declare version: number
+}
+
+export class AgentToolRegistrySchema extends BaseModel {
+  static $columns = ['approvalRequired', 'createdAt', 'createdByUserId', 'handlerKey', 'id', 'inputSchema', 'isActive', 'outputSchema', 'publicId', 'requiredPermission', 'requiredScopes', 'reversible', 'riskClass', 'rollbackPlan', 'sideEffects', 'supportsDryRun', 'tenantId', 'toolKey', 'version'] as const
+  $columns = AgentToolRegistrySchema.$columns
+  @column()
+  declare approvalRequired: boolean
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare createdByUserId: number | null
+  @column()
+  declare handlerKey: string
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare inputSchema: any
+  @column()
+  declare isActive: boolean
+  @column()
+  declare outputSchema: any
+  @column()
+  declare publicId: string
+  @column()
+  declare requiredPermission: string | null
+  @column()
+  declare requiredScopes: any
+  @column()
+  declare reversible: boolean
+  @column()
+  declare riskClass: string
+  @column()
+  declare rollbackPlan: string | null
+  @column()
+  declare sideEffects: any
+  @column()
+  declare supportsDryRun: boolean
+  @column()
+  declare tenantId: number
+  @column()
+  declare toolKey: string
+  @column()
+  declare version: number
+}
+
+export class AgentToolRunSchema extends BaseModel {
+  static $columns = ['attempt', 'dryRun', 'errorCode', 'errorMessage', 'finishedAt', 'id', 'idempotencyKey', 'inputSnapshot', 'planStepId', 'policyResult', 'publicId', 'result', 'startedAt', 'status', 'tenantId', 'toolRegistryId', 'verification'] as const
+  $columns = AgentToolRunSchema.$columns
+  @column()
+  declare attempt: number
+  @column()
+  declare dryRun: boolean
+  @column()
+  declare errorCode: string | null
+  @column()
+  declare errorMessage: string | null
+  @column.dateTime()
+  declare finishedAt: DateTime | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare idempotencyKey: string
+  @column()
+  declare inputSnapshot: any
+  @column()
+  declare planStepId: number
+  @column()
+  declare policyResult: any
+  @column()
+  declare publicId: string
+  @column()
+  declare result: any
+  @column.dateTime()
+  declare startedAt: DateTime
+  @column()
+  declare status: string
+  @column()
+  declare tenantId: number
+  @column()
+  declare toolRegistryId: number
+  @column()
+  declare verification: any
+}
+
 export class AgenticActionLedgerSchema extends BaseModel {
   static $columns = ['actionType', 'approvalIds', 'capabilityKey', 'channelId', 'completedAt', 'createdAt', 'errorClass', 'externalRefs', 'id', 'idempotencyKey', 'inputHash', 'policyResult', 'principalId', 'publicId', 'result', 'riskClass', 'startedAt', 'status', 'tenantId', 'verification'] as const
   $columns = AgenticActionLedgerSchema.$columns

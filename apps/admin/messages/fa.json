@@ -94,7 +94,8 @@
         "discoverySectionInsight": "تحلیل و تشخیص",
         "discoverySectionControl": "کنترل نمایش و رتبه‌بندی",
         "discoverySectionKnowledge": "دانش و فرصت",
-        "discoverySectionSystem": "سیستم و بازیابی"
+        "discoverySectionSystem": "سیستم و بازیابی",
+        "agentOrchestration": "ارکستراسیون Agentها"
     },
     "Topbar": {
         "search": "جستجو…",

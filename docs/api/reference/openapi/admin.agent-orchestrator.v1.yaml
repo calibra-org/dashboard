@@ -1,0 +1,12 @@
+openapi: 3.1.0
+info: {title: Calibra Admin Agent Orchestrator, version: 1.0.0}
+paths:
+  /api/v1/admin/agentic-commerce/orchestrator/overview: {get: {summary: Orchestrator overview, responses: {'200': {description: OK}}}}
+  /api/v1/admin/agentic-commerce/orchestrator/agents: {get: {summary: List agents, responses: {'200': {description: OK}}}, post: {summary: Save agent identity, responses: {'200': {description: OK}}}}
+  /api/v1/admin/agentic-commerce/orchestrator/tools: {get: {summary: List tool registry, responses: {'200': {description: OK}}}, post: {summary: Register tool version, responses: {'200': {description: OK}}}}
+  /api/v1/admin/agentic-commerce/orchestrator/plans: {get: {summary: List plans, responses: {'200': {description: OK}}}, post: {summary: Create bounded plan, responses: {'200': {description: OK}}}}
+  /api/v1/admin/agentic-commerce/orchestrator/conflicts: {post: {summary: Record explicit council resolution, responses: {'200': {description: OK}}}}
+  /api/v1/admin/agentic-commerce/orchestrator/approvals: {post: {summary: Decide high-risk approval, responses: {'200': {description: OK}}}}
+  /api/v1/admin/agentic-commerce/orchestrator/execute: {post: {summary: Execute registered plan step, responses: {'200': {description: OK}}}}
+  /api/v1/admin/agentic-commerce/orchestrator/kill-switch: {post: {summary: Set agent kill switch, responses: {'200': {description: OK}}}}
+  /api/v1/admin/agentic-commerce/orchestrator/outcome-hooks: {post: {summary: Schedule realized-outcome evaluation, responses: {'200': {description: OK}}}}
