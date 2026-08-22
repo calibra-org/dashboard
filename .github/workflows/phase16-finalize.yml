@@ -1,4 +1,4 @@
-name: Phase 16 Sync Finalized SDK
+name: Phase 16 Sync Finalized Storefront SDK
 
 on:
   push:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: phase16-sync-finalized-sdk
+  group: phase16-sync-finalized-storefront-sdk
   cancel-in-progress: true
 
 jobs:
@@ -34,12 +34,12 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Regenerate Admin OpenAPI SDK
+      - name: Regenerate Storefront OpenAPI SDK
         shell: bash
         run: |
           set -euo pipefail
-          pnpm --dir docs/api run build:json:admin
-          pnpm --filter @calibra/sdk run codegen:admin
+          pnpm --dir docs/api run build:json:storefront
+          pnpm --filter @calibra/sdk run codegen:storefront
           git diff --check
 
       - name: Guard generated-only change and publish
@@ -49,10 +49,10 @@ jobs:
         run: |
           set -euo pipefail
           changed="$(git diff --name-only)"
-          test "$changed" = "packages/sdk/src/generated/admin.d.ts"
+          test "$changed" = "packages/sdk/src/generated/storefront.d.ts"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add packages/sdk/src/generated/admin.d.ts
+          git add packages/sdk/src/generated/storefront.d.ts
           git diff --cached --check
-          git commit -m 'chore(phase16): regenerate admin SDK contract'
+          git commit -m 'chore(phase16): regenerate storefront SDK contract'
           git push origin "HEAD:${TARGET_BRANCH}"
