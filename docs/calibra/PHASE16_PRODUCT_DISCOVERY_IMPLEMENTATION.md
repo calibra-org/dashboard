@@ -73,6 +73,7 @@ Before merge:
 - Admin typecheck/build
 - Phase 16 unit tests
 - existing RLS audit tests
+- repository Biome formatting normalized on the finalized source branch
 - `git diff --check`
 - no prototype assets or previous Phase 16 mock UI
 
