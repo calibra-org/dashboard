@@ -183,7 +183,9 @@ export default class extends BaseSchema {
             table.bigIncrements("id").notNullable();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
             table.string("operation", 24).notNullable().defaultTo("upsert_product");
-            table.bigInteger("product_id").unsigned().nullable().references("id").inTable("products").onDelete("CASCADE");
+            // The projection ledger must retain the product id after a hard delete so a replay can
+            // remove the stale search document. A product FK would block or erase that delete intent.
+            table.bigInteger("product_id").unsigned().nullable();
             table.string("status", 24).notNullable().defaultTo("pending");
             table.string("idempotency_key", 96).notNullable();
             table.integer("attempts").notNullable().defaultTo(0);
