@@ -15,7 +15,8 @@ Channels → Agentic Commerce → Orchestration. Agent Council is contextual, no
 ## Release gates
 RLS, authz, step-up, rate limit, audit, registry confinement, approval, idempotency, verification, kill switch, RTL/a11y, no no-op UI.
 
-
 ## Production integration note (2026-08-22)
 
 The original source pack is an implementation input only. Production merge requires current-main migration ordering, generated Lucid schema, OpenAPI/Admin SDK synchronization, repository typecheck/build/tests, Migration Smoke, RLS validation, and exact-head CI.
+
+The production candidate uses migration `1775000000000_create_multi_agent_orchestrator.ts`. Its repository formatting gate is normalized before the final exact-head CI run; no release gate is waived or bypassed.
