@@ -1,56 +1,14 @@
-name: Phase 16 Fix Finalized Projection Ledger
+name: Phase 16 Carrier Archived
 
 on:
-  push:
-    branches:
-      - agent/phase16-discovery-os-final-20260818
+  workflow_dispatch:
 
 permissions:
-  contents: write
-
-concurrency:
-  group: phase16-fix-finalized-projection-ledger
-  cancel-in-progress: true
+  contents: read
 
 jobs:
-  fix-projection-ledger:
-    if: github.actor != 'github-actions[bot]'
+  archived:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: agent/phase16-finalized-source-20260822
-          fetch-depth: 0
-
-      - name: Remove incompatible product FK from replay ledger
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-
-          path = Path("apps/api/database/migrations/1770001600000_create_discovery_os_tables.ts")
-          text = path.read_text()
-          old = '            table.bigInteger("product_id").unsigned().nullable().references("id").inTable("products").onDelete("CASCADE");'
-          new = '''            // The projection ledger must retain the product id after a hard delete so a replay can\n            // remove the stale search document. A product FK would block or erase that delete intent.\n            table.bigInteger("product_id").unsigned().nullable();'''
-          if text.count(old) != 1:
-              raise SystemExit(f"expected exactly one projection product FK, found {text.count(old)}")
-          path.write_text(text.replace(old, new, 1))
-          PY
-          git diff --check
-          test "$(git diff --name-only)" = "apps/api/database/migrations/1770001600000_create_discovery_os_tables.ts"
-          grep -Fq 'table.bigInteger("product_id").unsigned().nullable();' apps/api/database/migrations/1770001600000_create_discovery_os_tables.ts
-
-      - name: Publish guarded migration fix
-        shell: bash
-        env:
-          TARGET_BRANCH: agent/phase16-finalized-source-20260822
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add apps/api/database/migrations/1770001600000_create_discovery_os_tables.ts
-          git diff --cached --check
-          git commit -m 'fix(phase16): preserve projection intent on product delete'
-          git push origin "HEAD:${TARGET_BRANCH}"
+      - name: Carrier status
+        run: echo "Phase 16 finalized source was merged through PR #66; this carrier is archived."
