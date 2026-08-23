@@ -8,6 +8,8 @@
 
 Phase 26 منبع حقیقت جدید برای سفارش، قیمت، مشتری، پرداخت، کمپین یا تصمیم نیست. رکوردهای حافظه باید به sourceهای معتبر قبلی لینک شوند؛ از جمله Decision Intelligence، Governance OS، Experimentation، Agent Orchestrator و Growth Portfolio.
 
+Dependencyهای canonical این فاز Phase 11، 17، 22 و 25 هستند و Decision/Outcome authority از Phase 10 مصرف می‌شود. هیچ source reference صرفاً بر اساس نام جدول یا شناسهٔ ارسالی کاربر معتبر تلقی نمی‌شود؛ tenant ownership و allowlist authority باید در سرور تأیید شود.
+
 ## Memory record
 
 هر memory شامل Context، Observed signals، Decision، Reason، Alternatives rejected، Actor/approvals، Action، Outcome، Lesson، Confidence/strength و Expiry/relevance است.
@@ -30,6 +32,7 @@ Phase 26 منبع حقیقت جدید برای سفارش، قیمت، مشتر�
 - retrieval باید permission-aware باشد.
 - پاسخ باید source references را همراه lesson برگرداند؛ prose بدون provenance ممنوع است.
 - هر retrieval برای effectiveness measurement ثبت می‌شود.
+- دسترسی agent از Governance principal و scopeهای سروری مشتق می‌شود و از permission یا restricted flag ارسالی client ارث نمی‌برد.
 
 ## Contradiction and lineage
 
