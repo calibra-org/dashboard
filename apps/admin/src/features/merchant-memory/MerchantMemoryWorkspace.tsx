@@ -141,7 +141,7 @@ export function MerchantMemoryWorkspace() {
         <div dir="rtl" className="space-y-6 p-6">
             <PageHeader
                 title="حافظه سازمانی بازرگان"
-                description="Merchant Memory & Organizational Learning — دانش ساخت‌یافته، منبع‌دار و قابل ممیزی برای تصمیم‌های آینده"
+                subtitle="Merchant Memory & Organizational Learning — دانش ساخت‌یافته، منبع‌دار و قابل ممیزی برای تصمیم‌های آینده"
             />
 
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
@@ -206,7 +206,9 @@ export function MerchantMemoryWorkspace() {
                                     <span>قدرت: {percent(memory.strength)}</span>
                                     <span>حساسیت: {memory.sensitivity}</span>
                                     <span>Evidence: {memory.sources?.length ?? 0}</span>
-                                    {memory.retrieval_score != null ? <span>امتیاز: {percent(memory.retrieval_score)}</span> : null}
+                                    {memory.retrieval_score != null ? (
+                                        <span>امتیاز: {percent(memory.retrieval_score)}</span>
+                                    ) : null}
                                 </div>
                             </div>
                         ))}
