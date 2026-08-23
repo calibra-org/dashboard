@@ -11,6 +11,8 @@ const memoryClass = vine.enum([
     "policy_precedent",
 ]);
 
+const scopeKind = vine.enum(["merchant", "supplier", "campaign", "pricing", "customer_segment", "product", "process", "policy"]);
+
 const evidence = vine.object({
     source_kind: vine.enum([
         "intelligence_case",
@@ -29,37 +31,37 @@ const evidence = vine.object({
         "growth_portfolio_outcome",
     ]),
     source_ref: vine.string().trim().minLength(1).maxLength(180),
-    source_version: vine.string().trim().maxLength(80).optional(),
-    source_route: vine.string().trim().maxLength(500).optional(),
+    source_version: vine.string().trim().maxLength(80).nullable().optional(),
+    source_route: vine.string().trim().maxLength(500).nullable().optional(),
     label: vine.string().trim().minLength(2).maxLength(300),
     evidence_role: vine.enum(["supporting", "contradicting", "outcome", "approval", "context"]).optional(),
-    excerpt: vine.string().trim().maxLength(2000).optional(),
+    excerpt: vine.string().trim().maxLength(1200).nullable().optional(),
     metadata: vine.record(vine.any()).optional(),
-    observed_at: vine.string().trim().maxLength(80).optional(),
+    observed_at: vine.string().trim().maxLength(80).nullable().optional(),
 });
 
 const memoryPayload = {
     memory_key: vine.string().trim().minLength(3).maxLength(190),
     memory_class: memoryClass,
-    scope_kind: vine.enum(["merchant", "supplier", "campaign", "pricing", "customer_segment", "product", "process", "policy"]),
-    scope_key: vine.string().trim().maxLength(160).optional(),
+    scope_kind: scopeKind,
+    scope_key: vine.string().trim().maxLength(160).nullable().optional(),
     title: vine.string().trim().minLength(3).maxLength(300),
-    context: vine.string().trim().minLength(3).maxLength(8000),
-    observed_signals: vine.array(vine.any()).maxLength(64).optional(),
-    decision: vine.string().trim().maxLength(8000).optional(),
-    reason: vine.string().trim().maxLength(8000).optional(),
-    alternatives_rejected: vine.array(vine.any()).maxLength(64).optional(),
-    actors_and_approvals: vine.array(vine.any()).maxLength(64).optional(),
-    action: vine.string().trim().maxLength(8000).optional(),
-    outcome: vine.string().trim().maxLength(8000).optional(),
-    lesson: vine.string().trim().minLength(3).maxLength(8000),
+    context: vine.string().trim().minLength(3).maxLength(12000),
+    observed_signals: vine.array(vine.record(vine.any())).maxLength(128).optional(),
+    decision: vine.string().trim().maxLength(8000).nullable().optional(),
+    reason: vine.string().trim().maxLength(8000).nullable().optional(),
+    alternatives_rejected: vine.array(vine.record(vine.any())).maxLength(64).optional(),
+    actors_and_approvals: vine.array(vine.record(vine.any())).maxLength(64).optional(),
+    action: vine.string().trim().maxLength(8000).nullable().optional(),
+    outcome: vine.string().trim().maxLength(8000).nullable().optional(),
+    lesson: vine.string().trim().minLength(3).maxLength(12000),
     confidence: vine.number().min(0).max(1),
     strength: vine.number().min(0).max(1),
     privacy_level: vine.enum(["internal", "restricted", "aggregated"]).optional(),
     retention_class: vine.enum(["short", "standard", "long", "legal_hold"]).optional(),
-    effective_from: vine.string().trim().maxLength(80).optional(),
-    expires_at: vine.string().trim().maxLength(80).optional(),
-    evidence: vine.array(evidence).minLength(1).maxLength(64),
+    effective_from: vine.string().trim().minLength(10).maxLength(80),
+    expires_at: vine.string().trim().maxLength(80).nullable().optional(),
+    evidence: vine.array(evidence).minLength(1).maxLength(128),
 };
 
 export const createMerchantMemoryValidator = vine.compile(vine.object(memoryPayload));
@@ -67,20 +69,24 @@ export const createMerchantMemoryValidator = vine.compile(vine.object(memoryPayl
 export const supersedeMerchantMemoryValidator = vine.compile(
     vine.object({
         replacement: vine.object(memoryPayload),
-        relation: vine.enum(["supersedes", "contradicts", "refines", "supports"]),
+        relation: vine.enum(["supersedes", "contradicts", "refines"]),
         reason: vine.string().trim().minLength(3).maxLength(4000),
     }),
 );
 
 export const retrieveMerchantMemoryValidator = vine.compile(
     vine.object({
-        query: vine.string().trim().minLength(2).maxLength(500),
+        principal_type: vine.enum(["human", "agent", "system"]),
+        principal_ref: vine.string().trim().minLength(1).maxLength(160),
+        query: vine.string().trim().minLength(2).maxLength(4000),
         purpose: vine.string().trim().minLength(2).maxLength(80).optional(),
         memory_classes: vine.array(memoryClass).maxLength(8).optional(),
-        scope_kind: vine.string().trim().maxLength(48).optional(),
-        scope_key: vine.string().trim().maxLength(160).optional(),
+        scope_kind: scopeKind.optional(),
+        scope_key: vine.string().trim().maxLength(160).nullable().optional(),
+        min_confidence: vine.number().min(0).max(1).optional(),
+        include_history: vine.boolean().optional(),
         include_restricted: vine.boolean().optional(),
-        limit: vine.number().positive().withoutDecimals().max(20).optional(),
+        limit: vine.number().positive().withoutDecimals().max(50).optional(),
     }),
 );
 
@@ -88,9 +94,9 @@ export const merchantMemoryFeedbackValidator = vine.compile(
     vine.object({
         memory_public_id: vine.string().uuid(),
         feedback: vine.enum(["useful", "irrelevant", "applied", "incorrect"]),
-        usefulness_score: vine.number().min(0).max(1).optional(),
-        prevented_repeat_error: vine.boolean().optional(),
-        outcome_delta: vine.number().optional(),
-        note: vine.string().trim().maxLength(4000).optional(),
+        usefulness_score: vine.number().min(0).max(1).nullable().optional(),
+        prevented_repeat_error: vine.boolean().nullable().optional(),
+        outcome_delta: vine.number().nullable().optional(),
+        note: vine.string().trim().maxLength(4000).nullable().optional(),
     }),
 );
