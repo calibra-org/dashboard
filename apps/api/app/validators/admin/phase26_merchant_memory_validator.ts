@@ -70,6 +70,7 @@ export const retrieveMerchantMemoryValidator = vine.compile(
         query: vine.string().trim().maxLength(4000),
         purpose: vine.string().trim().minLength(2).maxLength(80),
         consumer: memoryConsumer,
+        agent_principal_key: vine.string().trim().minLength(1).maxLength(120).nullable().optional(),
         memory_classes: vine.array(memoryClass).maxLength(8).optional(),
         subject_type: vine.string().trim().maxLength(80).nullable().optional(),
         subject_id: vine.string().trim().maxLength(160).nullable().optional(),
