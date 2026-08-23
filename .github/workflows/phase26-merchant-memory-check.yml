@@ -80,13 +80,14 @@ jobs:
           '''
               service = service[:end] + addition + service[end:]
 
+          retrieval_scope = service.index('export async function retrieveMemories')
           if 'normalizeMerchantMemorySearchTokens(input.query)' not in service:
-              start = service.index('    const tokens = input.query', service.index('export async function retrieveMemories'))
+              start = service.index('    const tokens = input.query', retrieval_scope)
               end = service.index('        .slice(0, 8);', start) + len('        .slice(0, 8);')
               service = service[:start] + '    const tokens = normalizeMerchantMemorySearchTokens(input.query);' + service[end:]
 
           if 'const candidateRows = await query' not in service:
-              start = service.index('    const rows = await query', service.index('export async function retrieveMemories'))
+              start = service.index('    const rows = await query', retrieval_scope)
               end_marker = '    const publicIds = rows.map((row) => String(row.public_id));'
               end = service.index(end_marker, start) + len(end_marker)
               ranked = '''    const candidateRows = await query
@@ -106,33 +107,25 @@ jobs:
 
           plain = 'memories: rows.map((row) => ({ ...row, sources: groupedSources.get(Number(row.id)) ?? [] })),'
           scored = 'memories: rows.map((row) => ({ ...row, retrieval_score: scores.get(Number(row.id))?.total ?? 0, score_components: scores.get(Number(row.id)) ?? null, sources: groupedSources.get(Number(row.id)) ?? [] })),'
-          service = service.replace(plain, scored, 1)
+          if plain in service:
+              service = service.replace(plain, scored, 1)
 
-          if 'const selectedMemory = await requireMemory(input.memory_public_id);' not in service:
-              scope = service.index('export async function recordEffectiveness')
-              old = '''        memory = await requireMemory(input.memory_public_id);
-              const returned = json<string[]>(retrieval.returned_memory_public_ids, []);
-              if (!returned.includes(String(memory.public_id))) {'''
-              new = '''        const selectedMemory = await requireMemory(input.memory_public_id);
-              const returned = json<string[]>(retrieval.returned_memory_public_ids, []);
-              if (!returned.includes(String(selectedMemory.public_id))) {'''
-              pos = service.find(old, scope)
-              if pos < 0:
-                  raise SystemExit('effectiveness narrowing marker missing')
-              service = service[:pos] + service[pos:].replace(old, new, 1)
-              assign_anchor = '''            });
-              }
-          }
-          if (input.source_outcome_record_id) {'''
-              assign_new = '''            });
-              }
-              memory = selectedMemory;
-          }
-          if (input.source_outcome_record_id) {'''
-              pos = service.find(assign_anchor, scope)
-              if pos < 0:
-                  raise SystemExit('effectiveness assignment marker missing')
-              service = service[:pos] + service[pos:].replace(assign_anchor, assign_new, 1)
+          effectiveness_scope = service.index('export async function recordEffectiveness')
+          if 'const selectedMemory = await requireMemory(input.memory_public_id);' not in service[effectiveness_scope:]:
+              tail = service[effectiveness_scope:]
+              target = 'memory = await requireMemory(input.memory_public_id);'
+              if target not in tail:
+                  raise SystemExit('effectiveness memory assignment missing')
+              tail = tail.replace(target, 'const selectedMemory = await requireMemory(input.memory_public_id);', 1)
+              target = 'String(memory.public_id)'
+              if target not in tail:
+                  raise SystemExit('effectiveness memory public id missing')
+              tail = tail.replace(target, 'String(selectedMemory.public_id)', 1)
+              outcome = '    if (input.source_outcome_record_id) {'
+              if outcome not in tail:
+                  raise SystemExit('effectiveness outcome marker missing')
+              tail = tail.replace(outcome, '        memory = selectedMemory;\n    }\n' + outcome, 1)
+              service = service[:effectiveness_scope] + tail
 
           service_path.write_text(service)
 
@@ -148,9 +141,11 @@ jobs:
           merge = merge_path.read_text()
           if 'const phase26 =' not in merge:
               anchor = 'const phase25 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase25.v1.json"), "utf8"));'
+              if anchor not in merge: raise SystemExit('phase25 merge import anchor missing')
               merge = merge.replace(anchor, anchor + '\nconst phase26 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase26.v1.json"), "utf8"));', 1)
           if '[phase26, "Phase26MerchantMemoryOverlay"]' not in merge:
               anchor = '    [phase25, "Phase25GrowthPortfolioOverlay"],'
+              if anchor not in merge: raise SystemExit('phase25 merge overlay anchor missing')
               merge = merge.replace(anchor, anchor + '\n    [phase26, "Phase26MerchantMemoryOverlay"],', 1)
           merge_path.write_text(merge)
 
@@ -158,6 +153,7 @@ jobs:
           sidebar = sidebar_path.read_text()
           if '/analytics/merchant-memory' not in sidebar:
               anchor = '            { href: "/analytics/growth-portfolio", label: "سبد رشد خودکار", icon: TrendingUp },\n'
+              if anchor not in sidebar: raise SystemExit('growth portfolio navigation anchor missing')
               sidebar = sidebar.replace(anchor, anchor + '            { href: "/analytics/merchant-memory", label: "حافظه سازمانی", icon: Library },\n', 1)
           sidebar_path.write_text(sidebar)
           PY
