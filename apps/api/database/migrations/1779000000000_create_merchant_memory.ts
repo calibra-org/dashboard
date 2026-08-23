@@ -33,6 +33,7 @@ export default class extends BaseSchema {
             table.string("visibility_scope", 24).notNullable().defaultTo("admin_agent");
             table.string("sensitivity_level", 24).notNullable().defaultTo("internal");
             table.string("aggregation_level", 24).notNullable().defaultTo("aggregate");
+            table.string("retention_class", 32).notNullable().defaultTo("business_learning");
             table.timestamp("effective_from", { useTz: true }).notNullable();
             table.timestamp("expires_at", { useTz: true }).nullable();
             table.timestamp("last_validated_at", { useTz: true }).nullable();
@@ -79,9 +80,11 @@ export default class extends BaseSchema {
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
             table.string("requester_type", 24).notNullable();
             table.string("requester_reference", 180).nullable();
-            table.text("query_text").notNullable();
+            table.string("purpose", 80).notNullable();
+            table.string("query_hash", 64).notNullable();
             table.jsonb("filters").notNullable().defaultTo(this.raw("'{}'::jsonb"));
             table.jsonb("returned_memory_ids").notNullable().defaultTo(this.raw("'[]'::jsonb"));
+            table.integer("candidate_count").notNullable().defaultTo(0);
             table.integer("result_count").notNullable().defaultTo(0);
             table.integer("source_linked_count").notNullable().defaultTo(0);
             table.integer("expired_excluded_count").notNullable().defaultTo(0);
@@ -98,8 +101,10 @@ export default class extends BaseSchema {
             table.bigInteger("retrieval_id").unsigned().nullable().references("id").inTable("merchant_memory_retrievals").onDelete("SET NULL");
             table.string("effect_kind", 32).notNullable();
             table.decimal("usefulness_score", 8, 6).nullable();
+            table.boolean("repeat_error_avoided").nullable();
             table.string("decision_reference", 180).nullable();
             table.string("outcome_reference", 180).nullable();
+            table.bigInteger("source_outcome_record_id").unsigned().nullable().references("id").inTable("intelligence_outcome_records").onDelete("SET NULL");
             table.text("notes").nullable();
             table.timestamp("measured_at", { useTz: true }).notNullable();
             table.bigInteger("recorded_by_user_id").unsigned().nullable().references("id").inTable("users").onDelete("SET NULL");
@@ -114,10 +119,14 @@ export default class extends BaseSchema {
             "ALTER TABLE merchant_memories ADD CONSTRAINT merchant_memory_aggregation_check CHECK (aggregation_level IN ('aggregate','cohort','record_level'))",
             "ALTER TABLE merchant_memories ADD CONSTRAINT merchant_memory_ranges_check CHECK (confidence BETWEEN 0 AND 1 AND strength BETWEEN 0 AND 1)",
             "ALTER TABLE merchant_memories ADD CONSTRAINT merchant_memory_expiry_check CHECK (expires_at IS NULL OR expires_at > effective_from)",
+            "ALTER TABLE merchant_memories ADD CONSTRAINT merchant_memory_sensitive_record_check CHECK (NOT (sensitivity_level = 'sensitive' AND aggregation_level = 'record_level'))",
             "ALTER TABLE merchant_memory_sources ADD CONSTRAINT merchant_memory_evidence_role_check CHECK (evidence_role IN ('supporting','contradicting','outcome','approval','policy'))",
+            "ALTER TABLE merchant_memory_sources ADD CONSTRAINT merchant_memory_evidence_hash_check CHECK (evidence_hash IS NULL OR evidence_hash ~ '^[0-9a-f]{64}$')",
             "ALTER TABLE merchant_memory_lineage ADD CONSTRAINT merchant_memory_lineage_relation_check CHECK (relation IN ('supersedes','refines','contradicts'))",
             "ALTER TABLE merchant_memory_lineage ADD CONSTRAINT merchant_memory_lineage_no_self_check CHECK (predecessor_memory_id <> successor_memory_id)",
             "ALTER TABLE merchant_memory_retrievals ADD CONSTRAINT merchant_memory_requester_check CHECK (requester_type IN ('human','agent','system'))",
+            "ALTER TABLE merchant_memory_retrievals ADD CONSTRAINT merchant_memory_query_hash_check CHECK (query_hash ~ '^[0-9a-f]{64}$')",
+            "ALTER TABLE merchant_memory_retrievals ADD CONSTRAINT merchant_memory_retrieval_counts_check CHECK (candidate_count >= 0 AND result_count >= 0 AND source_linked_count >= 0 AND expired_excluded_count >= 0 AND superseded_excluded_count >= 0 AND permission_excluded_count >= 0)",
             "ALTER TABLE merchant_memory_effectiveness ADD CONSTRAINT merchant_memory_effect_kind_check CHECK (effect_kind IN ('useful','not_useful','prevented_repeat_error','decision_influenced','outcome_supported'))",
             "ALTER TABLE merchant_memory_effectiveness ADD CONSTRAINT merchant_memory_usefulness_check CHECK (usefulness_score IS NULL OR usefulness_score BETWEEN 0 AND 1)",
         ];
