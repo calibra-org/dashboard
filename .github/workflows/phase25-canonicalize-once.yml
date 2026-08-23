@@ -1,0 +1,98 @@
+name: Phase 25 Canonicalize Once
+
+on:
+  push:
+    branches: [feat/phase25-growth-portfolio-20260823]
+
+permissions:
+  contents: write
+
+jobs:
+  canonicalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/phase25-growth-portfolio-20260823
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --global pnpm@10.32.1
+      - run: pnpm install --frozen-lockfile
+      - name: Wire Phase 25 into canonical navigation and API docs
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          sidebar = Path('apps/admin/src/components/Sidebar.tsx')
+          text = sidebar.read_text()
+          anchor = '            { href: "/analytics/pre-production-lab", label: "آزمایشگاه پیش‌انتشار", icon: Bug },\n'
+          addition = '            { href: "/analytics/growth-portfolio", label: "سبد رشد خودکار", icon: TrendingUp },\n'
+          if addition not in text:
+              if anchor not in text:
+                  raise SystemExit('Sidebar anchor missing')
+              text = text.replace(anchor, anchor + addition, 1)
+              sidebar.write_text(text)
+
+          package = Path('docs/api/package.json')
+          text = package.read_text()
+          chain_old = 'pnpm build:json:admin-phase23 && pnpm build:json:admin-phase24 && pnpm build:json:admin-completion'
+          chain_new = 'pnpm build:json:admin-phase23 && pnpm build:json:admin-phase24 && pnpm build:json:admin-phase25 && pnpm build:json:admin-completion'
+          if chain_new not in text:
+              if chain_old not in text:
+                  raise SystemExit('Admin build-chain anchor missing')
+              text = text.replace(chain_old, chain_new, 1)
+          script_old = '        "build:json:admin-phase24": "redocly bundle reference/openapi/admin.phase24.v1.yaml -o dist/admin.phase24.v1.json --ext json"\n'
+          script_new = '        "build:json:admin-phase24": "redocly bundle reference/openapi/admin.phase24.v1.yaml -o dist/admin.phase24.v1.json --ext json",\n        "build:json:admin-phase25": "redocly bundle reference/openapi/admin.phase25.v1.yaml -o dist/admin.phase25.v1.json --ext json"\n'
+          if '"build:json:admin-phase25"' not in text:
+              if script_old not in text:
+                  raise SystemExit('Phase24 package script anchor missing')
+              text = text.replace(script_old, script_new, 1)
+          package.write_text(text)
+
+          merge = Path('docs/api/scripts/merge-admin-spec.js')
+          text = merge.read_text()
+          load_anchor = 'const phase24 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase24.v1.json"), "utf8"));\n'
+          load_add = 'const phase25 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase25.v1.json"), "utf8"));\n'
+          if load_add not in text:
+              if load_anchor not in text:
+                  raise SystemExit('Phase24 merge load anchor missing')
+              text = text.replace(load_anchor, load_anchor + load_add, 1)
+          overlay_anchor = '    [phase24, "Phase24SyntheticCommerceOverlay"],\n'
+          overlay_add = '    [phase25, "Phase25GrowthPortfolioOverlay"],\n'
+          if overlay_add not in text:
+              if overlay_anchor not in text:
+                  raise SystemExit('Phase24 overlay anchor missing')
+              text = text.replace(overlay_anchor, overlay_anchor + overlay_add, 1)
+          merge.write_text(text)
+          PY
+      - name: Apply canonical Biome formatting
+        run: |
+          pnpm exec biome check --write \
+            apps/admin/src/components/Sidebar.tsx \
+            apps/admin/src/features/growth-portfolio/GrowthPortfolioWorkspace.tsx \
+            apps/admin/src/lib/queries/growth-portfolio.ts \
+            apps/admin/e2e/phase25-growth-portfolio.spec.ts \
+            apps/api/app/controllers/admin/growth_portfolio_controller.ts \
+            apps/api/app/services/phase25_growth_portfolio_service.ts \
+            apps/api/app/validators/admin/phase25_growth_portfolio_validator.ts \
+            apps/api/database/migrations/1778000000000_create_growth_portfolio_engine.ts \
+            apps/api/start/routes/admin_growth_portfolio.ts \
+            apps/api/tests/unit/intelligence/growth_portfolio_optimizer.spec.ts \
+            scripts/verify-phase25-growth-portfolio.mjs
+      - name: Build merged API spec and regenerate SDK
+        run: |
+          pnpm --filter @calibra/api-docs run build:json
+          pnpm --filter @calibra/sdk run codegen
+      - name: Commit canonical Phase 25 outputs and remove one-shot workflow
+        run: |
+          rm .github/workflows/phase25-canonicalize-once.yml
+          git config user.name "calibra-dev"
+          git config user.email "keshavarz20.com@gmail.com"
+          git add -A
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "chore(phase25): canonicalize navigation docs and SDK"
+          git push origin HEAD:feat/phase25-growth-portfolio-20260823
