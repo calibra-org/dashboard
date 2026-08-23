@@ -3,7 +3,7 @@ import vine from "@vinejs/vine";
 const source = vine.object({
     source_domain: vine.enum(["phase10", "phase11", "phase17", "phase22", "phase25"]),
     source_kind: vine.string().trim().minLength(2).maxLength(80),
-    source_id: vine.unionOfTypes([vine.number().positive().withoutDecimals(), vine.string().trim().minLength(1).maxLength(190)]).optional(),
+    source_id: vine.number().positive().withoutDecimals(),
     source_route: vine.string().trim().maxLength(500).nullable().optional(),
     source_version: vine.string().trim().maxLength(80).nullable().optional(),
     evidence_role: vine.enum(["primary", "supporting", "contradicting", "outcome", "approval", "action"]).optional(),
@@ -52,8 +52,6 @@ export const retrieveMerchantMemoryValidator = vine.compile(
     vine.object({
         query: vine.string().trim().maxLength(2000),
         purpose: vine.string().trim().minLength(2).maxLength(80),
-        requester_kind: vine.enum(["human", "agent", "system"]),
-        requester_id: vine.string().trim().maxLength(190).nullable().optional(),
         memory_class: vine.string().trim().maxLength(48).nullable().optional(),
         subject_scope: vine.string().trim().maxLength(24).nullable().optional(),
         subject_key: vine.string().trim().maxLength(190).nullable().optional(),
