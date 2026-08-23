@@ -162,7 +162,9 @@ export function DigitalTwinWorkspace() {
                                 <p className="text-muted-foreground text-sm">هر اجرا snapshot و hash مستقل دارد.</p>
                             </div>
                             {risk ? (
-                                <div className="rounded-full border px-3 py-1 text-sm">ریسک موجودی: {fmt(Number(risk.p50) * 100)}٪</div>
+                                <div className="rounded-full border px-3 py-1 text-sm">
+                                    ریسک موجودی: {fmt(Number(risk.p50) * 100)}٪
+                                </div>
                             ) : null}
                         </div>
                         <div className="mt-4 grid gap-3 md:grid-cols-2">
@@ -183,7 +185,9 @@ export function DigitalTwinWorkspace() {
                                         variant="outline"
                                         className="mt-4 w-full"
                                         disabled={run.isPending}
-                                        onClick={() => run.mutate({ path: `scenarios/${s.public_id}/run`, body: { seed: 23001 } })}
+                                        onClick={() =>
+                                            run.mutate({ path: `scenarios/${s.public_id}/run`, body: { seed: 23001 } })
+                                        }
                                     >
                                         اجرای شبیه‌سازی
                                     </Button>
