@@ -6,7 +6,10 @@ import {
     type MemorySensitivity,
 } from "#services/phase26_merchant_memory_service";
 
-function input(overrides: Partial<CreateMemoryInput> = {}, sourceSensitivity: MemorySensitivity = "aggregate"): CreateMemoryInput {
+function input(
+    overrides: Partial<CreateMemoryInput> = {},
+    sourceSensitivity: MemorySensitivity = "aggregate",
+): CreateMemoryInput {
     return {
         memory_class: "campaign_lesson",
         title: "درس کمپین",
