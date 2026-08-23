@@ -6,7 +6,7 @@ import { DateTime } from "luxon";
 import type User from "#models/user";
 import { currentTenantId, currentTrx } from "#services/tenant_context";
 
-export const MERCHANT_MEMORY_VERSION = "merchant-memory-v1.0.0";
+export const MERCHANT_MEMORY_VERSION = "merchant-memory-v1.1.0";
 
 export const MEMORY_CLASSES = [
     "operational_incident",
@@ -20,30 +20,28 @@ export const MEMORY_CLASSES = [
 ] as const;
 
 export type MemoryClass = (typeof MEMORY_CLASSES)[number];
-export type MemorySensitivity = "aggregated" | "internal" | "restricted";
+export type MemoryConsumer = "human" | "agent";
+export type MemorySensitivity = "aggregate" | "internal" | "customer_level_sensitive";
+export type SourcePhase = "phase10" | "phase11" | "phase17" | "phase22" | "phase25" | "manual_reviewed";
 
 type MemorySourceInput = {
-    source_kind:
-        | "decision"
-        | "outcome"
-        | "approval"
-        | "experiment"
-        | "portfolio"
-        | "incident"
-        | "audit"
-        | "operator";
-    source_table: string;
+    source_phase: SourcePhase;
+    source_kind: string;
     source_id: string;
-    source_public_id?: string | null;
-    evidence_hash?: string | null;
-    evidence_role?: "primary" | "supporting" | "contradicting";
-    observed_at?: string | null;
+    source_route?: string | null;
+    source_hash?: string | null;
+    label: string;
+    evidence_role?: "primary" | "supporting" | "contradicting" | "outcome";
+    evidence_summary?: Record<string, unknown>;
+    sensitivity?: MemorySensitivity;
+    observed_at: string;
 };
 
-type CreateMemoryInput = {
+export type CreateMemoryInput = {
     memory_class: MemoryClass;
     subject_type?: string | null;
-    subject_key?: string | null;
+    subject_id?: string | null;
+    title: string;
     context: string;
     observed_signals?: unknown[];
     decision?: string | null;
@@ -56,44 +54,51 @@ type CreateMemoryInput = {
     confidence: number;
     strength: number;
     sensitivity?: MemorySensitivity;
-    required_permission?: string | null;
+    retention_class?: "short" | "standard" | "extended" | "legal_hold";
+    allowed_consumers?: MemoryConsumer[];
+    purposes?: string[];
     relevant_from?: string;
     expires_at?: string | null;
     sources: MemorySourceInput[];
 };
 
-type RetrieveMemoryInput = {
+export type RetrieveMemoryInput = {
     query: string;
-    principal_kind: "admin" | "copilot" | "automation";
-    principal_id?: string | null;
+    purpose: string;
+    consumer: MemoryConsumer;
     memory_classes?: MemoryClass[];
     subject_type?: string | null;
-    subject_key?: string | null;
-    permissions?: string[];
-    include_restricted?: boolean;
+    subject_id?: string | null;
+    min_confidence?: number;
+    include_customer_sensitive?: boolean;
     limit?: number;
+    request_correlation_id?: string | null;
 };
 
-type EffectivenessInput = {
-    retrieval_public_id: string;
-    memory_public_id?: string | null;
-    outcome: "used" | "ignored" | "misleading" | "prevented_repeat_error" | "unknown";
-    usefulness?: number | null;
-    repeat_error_avoided?: boolean | null;
-    notes?: string | null;
+type SourceTarget = { table: string; idColumn?: string };
+
+const SOURCE_TARGETS: Record<string, SourceTarget> = {
+    "phase10:case": { table: "intelligence_cases" },
+    "phase10:decision": { table: "intelligence_decisions" },
+    "phase10:action": { table: "intelligence_action_records" },
+    "phase10:outcome": { table: "intelligence_outcome_records" },
+    "phase11:policy_version": { table: "governance_policy_versions" },
+    "phase11:approval_request": { table: "governance_approval_requests" },
+    "phase11:approval_decision": { table: "governance_approval_decisions" },
+    "phase11:action_ledger": { table: "governance_action_ledger" },
+    "phase17:experiment": { table: "experiments" },
+    "phase17:analysis_run": { table: "experiment_analysis_runs" },
+    "phase22:plan": { table: "agent_plans" },
+    "phase22:tool_run": { table: "agent_tool_runs" },
+    "phase22:outcome_hook": { table: "agent_outcome_hooks" },
+    "phase25:plan": { table: "growth_portfolio_plans" },
+    "phase25:run": { table: "growth_portfolio_runs" },
+    "phase25:outcome": { table: "growth_portfolio_outcomes" },
+    "phase25:rebalance": { table: "growth_portfolio_rebalance_events" },
 };
 
 const tenantId = () => Number(currentTenantId());
-
-const json = <T>(value: T | string | null | undefined, fallback: T): T => {
-    if (value == null) return fallback;
-    if (typeof value !== "string") return value;
-    try {
-        return JSON.parse(value) as T;
-    } catch {
-        return fallback;
-    }
-};
+const nowSql = () => DateTime.utc().toSQL();
 
 function stable(value: unknown): unknown {
     if (Array.isArray(value)) return value.map(stable);
@@ -109,11 +114,31 @@ function hash(value: unknown) {
     return createHash("sha256").update(JSON.stringify(stable(value))).digest("hex");
 }
 
-function parseMoment(value: string | null | undefined, fallbackNow = false) {
-    if (!value && fallbackNow) return DateTime.utc();
-    if (!value) return null;
-    const parsed = DateTime.fromISO(value, { setZone: true }).toUTC();
-    return parsed.isValid ? parsed : null;
+function json<T>(value: T | string | null | undefined, fallback: T): T {
+    if (value == null) return fallback;
+    if (typeof value !== "string") return value;
+    try {
+        return JSON.parse(value) as T;
+    } catch {
+        return fallback;
+    }
+}
+
+function asId(value: string) {
+    if (!/^\d+$/.test(value)) return null;
+    const id = Number(value);
+    return Number.isSafeInteger(id) && id > 0 ? id : null;
+}
+
+function parseDate(value: string | undefined, fallback: DateTime) {
+    const parsed = value ? DateTime.fromISO(value, { setZone: true }) : fallback;
+    if (!parsed.isValid) {
+        throw new Exception("Merchant memory timestamp is invalid", {
+            status: 422,
+            code: "E_MERCHANT_MEMORY_TIME_INVALID",
+        });
+    }
+    return parsed.toUTC();
 }
 
 function assertPrivacyBoundary(input: CreateMemoryInput) {
@@ -123,271 +148,288 @@ function assertPrivacyBoundary(input: CreateMemoryInput) {
             code: "E_MERCHANT_MEMORY_SOURCE_REQUIRED",
         });
     }
-
+    const sensitivity = input.sensitivity ?? "aggregate";
+    const consumers = input.allowed_consumers ?? ["human"];
     const subjectType = input.subject_type?.trim().toLowerCase();
-    if (subjectType === "customer" || subjectType === "customer_id" || input.subject_key?.toLowerCase().startsWith("customer:")) {
-        throw new Exception("Raw customer-level durable memory is forbidden; use an aggregated segment lesson", {
-            status: 422,
-            code: "E_MERCHANT_MEMORY_RAW_CUSTOMER_FORBIDDEN",
-        });
-    }
-
-    if (input.memory_class === "customer_segment_behavior" && subjectType && subjectType !== "segment") {
-        throw new Exception("Customer behavior memory must be aggregated at segment scope", {
-            status: 422,
-            code: "E_MERCHANT_MEMORY_SEGMENT_SCOPE_REQUIRED",
-        });
-    }
-
-    const relevant = parseMoment(input.relevant_from, true)!;
-    const expires = parseMoment(input.expires_at);
-    if (input.relevant_from && !parseMoment(input.relevant_from)) {
-        throw new Exception("Invalid relevant_from timestamp", { status: 422, code: "E_MERCHANT_MEMORY_RELEVANCE_INVALID" });
-    }
-    if (input.expires_at && !expires) {
-        throw new Exception("Invalid expires_at timestamp", { status: 422, code: "E_MERCHANT_MEMORY_EXPIRY_INVALID" });
-    }
+    const relevant = parseDate(input.relevant_from, DateTime.utc());
+    const expires = input.expires_at ? parseDate(input.expires_at, DateTime.utc()) : null;
     if (expires && expires <= relevant) {
         throw new Exception("Memory expiry must be after relevance start", {
             status: 422,
             code: "E_MERCHANT_MEMORY_EXPIRY_INVALID",
         });
     }
+    if (subjectType === "customer" && sensitivity !== "customer_level_sensitive") {
+        throw new Exception("Customer-level memory must be explicitly marked sensitive", {
+            status: 422,
+            code: "E_MERCHANT_MEMORY_CUSTOMER_SENSITIVITY_REQUIRED",
+        });
+    }
+    if (sensitivity === "customer_level_sensitive") {
+        if (consumers.some((consumer) => consumer !== "human")) {
+            throw new Exception("Customer-level sensitive memory cannot be exposed to agents", {
+                status: 422,
+                code: "E_MERCHANT_MEMORY_AGENT_SENSITIVE_FORBIDDEN",
+            });
+        }
+        if ((input.retention_class ?? "standard") !== "short" || !expires || expires.diff(relevant, "days").days > 30) {
+            throw new Exception("Customer-level sensitive memory requires short retention and expiry within 30 days", {
+                status: 422,
+                code: "E_MERCHANT_MEMORY_SENSITIVE_RETENTION_REQUIRED",
+            });
+        }
+    }
 }
 
-async function expireDueMemories() {
-    const now = DateTime.utc().toSQL();
-    await currentTrx()
-        .from("merchant_memory_records")
-        .where({ tenant_id: tenantId(), status: "active" })
-        .whereNotNull("expires_at")
-        .where("expires_at", "<=", now)
-        .update({ status: "expired", updated_at: now });
+async function validateSource(source: MemorySourceInput) {
+    if (source.source_phase === "manual_reviewed") return;
+    const target = SOURCE_TARGETS[`${source.source_phase}:${source.source_kind}`];
+    if (!target) {
+        throw new Exception("Unsupported merchant memory source authority", {
+            status: 422,
+            code: "E_MERCHANT_MEMORY_SOURCE_UNSUPPORTED",
+        });
+    }
+    const id = asId(source.source_id);
+    if (!id) {
+        throw new Exception("Canonical merchant memory sources require a numeric source id", {
+            status: 422,
+            code: "E_MERCHANT_MEMORY_SOURCE_ID_INVALID",
+        });
+    }
+    const row = await currentTrx()
+        .from(target.table)
+        .where({ tenant_id: tenantId(), [target.idColumn ?? "id"]: id })
+        .first();
+    if (!row) {
+        throw new Exception("Merchant memory source was not found in the current tenant", {
+            status: 422,
+            code: "E_MERCHANT_MEMORY_SOURCE_NOT_FOUND",
+        });
+    }
 }
 
 async function requireMemory(publicId: string) {
-    await expireDueMemories();
     const row = await currentTrx()
         .from("merchant_memory_records")
         .where({ tenant_id: tenantId(), public_id: publicId })
         .first();
-    if (!row) throw new Exception("Merchant memory not found", { status: 404, code: "E_MERCHANT_MEMORY_NOT_FOUND" });
+    if (!row) {
+        throw new Exception("Merchant memory not found", { status: 404, code: "E_MERCHANT_MEMORY_NOT_FOUND" });
+    }
     return row;
 }
 
-async function sourceMap(memoryIds: number[]) {
-    const grouped = new Map<number, unknown[]>();
-    if (!memoryIds.length) return grouped;
+async function sourceRows(memoryIds: number[]) {
+    if (!memoryIds.length) return new Map<number, unknown[]>();
     const rows = await currentTrx()
         .from("merchant_memory_sources")
         .where("tenant_id", tenantId())
         .whereIn("memory_id", memoryIds)
         .orderBy("observed_at", "desc");
+    const grouped = new Map<number, unknown[]>();
     for (const row of rows) {
         const id = Number(row.memory_id);
-        grouped.set(id, [...(grouped.get(id) ?? []), row]);
+        grouped.set(id, [...(grouped.get(id) ?? []), { ...row, evidence_summary: json(row.evidence_summary, {}) }]);
     }
     return grouped;
 }
 
 export async function createMemory(input: CreateMemoryInput, actor: User) {
     assertPrivacyBoundary(input);
+    for (const source of input.sources) await validateSource(source);
     const trx = currentTrx();
-    const now = DateTime.utc();
-    const relevantFrom = parseMoment(input.relevant_from, true)!;
-    const expiresAt = parseMoment(input.expires_at);
-    const publicId = randomUUID();
-
-    const [memory] = await trx
+    const now = nowSql();
+    const relevantFrom = parseDate(input.relevant_from, DateTime.utc()).toSQL();
+    const expiresAt = input.expires_at ? parseDate(input.expires_at, DateTime.utc()).toSQL() : null;
+    const records = await trx
         .table("merchant_memory_records")
         .insert({
-            public_id: publicId,
+            public_id: randomUUID(),
             tenant_id: tenantId(),
             memory_class: input.memory_class,
             subject_type: input.subject_type ?? null,
-            subject_key: input.subject_key ?? null,
+            subject_id: input.subject_id ?? null,
+            title: input.title,
             context: input.context,
             observed_signals: JSON.stringify(input.observed_signals ?? []),
             decision: input.decision ?? null,
             reason: input.reason ?? null,
             alternatives_rejected: JSON.stringify(input.alternatives_rejected ?? []),
-            actors_and_approvals: JSON.stringify(input.actors_and_approvals ?? []),
+            actors_and_approvals: JSON.stringify(input.actors_and_approvals ?? [{ user_id: Number(actor.id) }]),
             action: input.action ?? null,
             outcome: input.outcome ?? null,
             lesson: input.lesson,
             confidence: input.confidence,
             strength: input.strength,
             status: "active",
-            sensitivity: input.sensitivity ?? "aggregated",
-            required_permission: input.required_permission ?? null,
-            relevant_from: relevantFrom.toSQL(),
-            expires_at: expiresAt?.toSQL() ?? null,
-            superseded_at: null,
-            created_by_user_id: actor.id,
-            created_at: now.toSQL(),
-            updated_at: now.toSQL(),
+            sensitivity: input.sensitivity ?? "aggregate",
+            retention_class: input.retention_class ?? "standard",
+            allowed_consumers: JSON.stringify(input.allowed_consumers ?? ["human"]),
+            purposes: JSON.stringify(input.purposes ?? []),
+            relevant_from: relevantFrom,
+            expires_at: expiresAt,
+            created_by_user_id: Number(actor.id),
+            updated_by_user_id: Number(actor.id),
+            created_at: now,
+            updated_at: now,
         })
         .returning("*");
-
+    const memory = records[0];
     for (const source of input.sources) {
         await trx.table("merchant_memory_sources").insert({
             tenant_id: tenantId(),
             memory_id: memory.id,
+            source_phase: source.source_phase,
             source_kind: source.source_kind,
-            source_table: source.source_table,
             source_id: source.source_id,
-            source_public_id: source.source_public_id ?? null,
-            evidence_hash: source.evidence_hash ?? null,
+            source_route: source.source_route ?? null,
+            source_hash: source.source_hash ?? hash(source.evidence_summary ?? {}),
+            label: source.label,
             evidence_role: source.evidence_role ?? "supporting",
-            observed_at: parseMoment(source.observed_at)?.toSQL() ?? null,
-            created_at: now.toSQL(),
+            evidence_summary: JSON.stringify(source.evidence_summary ?? {}),
+            sensitivity: source.sensitivity ?? "aggregate",
+            observed_at: parseDate(source.observed_at, DateTime.utc()).toSQL(),
+            created_at: now,
         });
     }
-
-    return memoryDetail(publicId);
+    return memoryDetail(memory.public_id);
 }
 
 export async function memoryDetail(publicId: string) {
     const memory = await requireMemory(publicId);
-    const trx = currentTrx();
-    const sources = await trx
+    const sources = await currentTrx()
         .from("merchant_memory_sources")
         .where({ tenant_id: tenantId(), memory_id: memory.id })
-        .orderBy("created_at", "asc");
-    const predecessors = await trx
+        .orderBy("observed_at", "desc");
+    const predecessors = await currentTrx()
         .from("merchant_memory_lineage as l")
         .join("merchant_memory_records as p", "p.id", "l.from_memory_id")
         .where({ "l.tenant_id": tenantId(), "l.to_memory_id": memory.id })
-        .select("l.relation", "l.reason", "p.public_id", "p.lesson", "p.status");
-    const successors = await trx
+        .select("l.relation", "l.reason", "p.public_id", "p.title", "p.status");
+    const successors = await currentTrx()
         .from("merchant_memory_lineage as l")
         .join("merchant_memory_records as n", "n.id", "l.to_memory_id")
         .where({ "l.tenant_id": tenantId(), "l.from_memory_id": memory.id })
-        .select("l.relation", "l.reason", "n.public_id", "n.lesson", "n.status");
+        .select("l.relation", "l.reason", "n.public_id", "n.title", "n.status");
     return {
         ...memory,
         observed_signals: json(memory.observed_signals, []),
         alternatives_rejected: json(memory.alternatives_rejected, []),
         actors_and_approvals: json(memory.actors_and_approvals, []),
-        sources,
+        allowed_consumers: json(memory.allowed_consumers, []),
+        purposes: json(memory.purposes, []),
+        sources: sources.map((source) => ({ ...source, evidence_summary: json(source.evidence_summary, {}) })),
         lineage: { predecessors, successors },
     };
 }
 
 export async function listMemories(filters: {
     memory_class?: MemoryClass;
-    status?: string;
+    status?: "active" | "superseded" | "expired" | "withdrawn";
     subject_type?: string;
-    subject_key?: string;
+    subject_id?: string;
+    limit?: number;
 } = {}) {
-    await expireDueMemories();
     const query = currentTrx().from("merchant_memory_records").where("tenant_id", tenantId());
     if (filters.memory_class) query.where("memory_class", filters.memory_class);
     if (filters.status) query.where("status", filters.status);
     if (filters.subject_type) query.where("subject_type", filters.subject_type);
-    if (filters.subject_key) query.where("subject_key", filters.subject_key);
-    return query.orderBy("relevant_from", "desc").limit(200);
-}
-
-function lexicalScore(row: Record<string, unknown>, tokens: string[]) {
-    if (!tokens.length) return 1;
-    const haystack = `${row.context ?? ""} ${row.decision ?? ""} ${row.reason ?? ""} ${row.lesson ?? ""}`.toLowerCase();
-    const hits = tokens.filter((token) => haystack.includes(token)).length;
-    return hits / tokens.length;
+    if (filters.subject_id) query.where("subject_id", filters.subject_id);
+    return query.orderBy("relevant_from", "desc").limit(Math.min(200, Math.max(1, filters.limit ?? 100)));
 }
 
 export async function retrieveMemories(input: RetrieveMemoryInput, actor: User) {
-    await expireDueMemories();
     const trx = currentTrx();
-    const permissions = new Set(input.permissions ?? []);
+    const now = nowSql();
     const limit = Math.min(50, Math.max(1, input.limit ?? 12));
-    const tokens = input.query
-        .trim()
-        .toLowerCase()
-        .split(/\s+/)
-        .filter((token) => token.length >= 2)
-        .slice(0, 12);
-
-    const allActive = trx.from("merchant_memory_records").where({ tenant_id: tenantId(), status: "active" });
-    if (input.memory_classes?.length) allActive.whereIn("memory_class", input.memory_classes);
-    if (input.subject_type) allActive.where("subject_type", input.subject_type);
-    if (input.subject_key) allActive.where("subject_key", input.subject_key);
-
-    const candidates = await allActive
+    const activeBase = trx.from("merchant_memory_records").where({ tenant_id: tenantId(), status: "active" });
+    const candidateRow = await activeBase.clone().count("* as count").first();
+    const expiredRow = await activeBase.clone().whereNotNull("expires_at").where("expires_at", "<=", now).count("* as count").first();
+    const supersededRow = await trx
+        .from("merchant_memory_records")
+        .where({ tenant_id: tenantId(), status: "superseded" })
+        .count("* as count")
+        .first();
+    const query = activeBase
         .clone()
+        .where((builder) => builder.whereNull("expires_at").orWhere("expires_at", ">", now))
+        .whereRaw("allowed_consumers @> ?::jsonb", [JSON.stringify([input.consumer])])
+        .where((builder) =>
+            builder.whereRaw("jsonb_array_length(purposes) = 0").orWhereRaw("purposes @> ?::jsonb", [JSON.stringify([input.purpose])]),
+        )
         .whereExists(
             trx
                 .from("merchant_memory_sources")
                 .select(trx.raw("1"))
                 .whereRaw("merchant_memory_sources.memory_id = merchant_memory_records.id")
                 .whereRaw("merchant_memory_sources.tenant_id = merchant_memory_records.tenant_id"),
-        )
+        );
+    if (input.memory_classes?.length) query.whereIn("memory_class", input.memory_classes);
+    if (input.subject_type) query.where("subject_type", input.subject_type);
+    if (input.subject_id) query.where("subject_id", input.subject_id);
+    if (input.min_confidence != null) query.where("confidence", ">=", input.min_confidence);
+    if (input.consumer === "agent" || !input.include_customer_sensitive) {
+        query.whereNot("sensitivity", "customer_level_sensitive");
+    }
+    const beforePermission = await activeBase
+        .clone()
+        .where((builder) => builder.whereNull("expires_at").orWhere("expires_at", ">", now))
+        .count("* as count")
+        .first();
+    const afterPermission = await query.clone().count("* as count").first();
+    const tokens = input.query
+        .trim()
+        .toLowerCase()
+        .split(/\s+/)
+        .filter((token) => token.length >= 2)
+        .slice(0, 8);
+    if (tokens.length) {
+        query.where((builder) => {
+            for (const token of tokens) {
+                builder.orWhereILike("title", `%${token}%`).orWhereILike("lesson", `%${token}%`).orWhereILike("context", `%${token}%`);
+            }
+        });
+    }
+    const rows = await query
         .orderBy("strength", "desc")
         .orderBy("confidence", "desc")
-        .limit(300);
-
-    let permissionFiltered = 0;
-    const allowed = candidates.filter((row) => {
-        if (row.sensitivity === "restricted" && !input.include_restricted) {
-            permissionFiltered += 1;
-            return false;
-        }
-        if (row.required_permission && !permissions.has(String(row.required_permission))) {
-            permissionFiltered += 1;
-            return false;
-        }
-        return true;
-    });
-
-    const ranked = allowed
-        .map((row) => ({
-            row,
-            score:
-                lexicalScore(row, tokens) * 0.5 +
-                Number(row.confidence ?? 0) * 0.25 +
-                Number(row.strength ?? 0) * 0.25,
-        }))
-        .filter(({ score }) => tokens.length === 0 || score > 0.5)
-        .sort((a, b) => b.score - a.score)
-        .slice(0, limit);
-
-    const ids = ranked.map(({ row }) => Number(row.id));
-    const sources = await sourceMap(ids);
-    const retrievalPublicId = randomUUID();
-    const [retrieval] = await trx
+        .orderBy("relevant_from", "desc")
+        .limit(limit);
+    const groupedSources = await sourceRows(rows.map((row) => Number(row.id)));
+    const publicIds = rows.map((row) => String(row.public_id));
+    const retrievals = await trx
         .table("merchant_memory_retrievals")
         .insert({
-            public_id: retrievalPublicId,
+            public_id: randomUUID(),
             tenant_id: tenantId(),
-            principal_kind: input.principal_kind,
-            principal_id: input.principal_id ?? String(actor.id),
-            query: input.query,
+            principal_kind: input.consumer,
+            principal_id: String(actor.id),
+            purpose: input.purpose,
+            query_hash: hash({ query: input.query.trim().toLowerCase(), engine: MERCHANT_MEMORY_VERSION }),
             filters: JSON.stringify({
                 memory_classes: input.memory_classes ?? [],
                 subject_type: input.subject_type ?? null,
-                subject_key: input.subject_key ?? null,
-                permissions: [...permissions].sort(),
-                include_restricted: input.include_restricted ?? false,
+                subject_id: input.subject_id ?? null,
+                min_confidence: input.min_confidence ?? null,
+                include_customer_sensitive: input.consumer === "human" && input.include_customer_sensitive === true,
                 engine_version: MERCHANT_MEMORY_VERSION,
-                query_hash: hash(input.query.trim().toLowerCase()),
             }),
-            returned_memory_ids: JSON.stringify(ids),
-            result_count: ids.length,
-            source_linked_count: ranked.filter(({ row }) => (sources.get(Number(row.id)) ?? []).length > 0).length,
-            expired_filtered_count: 0,
-            permission_filtered_count: permissionFiltered,
-            retrieved_at: DateTime.utc().toSQL(),
+            returned_memory_public_ids: JSON.stringify(publicIds),
+            candidate_count: Number(candidateRow?.count ?? 0),
+            result_count: rows.length,
+            source_linked_count: rows.filter((row) => (groupedSources.get(Number(row.id)) ?? []).length > 0).length,
+            expired_filtered_count: Number(expiredRow?.count ?? 0),
+            permission_filtered_count: Math.max(0, Number(beforePermission?.count ?? 0) - Number(afterPermission?.count ?? 0)),
+            superseded_filtered_count: Number(supersededRow?.count ?? 0),
+            request_correlation_id: input.request_correlation_id ?? null,
+            retrieved_at: now,
         })
         .returning("*");
-
     return {
-        retrieval_public_id: retrieval.public_id,
+        retrieval_public_id: retrievals[0].public_id,
         engine_version: MERCHANT_MEMORY_VERSION,
-        memories: ranked.map(({ row, score }) => ({
-            ...row,
-            retrieval_score: Number(score.toFixed(6)),
-            sources: sources.get(Number(row.id)) ?? [],
-        })),
+        memories: rows.map((row) => ({ ...row, sources: groupedSources.get(Number(row.id)) ?? [] })),
     };
 }
 
@@ -398,50 +440,69 @@ export async function supersedeMemory(
 ) {
     const predecessor = await requireMemory(predecessorPublicId);
     if (predecessor.status !== "active") {
-        throw new Exception("Only active merchant memory may be superseded", {
+        throw new Exception("Only active merchant memory can be superseded", {
             status: 409,
             code: "E_MERCHANT_MEMORY_NOT_ACTIVE",
         });
     }
     if (predecessor.memory_class !== input.memory_class) {
-        throw new Exception("Superseding memory must preserve memory class", {
+        throw new Exception("Memory lineage must preserve the memory class", {
             status: 422,
             code: "E_MERCHANT_MEMORY_LINEAGE_CLASS_MISMATCH",
         });
     }
-
-    const successor = await createMemory(input, actor);
-    const next = await requireMemory(successor.public_id);
-    const now = DateTime.utc().toSQL();
+    if ((predecessor.subject_type ?? null) !== (input.subject_type ?? null) || (predecessor.subject_id ?? null) !== (input.subject_id ?? null)) {
+        throw new Exception("Memory lineage must preserve the subject identity", {
+            status: 422,
+            code: "E_MERCHANT_MEMORY_LINEAGE_SUBJECT_MISMATCH",
+        });
+    }
+    const next = await createMemory(input, actor);
+    const successor = await requireMemory(next.public_id);
+    const now = nowSql();
     await currentTrx().table("merchant_memory_lineage").insert({
         tenant_id: tenantId(),
         from_memory_id: predecessor.id,
-        to_memory_id: next.id,
+        to_memory_id: successor.id,
         relation: input.relation ?? "supersedes",
         reason: input.supersession_reason,
-        created_by_user_id: actor.id,
+        created_by_user_id: Number(actor.id),
         created_at: now,
     });
     if ((input.relation ?? "supersedes") === "supersedes") {
         await currentTrx()
             .from("merchant_memory_records")
             .where({ tenant_id: tenantId(), id: predecessor.id })
-            .update({ status: "superseded", superseded_at: now, updated_at: now });
+            .update({ status: "superseded", superseded_at: now, updated_by_user_id: Number(actor.id), updated_at: now });
     }
     return memoryDetail(successor.public_id);
 }
 
-export async function recordEffectiveness(recordPublicId: string, input: EffectivenessInput, actor: User) {
-    const memory = await requireMemory(recordPublicId);
-    if (input.memory_public_id && input.memory_public_id !== recordPublicId) {
-        throw new Exception("Effectiveness memory identifier does not match the route", {
-            status: 422,
-            code: "E_MERCHANT_MEMORY_EFFECTIVENESS_SCOPE",
-        });
-    }
+export async function revokeMemory(publicId: string, actor: User) {
+    const memory = await requireMemory(publicId);
+    if (memory.status === "withdrawn") return memoryDetail(publicId);
+    await currentTrx()
+        .from("merchant_memory_records")
+        .where({ tenant_id: tenantId(), id: memory.id })
+        .update({ status: "withdrawn", updated_by_user_id: Number(actor.id), updated_at: nowSql() });
+    return memoryDetail(publicId);
+}
+
+export async function recordEffectiveness(
+    retrievalPublicId: string,
+    input: {
+        memory_public_id?: string | null;
+        signal: "used" | "ignored" | "helpful" | "harmful" | "repeat_error";
+        usefulness?: number | null;
+        repeat_error_avoided?: boolean | null;
+        notes?: string | null;
+        source_outcome_record_id?: number | null;
+    },
+    actor: User,
+) {
     const retrieval = await currentTrx()
         .from("merchant_memory_retrievals")
-        .where({ tenant_id: tenantId(), public_id: input.retrieval_public_id })
+        .where({ tenant_id: tenantId(), public_id: retrievalPublicId })
         .first();
     if (!retrieval) {
         throw new Exception("Merchant memory retrieval not found", {
@@ -449,80 +510,80 @@ export async function recordEffectiveness(recordPublicId: string, input: Effecti
             code: "E_MERCHANT_MEMORY_RETRIEVAL_NOT_FOUND",
         });
     }
-    const returned = new Set(json<number[]>(retrieval.returned_memory_ids, []).map(Number));
-    if (!returned.has(Number(memory.id))) {
-        throw new Exception("Effectiveness may only reference a memory returned by that retrieval", {
-            status: 422,
-            code: "E_MERCHANT_MEMORY_EFFECTIVENESS_SCOPE",
-        });
+    let memory: Record<string, unknown> | null = null;
+    if (input.memory_public_id) {
+        memory = await requireMemory(input.memory_public_id);
+        const returned = json<string[]>(retrieval.returned_memory_public_ids, []);
+        if (!returned.includes(String(memory.public_id))) {
+            throw new Exception("Effectiveness may only reference memory returned by this retrieval", {
+                status: 422,
+                code: "E_MERCHANT_MEMORY_EFFECTIVENESS_SCOPE_MISMATCH",
+            });
+        }
     }
-    const [row] = await currentTrx()
+    if (input.source_outcome_record_id) {
+        const outcome = await currentTrx()
+            .from("intelligence_outcome_records")
+            .where({ tenant_id: tenantId(), id: input.source_outcome_record_id })
+            .first();
+        if (!outcome) {
+            throw new Exception("Outcome evidence is outside the current tenant", {
+                status: 422,
+                code: "E_MERCHANT_MEMORY_OUTCOME_NOT_FOUND",
+            });
+        }
+    }
+    const rows = await currentTrx()
         .table("merchant_memory_effectiveness")
         .insert({
             tenant_id: tenantId(),
             retrieval_id: retrieval.id,
-            memory_id: memory.id,
-            outcome: input.outcome,
+            memory_id: memory ? Number(memory.id) : null,
+            signal: input.signal,
             usefulness: input.usefulness ?? null,
             repeat_error_avoided: input.repeat_error_avoided ?? null,
+            source_outcome_record_id: input.source_outcome_record_id ?? null,
             notes: input.notes ?? null,
-            recorded_by_user_id: actor.id,
-            recorded_at: DateTime.utc().toSQL(),
+            recorded_by_user_id: Number(actor.id),
+            recorded_at: nowSql(),
         })
         .returning("*");
-    return row;
-}
-
-export async function revokeMemory(publicId: string, actor: User) {
-    const memory = await requireMemory(publicId);
-    if (memory.status === "revoked") return memoryDetail(publicId);
-    const now = DateTime.utc().toSQL();
-    await currentTrx()
-        .from("merchant_memory_records")
-        .where({ tenant_id: tenantId(), id: memory.id })
-        .update({ status: "revoked", updated_at: now, created_by_user_id: memory.created_by_user_id ?? actor.id });
-    return memoryDetail(publicId);
+    return rows[0];
 }
 
 export async function overview() {
-    await expireDueMemories();
     const trx = currentTrx();
-    const tenant = tenantId();
-    const [active, superseded, expired, retrievals, sourceCoverage, effectiveness] = await Promise.all([
-        trx.from("merchant_memory_records").where({ tenant_id: tenant, status: "active" }).count("* as c").first(),
-        trx.from("merchant_memory_records").where({ tenant_id: tenant, status: "superseded" }).count("* as c").first(),
-        trx.from("merchant_memory_records").where({ tenant_id: tenant, status: "expired" }).count("* as c").first(),
-        trx.from("merchant_memory_retrievals").where("tenant_id", tenant).count("* as c").first(),
+    const now = nowSql();
+    const [active, superseded, expired, retrievals, effectiveness] = await Promise.all([
+        trx.from("merchant_memory_records").where({ tenant_id: tenantId(), status: "active" }).count("* as count").first(),
+        trx.from("merchant_memory_records").where({ tenant_id: tenantId(), status: "superseded" }).count("* as count").first(),
         trx
-            .from("merchant_memory_records as m")
-            .where("m.tenant_id", tenant)
-            .whereExists(
-                trx
-                    .from("merchant_memory_sources as s")
-                    .select(trx.raw("1"))
-                    .whereRaw("s.memory_id = m.id")
-                    .whereRaw("s.tenant_id = m.tenant_id"),
-            )
-            .count("* as c")
+            .from("merchant_memory_records")
+            .where({ tenant_id: tenantId(), status: "active" })
+            .whereNotNull("expires_at")
+            .where("expires_at", "<=", now)
+            .count("* as count")
             .first(),
+        trx.from("merchant_memory_retrievals").where("tenant_id", tenantId()).count("* as count").first(),
         trx
             .from("merchant_memory_effectiveness")
-            .where("tenant_id", tenant)
+            .where("tenant_id", tenantId())
             .select(
-                trx.raw("AVG(usefulness) as avg_usefulness"),
-                trx.raw("AVG(CASE WHEN repeat_error_avoided = true THEN 1.0 WHEN repeat_error_avoided = false THEN 0.0 END) as repeat_error_avoidance_rate"),
+                trx.raw("COUNT(*)::int AS samples"),
+                trx.raw("AVG(usefulness) FILTER (WHERE usefulness IS NOT NULL) AS usefulness_rate"),
+                trx.raw("AVG(CASE WHEN repeat_error_avoided IS TRUE THEN 1.0 WHEN repeat_error_avoided IS FALSE THEN 0.0 END) AS repeat_error_avoidance_rate"),
             )
             .first(),
     ]);
     return {
         engine_version: MERCHANT_MEMORY_VERSION,
-        active_memories: Number(active?.c ?? 0),
-        superseded_memories: Number(superseded?.c ?? 0),
-        expired_memories: Number(expired?.c ?? 0),
-        retrievals: Number(retrievals?.c ?? 0),
-        source_linked_memories: Number(sourceCoverage?.c ?? 0),
-        avg_usefulness: effectiveness?.avg_usefulness == null ? null : Number(effectiveness.avg_usefulness),
-        repeat_error_avoidance_rate:
+        active_memories: Number(active?.count ?? 0),
+        superseded_memories: Number(superseded?.count ?? 0),
+        expired_memories: Number(expired?.count ?? 0),
+        retrieval_count: Number(retrievals?.count ?? 0),
+        effectiveness_samples: Number(effectiveness?.samples ?? 0),
+        retrieval_usefulness: effectiveness?.usefulness_rate == null ? null : Number(effectiveness.usefulness_rate),
+        repeat_error_reduction_proxy:
             effectiveness?.repeat_error_avoidance_rate == null ? null : Number(effectiveness.repeat_error_avoidance_rate),
     };
 }
