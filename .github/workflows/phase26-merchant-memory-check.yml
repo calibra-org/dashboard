@@ -122,9 +122,11 @@ jobs:
                   raise SystemExit('effectiveness memory public id missing')
               tail = tail.replace(target, 'String(selectedMemory.public_id)', 1)
               outcome = '    if (input.source_outcome_record_id) {'
-              if outcome not in tail:
-                  raise SystemExit('effectiveness outcome marker missing')
-              tail = tail.replace(outcome, '        memory = selectedMemory;\n    }\n' + outcome, 1)
+              outcome_pos = tail.find(outcome)
+              close_pos = tail.rfind('\n    }\n', 0, outcome_pos)
+              if outcome_pos < 0 or close_pos < 0:
+                  raise SystemExit('effectiveness scope boundary missing')
+              tail = tail[:close_pos] + '\n        memory = selectedMemory;' + tail[close_pos:]
               service = service[:effectiveness_scope] + tail
 
           service_path.write_text(service)
