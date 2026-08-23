@@ -786,7 +786,7 @@ export async function rebalancePlan(planPublicId: string, input: RebalanceInput,
                     proposed_run_public_id: proposed.public_id,
                 },
             },
-            actor.id,
+            Number(actor.id),
         );
         await trx
             .from("growth_portfolio_rebalance_events")
