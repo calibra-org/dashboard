@@ -1,5 +1,4 @@
 import { createHash, randomUUID } from "node:crypto";
-
 import { Exception } from "@adonisjs/core/exceptions";
 import { DateTime } from "luxon";
 
@@ -111,7 +110,39 @@ function stable(value: unknown): unknown {
 }
 
 function hash(value: unknown) {
-    return createHash("sha256").update(JSON.stringify(stable(value))).digest("hex");
+    return createHash("sha256")
+        .update(JSON.stringify(stable(value)))
+        .digest("hex");
+}
+
+export function normalizeMerchantMemorySearchTokens(query: string) {
+    return [
+        ...new Set(
+            query
+                .normalize("NFKC")
+                .toLowerCase()
+                .replace(/[^\p{L}\p{N}]+/gu, " ")
+                .split(/\s+/)
+                .filter((token) => token.length >= 2),
+        ),
+    ].slice(0, 8);
+}
+
+export function merchantMemoryRetrievalScore(
+    row: { title?: unknown; context?: unknown; lesson?: unknown; confidence?: unknown; strength?: unknown },
+    tokens: string[],
+) {
+    const haystack = `${row.title ?? ""} ${row.context ?? ""} ${row.lesson ?? ""}`.normalize("NFKC").toLowerCase();
+    const lexicalRatio = tokens.length === 0 ? 1 : tokens.filter((token) => haystack.includes(token)).length / tokens.length;
+    const lexical = lexicalRatio * 0.5;
+    const confidence = Math.max(0, Math.min(1, Number(row.confidence ?? 0))) * 0.25;
+    const strength = Math.max(0, Math.min(1, Number(row.strength ?? 0))) * 0.25;
+    return {
+        lexical: Number(lexical.toFixed(8)),
+        confidence: Number(confidence.toFixed(8)),
+        strength: Number(strength.toFixed(8)),
+        total: Number((lexical + confidence + strength).toFixed(8)),
+    };
 }
 
 function json<T>(value: T | string | null | undefined, fallback: T): T {
@@ -210,10 +241,7 @@ async function validateSource(source: MemorySourceInput) {
 }
 
 async function requireMemory(publicId: string) {
-    const row = await currentTrx()
-        .from("merchant_memory_records")
-        .where({ tenant_id: tenantId(), public_id: publicId })
-        .first();
+    const row = await currentTrx().from("merchant_memory_records").where({ tenant_id: tenantId(), public_id: publicId }).first();
     if (!row) {
         throw new Exception("Merchant memory not found", { status: 404, code: "E_MERCHANT_MEMORY_NOT_FOUND" });
     }
@@ -324,13 +352,15 @@ export async function memoryDetail(publicId: string) {
     };
 }
 
-export async function listMemories(filters: {
-    memory_class?: MemoryClass;
-    status?: "active" | "superseded" | "expired" | "withdrawn";
-    subject_type?: string;
-    subject_id?: string;
-    limit?: number;
-} = {}) {
+export async function listMemories(
+    filters: {
+        memory_class?: MemoryClass;
+        status?: "active" | "superseded" | "expired" | "withdrawn";
+        subject_type?: string;
+        subject_id?: string;
+        limit?: number;
+    } = {},
+) {
     const query = currentTrx().from("merchant_memory_records").where("tenant_id", tenantId());
     if (filters.memory_class) query.where("memory_class", filters.memory_class);
     if (filters.status) query.where("status", filters.status);
@@ -345,7 +375,12 @@ export async function retrieveMemories(input: RetrieveMemoryInput, actor: User) 
     const limit = Math.min(50, Math.max(1, input.limit ?? 12));
     const activeBase = trx.from("merchant_memory_records").where({ tenant_id: tenantId(), status: "active" });
     const candidateRow = await activeBase.clone().count("* as count").first();
-    const expiredRow = await activeBase.clone().whereNotNull("expires_at").where("expires_at", "<=", now).count("* as count").first();
+    const expiredRow = await activeBase
+        .clone()
+        .whereNotNull("expires_at")
+        .where("expires_at", "<=", now)
+        .count("* as count")
+        .first();
     const supersededRow = await trx
         .from("merchant_memory_records")
         .where({ tenant_id: tenantId(), status: "superseded" })
@@ -356,7 +391,9 @@ export async function retrieveMemories(input: RetrieveMemoryInput, actor: User) 
         .where((builder) => builder.whereNull("expires_at").orWhere("expires_at", ">", now))
         .whereRaw("allowed_consumers @> ?::jsonb", [JSON.stringify([input.consumer])])
         .where((builder) =>
-            builder.whereRaw("jsonb_array_length(purposes) = 0").orWhereRaw("purposes @> ?::jsonb", [JSON.stringify([input.purpose])]),
+            builder
+                .whereRaw("jsonb_array_length(purposes) = 0")
+                .orWhereRaw("purposes @> ?::jsonb", [JSON.stringify([input.purpose])]),
         )
         .whereExists(
             trx
@@ -378,24 +415,28 @@ export async function retrieveMemories(input: RetrieveMemoryInput, actor: User) 
         .count("* as count")
         .first();
     const afterPermission = await query.clone().count("* as count").first();
-    const tokens = input.query
-        .trim()
-        .toLowerCase()
-        .split(/\s+/)
-        .filter((token) => token.length >= 2)
-        .slice(0, 8);
+    const tokens = normalizeMerchantMemorySearchTokens(input.query);
     if (tokens.length) {
         query.where((builder) => {
             for (const token of tokens) {
-                builder.orWhereILike("title", `%${token}%`).orWhereILike("lesson", `%${token}%`).orWhereILike("context", `%${token}%`);
+                builder
+                    .orWhereILike("title", `%${token}%`)
+                    .orWhereILike("lesson", `%${token}%`)
+                    .orWhereILike("context", `%${token}%`);
             }
         });
     }
-    const rows = await query
+    const candidateRows = await query
         .orderBy("strength", "desc")
         .orderBy("confidence", "desc")
         .orderBy("relevant_from", "desc")
-        .limit(limit);
+        .limit(300);
+    const ranked = candidateRows
+        .map((row) => ({ row, score: merchantMemoryRetrievalScore(row, tokens) }))
+        .sort((a, b) => b.score.total - a.score.total || Number(b.row.id) - Number(a.row.id))
+        .slice(0, limit);
+    const rows = ranked.map(({ row }) => row);
+    const scores = new Map(ranked.map(({ row, score }) => [Number(row.id), score]));
     const groupedSources = await sourceRows(rows.map((row) => Number(row.id)));
     const publicIds = rows.map((row) => String(row.public_id));
     const retrievals = await trx
@@ -429,7 +470,12 @@ export async function retrieveMemories(input: RetrieveMemoryInput, actor: User) 
     return {
         retrieval_public_id: retrievals[0].public_id,
         engine_version: MERCHANT_MEMORY_VERSION,
-        memories: rows.map((row) => ({ ...row, sources: groupedSources.get(Number(row.id)) ?? [] })),
+        memories: rows.map((row) => ({
+            ...row,
+            retrieval_score: scores.get(Number(row.id))?.total ?? 0,
+            score_components: scores.get(Number(row.id)) ?? null,
+            sources: groupedSources.get(Number(row.id)) ?? [],
+        })),
     };
 }
 
@@ -451,7 +497,10 @@ export async function supersedeMemory(
             code: "E_MERCHANT_MEMORY_LINEAGE_CLASS_MISMATCH",
         });
     }
-    if ((predecessor.subject_type ?? null) !== (input.subject_type ?? null) || (predecessor.subject_id ?? null) !== (input.subject_id ?? null)) {
+    if (
+        (predecessor.subject_type ?? null) !== (input.subject_type ?? null) ||
+        (predecessor.subject_id ?? null) !== (input.subject_id ?? null)
+    ) {
         throw new Exception("Memory lineage must preserve the subject identity", {
             status: 422,
             code: "E_MERCHANT_MEMORY_LINEAGE_SUBJECT_MISMATCH",
@@ -460,15 +509,17 @@ export async function supersedeMemory(
     const next = await createMemory(input, actor);
     const successor = await requireMemory(next.public_id);
     const now = nowSql();
-    await currentTrx().table("merchant_memory_lineage").insert({
-        tenant_id: tenantId(),
-        from_memory_id: predecessor.id,
-        to_memory_id: successor.id,
-        relation: input.relation ?? "supersedes",
-        reason: input.supersession_reason,
-        created_by_user_id: Number(actor.id),
-        created_at: now,
-    });
+    await currentTrx()
+        .table("merchant_memory_lineage")
+        .insert({
+            tenant_id: tenantId(),
+            from_memory_id: predecessor.id,
+            to_memory_id: successor.id,
+            relation: input.relation ?? "supersedes",
+            reason: input.supersession_reason,
+            created_by_user_id: Number(actor.id),
+            created_at: now,
+        });
     if ((input.relation ?? "supersedes") === "supersedes") {
         await currentTrx()
             .from("merchant_memory_records")
@@ -512,14 +563,15 @@ export async function recordEffectiveness(
     }
     let memory: Record<string, unknown> | null = null;
     if (input.memory_public_id) {
-        memory = await requireMemory(input.memory_public_id);
+        const selectedMemory = await requireMemory(input.memory_public_id);
         const returned = json<string[]>(retrieval.returned_memory_public_ids, []);
-        if (!returned.includes(String(memory.public_id))) {
+        if (!returned.includes(String(selectedMemory.public_id))) {
             throw new Exception("Effectiveness may only reference memory returned by this retrieval", {
                 status: 422,
                 code: "E_MERCHANT_MEMORY_EFFECTIVENESS_SCOPE_MISMATCH",
             });
         }
+        memory = selectedMemory;
     }
     if (input.source_outcome_record_id) {
         const outcome = await currentTrx()
@@ -571,7 +623,9 @@ export async function overview() {
             .select(
                 trx.raw("COUNT(*)::int AS samples"),
                 trx.raw("AVG(usefulness) FILTER (WHERE usefulness IS NOT NULL) AS usefulness_rate"),
-                trx.raw("AVG(CASE WHEN repeat_error_avoided IS TRUE THEN 1.0 WHEN repeat_error_avoided IS FALSE THEN 0.0 END) AS repeat_error_avoidance_rate"),
+                trx.raw(
+                    "AVG(CASE WHEN repeat_error_avoided IS TRUE THEN 1.0 WHEN repeat_error_avoided IS FALSE THEN 0.0 END) AS repeat_error_avoidance_rate",
+                ),
             )
             .first(),
     ]);

@@ -143,33 +143,55 @@ export function MerchantMemoryWorkspace() {
             />
 
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                <Card className="p-4"><p className="text-sm text-muted-foreground">حافظه فعال</p><p className="mt-2 text-3xl font-semibold">{overview.data?.active_memories ?? "—"}</p></Card>
-                <Card className="p-4"><p className="text-sm text-muted-foreground">بازیابی‌ها</p><p className="mt-2 text-3xl font-semibold">{overview.data?.retrieval_count ?? "—"}</p></Card>
-                <Card className="p-4"><p className="text-sm text-muted-foreground">سودمندی بازیابی</p><p className="mt-2 text-3xl font-semibold">{percent(overview.data?.retrieval_usefulness)}</p></Card>
-                <Card className="p-4"><p className="text-sm text-muted-foreground">کاهش تکرار خطا</p><p className="mt-2 text-3xl font-semibold">{percent(overview.data?.repeat_error_reduction_proxy)}</p></Card>
+                <Card className="p-4">
+                    <p className="text-muted-foreground text-sm">حافظه فعال</p>
+                    <p className="mt-2 font-semibold text-3xl">{overview.data?.active_memories ?? "—"}</p>
+                </Card>
+                <Card className="p-4">
+                    <p className="text-muted-foreground text-sm">بازیابی‌ها</p>
+                    <p className="mt-2 font-semibold text-3xl">{overview.data?.retrieval_count ?? "—"}</p>
+                </Card>
+                <Card className="p-4">
+                    <p className="text-muted-foreground text-sm">سودمندی بازیابی</p>
+                    <p className="mt-2 font-semibold text-3xl">{percent(overview.data?.retrieval_usefulness)}</p>
+                </Card>
+                <Card className="p-4">
+                    <p className="text-muted-foreground text-sm">کاهش تکرار خطا</p>
+                    <p className="mt-2 font-semibold text-3xl">{percent(overview.data?.repeat_error_reduction_proxy)}</p>
+                </Card>
             </div>
 
             <Card className="space-y-4 p-5">
                 <div>
-                    <h2 className="text-lg font-semibold">بازیابی منبع‌دار</h2>
-                    <p className="text-sm text-muted-foreground">فقط memory فعال، غیرمنقضی و دارای evidence وارد نتیجه می‌شود.</p>
+                    <h2 className="font-semibold text-lg">بازیابی منبع‌دار</h2>
+                    <p className="text-muted-foreground text-sm">فقط memory فعال، غیرمنقضی و دارای evidence وارد نتیجه می‌شود.</p>
                 </div>
                 <div className="flex flex-col gap-3 md:flex-row">
-                    <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="مثلاً: درس کمپین تخفیف یا تأمین‌کننده" />
-                    <Button onClick={runRetrieval} disabled={retrieve.isPending || !query.trim()}>بازیابی حافظه</Button>
+                    <Input
+                        value={query}
+                        onChange={(event) => setQuery(event.target.value)}
+                        placeholder="مثلاً: درس کمپین تخفیف یا تأمین‌کننده"
+                    />
+                    <Button onClick={runRetrieval} disabled={retrieve.isPending || !query.trim()}>
+                        بازیابی حافظه
+                    </Button>
                 </div>
                 {retrieval ? (
                     <div className="space-y-3">
-                        <p className="text-xs text-muted-foreground">Retrieval ID: {retrieval.retrieval_public_id}</p>
-                        {retrieval.memories.length === 0 ? <p className="text-sm text-muted-foreground">حافظه مرتبطی پیدا نشد.</p> : null}
+                        <p className="text-muted-foreground text-xs">Retrieval ID: {retrieval.retrieval_public_id}</p>
+                        {retrieval.memories.length === 0 ? (
+                            <p className="text-muted-foreground text-sm">حافظه مرتبطی پیدا نشد.</p>
+                        ) : null}
                         {retrieval.memories.map((memory) => (
                             <div key={memory.public_id} className="rounded-lg border p-4">
                                 <div className="flex flex-wrap items-center justify-between gap-2">
                                     <strong>{memory.title}</strong>
-                                    <span className="text-xs text-muted-foreground">{classLabels[memory.memory_class] ?? memory.memory_class}</span>
+                                    <span className="text-muted-foreground text-xs">
+                                        {classLabels[memory.memory_class] ?? memory.memory_class}
+                                    </span>
                                 </div>
                                 <p className="mt-2 text-sm">{memory.lesson}</p>
-                                <div className="mt-3 flex flex-wrap gap-3 text-xs text-muted-foreground">
+                                <div className="mt-3 flex flex-wrap gap-3 text-muted-foreground text-xs">
                                     <span>اعتماد: {percent(memory.confidence)}</span>
                                     <span>قدرت: {percent(memory.strength)}</span>
                                     <span>حساسیت: {memory.sensitivity}</span>
@@ -185,22 +207,34 @@ export function MerchantMemoryWorkspace() {
             <div className="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
                 <Card className="p-5">
                     <div className="mb-4 flex items-center justify-between gap-3">
-                        <div><h2 className="text-lg font-semibold">دفتر حافظه</h2><p className="text-sm text-muted-foreground">Active / superseded / expiry / evidence lineage</p></div>
-                        <span className="text-xs text-muted-foreground">{overview.data?.engine_version ?? "merchant-memory"}</span>
+                        <div>
+                            <h2 className="font-semibold text-lg">دفتر حافظه</h2>
+                            <p className="text-muted-foreground text-sm">Active / superseded / expiry / evidence lineage</p>
+                        </div>
+                        <span className="text-muted-foreground text-xs">
+                            {overview.data?.engine_version ?? "merchant-memory"}
+                        </span>
                     </div>
                     <div className="space-y-3">
                         {memoryRows.map((memory) => (
                             <div key={memory.public_id} className="rounded-lg border p-4">
                                 <div className="flex flex-wrap items-start justify-between gap-2">
-                                    <div><strong>{memory.title}</strong><p className="mt-1 text-sm text-muted-foreground">{memory.lesson}</p></div>
+                                    <div>
+                                        <strong>{memory.title}</strong>
+                                        <p className="mt-1 text-muted-foreground text-sm">{memory.lesson}</p>
+                                    </div>
                                     <span className="rounded-md border px-2 py-1 text-xs">{memory.status}</span>
                                 </div>
-                                <div className="mt-3 flex flex-wrap gap-3 text-xs text-muted-foreground">
+                                <div className="mt-3 flex flex-wrap gap-3 text-muted-foreground text-xs">
                                     <span>{classLabels[memory.memory_class] ?? memory.memory_class}</span>
                                     <span>{memory.sensitivity}</span>
                                     <span>{memory.retention_class}</span>
                                     <span>اعتماد {percent(memory.confidence)}</span>
-                                    <span>{memory.expires_at ? `انقضا: ${new Date(memory.expires_at).toLocaleDateString("fa-IR")}` : "بدون انقضای صریح"}</span>
+                                    <span>
+                                        {memory.expires_at
+                                            ? `انقضا: ${new Date(memory.expires_at).toLocaleDateString("fa-IR")}`
+                                            : "بدون انقضای صریح"}
+                                    </span>
                                 </div>
                             </div>
                         ))}
@@ -208,12 +242,35 @@ export function MerchantMemoryWorkspace() {
                 </Card>
 
                 <Card className="space-y-4 p-5">
-                    <div><h2 className="text-lg font-semibold">ثبت درس بازبینی‌شده</h2><p className="text-sm text-muted-foreground">برای knowledge دستی فقط مسیر manual_reviewed استفاده می‌شود.</p></div>
-                    <div className="space-y-2"><Label>عنوان</Label><Input value={title} onChange={(event) => setTitle(event.target.value)} /></div>
-                    <div className="space-y-2"><Label>زمینه</Label><Textarea value={context} onChange={(event) => setContext(event.target.value)} /></div>
-                    <div className="space-y-2"><Label>درس</Label><Textarea value={lesson} onChange={(event) => setLesson(event.target.value)} /></div>
-                    <div className="space-y-2"><Label>شناسه مرجع بازبینی</Label><Input value={sourceId} onChange={(event) => setSourceId(event.target.value)} /></div>
-                    <Button className="w-full" onClick={createReviewedMemory} disabled={createMemory.isPending || !title.trim() || !context.trim() || !lesson.trim()}>ثبت حافظه</Button>
+                    <div>
+                        <h2 className="font-semibold text-lg">ثبت درس بازبینی‌شده</h2>
+                        <p className="text-muted-foreground text-sm">
+                            برای knowledge دستی فقط مسیر manual_reviewed استفاده می‌شود.
+                        </p>
+                    </div>
+                    <div className="space-y-2">
+                        <Label>عنوان</Label>
+                        <Input value={title} onChange={(event) => setTitle(event.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>زمینه</Label>
+                        <Textarea value={context} onChange={(event) => setContext(event.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>درس</Label>
+                        <Textarea value={lesson} onChange={(event) => setLesson(event.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>شناسه مرجع بازبینی</Label>
+                        <Input value={sourceId} onChange={(event) => setSourceId(event.target.value)} />
+                    </div>
+                    <Button
+                        className="w-full"
+                        onClick={createReviewedMemory}
+                        disabled={createMemory.isPending || !title.trim() || !context.trim() || !lesson.trim()}
+                    >
+                        ثبت حافظه
+                    </Button>
                 </Card>
             </div>
         </div>

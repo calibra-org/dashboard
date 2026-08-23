@@ -26,10 +26,7 @@ test.group("Phase 26 merchant-memory ranking", () => {
     });
 
     test("score decomposition is bounded and additive", ({ assert }) => {
-        const score = merchantMemoryRetrievalScore(
-            { title: "x", context: "x", lesson: "x", confidence: 1, strength: 1 },
-            ["x"],
-        );
+        const score = merchantMemoryRetrievalScore({ title: "x", context: "x", lesson: "x", confidence: 1, strength: 1 }, ["x"]);
         assert.isAtLeast(score.total, 0);
         assert.isAtMost(score.total, 1);
         assert.closeTo(score.total, score.lexical + score.confidence + score.strength, 0.000001);

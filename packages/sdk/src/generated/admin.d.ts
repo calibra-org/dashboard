@@ -11467,6 +11467,118 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/merchant-memory/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminMerchantMemoryOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/merchant-memory/records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminMerchantMemoryRecords"];
+        put?: never;
+        post: operations["adminMerchantMemoryCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/merchant-memory/records/{publicId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminMerchantMemoryDetail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/merchant-memory/records/{publicId}/supersede": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminMerchantMemorySupersede"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/merchant-memory/records/{publicId}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminMerchantMemoryRevoke"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/merchant-memory/retrieve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminMerchantMemoryRetrieve"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/merchant-memory/retrievals/{publicId}/effectiveness": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminMerchantMemoryEffectiveness"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -15643,6 +15755,28 @@ export interface components {
         };
         /** @description Growth portfolio resource created. */
         Phase25GrowthPortfolioOverlayCreatedEnvelope: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": {
+                    data: unknown;
+                };
+            };
+        };
+        /** @description Successful merchant memory response. */
+        Phase26MerchantMemoryOverlayOkEnvelope: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": {
+                    data: unknown;
+                };
+            };
+        };
+        /** @description Merchant memory resource created. */
+        Phase26MerchantMemoryOverlayCreatedEnvelope: {
             headers: {
                 [name: string]: unknown;
             };
@@ -34358,6 +34492,110 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["Phase25GrowthPortfolioOverlayOkEnvelope"];
+        };
+    };
+    adminMerchantMemoryOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Phase26MerchantMemoryOverlayOkEnvelope"];
+        };
+    };
+    adminMerchantMemoryRecords: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Phase26MerchantMemoryOverlayOkEnvelope"];
+        };
+    };
+    adminMerchantMemoryCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["ObjectBody"];
+        responses: {
+            201: components["responses"]["Phase26MerchantMemoryOverlayCreatedEnvelope"];
+        };
+    };
+    adminMerchantMemoryDetail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Phase26MerchantMemoryOverlayOkEnvelope"];
+        };
+    };
+    adminMerchantMemorySupersede: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["ObjectBody"];
+        responses: {
+            201: components["responses"]["Phase26MerchantMemoryOverlayCreatedEnvelope"];
+        };
+    };
+    adminMerchantMemoryRevoke: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Phase26MerchantMemoryOverlayOkEnvelope"];
+        };
+    };
+    adminMerchantMemoryRetrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["ObjectBody"];
+        responses: {
+            200: components["responses"]["Phase26MerchantMemoryOverlayOkEnvelope"];
+        };
+    };
+    adminMerchantMemoryEffectiveness: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["ObjectBody"];
+        responses: {
+            201: components["responses"]["Phase26MerchantMemoryOverlayCreatedEnvelope"];
         };
     };
 }
