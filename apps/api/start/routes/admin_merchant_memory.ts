@@ -23,7 +23,7 @@ router
             .as("admin.merchant_memory.retrieve")
             .use(adminWriteLimiter);
         router
-            .post("/records/:publicId/effectiveness", [MerchantMemoryController, "effectiveness"])
+            .post("/retrievals/:publicId/effectiveness", [MerchantMemoryController, "effectiveness"])
             .as("admin.merchant_memory.effectiveness")
             .use(adminWriteLimiter);
         router
