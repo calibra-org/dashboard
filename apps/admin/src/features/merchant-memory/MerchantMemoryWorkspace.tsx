@@ -19,6 +19,8 @@ type Overview = {
     effectiveness_samples: number;
     retrieval_usefulness: number | null;
     repeat_error_reduction_proxy: number | null;
+    misleading_memory_rate: number | null;
+    source_linked_retrieval_rate: number | null;
 };
 
 type Source = {
@@ -142,7 +144,7 @@ export function MerchantMemoryWorkspace() {
                 description="Merchant Memory & Organizational Learning — دانش ساخت‌یافته، منبع‌دار و قابل ممیزی برای تصمیم‌های آینده"
             />
 
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
                 <Card className="p-4">
                     <p className="text-muted-foreground text-sm">حافظه فعال</p>
                     <p className="mt-2 font-semibold text-3xl">{overview.data?.active_memories ?? "—"}</p>
@@ -158,6 +160,14 @@ export function MerchantMemoryWorkspace() {
                 <Card className="p-4">
                     <p className="text-muted-foreground text-sm">کاهش تکرار خطا</p>
                     <p className="mt-2 font-semibold text-3xl">{percent(overview.data?.repeat_error_reduction_proxy)}</p>
+                </Card>
+                <Card className="p-4">
+                    <p className="text-muted-foreground text-sm">بازیابی منبع‌دار</p>
+                    <p className="mt-2 font-semibold text-3xl">{percent(overview.data?.source_linked_retrieval_rate)}</p>
+                </Card>
+                <Card className="p-4">
+                    <p className="text-muted-foreground text-sm">حافظه گمراه‌کننده</p>
+                    <p className="mt-2 font-semibold text-3xl">{percent(overview.data?.misleading_memory_rate)}</p>
                 </Card>
             </div>
 
@@ -196,7 +206,7 @@ export function MerchantMemoryWorkspace() {
                                     <span>قدرت: {percent(memory.strength)}</span>
                                     <span>حساسیت: {memory.sensitivity}</span>
                                     <span>Evidence: {memory.sources?.length ?? 0}</span>
-                                    {memory.retrieval_score != null ? <span>Score: {memory.retrieval_score}</span> : null}
+                                    {memory.retrieval_score != null ? <span>امتیاز: {percent(memory.retrieval_score)}</span> : null}
                                 </div>
                             </div>
                         ))}

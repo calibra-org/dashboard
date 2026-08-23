@@ -74,6 +74,8 @@ export type RetrieveMemoryInput = {
     request_correlation_id?: string | null;
 };
 
+type AgentMemoryPrincipal = { id: number; principal_key: string };
+
 type SourceTarget = { table: string; idColumn?: string };
 
 const SOURCE_TARGETS: Record<string, SourceTarget> = {
@@ -172,7 +174,7 @@ function parseDate(value: string | undefined, fallback: DateTime) {
     return parsed.toUTC();
 }
 
-function assertPrivacyBoundary(input: CreateMemoryInput) {
+export function assertMerchantMemoryPrivacyBoundary(input: CreateMemoryInput) {
     if (!input.sources.length) {
         throw new Exception("Merchant memory requires source-linked evidence", {
             status: 422,
@@ -181,6 +183,19 @@ function assertPrivacyBoundary(input: CreateMemoryInput) {
     }
     const sensitivity = input.sensitivity ?? "aggregate";
     const consumers = input.allowed_consumers ?? ["human"];
+    const sourceSensitivities = new Set(input.sources.map((source) => source.sensitivity ?? "aggregate"));
+    if (sourceSensitivities.has("customer_level_sensitive") && sensitivity !== "customer_level_sensitive") {
+        throw new Exception("Sensitive source evidence requires sensitive memory classification", {
+            status: 422,
+            code: "E_MERCHANT_MEMORY_SOURCE_SENSITIVITY_DOWNGRADE",
+        });
+    }
+    if (sourceSensitivities.has("internal") && sensitivity === "aggregate") {
+        throw new Exception("Internal source evidence cannot be downgraded to aggregate memory", {
+            status: 422,
+            code: "E_MERCHANT_MEMORY_SOURCE_SENSITIVITY_DOWNGRADE",
+        });
+    }
     const subjectType = input.subject_type?.trim().toLowerCase();
     const relevant = parseDate(input.relevant_from, DateTime.utc());
     const expires = input.expires_at ? parseDate(input.expires_at, DateTime.utc()) : null;
@@ -264,7 +279,7 @@ async function sourceRows(memoryIds: number[]) {
 }
 
 export async function createMemory(input: CreateMemoryInput, actor: User) {
-    assertPrivacyBoundary(input);
+    assertMerchantMemoryPrivacyBoundary(input);
     for (const source of input.sources) await validateSource(source);
     const trx = currentTrx();
     const now = nowSql();
@@ -369,7 +384,23 @@ export async function listMemories(
     return query.orderBy("relevant_from", "desc").limit(Math.min(200, Math.max(1, filters.limit ?? 100)));
 }
 
-export async function retrieveMemories(input: RetrieveMemoryInput, actor: User) {
+export async function retrieveMemories(
+    input: RetrieveMemoryInput,
+    actor: User,
+    agentPrincipal: AgentMemoryPrincipal | null = null,
+) {
+    if (input.consumer === "agent" && !agentPrincipal) {
+        throw new Exception("Approved agent principal is required for agent retrieval", {
+            status: 403,
+            code: "E_MERCHANT_MEMORY_AGENT_PRINCIPAL_REQUIRED",
+        });
+    }
+    if (input.consumer === "human" && agentPrincipal) {
+        throw new Exception("Agent principal cannot be attached to human retrieval", {
+            status: 422,
+            code: "E_MERCHANT_MEMORY_PRINCIPAL_KIND_MISMATCH",
+        });
+    }
     const trx = currentTrx();
     const now = nowSql();
     const limit = Math.min(50, Math.max(1, input.limit ?? 12));
@@ -445,7 +476,7 @@ export async function retrieveMemories(input: RetrieveMemoryInput, actor: User) 
             public_id: randomUUID(),
             tenant_id: tenantId(),
             principal_kind: input.consumer,
-            principal_id: String(actor.id),
+            principal_id: input.consumer === "agent" ? String(agentPrincipal!.id) : String(actor.id),
             purpose: input.purpose,
             query_hash: hash({ query: input.query.trim().toLowerCase(), engine: MERCHANT_MEMORY_VERSION }),
             filters: JSON.stringify({
@@ -606,7 +637,7 @@ export async function recordEffectiveness(
 export async function overview() {
     const trx = currentTrx();
     const now = nowSql();
-    const [active, superseded, expired, retrievals, effectiveness] = await Promise.all([
+    const [active, superseded, expired, retrievals, sourceLinkage, effectiveness] = await Promise.all([
         trx.from("merchant_memory_records").where({ tenant_id: tenantId(), status: "active" }).count("* as count").first(),
         trx.from("merchant_memory_records").where({ tenant_id: tenantId(), status: "superseded" }).count("* as count").first(),
         trx
@@ -618,6 +649,11 @@ export async function overview() {
             .first(),
         trx.from("merchant_memory_retrievals").where("tenant_id", tenantId()).count("* as count").first(),
         trx
+            .from("merchant_memory_retrievals")
+            .where("tenant_id", tenantId())
+            .select(trx.raw("SUM(source_linked_count)::float / NULLIF(SUM(result_count), 0) AS source_linked_retrieval_rate"))
+            .first(),
+        trx
             .from("merchant_memory_effectiveness")
             .where("tenant_id", tenantId())
             .select(
@@ -626,6 +662,7 @@ export async function overview() {
                 trx.raw(
                     "AVG(CASE WHEN repeat_error_avoided IS TRUE THEN 1.0 WHEN repeat_error_avoided IS FALSE THEN 0.0 END) AS repeat_error_avoidance_rate",
                 ),
+                trx.raw("AVG(CASE WHEN signal = 'harmful' THEN 1.0 ELSE 0.0 END) AS misleading_memory_rate"),
             )
             .first(),
     ]);
@@ -639,5 +676,9 @@ export async function overview() {
         retrieval_usefulness: effectiveness?.usefulness_rate == null ? null : Number(effectiveness.usefulness_rate),
         repeat_error_reduction_proxy:
             effectiveness?.repeat_error_avoidance_rate == null ? null : Number(effectiveness.repeat_error_avoidance_rate),
+        misleading_memory_rate:
+            effectiveness?.misleading_memory_rate == null ? null : Number(effectiveness.misleading_memory_rate),
+        source_linked_retrieval_rate:
+            sourceLinkage?.source_linked_retrieval_rate == null ? null : Number(sourceLinkage.source_linked_retrieval_rate),
     };
 }

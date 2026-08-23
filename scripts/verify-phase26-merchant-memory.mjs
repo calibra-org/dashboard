@@ -60,4 +60,10 @@ for (const segment of routes.split("router.post").slice(1)) {
 }
 must(routeIndex.includes('await import("./routes/admin_merchant_memory.js")'), "Phase 26 route registration missing");
 
+
+must(service.includes("agentPrincipal!.id"), "server-derived agent principal linkage missing");
+must(service.includes("E_MERCHANT_MEMORY_SOURCE_SENSITIVITY_DOWNGRADE"), "source sensitivity downgrade protection missing");
+must(service.includes("misleading_memory_rate") && service.includes("source_linked_retrieval_rate"), "Phase 26 effectiveness KPIs incomplete");
+must(read("apps/api/app/controllers/admin/merchant_memory_controller.ts").includes("agentPrincipal = await requireApprovedAgentPrincipal"), "Governance principal is not bound to retrieval logging");
+
 console.log("PASS Phase26 Merchant Memory integrity gate");

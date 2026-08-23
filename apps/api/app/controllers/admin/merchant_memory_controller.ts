@@ -70,6 +70,7 @@ export default class MerchantMemoryController {
     async retrieve({ request, auth, response }: HttpContext) {
         await requireMerchantMemoryPermission(auth.user!, "merchant_memory.retrieve");
         const payload = await request.validateUsing(retrieveMerchantMemoryValidator);
+        let agentPrincipal: Awaited<ReturnType<typeof requireApprovedAgentPrincipal>> | null = null;
         if (payload.consumer === "agent") {
             if (!payload.agent_principal_key) {
                 throw new Exception("Agent retrieval requires an approved principal key", {
@@ -77,12 +78,12 @@ export default class MerchantMemoryController {
                     code: "E_MERCHANT_MEMORY_AGENT_PRINCIPAL_REQUIRED",
                 });
             }
-            await requireApprovedAgentPrincipal(payload.agent_principal_key);
+            agentPrincipal = await requireApprovedAgentPrincipal(payload.agent_principal_key);
             payload.include_customer_sensitive = false;
         } else if (payload.include_customer_sensitive) {
             await requireExplicitMerchantMemoryPermission(auth.user!, "merchant_memory.restricted");
         }
-        return response.ok({ data: await memory.retrieveMemories(payload, auth.user!) });
+        return response.ok({ data: await memory.retrieveMemories(payload, auth.user!, agentPrincipal) });
     }
 
     async effectiveness({ params, request, auth, response }: HttpContext) {
