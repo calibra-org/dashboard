@@ -1,0 +1,73 @@
+name: Phase 26 Hardening Once
+
+on:
+  push:
+    branches:
+      - feat/phase26-merchant-memory-20260823
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  harden:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/phase26-merchant-memory-20260823
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --global pnpm@10.32.1
+      - run: pnpm install --frozen-lockfile
+      - name: Apply Phase 26 authority and privacy hardening
+        run: |
+          python <<'PY'
+          from pathlib import Path
+
+          migration = Path('apps/api/database/migrations/1779000000000_create_merchant_memory.ts')
+          text = migration.read_text()
+          text = text.replace("status IN ('active','superseded','expired','withdrawn')", "status IN ('active','superseded','expired','revoked')")
+          text = text.replace("source_kind IN ('decision','outcome','approval','experiment','portfolio','incident','audit','operator')", "source_kind IN ('decision','action','outcome','approval','policy','experiment','portfolio','orchestration','incident','audit','operator')")
+          text = text.replace('table.text("query").notNullable();', 'table.string("query_hash", 64).notNullable();\n            table.jsonb("query_features").notNullable().defaultTo(this.raw("\'{}\'::jsonb"));')
+          text = text.replace('table.integer("permission_filtered_count").notNullable().defaultTo(0);', 'table.integer("permission_filtered_count").notNullable().defaultTo(0);\n            table.integer("superseded_filtered_count").notNullable().defaultTo(0);')
+          migration.write_text(text)
+
+          controller = Path('apps/api/app/controllers/admin/merchant_memory_controller.ts')
+          text = controller.read_text().replace('subject_id: request.input("subject_id") || undefined,', 'subject_key: request.input("subject_key") || undefined,')
+          controller.write_text(text)
+
+          validator = Path('apps/api/app/validators/admin/phase26_merchant_memory_validator.ts')
+          text = validator.read_text()
+          text = text.replace('const sourceKind = vine.enum(["decision", "outcome", "approval", "experiment", "portfolio", "incident", "audit", "operator"]);', 'const sourceKind = vine.enum([\n    "decision",\n    "action",\n    "outcome",\n    "approval",\n    "policy",\n    "experiment",\n    "portfolio",\n    "orchestration",\n    "incident",\n    "audit",\n    "operator",\n]);')
+          text = text.replace('        permissions: vine.array(vine.string().trim().minLength(1).maxLength(80)).maxLength(64).optional(),\n        include_restricted: vine.boolean().optional(),\n', '')
+          validator.write_text(text)
+
+          service = Path('apps/api/app/services/phase26_merchant_memory_service.ts')
+          text = service.read_text()
+          text = text.replace('import type User from "#models/user";\nimport { currentTenantId, currentTrx } from "#services/tenant_context";', 'import type User from "#models/user";\nimport { resolveMerchantMemoryAccess, validateMerchantMemorySources } from "#services/phase26_memory_authority_service";\nimport { currentTenantId, currentTrx } from "#services/tenant_context";')
+          text = text.replace('    permissions?: string[];\n    include_restricted?: boolean;\n', '')
+          text = text.replace('    assertPrivacyBoundary(input);\n    const trx = currentTrx();', '    assertPrivacyBoundary(input);\n    await validateMerchantMemorySources(input.sources);\n    const trx = currentTrx();', 1)
+          text = text.replace('    const permissions = new Set(input.permissions ?? []);\n    const limit = Math.min(50, Math.max(1, input.limit ?? 12));', '    const access = await resolveMerchantMemoryAccess(input, actor);\n    const permissions = access.permissions;\n    const limit = Math.min(50, Math.max(1, input.limit ?? 12));')
+          text = text.replace('    const allActive = trx.from("merchant_memory_records").where({ tenant_id: tenantId(), status: "active" });', '    const [expiredFiltered, supersededFiltered] = await Promise.all([\n        trx.from("merchant_memory_records").where({ tenant_id: tenantId(), status: "expired" }).count("* as c").first(),\n        trx.from("merchant_memory_records").where({ tenant_id: tenantId(), status: "superseded" }).count("* as c").first(),\n    ]);\n\n    const allActive = trx.from("merchant_memory_records").where({ tenant_id: tenantId(), status: "active" });')
+          text = text.replace('row.sensitivity === "restricted" && !input.include_restricted', 'row.sensitivity === "restricted" && !access.includeRestricted')
+          text = text.replace('                permissions: [...permissions].sort(),\n                include_restricted: input.include_restricted ?? false,', '                permissions: [...permissions].sort(),\n                include_restricted: access.includeRestricted,')
+          text = text.replace('            principal_kind: input.principal_kind,\n            principal_id: input.principal_id ?? String(actor.id),\n            query: input.query,\n            filters: JSON.stringify({', '            principal_kind: access.principalKind,\n            principal_id: access.principalId,\n            query_hash: hash(input.query.trim().toLowerCase()),\n            query_features: JSON.stringify({ token_count: tokens.length, engine_version: MERCHANT_MEMORY_VERSION }),\n            filters: JSON.stringify({')
+          text = text.replace('            expired_filtered_count: 0,\n            permission_filtered_count: permissionFiltered,', '            expired_filtered_count: Number(expiredFiltered?.c ?? 0),\n            permission_filtered_count: permissionFiltered,\n            superseded_filtered_count: Number(supersededFiltered?.c ?? 0),')
+          text = text.replace('            retrieval_score: Number(score.toFixed(6)),\n            sources:', '            retrieval_score: Number(score.toFixed(6)),\n            score_components: {\n                lexical: Number(lexicalScore(row, tokens).toFixed(6)),\n                confidence: Number((Number(row.confidence ?? 0) * 0.25).toFixed(6)),\n                strength: Number((Number(row.strength ?? 0) * 0.25).toFixed(6)),\n            },\n            sources:')
+          service.write_text(text)
+          PY
+      - name: Canonical format
+        run: pnpm exec biome check --write apps/api/app/services/phase26_memory_authority_service.ts apps/api/app/services/phase26_merchant_memory_service.ts apps/api/app/controllers/admin/merchant_memory_controller.ts apps/api/app/validators/admin/phase26_merchant_memory_validator.ts apps/api/database/migrations/1779000000000_create_merchant_memory.ts
+      - name: API typecheck
+        run: pnpm --filter @calibra/api run typecheck
+      - name: Commit verified hardening and remove workflow
+        run: |
+          rm .github/workflows/phase26-hardening-once.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -- apps/api/app/services/phase26_memory_authority_service.ts apps/api/app/services/phase26_merchant_memory_service.ts apps/api/app/controllers/admin/merchant_memory_controller.ts apps/api/app/validators/admin/phase26_merchant_memory_validator.ts apps/api/database/migrations/1779000000000_create_merchant_memory.ts .github/workflows/phase26-hardening-once.yml
+          git commit -m "fix(api): harden Phase 26 memory authority"
+          git push origin HEAD:feat/phase26-merchant-memory-20260823
