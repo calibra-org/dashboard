@@ -1,0 +1,136 @@
+openapi: 3.1.0
+info:
+  title: Calibra Admin Phase 24 Synthetic Commerce API
+  version: 1.0.0
+tags:
+  - name: Synthetic Commerce
+    description: Isolated pre-production synthetic shopper and release evidence control plane.
+paths:
+  /api/v1/admin/synthetic-commerce/overview:
+    get:
+      tags: [Synthetic Commerce]
+      operationId: adminSyntheticCommerceOverview
+      summary: Synthetic commerce release overview
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/synthetic-commerce/environments:
+    get:
+      tags: [Synthetic Commerce]
+      operationId: adminSyntheticCommerceEnvironments
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+    post:
+      tags: [Synthetic Commerce]
+      operationId: adminSyntheticCommerceEnvironmentCreate
+      requestBody: { $ref: '#/components/requestBodies/ObjectBody' }
+      responses:
+        '201': { $ref: '#/components/responses/CreatedEnvelope' }
+  /api/v1/admin/synthetic-commerce/personas:
+    get:
+      tags: [Synthetic Commerce]
+      operationId: adminSyntheticCommercePersonas
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+    post:
+      tags: [Synthetic Commerce]
+      operationId: adminSyntheticCommercePersonaCreate
+      requestBody: { $ref: '#/components/requestBodies/ObjectBody' }
+      responses:
+        '201': { $ref: '#/components/responses/CreatedEnvelope' }
+  /api/v1/admin/synthetic-commerce/seeds:
+    get:
+      tags: [Synthetic Commerce]
+      operationId: adminSyntheticCommerceSeeds
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+    post:
+      tags: [Synthetic Commerce]
+      operationId: adminSyntheticCommerceSeedCreate
+      requestBody: { $ref: '#/components/requestBodies/ObjectBody' }
+      responses:
+        '201': { $ref: '#/components/responses/CreatedEnvelope' }
+  /api/v1/admin/synthetic-commerce/seeds/{publicId}/freeze:
+    post:
+      tags: [Synthetic Commerce]
+      operationId: adminSyntheticCommerceSeedFreeze
+      parameters:
+        - $ref: '#/components/parameters/PublicId'
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/synthetic-commerce/scenarios:
+    get:
+      tags: [Synthetic Commerce]
+      operationId: adminSyntheticCommerceScenarios
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+    post:
+      tags: [Synthetic Commerce]
+      operationId: adminSyntheticCommerceScenarioCreate
+      requestBody: { $ref: '#/components/requestBodies/ObjectBody' }
+      responses:
+        '201': { $ref: '#/components/responses/CreatedEnvelope' }
+  /api/v1/admin/synthetic-commerce/runs:
+    get:
+      tags: [Synthetic Commerce]
+      operationId: adminSyntheticCommerceRuns
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/synthetic-commerce/scenarios/{publicId}/run:
+    post:
+      tags: [Synthetic Commerce]
+      operationId: adminSyntheticCommerceRunQueue
+      parameters:
+        - $ref: '#/components/parameters/PublicId'
+      responses:
+        '201': { $ref: '#/components/responses/CreatedEnvelope' }
+  /api/v1/admin/synthetic-commerce/runs/{publicId}:
+    get:
+      tags: [Synthetic Commerce]
+      operationId: adminSyntheticCommerceRunDetail
+      parameters:
+        - $ref: '#/components/parameters/PublicId'
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/synthetic-commerce/runs/{publicId}/report:
+    post:
+      tags: [Synthetic Commerce]
+      operationId: adminSyntheticCommerceRunReport
+      parameters:
+        - $ref: '#/components/parameters/PublicId'
+      requestBody: { $ref: '#/components/requestBodies/ObjectBody' }
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+components:
+  parameters:
+    PublicId:
+      name: publicId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+  requestBodies:
+    ObjectBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: true
+  responses:
+    OkEnvelope:
+      description: Successful synthetic-commerce response.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data: {}
+    CreatedEnvelope:
+      description: Synthetic-commerce resource created.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data: {}
