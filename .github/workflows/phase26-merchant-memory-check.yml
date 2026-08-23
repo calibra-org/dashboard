@@ -10,7 +10,7 @@ on:
       - "apps/api/database/migrations/1779000000000_create_merchant_memory.ts"
       - "apps/api/start/routes/admin_merchant_memory.ts"
       - "apps/api/start/routes.ts"
-      - "apps/api/tests/unit/phase26_merchant_memory_ranking.spec.ts"
+      - "apps/api/tests/unit/phase26_merchant_memory_*.spec.ts"
       - "apps/admin/src/features/merchant-memory/**"
       - "apps/admin/src/lib/queries/merchant-memory.ts"
       - "apps/admin/src/components/Sidebar.tsx"
@@ -21,10 +21,11 @@ on:
       - "scripts/verify-phase26-merchant-memory.mjs"
       - ".github/workflows/phase26-merchant-memory-check.yml"
   push:
-    branches: [feat/phase26-merchant-memory-20260823]
+    branches:
+      - feat/phase26-merchant-memory-20260823
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: phase26-merchant-memory-${{ github.ref }}
@@ -35,160 +36,39 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event_name == 'push' && github.ref_name || github.event.pull_request.head.sha }}
-          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 24.14.0
       - run: npm install --global pnpm@10.32.1
       - run: pnpm install --frozen-lockfile
-
-      - name: Canonicalize Phase 26 source
-        run: |
-          python <<'PY'
-          from pathlib import Path
-          import json
-
-          service_path = Path('apps/api/app/services/phase26_merchant_memory_service.ts')
-          service = service_path.read_text()
-
-          if 'merchantMemoryRetrievalScore' not in service:
-              start = service.index('function hash(value: unknown) {')
-              end = service.index('\n}\n', start) + 3
-              addition = '''
-          export function normalizeMerchantMemorySearchTokens(query: string) {
-              return [...new Set(query.normalize("NFKC").toLowerCase().replace(/[^\\p{L}\\p{N}]+/gu, " ").split(/\\s+/).filter((token) => token.length >= 2))].slice(0, 8);
-          }
-
-          export function merchantMemoryRetrievalScore(
-              row: { title?: unknown; context?: unknown; lesson?: unknown; confidence?: unknown; strength?: unknown },
-              tokens: string[],
-          ) {
-              const haystack = `${row.title ?? ""} ${row.context ?? ""} ${row.lesson ?? ""}`.normalize("NFKC").toLowerCase();
-              const lexicalRatio = tokens.length === 0 ? 1 : tokens.filter((token) => haystack.includes(token)).length / tokens.length;
-              const lexical = lexicalRatio * 0.5;
-              const confidence = Math.max(0, Math.min(1, Number(row.confidence ?? 0))) * 0.25;
-              const strength = Math.max(0, Math.min(1, Number(row.strength ?? 0))) * 0.25;
-              return {
-                  lexical: Number(lexical.toFixed(8)),
-                  confidence: Number(confidence.toFixed(8)),
-                  strength: Number(strength.toFixed(8)),
-                  total: Number((lexical + confidence + strength).toFixed(8)),
-              };
-          }
-          '''
-              service = service[:end] + addition + service[end:]
-
-          retrieval_scope = service.index('export async function retrieveMemories')
-          if 'normalizeMerchantMemorySearchTokens(input.query)' not in service:
-              start = service.index('    const tokens = input.query', retrieval_scope)
-              end = service.index('        .slice(0, 8);', start) + len('        .slice(0, 8);')
-              service = service[:start] + '    const tokens = normalizeMerchantMemorySearchTokens(input.query);' + service[end:]
-
-          if 'const candidateRows = await query' not in service:
-              start = service.index('    const rows = await query', retrieval_scope)
-              end_marker = '    const publicIds = rows.map((row) => String(row.public_id));'
-              end = service.index(end_marker, start) + len(end_marker)
-              ranked = '''    const candidateRows = await query
-              .orderBy("strength", "desc")
-              .orderBy("confidence", "desc")
-              .orderBy("relevant_from", "desc")
-              .limit(300);
-          const ranked = candidateRows
-              .map((row) => ({ row, score: merchantMemoryRetrievalScore(row, tokens) }))
-              .sort((a, b) => b.score.total - a.score.total || Number(b.row.id) - Number(a.row.id))
-              .slice(0, limit);
-          const rows = ranked.map(({ row }) => row);
-          const scores = new Map(ranked.map(({ row, score }) => [Number(row.id), score]));
-          const groupedSources = await sourceRows(rows.map((row) => Number(row.id)));
-          const publicIds = rows.map((row) => String(row.public_id));'''
-              service = service[:start] + ranked + service[end:]
-
-          plain = 'memories: rows.map((row) => ({ ...row, sources: groupedSources.get(Number(row.id)) ?? [] })),'
-          scored = 'memories: rows.map((row) => ({ ...row, retrieval_score: scores.get(Number(row.id))?.total ?? 0, score_components: scores.get(Number(row.id)) ?? null, sources: groupedSources.get(Number(row.id)) ?? [] })),'
-          if plain in service:
-              service = service.replace(plain, scored, 1)
-
-          effectiveness_scope = service.index('export async function recordEffectiveness')
-          if 'const selectedMemory = await requireMemory(input.memory_public_id);' not in service[effectiveness_scope:]:
-              tail = service[effectiveness_scope:]
-              target = 'memory = await requireMemory(input.memory_public_id);'
-              if target not in tail:
-                  raise SystemExit('effectiveness memory assignment missing')
-              tail = tail.replace(target, 'const selectedMemory = await requireMemory(input.memory_public_id);', 1)
-              target = 'String(memory.public_id)'
-              if target not in tail:
-                  raise SystemExit('effectiveness memory public id missing')
-              tail = tail.replace(target, 'String(selectedMemory.public_id)', 1)
-              outcome = '    if (input.source_outcome_record_id) {'
-              outcome_pos = tail.find(outcome)
-              close_pos = tail.rfind('\n    }\n', 0, outcome_pos)
-              if outcome_pos < 0 or close_pos < 0:
-                  raise SystemExit('effectiveness scope boundary missing')
-              tail = tail[:close_pos] + '\n        memory = selectedMemory;' + tail[close_pos:]
-              service = service[:effectiveness_scope] + tail
-
-          service_path.write_text(service)
-
-          package_path = Path('docs/api/package.json')
-          pkg = json.loads(package_path.read_text())
-          scripts = pkg['scripts']
-          scripts['build:json:admin-phase26'] = 'redocly bundle reference/openapi/admin.phase26.v1.yaml -o dist/admin.phase26.v1.json --ext json'
-          if 'build:json:admin-phase26' not in scripts['build:json:admin']:
-              scripts['build:json:admin'] = scripts['build:json:admin'].replace('pnpm build:json:admin-phase25 &&', 'pnpm build:json:admin-phase25 && pnpm build:json:admin-phase26 &&')
-          package_path.write_text(json.dumps(pkg, ensure_ascii=False, indent=4) + '\n')
-
-          merge_path = Path('docs/api/scripts/merge-admin-spec.js')
-          merge = merge_path.read_text()
-          if 'const phase26 =' not in merge:
-              anchor = 'const phase25 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase25.v1.json"), "utf8"));'
-              if anchor not in merge: raise SystemExit('phase25 merge import anchor missing')
-              merge = merge.replace(anchor, anchor + '\nconst phase26 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase26.v1.json"), "utf8"));', 1)
-          if '[phase26, "Phase26MerchantMemoryOverlay"]' not in merge:
-              anchor = '    [phase25, "Phase25GrowthPortfolioOverlay"],'
-              if anchor not in merge: raise SystemExit('phase25 merge overlay anchor missing')
-              merge = merge.replace(anchor, anchor + '\n    [phase26, "Phase26MerchantMemoryOverlay"],', 1)
-          merge_path.write_text(merge)
-
-          sidebar_path = Path('apps/admin/src/components/Sidebar.tsx')
-          sidebar = sidebar_path.read_text()
-          if '/analytics/merchant-memory' not in sidebar:
-              anchor = '            { href: "/analytics/growth-portfolio", label: "سبد رشد خودکار", icon: TrendingUp },\n'
-              if anchor not in sidebar: raise SystemExit('growth portfolio navigation anchor missing')
-              sidebar = sidebar.replace(anchor, anchor + '            { href: "/analytics/merchant-memory", label: "حافظه سازمانی", icon: Library },\n', 1)
-          sidebar_path.write_text(sidebar)
-          PY
-
-          pnpm exec biome check --write \
-            apps/api/app/services/phase26_merchant_memory_service.ts \
-            apps/api/tests/unit/phase26_merchant_memory_ranking.spec.ts \
-            apps/admin/src/features/merchant-memory/MerchantMemoryWorkspace.tsx \
-            apps/admin/src/lib/queries/merchant-memory.ts \
-            apps/admin/src/components/Sidebar.tsx \
-            docs/api/package.json \
-            docs/api/scripts/merge-admin-spec.js \
-            scripts/verify-phase26-merchant-memory.mjs
-          pnpm --filter @calibra/api-docs run build:json:admin
-          pnpm --filter @calibra/sdk run codegen:admin
-
-          if ! git diff --quiet; then
-            git config user.name github-actions[bot]
-            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-            git add -A
-            git commit -m "feat(phase26): canonicalize ranking and API contracts"
-            git push origin HEAD:feat/phase26-merchant-memory-20260823
-          fi
-
+      - name: Format integrity
+        run: >-
+          pnpm exec biome check
+          apps/api/app/controllers/admin/merchant_memory_controller.ts
+          apps/api/app/services/phase26_merchant_memory_service.ts
+          apps/api/app/services/merchant_memory/permissions.ts
+          apps/api/app/validators/admin/phase26_merchant_memory_validator.ts
+          apps/api/database/migrations/1779000000000_create_merchant_memory.ts
+          apps/api/start/routes/admin_merchant_memory.ts
+          apps/api/tests/unit/phase26_merchant_memory_ranking.spec.ts
+          apps/api/tests/unit/phase26_merchant_memory_privacy.spec.ts
+          apps/admin/src/features/merchant-memory/MerchantMemoryWorkspace.tsx
+          apps/admin/src/lib/queries/merchant-memory.ts
+          apps/admin/src/components/Sidebar.tsx
+          docs/api/package.json
+          docs/api/scripts/merge-admin-spec.js
+          scripts/verify-phase26-merchant-memory.mjs
       - name: Phase 26 static contract
         run: node scripts/verify-phase26-merchant-memory.mjs
-      - name: Phase 26 ranking regression
-        run: pnpm --filter @calibra/api exec node ace test --files='tests/unit/phase26_merchant_memory_ranking.spec.ts'
+      - name: Ranking and privacy regressions
+        run: pnpm --filter @calibra/api exec node ace test --files='tests/unit/phase26_merchant_memory_*.spec.ts'
       - name: API typecheck
         run: pnpm --filter @calibra/api run typecheck
       - name: Admin typecheck
         run: pnpm --filter @calibra/admin run typecheck
-      - name: Admin OpenAPI build
+      - name: Admin production build
+        run: pnpm --filter @calibra/admin run build
+      - name: Canonical Admin OpenAPI
         run: pnpm --filter @calibra/api-docs run build:json:admin
       - name: SDK sync
         run: |
