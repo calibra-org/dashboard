@@ -16,4 +16,4 @@ Phase 26 creates a durable, structured, source-linked organizational memory laye
 
 ## Release status
 
-Implementation is in Draft PR #80. Merge is blocked until schema/service contracts, permission-aware retrieval, source validation, lineage, admin surface, OpenAPI/SDK, dedicated tests and full repository CI are green on the exact final head.
+Implementation is in canonical Draft PR #84. Merge is blocked until schema/service contracts, permission-aware retrieval, source validation, lineage, admin surface, OpenAPI/SDK, dedicated tests and full repository CI are green on the exact final head.
