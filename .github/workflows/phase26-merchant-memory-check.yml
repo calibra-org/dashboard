@@ -46,7 +46,6 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Canonicalize Phase 26 source
-        if: github.event_name == 'push'
         run: |
           python <<'PY'
           from pathlib import Path
