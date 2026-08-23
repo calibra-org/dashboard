@@ -19,14 +19,11 @@ export function useSyntheticCommerceResource<T>(path: string, enabled = true) {
     });
 }
 
-export function useSyntheticCommerceMutation<T = unknown, B = Record<string, unknown>>(
-    method: MutationMethod = "POST",
-) {
+export function useSyntheticCommerceMutation<T = unknown, B = Record<string, unknown>>(method: MutationMethod = "POST") {
     const locale = useLocale() as Locale;
     const queryClient = useQueryClient();
     return useMutation<T, Error, { path: string; body: B }>({
-        mutationFn: async ({ path, body }) =>
-            (await apiMutate<{ data: T }>(method, `${base}/${path}`, { locale, body })).data,
+        mutationFn: async ({ path, body }) => (await apiMutate<{ data: T }>(method, `${base}/${path}`, { locale, body })).data,
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin", "synthetic-commerce"] }),
     });
 }

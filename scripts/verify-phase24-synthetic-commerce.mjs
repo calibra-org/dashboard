@@ -22,11 +22,22 @@ for (const table of tables) {
 }
 if (!migration.includes("ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY")) throw new Error("RLS enable loop missing");
 if (!migration.includes("ALTER TABLE ${table} FORCE ROW LEVEL SECURITY")) throw new Error("RLS force loop missing");
-if ((migration.match(/createTable\("synthetic_commerce_/g) ?? []).length !== 7) throw new Error("Phase 24 must own exactly seven synthetic-commerce tables");
-for (const token of ["is_synthetic", "provider_mode", "stubbed", "analytics_mode", "isolated", "fixture_hash", "frozen", "journey_coverage", "false_alarm_gates"]) {
+if ((migration.match(/createTable\("synthetic_commerce_/g) ?? []).length !== 7)
+    throw new Error("Phase 24 must own exactly seven synthetic-commerce tables");
+for (const token of [
+    "is_synthetic",
+    "provider_mode",
+    "stubbed",
+    "analytics_mode",
+    "isolated",
+    "fixture_hash",
+    "frozen",
+    "journey_coverage",
+    "false_alarm_gates",
+]) {
     if (!migration.includes(token) && !service.includes(token)) throw new Error(`missing Phase 24 invariant: ${token}`);
 }
-for (const forbidden of ["table(\"orders\")", "table(\"payments\")", "table(\"inventory", "table(\"refund"]) {
+for (const forbidden of ['table("orders")', 'table("payments")', 'table("inventory', 'table("refund']) {
     if (service.includes(forbidden)) throw new Error(`production mutation surface forbidden in Phase 24: ${forbidden}`);
 }
 if (!service.includes("synthetic:${tenant}:")) throw new Error("synthetic tenant namespace enforcement missing");
@@ -37,11 +48,33 @@ if (!routes.includes("adminWriteLimiter")) throw new Error("write limiter missin
 for (const path of ["/overview", "/environments", "/personas", "/seeds", "/scenarios", "/runs"]) {
     if (!routes.includes(path)) throw new Error(`route surface missing: ${path}`);
 }
-for (const token of ["SYNTHETIC ONLY", "Provider Stubbed", "Analytics Isolated", "False Alarm", "Scenario Library", "Run Ledger", "HelperTooltip"]) {
+for (const token of [
+    "SYNTHETIC ONLY",
+    "Provider Stubbed",
+    "Analytics Isolated",
+    "False Alarm",
+    "Scenario Library",
+    "Run Ledger",
+    "HelperTooltip",
+]) {
     if (!ui.includes(token)) throw new Error(`UI contract missing: ${token}`);
 }
 for (const token of ['trace: "retain-on-failure"', 'screenshot: "only-on-failure"', "آزمایشگاه پیش‌انتشار"]) {
     if (!e2e.includes(token)) throw new Error(`Playwright failure-artifact contract missing: ${token}`);
 }
-if (!openapi.includes("/api/v1/admin/synthetic-commerce/runs/{publicId}/report")) throw new Error("Phase 24 OpenAPI report endpoint missing");
-console.log(JSON.stringify({ status: "PASS", phase: 24, tables: tables.length, synthetic_isolation: true, production_mutation: false, trace_contract: true }, null, 2));
+if (!openapi.includes("/api/v1/admin/synthetic-commerce/runs/{publicId}/report"))
+    throw new Error("Phase 24 OpenAPI report endpoint missing");
+console.log(
+    JSON.stringify(
+        {
+            status: "PASS",
+            phase: 24,
+            tables: tables.length,
+            synthetic_isolation: true,
+            production_mutation: false,
+            trace_contract: true,
+        },
+        null,
+        2,
+    ),
+);

@@ -19,16 +19,7 @@ const RECOMMENDED_PERSONAS = [
     "suspicious-bot",
     "legitimate-ai-shopping-agent",
 ];
-const CRITICAL_JOURNEY = [
-    "homepage",
-    "search",
-    "pdp",
-    "cart",
-    "checkout",
-    "payment",
-    "fulfillment-promise",
-    "support",
-];
+const CRITICAL_JOURNEY = ["homepage", "search", "pdp", "cart", "checkout", "payment", "fulfillment-promise", "support"];
 
 function stable(value: unknown): unknown {
     if (Array.isArray(value)) return value.map(stable);
@@ -41,7 +32,9 @@ function stable(value: unknown): unknown {
 }
 
 function hash(value: unknown): string {
-    return createHash("sha256").update(JSON.stringify(stable(value))).digest("hex");
+    return createHash("sha256")
+        .update(JSON.stringify(stable(value)))
+        .digest("hex");
 }
 
 function tenantId() {
@@ -49,10 +42,7 @@ function tenantId() {
 }
 
 async function environmentByPublicId(publicId: string) {
-    return currentTrx()
-        .from("synthetic_commerce_environments")
-        .where({ tenant_id: tenantId(), public_id: publicId })
-        .first();
+    return currentTrx().from("synthetic_commerce_environments").where({ tenant_id: tenantId(), public_id: publicId }).first();
 }
 
 async function assertSyntheticEnvironment(publicId: string) {
@@ -128,10 +118,7 @@ export async function overview() {
 }
 
 export async function listEnvironments() {
-    return currentTrx()
-        .from("synthetic_commerce_environments")
-        .where("tenant_id", tenantId())
-        .orderBy("updated_at", "desc");
+    return currentTrx().from("synthetic_commerce_environments").where("tenant_id", tenantId()).orderBy("updated_at", "desc");
 }
 
 export async function createEnvironment(input: { name: string }, actor: User) {
@@ -159,10 +146,7 @@ export async function createEnvironment(input: { name: string }, actor: User) {
 }
 
 export async function listPersonas() {
-    return currentTrx()
-        .from("synthetic_commerce_personas")
-        .where("tenant_id", tenantId())
-        .orderBy("updated_at", "desc");
+    return currentTrx().from("synthetic_commerce_personas").where("tenant_id", tenantId()).orderBy("updated_at", "desc");
 }
 
 export async function createPersona(
@@ -201,10 +185,7 @@ export async function createPersona(
 }
 
 export async function listSeeds() {
-    return currentTrx()
-        .from("synthetic_commerce_seed_versions")
-        .where("tenant_id", tenantId())
-        .orderBy("created_at", "desc");
+    return currentTrx().from("synthetic_commerce_seed_versions").where("tenant_id", tenantId()).orderBy("created_at", "desc");
 }
 
 export async function createSeed(
@@ -245,10 +226,7 @@ export async function createSeed(
 
 export async function freezeSeed(publicId: string) {
     const trx = currentTrx();
-    const seed = await trx
-        .from("synthetic_commerce_seed_versions")
-        .where({ tenant_id: tenantId(), public_id: publicId })
-        .first();
+    const seed = await trx.from("synthetic_commerce_seed_versions").where({ tenant_id: tenantId(), public_id: publicId }).first();
     if (!seed) {
         throw new Exception("Synthetic seed not found", {
             status: 404,
@@ -429,10 +407,7 @@ export async function queueRun(scenarioPublicId: string, actor: User) {
 
 export async function runDetail(publicId: string) {
     const trx = currentTrx();
-    const run = await trx
-        .from("synthetic_commerce_runs")
-        .where({ tenant_id: tenantId(), public_id: publicId })
-        .first();
+    const run = await trx.from("synthetic_commerce_runs").where({ tenant_id: tenantId(), public_id: publicId }).first();
     if (!run) {
         throw new Exception("Synthetic run not found", {
             status: 404,
@@ -440,14 +415,8 @@ export async function runDetail(publicId: string) {
         });
     }
     const [gates, artifacts] = await Promise.all([
-        trx
-            .from("synthetic_commerce_gate_results")
-            .where({ tenant_id: tenantId(), run_id: run.id })
-            .orderBy("id"),
-        trx
-            .from("synthetic_commerce_artifacts")
-            .where({ tenant_id: tenantId(), run_id: run.id })
-            .orderBy("id"),
+        trx.from("synthetic_commerce_gate_results").where({ tenant_id: tenantId(), run_id: run.id }).orderBy("id"),
+        trx.from("synthetic_commerce_artifacts").where({ tenant_id: tenantId(), run_id: run.id }).orderBy("id"),
     ]);
     return { ...run, gates, artifacts };
 }
@@ -461,10 +430,7 @@ export async function reportRun(
     },
 ) {
     const trx = currentTrx();
-    const run = await trx
-        .from("synthetic_commerce_runs")
-        .where({ tenant_id: tenantId(), public_id: publicId })
-        .first();
+    const run = await trx.from("synthetic_commerce_runs").where({ tenant_id: tenantId(), public_id: publicId }).first();
     if (!run) {
         throw new Exception("Synthetic run not found", {
             status: 404,
@@ -532,7 +498,7 @@ export async function reportRun(
             public_id: randomUUID(),
             tenant_id: tenantId(),
             run_id: run.id,
-            gate_result_id: artifact.gate_key ? gateIds.get(String(artifact.gate_key)) ?? null : null,
+            gate_result_id: artifact.gate_key ? (gateIds.get(String(artifact.gate_key)) ?? null) : null,
             kind: artifact.kind,
             name: artifact.name,
             storage_key: storageKey,

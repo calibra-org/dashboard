@@ -52,7 +52,12 @@ export default class extends BaseSchema {
             t.increments("id");
             t.uuid("public_id").notNullable().unique();
             t.integer("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            t.integer("environment_id").unsigned().notNullable().references("id").inTable("synthetic_commerce_environments").onDelete("CASCADE");
+            t.integer("environment_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("synthetic_commerce_environments")
+                .onDelete("CASCADE");
             t.string("name", 160).notNullable();
             t.integer("version").notNullable();
             t.bigInteger("seed").notNullable();
@@ -70,9 +75,24 @@ export default class extends BaseSchema {
             t.increments("id");
             t.uuid("public_id").notNullable().unique();
             t.integer("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            t.integer("environment_id").unsigned().notNullable().references("id").inTable("synthetic_commerce_environments").onDelete("CASCADE");
-            t.integer("persona_id").unsigned().notNullable().references("id").inTable("synthetic_commerce_personas").onDelete("RESTRICT");
-            t.integer("seed_version_id").unsigned().notNullable().references("id").inTable("synthetic_commerce_seed_versions").onDelete("RESTRICT");
+            t.integer("environment_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("synthetic_commerce_environments")
+                .onDelete("CASCADE");
+            t.integer("persona_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("synthetic_commerce_personas")
+                .onDelete("RESTRICT");
+            t.integer("seed_version_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("synthetic_commerce_seed_versions")
+                .onDelete("RESTRICT");
             t.string("title", 180).notNullable();
             t.string("journey_key", 80).notNullable();
             t.jsonb("steps").notNullable().defaultTo("[]");
@@ -89,10 +109,25 @@ export default class extends BaseSchema {
             t.increments("id");
             t.uuid("public_id").notNullable().unique();
             t.integer("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            t.integer("environment_id").unsigned().notNullable().references("id").inTable("synthetic_commerce_environments").onDelete("CASCADE");
-            t.integer("scenario_id").unsigned().notNullable().references("id").inTable("synthetic_commerce_scenarios").onDelete("CASCADE");
+            t.integer("environment_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("synthetic_commerce_environments")
+                .onDelete("CASCADE");
+            t.integer("scenario_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("synthetic_commerce_scenarios")
+                .onDelete("CASCADE");
             t.integer("scenario_version").notNullable();
-            t.integer("seed_version_id").unsigned().notNullable().references("id").inTable("synthetic_commerce_seed_versions").onDelete("RESTRICT");
+            t.integer("seed_version_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("synthetic_commerce_seed_versions")
+                .onDelete("RESTRICT");
             t.string("runner_version", 64).notNullable();
             t.string("input_hash", 64).notNullable();
             t.string("status", 24).notNullable().defaultTo("queued");
@@ -131,7 +166,12 @@ export default class extends BaseSchema {
             t.uuid("public_id").notNullable().unique();
             t.integer("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
             t.integer("run_id").unsigned().notNullable().references("id").inTable("synthetic_commerce_runs").onDelete("CASCADE");
-            t.integer("gate_result_id").unsigned().nullable().references("id").inTable("synthetic_commerce_gate_results").onDelete("SET NULL");
+            t.integer("gate_result_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("synthetic_commerce_gate_results")
+                .onDelete("SET NULL");
             t.string("kind", 24).notNullable();
             t.string("name", 180).notNullable();
             t.string("storage_key", 512).notNullable();
