@@ -1,5 +1,22 @@
 import vine from "@vinejs/vine";
 
+const policyConstraints = vine.object({
+    max_selected_actions: vine.number().positive().withoutDecimals().max(24).optional(),
+    min_confidence: vine.number().min(0).max(1).optional(),
+    forbidden_case_ids: vine.array(vine.number().positive().withoutDecimals()).maxLength(24).optional(),
+    approval_risk_threshold: vine.number().min(0).max(1).optional(),
+    high_risk_auto_cancel: vine.boolean().optional(),
+});
+
+const constraintOverrides = vine.object({
+    cash_budget_minor: vine.number().min(0).nullable().optional(),
+    team_hours_budget: vine.number().min(0).nullable().optional(),
+    warehouse_capacity_budget: vine.number().min(0).nullable().optional(),
+    supplier_capacity_budget: vine.number().min(0).nullable().optional(),
+    max_risk: vine.number().min(0).max(1).nullable().optional(),
+    channel_limits: vine.record(vine.number().min(0)).optional(),
+});
+
 export const createGrowthPortfolioPlanValidator = vine.compile(
     vine.object({
         name: vine.string().trim().minLength(3).maxLength(180),
@@ -10,7 +27,7 @@ export const createGrowthPortfolioPlanValidator = vine.compile(
         supplier_capacity_budget: vine.number().min(0).nullable().optional(),
         max_risk: vine.number().min(0).max(1).nullable().optional(),
         channel_limits: vine.record(vine.number().min(0)).optional(),
-        policy_constraints: vine.record(vine.any()).optional(),
+        policy_constraints: policyConstraints.optional(),
     }),
 );
 
@@ -34,10 +51,20 @@ export const addGrowthPortfolioCandidateValidator = vine.compile(
     }),
 );
 
+export const rebalanceGrowthPortfolioPlanValidator = vine.compile(
+    vine.object({
+        trigger_kind: vine.enum(["stockout", "campaign_outcome", "cash_settlement_delay", "supplier_incident"]),
+        trigger_snapshot: vine.record(vine.any()),
+        constraint_overrides: constraintOverrides.optional(),
+        active_case_ids: vine.array(vine.number().positive().withoutDecimals()).maxLength(24).optional(),
+    }),
+);
+
 export const measureGrowthPortfolioRunValidator = vine.compile(
     vine.object({
         realized_value_minor: vine.number(),
         attribution_confidence: vine.number().min(0).max(1),
+        measurement_window: vine.string().trim().maxLength(80).optional(),
         source_outcome_ids: vine.array(vine.number().positive().withoutDecimals()).maxLength(256),
         notes: vine.string().trim().maxLength(4000).optional(),
     }),
