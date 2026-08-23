@@ -11,24 +11,23 @@ const memoryClass = vine.enum([
     "policy_precedent",
 ]);
 
-const memorySensitivity = vine.enum(["aggregated", "internal", "restricted"]);
-const sourceKind = vine.enum(["decision", "outcome", "approval", "experiment", "portfolio", "incident", "audit", "operator"]);
-const evidenceRole = vine.enum(["primary", "supporting", "contradicting"]);
-
 const source = vine.object({
-    source_kind: sourceKind,
-    source_table: vine.string().trim().minLength(2).maxLength(96),
-    source_id: vine.string().trim().minLength(1).maxLength(160),
-    source_public_id: vine.string().trim().maxLength(160).nullable().optional(),
-    evidence_hash: vine.string().trim().fixedLength(64).nullable().optional(),
-    evidence_role: evidenceRole.optional(),
-    observed_at: vine.string().trim().minLength(10).maxLength(64).nullable().optional(),
+    source_domain: vine.string().trim().minLength(2).maxLength(80),
+    source_kind: vine.string().trim().minLength(2).maxLength(100),
+    source_id: vine.string().trim().maxLength(180).nullable().optional(),
+    source_route: vine.string().trim().maxLength(400).nullable().optional(),
+    source_hash: vine.string().trim().fixedLength(64).nullable().optional(),
+    label: vine.string().trim().minLength(2).maxLength(240),
+    evidence_role: vine.enum(["primary", "supporting", "contradicting"]).optional(),
+    evidence_summary: vine.record(vine.any()).optional(),
+    observed_at: vine.string().trim().minLength(10).maxLength(64),
 });
 
 const memoryBody = {
     memory_class: memoryClass,
-    subject_type: vine.string().trim().maxLength(64).nullable().optional(),
-    subject_key: vine.string().trim().maxLength(160).nullable().optional(),
+    subject_type: vine.string().trim().maxLength(80).nullable().optional(),
+    subject_id: vine.string().trim().maxLength(160).nullable().optional(),
+    title: vine.string().trim().minLength(3).maxLength(220),
     context: vine.string().trim().minLength(3).maxLength(12000),
     observed_signals: vine.array(vine.any()).maxLength(128).optional(),
     decision: vine.string().trim().maxLength(8000).nullable().optional(),
@@ -40,8 +39,10 @@ const memoryBody = {
     lesson: vine.string().trim().minLength(3).maxLength(12000),
     confidence: vine.number().min(0).max(1),
     strength: vine.number().min(0).max(1),
-    sensitivity: memorySensitivity.optional(),
-    required_permission: vine.string().trim().maxLength(80).nullable().optional(),
+    sensitivity: vine.enum(["aggregate", "internal", "customer_level_sensitive"]).optional(),
+    retention_class: vine.string().trim().minLength(2).maxLength(40).optional(),
+    allowed_consumers: vine.array(vine.enum(["human", "agent"])).minLength(1).maxLength(2).optional(),
+    purposes: vine.array(vine.string().trim().minLength(2).maxLength(80)).maxLength(32).optional(),
     relevant_from: vine.string().trim().minLength(10).maxLength(64).optional(),
     expires_at: vine.string().trim().minLength(10).maxLength(64).nullable().optional(),
     sources: vine.array(source).minLength(1).maxLength(128),
@@ -60,24 +61,25 @@ export const supersedeMerchantMemoryValidator = vine.compile(
 export const retrieveMerchantMemoryValidator = vine.compile(
     vine.object({
         query: vine.string().trim().maxLength(4000),
-        principal_kind: vine.enum(["admin", "copilot", "automation"]),
+        purpose: vine.string().trim().minLength(2).maxLength(80),
+        principal_kind: vine.enum(["human", "agent"]),
         principal_id: vine.string().trim().maxLength(160).nullable().optional(),
         memory_classes: vine.array(memoryClass).maxLength(8).optional(),
-        subject_type: vine.string().trim().maxLength(64).nullable().optional(),
-        subject_key: vine.string().trim().maxLength(160).nullable().optional(),
+        subject_type: vine.string().trim().maxLength(80).nullable().optional(),
+        subject_id: vine.string().trim().maxLength(160).nullable().optional(),
         permissions: vine.array(vine.string().trim().minLength(1).maxLength(80)).maxLength(64).optional(),
-        include_restricted: vine.boolean().optional(),
+        min_confidence: vine.number().min(0).max(1).optional(),
         limit: vine.number().positive().withoutDecimals().max(50).optional(),
     }),
 );
 
 export const recordMerchantMemoryEffectivenessValidator = vine.compile(
     vine.object({
-        retrieval_public_id: vine.string().trim().maxLength(64),
         memory_public_id: vine.string().trim().maxLength(64).nullable().optional(),
-        outcome: vine.enum(["used", "ignored", "misleading", "prevented_repeat_error", "unknown"]),
+        signal: vine.enum(["used", "ignored", "helpful", "harmful", "repeat_error"]),
         usefulness: vine.number().min(0).max(1).nullable().optional(),
         repeat_error_avoided: vine.boolean().nullable().optional(),
+        source_outcome_record_id: vine.number().positive().withoutDecimals().nullable().optional(),
         notes: vine.string().trim().maxLength(4000).nullable().optional(),
     }),
 );
