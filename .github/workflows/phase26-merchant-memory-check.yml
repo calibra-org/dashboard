@@ -171,7 +171,6 @@ jobs:
             scripts/verify-phase26-merchant-memory.mjs
           pnpm --filter @calibra/api-docs run build:json:admin
           pnpm --filter @calibra/sdk run codegen:admin
-          pnpm exec biome check --write packages/sdk/src/generated/admin.d.ts
 
           if ! git diff --quiet; then
             git config user.name github-actions[bot]
