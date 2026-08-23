@@ -41,6 +41,8 @@ Before merge:
 - SDK generation is canonical and produces no diff.
 - authenticated navigation resolves `/analytics/growth-portfolio`.
 
+The candidate merged for release is validated only after canonical Biome formatting, the merged Admin OpenAPI build, and SDK code generation have been committed back to the Phase 25 branch and the full repository CI reruns on that exact head.
+
 ## Safety boundary
 
 Phase 25 recommends, ranks, measures, and rebalances portfolios. It never silently cancels high-risk active work, bypasses Governance OS, or treats model output as realized business truth.
