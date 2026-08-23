@@ -21,8 +21,7 @@ on:
       - "scripts/verify-phase26-merchant-memory.mjs"
       - ".github/workflows/phase26-merchant-memory-check.yml"
   push:
-    branches:
-      - feat/phase26-merchant-memory-20260823
+    branches: [feat/phase26-merchant-memory-20260823]
 
 permissions:
   contents: write
@@ -50,114 +49,90 @@ jobs:
           python <<'PY'
           from pathlib import Path
           import json
-          import re
 
           service_path = Path('apps/api/app/services/phase26_merchant_memory_service.ts')
           service = service_path.read_text()
 
           if 'merchantMemoryRetrievalScore' not in service:
-              marker = '''function hash(value: unknown) {
-                  return createHash("sha256").update(JSON.stringify(stable(value))).digest("hex");
-              }
-              '''
-              addition = marker + '''
-              export function normalizeMerchantMemorySearchTokens(query: string) {
-                  return [...new Set(query.normalize("NFKC").toLowerCase().replace(/[^\\p{L}\\p{N}]+/gu, " ").split(/\\s+/).filter((token) => token.length >= 2))].slice(0, 8);
-              }
+              start = service.index('function hash(value: unknown) {')
+              end = service.index('\n}\n', start) + 3
+              addition = '''
+          export function normalizeMerchantMemorySearchTokens(query: string) {
+              return [...new Set(query.normalize("NFKC").toLowerCase().replace(/[^\\p{L}\\p{N}]+/gu, " ").split(/\\s+/).filter((token) => token.length >= 2))].slice(0, 8);
+          }
 
-              export function merchantMemoryRetrievalScore(
-                  row: { title?: unknown; context?: unknown; lesson?: unknown; confidence?: unknown; strength?: unknown },
-                  tokens: string[],
-              ) {
-                  const haystack = `${row.title ?? ""} ${row.context ?? ""} ${row.lesson ?? ""}`.normalize("NFKC").toLowerCase();
-                  const lexicalRatio = tokens.length === 0 ? 1 : tokens.filter((token) => haystack.includes(token)).length / tokens.length;
-                  const lexical = lexicalRatio * 0.5;
-                  const confidence = Math.max(0, Math.min(1, Number(row.confidence ?? 0))) * 0.25;
-                  const strength = Math.max(0, Math.min(1, Number(row.strength ?? 0))) * 0.25;
-                  return {
-                      lexical: Number(lexical.toFixed(8)),
-                      confidence: Number(confidence.toFixed(8)),
-                      strength: Number(strength.toFixed(8)),
-                      total: Number((lexical + confidence + strength).toFixed(8)),
-                  };
-              }
-              '''
-              if marker not in service:
-                  raise SystemExit('Phase 26 hash marker missing')
-              service = service.replace(marker, addition, 1)
+          export function merchantMemoryRetrievalScore(
+              row: { title?: unknown; context?: unknown; lesson?: unknown; confidence?: unknown; strength?: unknown },
+              tokens: string[],
+          ) {
+              const haystack = `${row.title ?? ""} ${row.context ?? ""} ${row.lesson ?? ""}`.normalize("NFKC").toLowerCase();
+              const lexicalRatio = tokens.length === 0 ? 1 : tokens.filter((token) => haystack.includes(token)).length / tokens.length;
+              const lexical = lexicalRatio * 0.5;
+              const confidence = Math.max(0, Math.min(1, Number(row.confidence ?? 0))) * 0.25;
+              const strength = Math.max(0, Math.min(1, Number(row.strength ?? 0))) * 0.25;
+              return {
+                  lexical: Number(lexical.toFixed(8)),
+                  confidence: Number(confidence.toFixed(8)),
+                  strength: Number(strength.toFixed(8)),
+                  total: Number((lexical + confidence + strength).toFixed(8)),
+              };
+          }
+          '''
+              service = service[:end] + addition + service[end:]
 
           if 'normalizeMerchantMemorySearchTokens(input.query)' not in service:
-              service, count = re.subn(
-                  r'''    const tokens = input\.query\n        \.trim\(\)\n        \.toLowerCase\(\)\n        \.split\(/\\s\+/\)\n        \.filter\(\(token\) => token\.length >= 2\)\n        \.slice\(0, 8\);''',
-                  '    const tokens = normalizeMerchantMemorySearchTokens(input.query);',
-                  service,
-                  count=1,
-              )
-              if count != 1:
-                  raise SystemExit('Phase 26 token marker missing')
+              start = service.index('    const tokens = input.query', service.index('export async function retrieveMemories'))
+              end = service.index('        .slice(0, 8);', start) + len('        .slice(0, 8);')
+              service = service[:start] + '    const tokens = normalizeMerchantMemorySearchTokens(input.query);' + service[end:]
 
           if 'const candidateRows = await query' not in service:
-              old = '''    const rows = await query
-                  .orderBy("strength", "desc")
-                  .orderBy("confidence", "desc")
-                  .orderBy("relevant_from", "desc")
-                  .limit(limit);
-              const groupedSources = await sourceRows(rows.map((row) => Number(row.id)));
-              const publicIds = rows.map((row) => String(row.public_id));
-              '''
-              new = '''    const candidateRows = await query
-                  .orderBy("strength", "desc")
-                  .orderBy("confidence", "desc")
-                  .orderBy("relevant_from", "desc")
-                  .limit(300);
-              const ranked = candidateRows
-                  .map((row) => ({ row, score: merchantMemoryRetrievalScore(row, tokens) }))
-                  .sort((a, b) => b.score.total - a.score.total || Number(b.row.id) - Number(a.row.id))
-                  .slice(0, limit);
-              const rows = ranked.map(({ row }) => row);
-              const scores = new Map(ranked.map(({ row, score }) => [Number(row.id), score]));
-              const groupedSources = await sourceRows(rows.map((row) => Number(row.id)));
-              const publicIds = rows.map((row) => String(row.public_id));
-              '''
-              if old not in service:
-                  raise SystemExit('Phase 26 ranking query marker missing')
-              service = service.replace(old, new, 1)
+              start = service.index('    const rows = await query', service.index('export async function retrieveMemories'))
+              end_marker = '    const publicIds = rows.map((row) => String(row.public_id));'
+              end = service.index(end_marker, start) + len(end_marker)
+              ranked = '''    const candidateRows = await query
+              .orderBy("strength", "desc")
+              .orderBy("confidence", "desc")
+              .orderBy("relevant_from", "desc")
+              .limit(300);
+          const ranked = candidateRows
+              .map((row) => ({ row, score: merchantMemoryRetrievalScore(row, tokens) }))
+              .sort((a, b) => b.score.total - a.score.total || Number(b.row.id) - Number(a.row.id))
+              .slice(0, limit);
+          const rows = ranked.map(({ row }) => row);
+          const scores = new Map(ranked.map(({ row, score }) => [Number(row.id), score]));
+          const groupedSources = await sourceRows(rows.map((row) => Number(row.id)));
+          const publicIds = rows.map((row) => String(row.public_id));'''
+              service = service[:start] + ranked + service[end:]
 
           plain = 'memories: rows.map((row) => ({ ...row, sources: groupedSources.get(Number(row.id)) ?? [] })),'
           scored = 'memories: rows.map((row) => ({ ...row, retrieval_score: scores.get(Number(row.id))?.total ?? 0, score_components: scores.get(Number(row.id)) ?? null, sources: groupedSources.get(Number(row.id)) ?? [] })),'
-          if plain in service:
-              service = service.replace(plain, scored, 1)
+          service = service.replace(plain, scored, 1)
 
-          nullable = '''    let memory: Record<string, unknown> | null = null;
-              if (input.memory_public_id) {
-                  memory = await requireMemory(input.memory_public_id);
-                  const returned = json<string[]>(retrieval.returned_memory_public_ids, []);
-                  if (!returned.includes(String(memory.public_id))) {
-              '''
-          narrowed = '''    let memory: Record<string, unknown> | null = null;
-              if (input.memory_public_id) {
-                  const selectedMemory = await requireMemory(input.memory_public_id);
-                  const returned = json<string[]>(retrieval.returned_memory_public_ids, []);
-                  if (!returned.includes(String(selectedMemory.public_id))) {
-              '''
           if 'const selectedMemory = await requireMemory(input.memory_public_id);' not in service:
-              if nullable not in service:
-                  raise SystemExit('Phase 26 effectiveness marker missing')
-              service = service.replace(nullable, narrowed, 1)
-              close_marker = '''            });
-                  }
+              scope = service.index('export async function recordEffectiveness')
+              old = '''        memory = await requireMemory(input.memory_public_id);
+              const returned = json<string[]>(retrieval.returned_memory_public_ids, []);
+              if (!returned.includes(String(memory.public_id))) {'''
+              new = '''        const selectedMemory = await requireMemory(input.memory_public_id);
+              const returned = json<string[]>(retrieval.returned_memory_public_ids, []);
+              if (!returned.includes(String(selectedMemory.public_id))) {'''
+              pos = service.find(old, scope)
+              if pos < 0:
+                  raise SystemExit('effectiveness narrowing marker missing')
+              service = service[:pos] + service[pos:].replace(old, new, 1)
+              assign_anchor = '''            });
               }
-              if (input.source_outcome_record_id) {
-              '''
-              close_replacement = '''            });
-                  }
-                  memory = selectedMemory;
+          }
+          if (input.source_outcome_record_id) {'''
+              assign_new = '''            });
               }
-              if (input.source_outcome_record_id) {
-              '''
-              if close_marker not in service:
-                  raise SystemExit('Phase 26 effectiveness close marker missing')
-              service = service.replace(close_marker, close_replacement, 1)
+              memory = selectedMemory;
+          }
+          if (input.source_outcome_record_id) {'''
+              pos = service.find(assign_anchor, scope)
+              if pos < 0:
+                  raise SystemExit('effectiveness assignment marker missing')
+              service = service[:pos] + service[pos:].replace(assign_anchor, assign_new, 1)
 
           service_path.write_text(service)
 
@@ -166,23 +141,16 @@ jobs:
           scripts = pkg['scripts']
           scripts['build:json:admin-phase26'] = 'redocly bundle reference/openapi/admin.phase26.v1.yaml -o dist/admin.phase26.v1.json --ext json'
           if 'build:json:admin-phase26' not in scripts['build:json:admin']:
-              scripts['build:json:admin'] = scripts['build:json:admin'].replace(
-                  'pnpm build:json:admin-phase25 &&',
-                  'pnpm build:json:admin-phase25 && pnpm build:json:admin-phase26 &&',
-              )
+              scripts['build:json:admin'] = scripts['build:json:admin'].replace('pnpm build:json:admin-phase25 &&', 'pnpm build:json:admin-phase25 && pnpm build:json:admin-phase26 &&')
           package_path.write_text(json.dumps(pkg, ensure_ascii=False, indent=4) + '\n')
 
           merge_path = Path('docs/api/scripts/merge-admin-spec.js')
           merge = merge_path.read_text()
           if 'const phase26 =' not in merge:
               anchor = 'const phase25 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase25.v1.json"), "utf8"));'
-              if anchor not in merge:
-                  raise SystemExit('Phase 26 merge import anchor missing')
               merge = merge.replace(anchor, anchor + '\nconst phase26 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase26.v1.json"), "utf8"));', 1)
           if '[phase26, "Phase26MerchantMemoryOverlay"]' not in merge:
               anchor = '    [phase25, "Phase25GrowthPortfolioOverlay"],'
-              if anchor not in merge:
-                  raise SystemExit('Phase 26 merge overlay anchor missing')
               merge = merge.replace(anchor, anchor + '\n    [phase26, "Phase26MerchantMemoryOverlay"],', 1)
           merge_path.write_text(merge)
 
@@ -190,8 +158,6 @@ jobs:
           sidebar = sidebar_path.read_text()
           if '/analytics/merchant-memory' not in sidebar:
               anchor = '            { href: "/analytics/growth-portfolio", label: "سبد رشد خودکار", icon: TrendingUp },\n'
-              if anchor not in sidebar:
-                  raise SystemExit('Phase 26 sidebar anchor missing')
               sidebar = sidebar.replace(anchor, anchor + '            { href: "/analytics/merchant-memory", label: "حافظه سازمانی", icon: Library },\n', 1)
           sidebar_path.write_text(sidebar)
           PY
@@ -205,7 +171,6 @@ jobs:
             docs/api/package.json \
             docs/api/scripts/merge-admin-spec.js \
             scripts/verify-phase26-merchant-memory.mjs
-
           pnpm --filter @calibra/api-docs run build:json:admin
           pnpm --filter @calibra/sdk run generate:admin
           pnpm exec biome check --write packages/sdk/src/generated/admin.d.ts
