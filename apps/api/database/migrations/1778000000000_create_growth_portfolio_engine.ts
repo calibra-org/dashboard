@@ -166,7 +166,13 @@ export default class extends BaseSchema {
                 .references("id")
                 .inTable("growth_portfolio_plans")
                 .onDelete("CASCADE");
-            table.bigInteger("from_run_id").unsigned().nullable().references("id").inTable("growth_portfolio_runs").onDelete("SET NULL");
+            table
+                .bigInteger("from_run_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("growth_portfolio_runs")
+                .onDelete("SET NULL");
             table
                 .bigInteger("proposed_run_id")
                 .unsigned()

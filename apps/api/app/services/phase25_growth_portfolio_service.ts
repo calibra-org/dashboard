@@ -125,12 +125,7 @@ export function weightedGrowthPortfolioValue(candidate: CandidateRow) {
     return Math.round(candidate.expected_incremental_contribution_minor * quality * riskPenalty);
 }
 
-function subsetFeasible(
-    plan: PlanRow,
-    candidates: CandidateRow[],
-    selectedIds: Set<number>,
-    validateDependencies = true,
-) {
+function subsetFeasible(plan: PlanRow, candidates: CandidateRow[], selectedIds: Set<number>, validateDependencies = true) {
     let cash = 0;
     let hours = 0;
     let warehouse = 0;
@@ -139,7 +134,9 @@ function subsetFeasible(
     const channels: Record<string, number> = {};
     const reasons: string[] = [];
     const selectedByCase = new Map(
-        candidates.filter((candidate) => selectedIds.has(candidate.id)).map((candidate) => [candidate.intelligence_case_id, candidate]),
+        candidates
+            .filter((candidate) => selectedIds.has(candidate.id))
+            .map((candidate) => [candidate.intelligence_case_id, candidate]),
     );
     const policy = policyFor(plan);
     const forbidden = new Set(uniqueNumbers(policy.forbidden_case_ids));
@@ -335,7 +332,10 @@ async function assertFreshCandidates(candidates: CandidateRow[]) {
     const sourceCases = await currentTrx()
         .from("intelligence_cases")
         .where("tenant_id", tenantId())
-        .whereIn("id", candidates.map((candidate) => candidate.intelligence_case_id))
+        .whereIn(
+            "id",
+            candidates.map((candidate) => candidate.intelligence_case_id),
+        )
         .select("id", "version", "signal_state");
     const currentById = new Map(sourceCases.map((item) => [Number(item.id), item]));
     const stale = candidates.find((candidate) => {
@@ -354,16 +354,13 @@ function effectivePlan(plan: PlanRow, overrides: ConstraintOverrides = {}): Plan
     return {
         ...plan,
         cash_budget_minor: overrides.cash_budget_minor === undefined ? plan.cash_budget_minor : overrides.cash_budget_minor,
-        team_hours_budget:
-            overrides.team_hours_budget === undefined ? plan.team_hours_budget : overrides.team_hours_budget,
+        team_hours_budget: overrides.team_hours_budget === undefined ? plan.team_hours_budget : overrides.team_hours_budget,
         warehouse_capacity_budget:
             overrides.warehouse_capacity_budget === undefined
                 ? plan.warehouse_capacity_budget
                 : overrides.warehouse_capacity_budget,
         supplier_capacity_budget:
-            overrides.supplier_capacity_budget === undefined
-                ? plan.supplier_capacity_budget
-                : overrides.supplier_capacity_budget,
+            overrides.supplier_capacity_budget === undefined ? plan.supplier_capacity_budget : overrides.supplier_capacity_budget,
         max_risk: overrides.max_risk === undefined ? plan.max_risk : overrides.max_risk,
         channel_limits: overrides.channel_limits === undefined ? plan.channel_limits : overrides.channel_limits,
     };
@@ -431,17 +428,19 @@ async function materializeRun(
     const run = rows[0];
     let executionOrder = 1;
     for (const item of optimized.items) {
-        await currentTrx().table("growth_portfolio_run_items").insert({
-            tenant_id: tenantId(),
-            run_id: run.id,
-            candidate_id: item.candidate.id,
-            decision: item.decision,
-            reason: item.reason,
-            expected_weighted_value_minor: item.score,
-            portfolio_score: item.score,
-            execution_order: item.decision === "selected" ? executionOrder++ : null,
-            binding_constraints: JSON.stringify(item.binding_constraints),
-        });
+        await currentTrx()
+            .table("growth_portfolio_run_items")
+            .insert({
+                tenant_id: tenantId(),
+                run_id: run.id,
+                candidate_id: item.candidate.id,
+                decision: item.decision,
+                reason: item.reason,
+                expected_weighted_value_minor: item.score,
+                portfolio_score: item.score,
+                execution_order: item.decision === "selected" ? executionOrder++ : null,
+                binding_constraints: JSON.stringify(item.binding_constraints),
+            });
     }
     return runDetail(run.public_id);
 }
@@ -568,7 +567,10 @@ export async function addCandidate(planPublicId: string, input: CandidateInput) 
         throw new Exception("Candidate cannot depend on itself", { status: 422, code: "E_GROWTH_PORTFOLIO_SELF_DEPENDENCY" });
     }
     if ((input.exclusive_with ?? []).includes(input.intelligence_case_id)) {
-        throw new Exception("Candidate cannot be exclusive with itself", { status: 422, code: "E_GROWTH_PORTFOLIO_SELF_EXCLUSIVE" });
+        throw new Exception("Candidate cannot be exclusive with itself", {
+            status: 422,
+            code: "E_GROWTH_PORTFOLIO_SELF_EXCLUSIVE",
+        });
     }
     const now = DateTime.utc().toSQL();
     const rows = await trx
@@ -869,10 +871,7 @@ export async function applyRebalance(publicId: string) {
     if (event.proposed_run_id) {
         await trx.from("growth_portfolio_runs").where("id", event.proposed_run_id).update({ status: "completed" });
     }
-    await trx
-        .from("growth_portfolio_rebalance_events")
-        .where("id", event.id)
-        .update({ status: "applied", applied_at: now });
+    await trx.from("growth_portfolio_rebalance_events").where("id", event.id).update({ status: "applied", applied_at: now });
     return rebalanceDetail(publicId);
 }
 

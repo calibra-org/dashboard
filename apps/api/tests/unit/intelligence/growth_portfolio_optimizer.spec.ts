@@ -1,10 +1,6 @@
 import { test } from "@japa/runner";
 
-import {
-    type CandidateRow,
-    optimizeGrowthPortfolio,
-    type PlanRow,
-} from "#services/phase25_growth_portfolio_service";
+import { type CandidateRow, optimizeGrowthPortfolio, type PlanRow } from "#services/phase25_growth_portfolio_service";
 
 const plan = (overrides: Partial<PlanRow> = {}): PlanRow => ({
     id: 1,
