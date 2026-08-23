@@ -1,0 +1,157 @@
+name: Phase 26 Canonicalize Once
+
+on:
+  push:
+    branches: [feat/phase26-merchant-memory-20260823]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  canonicalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/phase26-merchant-memory-20260823
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --global pnpm@10.32.1
+      - run: pnpm install --frozen-lockfile
+      - name: Patch deterministic ranking and release wiring
+        run: |
+          python <<'PY'
+          from pathlib import Path
+          import json
+
+          service = Path('apps/api/app/services/phase26_merchant_memory_service.ts')
+          text = service.read_text()
+          marker = '''function hash(value: unknown) {
+              return createHash("sha256").update(JSON.stringify(stable(value))).digest("hex");
+          }
+          '''
+          addition = '''function hash(value: unknown) {
+              return createHash("sha256").update(JSON.stringify(stable(value))).digest("hex");
+          }
+
+          export function merchantMemoryRetrievalScore(
+              row: { title?: unknown; context?: unknown; lesson?: unknown; confidence?: unknown; strength?: unknown },
+              tokens: string[],
+          ) {
+              const haystack = `${row.title ?? ""} ${row.context ?? ""} ${row.lesson ?? ""}`.toLowerCase();
+              const lexicalRatio = tokens.length === 0 ? 1 : tokens.filter((token) => haystack.includes(token)).length / tokens.length;
+              const lexical = lexicalRatio * 0.5;
+              const confidence = Math.max(0, Math.min(1, Number(row.confidence ?? 0))) * 0.25;
+              const strength = Math.max(0, Math.min(1, Number(row.strength ?? 0))) * 0.25;
+              return {
+                  lexical: Number(lexical.toFixed(8)),
+                  confidence: Number(confidence.toFixed(8)),
+                  strength: Number(strength.toFixed(8)),
+                  total: Number((lexical + confidence + strength).toFixed(8)),
+              };
+          }
+          '''
+          if 'merchantMemoryRetrievalScore' not in text:
+              if marker not in text: raise SystemExit('hash marker missing')
+              text = text.replace(marker, addition)
+
+          old = '''    const rows = await query
+              .orderBy("strength", "desc")
+              .orderBy("confidence", "desc")
+              .orderBy("relevant_from", "desc")
+              .limit(limit);
+              const groupedSources = await sourceRows(rows.map((row) => Number(row.id)));
+              const publicIds = rows.map((row) => String(row.public_id));
+          '''
+          new = '''    const candidateRows = await query
+              .orderBy("strength", "desc")
+              .orderBy("confidence", "desc")
+              .orderBy("relevant_from", "desc")
+              .limit(300);
+              const ranked = candidateRows
+                  .map((row) => ({ row, score: merchantMemoryRetrievalScore(row, tokens) }))
+                  .sort((a, b) => b.score.total - a.score.total || Number(b.row.id) - Number(a.row.id))
+                  .slice(0, limit);
+              const rows = ranked.map(({ row }) => row);
+              const scores = new Map(ranked.map(({ row, score }) => [Number(row.id), score]));
+              const groupedSources = await sourceRows(rows.map((row) => Number(row.id)));
+              const publicIds = rows.map((row) => String(row.public_id));
+          '''
+          if old in text:
+              text = text.replace(old, new)
+          elif 'const candidateRows = await query' not in text:
+              raise SystemExit('ranking query marker missing')
+
+          text = text.replace('principal_id: String(actor.id),', 'principal_id: input.consumer === "agent" ? input.agent_principal_key : String(actor.id),')
+          old_return = 'memories: rows.map((row) => ({ ...row, sources: groupedSources.get(Number(row.id)) ?? [] })), '
+          if old_return in text:
+              text = text.replace(old_return, 'memories: rows.map((row) => ({ ...row, retrieval_score: scores.get(Number(row.id))?.total ?? 0, score_components: scores.get(Number(row.id)) ?? null, sources: groupedSources.get(Number(row.id)) ?? [] })), ')
+          else:
+              text = text.replace('memories: rows.map((row) => ({ ...row, sources: groupedSources.get(Number(row.id)) ?? [] })),', 'memories: rows.map((row) => ({ ...row, retrieval_score: scores.get(Number(row.id))?.total ?? 0, score_components: scores.get(Number(row.id)) ?? null, sources: groupedSources.get(Number(row.id)) ?? [] })),')
+          service.write_text(text)
+
+          package_path = Path('docs/api/package.json')
+          pkg = json.loads(package_path.read_text())
+          scripts = pkg['scripts']
+          scripts['build:json:admin-phase26'] = 'redocly bundle reference/openapi/admin.phase26.v1.yaml -o dist/admin.phase26.v1.json --ext json'
+          chain = scripts['build:json:admin']
+          if 'build:json:admin-phase26' not in chain:
+              chain = chain.replace('pnpm build:json:admin-phase25 &&', 'pnpm build:json:admin-phase25 && pnpm build:json:admin-phase26 &&')
+          scripts['build:json:admin'] = chain
+          package_path.write_text(json.dumps(pkg, ensure_ascii=False, indent=4) + '\n')
+
+          merge = Path('docs/api/scripts/merge-admin-spec.js')
+          m = merge.read_text()
+          if 'const phase26 =' not in m:
+              m = m.replace('const phase25 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase25.v1.json"), "utf8"));', 'const phase25 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase25.v1.json"), "utf8"));\nconst phase26 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase26.v1.json"), "utf8"));')
+          if '[phase26, "Phase26MerchantMemoryOverlay"]' not in m:
+              m = m.replace('[phase25, "Phase25GrowthPortfolioOverlay"],', '[phase25, "Phase25GrowthPortfolioOverlay"],\n    [phase26, "Phase26MerchantMemoryOverlay"],')
+          merge.write_text(m)
+
+          sidebar = Path('apps/admin/src/components/Sidebar.tsx')
+          s = sidebar.read_text()
+          item = '            { href: "/analytics/merchant-memory", label: "حافظه سازمانی", icon: Library },\n'
+          if '/analytics/merchant-memory' not in s:
+              anchor = '            { href: "/analytics/growth-portfolio", label: "سبد رشد خودکار", icon: TrendingUp },\n'
+              if anchor not in s: raise SystemExit('sidebar anchor missing')
+              s = s.replace(anchor, anchor + item)
+          sidebar.write_text(s)
+
+          verifier = Path('scripts/verify-phase26-merchant-memory.mjs')
+          v = verifier.read_text()
+          additions = '''
+          must(service.includes("merchantMemoryRetrievalScore") && service.includes("score_components"), "deterministic retrieval score explanation missing");
+          must(service.includes("agent_principal_key"), "agent principal linkage missing");
+          must(read("apps/api/app/controllers/admin/merchant_memory_controller.ts").includes("requireApprovedAgentPrincipal"), "approved agent principal gate missing");
+          must(read("apps/admin/src/components/Sidebar.tsx").includes("/analytics/merchant-memory"), "Phase 26 navigation missing");
+          must(read("docs/api/reference/openapi/admin.phase26.v1.yaml").includes("/api/v1/admin/merchant-memory/retrievals/{publicId}/effectiveness"), "Phase 26 OpenAPI retrieval effectiveness missing");
+          '''
+          if 'deterministic retrieval score explanation missing' not in v:
+              v = v.replace('console.log("PASS Phase26 Merchant Memory integrity gate");', additions + '\nconsole.log("PASS Phase26 Merchant Memory integrity gate");')
+          verifier.write_text(v)
+          PY
+      - name: Canonical format
+        run: pnpm exec biome check --write apps/api/app/services/phase26_merchant_memory_service.ts apps/api/tests/unit/phase26_merchant_memory_ranking.spec.ts apps/admin/src/features/merchant-memory/MerchantMemoryWorkspace.tsx apps/admin/src/lib/queries/merchant-memory.ts apps/admin/src/components/Sidebar.tsx docs/api/scripts/merge-admin-spec.js scripts/verify-phase26-merchant-memory.mjs
+      - name: Phase 26 static gate
+        run: node scripts/verify-phase26-merchant-memory.mjs
+      - name: Phase 26 ranking unit test
+        run: pnpm --filter @calibra/api exec node ace test --files='tests/unit/phase26_merchant_memory_ranking.spec.ts'
+      - name: API typecheck
+        run: pnpm --filter @calibra/api run typecheck
+      - name: Admin typecheck
+        run: pnpm --filter @calibra/admin run typecheck
+      - name: Build merged Admin OpenAPI
+        run: pnpm --filter @calibra/api-docs run build:json:admin
+      - name: Generate canonical SDK
+        run: pnpm --filter @calibra/sdk run generate:admin
+      - name: Commit canonical Phase 26 output and remove workflow
+        run: |
+          rm .github/workflows/phase26-canonicalize-once.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "feat(phase26): canonicalize memory retrieval and contracts"
+          git push origin HEAD:feat/phase26-merchant-memory-20260823
