@@ -1,0 +1,35 @@
+name: Phase 24 Synthetic Commerce Integrity
+
+on:
+  pull_request:
+    paths:
+      - "apps/api/app/controllers/admin/synthetic_commerce_controller.ts"
+      - "apps/api/app/services/phase24_synthetic_commerce_service.ts"
+      - "apps/api/app/validators/admin/phase24_synthetic_commerce_validator.ts"
+      - "apps/api/start/routes/admin_synthetic_commerce.ts"
+      - "apps/api/database/migrations/1777000000000_create_synthetic_commerce_lab.ts"
+      - "apps/admin/src/features/synthetic-commerce/**"
+      - "apps/admin/src/lib/queries/synthetic-commerce.ts"
+      - "apps/admin/src/app/**/analytics/pre-production-lab/**"
+      - "apps/admin/e2e/phase24-synthetic-commerce.spec.ts"
+      - "docs/api/reference/openapi/admin.phase24.v1.yaml"
+      - "scripts/verify-phase24-synthetic-commerce.mjs"
+      - ".github/workflows/phase24-synthetic-commerce-check.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/api/app/controllers/admin/synthetic_commerce_controller.ts"
+      - "apps/api/app/services/phase24_synthetic_commerce_service.ts"
+      - "apps/api/database/migrations/1777000000000_create_synthetic_commerce_lab.ts"
+      - "scripts/verify-phase24-synthetic-commerce.mjs"
+
+jobs:
+  integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify synthetic isolation, deterministic seeds and evidence contracts
+        run: node scripts/verify-phase24-synthetic-commerce.mjs
