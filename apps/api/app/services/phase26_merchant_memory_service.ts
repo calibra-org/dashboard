@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
+
 import { Exception } from "@adonisjs/core/exceptions";
 import { DateTime } from "luxon";
 
@@ -19,60 +20,80 @@ export const MEMORY_CLASSES = [
 ] as const;
 
 export type MemoryClass = (typeof MEMORY_CLASSES)[number];
-export type MemorySensitivity = "internal" | "restricted" | "confidential";
-export type MemorySubjectScope = "merchant" | "aggregate" | "segment" | "supplier" | "product" | "process" | "policy";
+export type MemorySensitivity = "aggregated" | "internal" | "restricted";
 
-export type MemorySourceInput = {
-    source_domain: "decision_intelligence" | "governance" | "experimentation" | "orchestration" | "growth_portfolio" | "audit";
-    source_kind: string;
-    source_id?: string | null;
-    source_route?: string | null;
-    source_version?: string | null;
-    evidence_role?: "primary" | "supporting" | "contradicting" | "outcome";
-    evidence_snapshot?: Record<string, unknown>;
-    freshness_at: string;
+type MemorySourceInput = {
+    source_kind:
+        | "decision"
+        | "outcome"
+        | "approval"
+        | "experiment"
+        | "portfolio"
+        | "incident"
+        | "audit"
+        | "operator";
+    source_table: string;
+    source_id: string;
+    source_public_id?: string | null;
+    evidence_hash?: string | null;
+    evidence_role?: "primary" | "supporting" | "contradicting";
+    observed_at?: string | null;
 };
 
-export type CreateMemoryInput = {
+type CreateMemoryInput = {
     memory_class: MemoryClass;
-    subject_scope: MemorySubjectScope;
+    subject_type?: string | null;
     subject_key?: string | null;
-    title: string;
-    context?: Record<string, unknown>;
+    context: string;
     observed_signals?: unknown[];
     decision?: string | null;
     reason?: string | null;
     alternatives_rejected?: unknown[];
-    actor_snapshot?: Record<string, unknown>;
-    approval_references?: unknown[];
-    action_snapshot?: Record<string, unknown>;
-    outcome_snapshot?: Record<string, unknown>;
+    actors_and_approvals?: unknown[];
+    action?: string | null;
+    outcome?: string | null;
     lesson: string;
     confidence: number;
     strength: number;
     sensitivity?: MemorySensitivity;
-    retention_class?: "short" | "standard" | "extended" | "legal_hold";
-    minimum_role?: "admin" | "agent";
+    required_permission?: string | null;
     relevant_from?: string;
     expires_at?: string | null;
     sources: MemorySourceInput[];
 };
 
-export type RetrieveMemoryInput = {
+type RetrieveMemoryInput = {
     query: string;
-    purpose: string;
-    requester_kind: "human" | "agent" | "system";
-    requester_id?: string | null;
-    clearance?: MemorySensitivity;
+    principal_kind: "admin" | "copilot" | "automation";
+    principal_id?: string | null;
     memory_classes?: MemoryClass[];
-    subject_scope?: MemorySubjectScope;
-    subject_key?: string;
-    min_confidence?: number;
+    subject_type?: string | null;
+    subject_key?: string | null;
+    permissions?: string[];
+    include_restricted?: boolean;
     limit?: number;
 };
 
+type EffectivenessInput = {
+    retrieval_public_id: string;
+    memory_public_id?: string | null;
+    outcome: "used" | "ignored" | "misleading" | "prevented_repeat_error" | "unknown";
+    usefulness?: number | null;
+    repeat_error_avoided?: boolean | null;
+    notes?: string | null;
+};
+
 const tenantId = () => Number(currentTenantId());
-const sensitivityRank: Record<MemorySensitivity, number> = { internal: 0, restricted: 1, confidential: 2 };
+
+const json = <T>(value: T | string | null | undefined, fallback: T): T => {
+    if (value == null) return fallback;
+    if (typeof value !== "string") return value;
+    try {
+        return JSON.parse(value) as T;
+    } catch {
+        return fallback;
+    }
+};
 
 function stable(value: unknown): unknown {
     if (Array.isArray(value)) return value.map(stable);
@@ -88,65 +109,83 @@ function hash(value: unknown) {
     return createHash("sha256").update(JSON.stringify(stable(value))).digest("hex");
 }
 
-function json<T>(value: T | string | null | undefined, fallback: T): T {
-    if (value == null) return fallback;
-    if (typeof value !== "string") return value;
-    try {
-        return JSON.parse(value) as T;
-    } catch {
-        return fallback;
-    }
+function parseMoment(value: string | null | undefined, fallbackNow = false) {
+    if (!value && fallbackNow) return DateTime.utc();
+    if (!value) return null;
+    const parsed = DateTime.fromISO(value, { setZone: true }).toUTC();
+    return parsed.isValid ? parsed : null;
 }
 
 function assertPrivacyBoundary(input: CreateMemoryInput) {
     if (!input.sources.length) {
-        throw new Exception("Merchant memory requires at least one source-linked evidence reference", {
+        throw new Exception("Merchant memory requires source-linked evidence", {
             status: 422,
             code: "E_MERCHANT_MEMORY_SOURCE_REQUIRED",
         });
     }
-    if (input.subject_key?.toLowerCase().startsWith("customer:")) {
-        throw new Exception("Raw customer-level memory is forbidden; store an aggregated or segment-level learned fact", {
+
+    const subjectType = input.subject_type?.trim().toLowerCase();
+    if (subjectType === "customer" || subjectType === "customer_id" || input.subject_key?.toLowerCase().startsWith("customer:")) {
+        throw new Exception("Raw customer-level durable memory is forbidden; use an aggregated segment lesson", {
             status: 422,
             code: "E_MERCHANT_MEMORY_RAW_CUSTOMER_FORBIDDEN",
         });
     }
-    if (input.subject_scope === "segment" && !input.subject_key) {
-        throw new Exception("Segment memory requires a stable segment subject key", {
+
+    if (input.memory_class === "customer_segment_behavior" && subjectType && subjectType !== "segment") {
+        throw new Exception("Customer behavior memory must be aggregated at segment scope", {
             status: 422,
-            code: "E_MERCHANT_MEMORY_SUBJECT_REQUIRED",
+            code: "E_MERCHANT_MEMORY_SEGMENT_SCOPE_REQUIRED",
         });
     }
-    const relevant = DateTime.fromISO(input.relevant_from ?? DateTime.utc().toISO());
-    const expires = input.expires_at ? DateTime.fromISO(input.expires_at) : null;
-    if (!relevant.isValid || (expires && (!expires.isValid || expires <= relevant))) {
-        throw new Exception("Memory relevance and expiry timestamps are invalid", {
+
+    const relevant = parseMoment(input.relevant_from, true)!;
+    const expires = parseMoment(input.expires_at);
+    if (input.relevant_from && !parseMoment(input.relevant_from)) {
+        throw new Exception("Invalid relevant_from timestamp", { status: 422, code: "E_MERCHANT_MEMORY_RELEVANCE_INVALID" });
+    }
+    if (input.expires_at && !expires) {
+        throw new Exception("Invalid expires_at timestamp", { status: 422, code: "E_MERCHANT_MEMORY_EXPIRY_INVALID" });
+    }
+    if (expires && expires <= relevant) {
+        throw new Exception("Memory expiry must be after relevance start", {
             status: 422,
             code: "E_MERCHANT_MEMORY_EXPIRY_INVALID",
         });
     }
 }
 
+async function expireDueMemories() {
+    const now = DateTime.utc().toSQL();
+    await currentTrx()
+        .from("merchant_memory_records")
+        .where({ tenant_id: tenantId(), status: "active" })
+        .whereNotNull("expires_at")
+        .where("expires_at", "<=", now)
+        .update({ status: "expired", updated_at: now });
+}
+
 async function requireMemory(publicId: string) {
+    await expireDueMemories();
     const row = await currentTrx()
-        .from("merchant_memories")
+        .from("merchant_memory_records")
         .where({ tenant_id: tenantId(), public_id: publicId })
         .first();
     if (!row) throw new Exception("Merchant memory not found", { status: 404, code: "E_MERCHANT_MEMORY_NOT_FOUND" });
     return row;
 }
 
-async function sourcesFor(memoryIds: number[]) {
-    if (!memoryIds.length) return new Map<number, unknown[]>();
+async function sourceMap(memoryIds: number[]) {
+    const grouped = new Map<number, unknown[]>();
+    if (!memoryIds.length) return grouped;
     const rows = await currentTrx()
         .from("merchant_memory_sources")
         .where("tenant_id", tenantId())
         .whereIn("memory_id", memoryIds)
-        .orderBy("freshness_at", "desc");
-    const grouped = new Map<number, unknown[]>();
+        .orderBy("observed_at", "desc");
     for (const row of rows) {
         const id = Number(row.memory_id);
-        grouped.set(id, [...(grouped.get(id) ?? []), { ...row, evidence_snapshot: json(row.evidence_snapshot, {}) }]);
+        grouped.set(id, [...(grouped.get(id) ?? []), row]);
     }
     return grouped;
 }
@@ -154,182 +193,207 @@ async function sourcesFor(memoryIds: number[]) {
 export async function createMemory(input: CreateMemoryInput, actor: User) {
     assertPrivacyBoundary(input);
     const trx = currentTrx();
-    const now = DateTime.utc().toSQL();
-    const relevantFrom = DateTime.fromISO(input.relevant_from ?? DateTime.utc().toISO()).toUTC().toSQL();
-    const expiresAt = input.expires_at ? DateTime.fromISO(input.expires_at).toUTC().toSQL() : null;
-    const rows = await trx
-        .table("merchant_memories")
+    const now = DateTime.utc();
+    const relevantFrom = parseMoment(input.relevant_from, true)!;
+    const expiresAt = parseMoment(input.expires_at);
+    const publicId = randomUUID();
+
+    const [memory] = await trx
+        .table("merchant_memory_records")
         .insert({
-            public_id: randomUUID(),
+            public_id: publicId,
             tenant_id: tenantId(),
             memory_class: input.memory_class,
-            subject_scope: input.subject_scope,
+            subject_type: input.subject_type ?? null,
             subject_key: input.subject_key ?? null,
-            title: input.title,
-            context: JSON.stringify(input.context ?? {}),
+            context: input.context,
             observed_signals: JSON.stringify(input.observed_signals ?? []),
             decision: input.decision ?? null,
             reason: input.reason ?? null,
             alternatives_rejected: JSON.stringify(input.alternatives_rejected ?? []),
-            actor_snapshot: JSON.stringify(input.actor_snapshot ?? { user_id: Number(actor.id) }),
-            approval_references: JSON.stringify(input.approval_references ?? []),
-            action_snapshot: JSON.stringify(input.action_snapshot ?? {}),
-            outcome_snapshot: JSON.stringify(input.outcome_snapshot ?? {}),
+            actors_and_approvals: JSON.stringify(input.actors_and_approvals ?? []),
+            action: input.action ?? null,
+            outcome: input.outcome ?? null,
             lesson: input.lesson,
             confidence: input.confidence,
             strength: input.strength,
-            sensitivity: input.sensitivity ?? "internal",
-            retention_class: input.retention_class ?? "standard",
-            minimum_role: input.minimum_role ?? "admin",
-            relevant_from: relevantFrom,
-            expires_at: expiresAt,
-            last_confirmed_at: now,
             status: "active",
-            version: 1,
+            sensitivity: input.sensitivity ?? "aggregated",
+            required_permission: input.required_permission ?? null,
+            relevant_from: relevantFrom.toSQL(),
+            expires_at: expiresAt?.toSQL() ?? null,
+            superseded_at: null,
             created_by_user_id: actor.id,
-            created_at: now,
-            updated_at: now,
+            created_at: now.toSQL(),
+            updated_at: now.toSQL(),
         })
         .returning("*");
-    const memory = rows[0];
+
     for (const source of input.sources) {
         await trx.table("merchant_memory_sources").insert({
             tenant_id: tenantId(),
             memory_id: memory.id,
-            source_domain: source.source_domain,
             source_kind: source.source_kind,
-            source_id: source.source_id ?? null,
-            source_route: source.source_route ?? null,
-            source_version: source.source_version ?? null,
+            source_table: source.source_table,
+            source_id: source.source_id,
+            source_public_id: source.source_public_id ?? null,
+            evidence_hash: source.evidence_hash ?? null,
             evidence_role: source.evidence_role ?? "supporting",
-            content_hash: hash(source.evidence_snapshot ?? {}),
-            evidence_snapshot: JSON.stringify(source.evidence_snapshot ?? {}),
-            freshness_at: DateTime.fromISO(source.freshness_at).toUTC().toSQL(),
-            created_at: now,
+            observed_at: parseMoment(source.observed_at)?.toSQL() ?? null,
+            created_at: now.toSQL(),
         });
     }
-    return memoryDetail(memory.public_id);
+
+    return memoryDetail(publicId);
 }
 
 export async function memoryDetail(publicId: string) {
     const memory = await requireMemory(publicId);
-    const sources = await currentTrx()
+    const trx = currentTrx();
+    const sources = await trx
         .from("merchant_memory_sources")
         .where({ tenant_id: tenantId(), memory_id: memory.id })
-        .orderBy("freshness_at", "desc");
-    const predecessors = await currentTrx()
+        .orderBy("created_at", "asc");
+    const predecessors = await trx
         .from("merchant_memory_lineage as l")
-        .join("merchant_memories as p", "p.id", "l.predecessor_memory_id")
-        .where({ "l.tenant_id": tenantId(), "l.memory_id": memory.id })
-        .select("l.relationship", "l.reason_kind", "l.reason", "p.public_id", "p.title", "p.status");
-    const successors = await currentTrx()
+        .join("merchant_memory_records as p", "p.id", "l.from_memory_id")
+        .where({ "l.tenant_id": tenantId(), "l.to_memory_id": memory.id })
+        .select("l.relation", "l.reason", "p.public_id", "p.lesson", "p.status");
+    const successors = await trx
         .from("merchant_memory_lineage as l")
-        .join("merchant_memories as m", "m.id", "l.memory_id")
-        .where({ "l.tenant_id": tenantId(), "l.predecessor_memory_id": memory.id })
-        .select("l.relationship", "l.reason_kind", "l.reason", "m.public_id", "m.title", "m.status");
-    return { ...memory, sources, lineage: { predecessors, successors } };
+        .join("merchant_memory_records as n", "n.id", "l.to_memory_id")
+        .where({ "l.tenant_id": tenantId(), "l.from_memory_id": memory.id })
+        .select("l.relation", "l.reason", "n.public_id", "n.lesson", "n.status");
+    return {
+        ...memory,
+        observed_signals: json(memory.observed_signals, []),
+        alternatives_rejected: json(memory.alternatives_rejected, []),
+        actors_and_approvals: json(memory.actors_and_approvals, []),
+        sources,
+        lineage: { predecessors, successors },
+    };
 }
 
 export async function listMemories(filters: {
     memory_class?: MemoryClass;
-    status?: "active" | "superseded" | "expired" | "revoked";
-    subject_scope?: MemorySubjectScope;
+    status?: string;
+    subject_type?: string;
     subject_key?: string;
-    limit?: number;
 } = {}) {
-    const query = currentTrx().from("merchant_memories").where("tenant_id", tenantId());
+    await expireDueMemories();
+    const query = currentTrx().from("merchant_memory_records").where("tenant_id", tenantId());
     if (filters.memory_class) query.where("memory_class", filters.memory_class);
     if (filters.status) query.where("status", filters.status);
-    if (filters.subject_scope) query.where("subject_scope", filters.subject_scope);
+    if (filters.subject_type) query.where("subject_type", filters.subject_type);
     if (filters.subject_key) query.where("subject_key", filters.subject_key);
-    return query.orderBy("relevant_from", "desc").limit(Math.min(200, Math.max(1, filters.limit ?? 100)));
+    return query.orderBy("relevant_from", "desc").limit(200);
 }
 
-export async function retrieveMemories(input: RetrieveMemoryInput) {
+function lexicalScore(row: Record<string, unknown>, tokens: string[]) {
+    if (!tokens.length) return 1;
+    const haystack = `${row.context ?? ""} ${row.decision ?? ""} ${row.reason ?? ""} ${row.lesson ?? ""}`.toLowerCase();
+    const hits = tokens.filter((token) => haystack.includes(token)).length;
+    return hits / tokens.length;
+}
+
+export async function retrieveMemories(input: RetrieveMemoryInput, actor: User) {
+    await expireDueMemories();
     const trx = currentTrx();
-    const now = DateTime.utc().toSQL();
-    const clearance = input.clearance ?? "internal";
+    const permissions = new Set(input.permissions ?? []);
     const limit = Math.min(50, Math.max(1, input.limit ?? 12));
-    const base = trx.from("merchant_memories").where({ tenant_id: tenantId(), status: "active" });
-    const expired = await base.clone().whereNotNull("expires_at").where("expires_at", "<=", now).count("* as c").first();
-    const superseded = await trx
-        .from("merchant_memories")
-        .where({ tenant_id: tenantId(), status: "superseded" })
-        .count("* as c")
-        .first();
-    const query = base
-        .clone()
-        .where((builder) => builder.whereNull("expires_at").orWhere("expires_at", ">", now))
-        .whereExists(
-            trx
-                .from("merchant_memory_sources")
-                .select(trx.raw("1"))
-                .whereRaw("merchant_memory_sources.memory_id = merchant_memories.id")
-                .whereRaw("merchant_memory_sources.tenant_id = merchant_memories.tenant_id"),
-        );
-    if (input.memory_classes?.length) query.whereIn("memory_class", input.memory_classes);
-    if (input.subject_scope) query.where("subject_scope", input.subject_scope);
-    if (input.subject_key) query.where("subject_key", input.subject_key);
-    if (input.min_confidence != null) query.where("confidence", ">=", input.min_confidence);
-    if (input.requester_kind === "agent") query.where("minimum_role", "agent");
-    const allowedSensitivities = (Object.keys(sensitivityRank) as MemorySensitivity[]).filter(
-        (sensitivity) => sensitivityRank[sensitivity] <= sensitivityRank[clearance],
-    );
-    const permissionFiltered = await query
-        .clone()
-        .whereNotIn("sensitivity", allowedSensitivities)
-        .count("* as c")
-        .first();
-    query.whereIn("sensitivity", allowedSensitivities);
     const tokens = input.query
         .trim()
         .toLowerCase()
         .split(/\s+/)
         .filter((token) => token.length >= 2)
-        .slice(0, 8);
-    if (tokens.length) {
-        query.where((builder) => {
-            for (const token of tokens) {
-                builder.orWhereILike("title", `%${token}%`).orWhereILike("lesson", `%${token}%`);
-            }
-        });
-    }
-    const rows = await query.orderBy("strength", "desc").orderBy("confidence", "desc").orderBy("relevant_from", "desc").limit(limit);
-    const groupedSources = await sourcesFor(rows.map((row) => Number(row.id)));
-    const eventRows = await trx
-        .table("merchant_memory_retrieval_events")
+        .slice(0, 12);
+
+    const allActive = trx.from("merchant_memory_records").where({ tenant_id: tenantId(), status: "active" });
+    if (input.memory_classes?.length) allActive.whereIn("memory_class", input.memory_classes);
+    if (input.subject_type) allActive.where("subject_type", input.subject_type);
+    if (input.subject_key) allActive.where("subject_key", input.subject_key);
+
+    const candidates = await allActive
+        .clone()
+        .whereExists(
+            trx
+                .from("merchant_memory_sources")
+                .select(trx.raw("1"))
+                .whereRaw("merchant_memory_sources.memory_id = merchant_memory_records.id")
+                .whereRaw("merchant_memory_sources.tenant_id = merchant_memory_records.tenant_id"),
+        )
+        .orderBy("strength", "desc")
+        .orderBy("confidence", "desc")
+        .limit(300);
+
+    let permissionFiltered = 0;
+    const allowed = candidates.filter((row) => {
+        if (row.sensitivity === "restricted" && !input.include_restricted) {
+            permissionFiltered += 1;
+            return false;
+        }
+        if (row.required_permission && !permissions.has(String(row.required_permission))) {
+            permissionFiltered += 1;
+            return false;
+        }
+        return true;
+    });
+
+    const ranked = allowed
+        .map((row) => ({
+            row,
+            score:
+                lexicalScore(row, tokens) * 0.5 +
+                Number(row.confidence ?? 0) * 0.25 +
+                Number(row.strength ?? 0) * 0.25,
+        }))
+        .filter(({ score }) => tokens.length === 0 || score > 0.5)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, limit);
+
+    const ids = ranked.map(({ row }) => Number(row.id));
+    const sources = await sourceMap(ids);
+    const retrievalPublicId = randomUUID();
+    const [retrieval] = await trx
+        .table("merchant_memory_retrievals")
         .insert({
-            public_id: randomUUID(),
+            public_id: retrievalPublicId,
             tenant_id: tenantId(),
-            requester_kind: input.requester_kind,
-            requester_id: input.requester_id ?? null,
-            purpose: input.purpose,
-            query_hash: hash({ query: input.query.trim().toLowerCase(), filters: input, engine: MERCHANT_MEMORY_VERSION }),
-            query_features: JSON.stringify({
+            principal_kind: input.principal_kind,
+            principal_id: input.principal_id ?? String(actor.id),
+            query: input.query,
+            filters: JSON.stringify({
                 memory_classes: input.memory_classes ?? [],
-                subject_scope: input.subject_scope ?? null,
+                subject_type: input.subject_type ?? null,
                 subject_key: input.subject_key ?? null,
-                min_confidence: input.min_confidence ?? null,
+                permissions: [...permissions].sort(),
+                include_restricted: input.include_restricted ?? false,
                 engine_version: MERCHANT_MEMORY_VERSION,
+                query_hash: hash(input.query.trim().toLowerCase()),
             }),
-            retrieved_memory_ids: JSON.stringify(rows.map((row) => Number(row.id))),
-            result_count: rows.length,
-            expired_filtered_count: Number(expired?.c ?? 0),
-            permission_filtered_count: Number(permissionFiltered?.c ?? 0),
-            superseded_filtered_count: Number(superseded?.c ?? 0),
-            created_at: now,
+            returned_memory_ids: JSON.stringify(ids),
+            result_count: ids.length,
+            source_linked_count: ranked.filter(({ row }) => (sources.get(Number(row.id)) ?? []).length > 0).length,
+            expired_filtered_count: 0,
+            permission_filtered_count: permissionFiltered,
+            retrieved_at: DateTime.utc().toSQL(),
         })
         .returning("*");
+
     return {
-        retrieval_event_id: eventRows[0].public_id,
+        retrieval_public_id: retrieval.public_id,
         engine_version: MERCHANT_MEMORY_VERSION,
-        memories: rows.map((row) => ({ ...row, sources: groupedSources.get(Number(row.id)) ?? [] })),
+        memories: ranked.map(({ row, score }) => ({
+            ...row,
+            retrieval_score: Number(score.toFixed(6)),
+            sources: sources.get(Number(row.id)) ?? [],
+        })),
     };
 }
 
 export async function supersedeMemory(
     predecessorPublicId: string,
-    input: CreateMemoryInput & { reason_kind: "new_evidence" | "market_change" | "policy_change" | "correction" | "expiry_refresh"; supersession_reason: string },
+    input: CreateMemoryInput & { relation?: "supersedes" | "contradicts" | "refines"; supersession_reason: string },
     actor: User,
 ) {
     const predecessor = await requireMemory(predecessorPublicId);
@@ -339,115 +403,114 @@ export async function supersedeMemory(
             code: "E_MERCHANT_MEMORY_NOT_ACTIVE",
         });
     }
-    if (predecessor.memory_class !== input.memory_class || predecessor.subject_scope !== input.subject_scope) {
-        throw new Exception("Superseding memory must preserve class and subject scope lineage", {
+    if (predecessor.memory_class !== input.memory_class) {
+        throw new Exception("Superseding memory must preserve memory class", {
             status: 422,
-            code: "E_MERCHANT_MEMORY_LINEAGE_MISMATCH",
+            code: "E_MERCHANT_MEMORY_LINEAGE_CLASS_MISMATCH",
         });
     }
-    const next = await createMemory(input, actor);
-    const successor = await requireMemory(next.public_id);
+
+    const successor = await createMemory(input, actor);
+    const next = await requireMemory(successor.public_id);
     const now = DateTime.utc().toSQL();
-    await currentTrx()
-        .table("merchant_memory_lineage")
-        .insert({
-            tenant_id: tenantId(),
-            memory_id: successor.id,
-            predecessor_memory_id: predecessor.id,
-            relationship: "supersedes",
-            reason_kind: input.reason_kind,
-            reason: input.supersession_reason,
-            created_at: now,
-            created_by_user_id: actor.id,
+    await currentTrx().table("merchant_memory_lineage").insert({
+        tenant_id: tenantId(),
+        from_memory_id: predecessor.id,
+        to_memory_id: next.id,
+        relation: input.relation ?? "supersedes",
+        reason: input.supersession_reason,
+        created_by_user_id: actor.id,
+        created_at: now,
+    });
+    if ((input.relation ?? "supersedes") === "supersedes") {
+        await currentTrx()
+            .from("merchant_memory_records")
+            .where({ tenant_id: tenantId(), id: predecessor.id })
+            .update({ status: "superseded", superseded_at: now, updated_at: now });
+    }
+    return memoryDetail(successor.public_id);
+}
+
+export async function recordEffectiveness(recordPublicId: string, input: EffectivenessInput, actor: User) {
+    const memory = await requireMemory(recordPublicId);
+    if (input.memory_public_id && input.memory_public_id !== recordPublicId) {
+        throw new Exception("Effectiveness memory identifier does not match the route", {
+            status: 422,
+            code: "E_MERCHANT_MEMORY_EFFECTIVENESS_SCOPE",
         });
-    await currentTrx()
-        .from("merchant_memories")
-        .where({ tenant_id: tenantId(), id: predecessor.id })
-        .update({ status: "superseded", updated_at: now });
-    return memoryDetail(next.public_id);
-}
-
-export async function expireDueMemories() {
-    const now = DateTime.utc().toSQL();
-    const count = await currentTrx()
-        .from("merchant_memories")
-        .where({ tenant_id: tenantId(), status: "active" })
-        .whereNotNull("expires_at")
-        .where("expires_at", "<=", now)
-        .update({ status: "expired", updated_at: now });
-    return { expired: Number(count) };
-}
-
-export async function recordRetrievalFeedback(
-    retrievalPublicId: string,
-    input: {
-        feedback_kind: "useful" | "not_useful" | "applied" | "ignored" | "harmful";
-        usefulness_score?: number | null;
-        repeat_error_prevented?: boolean | null;
-        decision_changed?: boolean | null;
-        applied_memory_ids?: number[];
-        notes?: string | null;
-    },
-    actor: User,
-) {
-    const trx = currentTrx();
-    const event = await trx
-        .from("merchant_memory_retrieval_events")
-        .where({ tenant_id: tenantId(), public_id: retrievalPublicId })
+    }
+    const retrieval = await currentTrx()
+        .from("merchant_memory_retrievals")
+        .where({ tenant_id: tenantId(), public_id: input.retrieval_public_id })
         .first();
-    if (!event) {
-        throw new Exception("Merchant memory retrieval event not found", {
+    if (!retrieval) {
+        throw new Exception("Merchant memory retrieval not found", {
             status: 404,
             code: "E_MERCHANT_MEMORY_RETRIEVAL_NOT_FOUND",
         });
     }
-    const retrieved = new Set(json<number[]>(event.retrieved_memory_ids, []).map(Number));
-    const applied = [...new Set((input.applied_memory_ids ?? []).map(Number))];
-    if (applied.some((id) => !retrieved.has(id))) {
-        throw new Exception("Feedback may only reference memories returned by the retrieval event", {
+    const returned = new Set(json<number[]>(retrieval.returned_memory_ids, []).map(Number));
+    if (!returned.has(Number(memory.id))) {
+        throw new Exception("Effectiveness may only reference a memory returned by that retrieval", {
             status: 422,
-            code: "E_MERCHANT_MEMORY_FEEDBACK_SCOPE",
+            code: "E_MERCHANT_MEMORY_EFFECTIVENESS_SCOPE",
         });
     }
-    const rows = await trx
-        .table("merchant_memory_feedback")
+    const [row] = await currentTrx()
+        .table("merchant_memory_effectiveness")
         .insert({
             tenant_id: tenantId(),
-            retrieval_event_id: event.id,
-            feedback_kind: input.feedback_kind,
-            usefulness_score: input.usefulness_score ?? null,
-            repeat_error_prevented: input.repeat_error_prevented ?? null,
-            decision_changed: input.decision_changed ?? null,
-            applied_memory_ids: JSON.stringify(applied),
+            retrieval_id: retrieval.id,
+            memory_id: memory.id,
+            outcome: input.outcome,
+            usefulness: input.usefulness ?? null,
+            repeat_error_avoided: input.repeat_error_avoided ?? null,
             notes: input.notes ?? null,
             recorded_by_user_id: actor.id,
-            created_at: DateTime.utc().toSQL(),
+            recorded_at: DateTime.utc().toSQL(),
         })
         .returning("*");
-    return rows[0];
+    return row;
+}
+
+export async function revokeMemory(publicId: string, actor: User) {
+    const memory = await requireMemory(publicId);
+    if (memory.status === "revoked") return memoryDetail(publicId);
+    const now = DateTime.utc().toSQL();
+    await currentTrx()
+        .from("merchant_memory_records")
+        .where({ tenant_id: tenantId(), id: memory.id })
+        .update({ status: "revoked", updated_at: now, created_by_user_id: memory.created_by_user_id ?? actor.id });
+    return memoryDetail(publicId);
 }
 
 export async function overview() {
+    await expireDueMemories();
     const trx = currentTrx();
     const tenant = tenantId();
-    const now = DateTime.utc().toSQL();
-    const [active, superseded, dueExpiry, retrievals, feedback] = await Promise.all([
-        trx.from("merchant_memories").where({ tenant_id: tenant, status: "active" }).count("* as c").first(),
-        trx.from("merchant_memories").where({ tenant_id: tenant, status: "superseded" }).count("* as c").first(),
+    const [active, superseded, expired, retrievals, sourceCoverage, effectiveness] = await Promise.all([
+        trx.from("merchant_memory_records").where({ tenant_id: tenant, status: "active" }).count("* as c").first(),
+        trx.from("merchant_memory_records").where({ tenant_id: tenant, status: "superseded" }).count("* as c").first(),
+        trx.from("merchant_memory_records").where({ tenant_id: tenant, status: "expired" }).count("* as c").first(),
+        trx.from("merchant_memory_retrievals").where("tenant_id", tenant).count("* as c").first(),
         trx
-            .from("merchant_memories")
-            .where({ tenant_id: tenant, status: "active" })
-            .whereNotNull("expires_at")
-            .where("expires_at", "<=", now)
+            .from("merchant_memory_records as m")
+            .where("m.tenant_id", tenant)
+            .whereExists(
+                trx
+                    .from("merchant_memory_sources as s")
+                    .select(trx.raw("1"))
+                    .whereRaw("s.memory_id = m.id")
+                    .whereRaw("s.tenant_id = m.tenant_id"),
+            )
             .count("* as c")
             .first(),
-        trx.from("merchant_memory_retrieval_events").where("tenant_id", tenant).count("* as c").first(),
         trx
-            .from("merchant_memory_feedback")
+            .from("merchant_memory_effectiveness")
             .where("tenant_id", tenant)
             .select(
-                trx.raw("AVG(usefulness_score) as avg_usefulness"),
-                trx.raw("AVG(CASE WHEN repeat_error_prevented = true THEN 1.0 WHEN repeat_error_prevented = false THEN 0.0 END) as repeat_error_prevention_rate"),
+                trx.raw("AVG(usefulness) as avg_usefulness"),
+                trx.raw("AVG(CASE WHEN repeat_error_avoided = true THEN 1.0 WHEN repeat_error_avoided = false THEN 0.0 END) as repeat_error_avoidance_rate"),
             )
             .first(),
     ]);
@@ -455,10 +518,11 @@ export async function overview() {
         engine_version: MERCHANT_MEMORY_VERSION,
         active_memories: Number(active?.c ?? 0),
         superseded_memories: Number(superseded?.c ?? 0),
-        due_expiry: Number(dueExpiry?.c ?? 0),
+        expired_memories: Number(expired?.c ?? 0),
         retrievals: Number(retrievals?.c ?? 0),
-        avg_usefulness: feedback?.avg_usefulness == null ? null : Number(feedback.avg_usefulness),
-        repeat_error_prevention_rate:
-            feedback?.repeat_error_prevention_rate == null ? null : Number(feedback.repeat_error_prevention_rate),
+        source_linked_memories: Number(sourceCoverage?.c ?? 0),
+        avg_usefulness: effectiveness?.avg_usefulness == null ? null : Number(effectiveness.avg_usefulness),
+        repeat_error_avoidance_rate:
+            effectiveness?.repeat_error_avoidance_rate == null ? null : Number(effectiveness.repeat_error_avoidance_rate),
     };
 }
