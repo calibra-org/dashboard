@@ -1,14 +1,16 @@
 name: Phase 25 Canonicalize Once
 
 on:
-  push:
-    branches: [feat/phase25-growth-portfolio-20260823]
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: write
 
 jobs:
   canonicalize:
+    if: github.event.pull_request.head.ref == 'feat/phase25-growth-portfolio-20260823'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -32,8 +34,7 @@ jobs:
           if addition not in text:
               if anchor not in text:
                   raise SystemExit('Sidebar anchor missing')
-              text = text.replace(anchor, anchor + addition, 1)
-              sidebar.write_text(text)
+              sidebar.write_text(text.replace(anchor, anchor + addition, 1))
 
           package = Path('docs/api/package.json')
           text = package.read_text()
