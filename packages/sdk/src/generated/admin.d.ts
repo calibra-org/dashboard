@@ -11097,6 +11097,167 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/synthetic-commerce/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Synthetic commerce release overview */
+        get: operations["adminSyntheticCommerceOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/synthetic-commerce/environments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminSyntheticCommerceEnvironments"];
+        put?: never;
+        post: operations["adminSyntheticCommerceEnvironmentCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/synthetic-commerce/personas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminSyntheticCommercePersonas"];
+        put?: never;
+        post: operations["adminSyntheticCommercePersonaCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/synthetic-commerce/seeds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminSyntheticCommerceSeeds"];
+        put?: never;
+        post: operations["adminSyntheticCommerceSeedCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/synthetic-commerce/seeds/{publicId}/freeze": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminSyntheticCommerceSeedFreeze"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/synthetic-commerce/scenarios": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminSyntheticCommerceScenarios"];
+        put?: never;
+        post: operations["adminSyntheticCommerceScenarioCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/synthetic-commerce/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminSyntheticCommerceRuns"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/synthetic-commerce/scenarios/{publicId}/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminSyntheticCommerceRunQueue"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/synthetic-commerce/runs/{publicId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminSyntheticCommerceRunDetail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/synthetic-commerce/runs/{publicId}/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminSyntheticCommerceRunReport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -15238,6 +15399,28 @@ export interface components {
                 };
             };
         };
+        /** @description Successful synthetic-commerce response. */
+        OkEnvelope: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": {
+                    data: unknown;
+                };
+            };
+        };
+        /** @description Synthetic-commerce resource created. */
+        CreatedEnvelope: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": {
+                    data: unknown;
+                };
+            };
+        };
     };
     parameters: {
         /** @description 1-indexed page number. Defaults to 1. */
@@ -15282,8 +15465,17 @@ export interface components {
         Id: number;
         QualityOverlayIdempotencyKey: string;
         DigitalTwinPublicId: string;
+        PublicId: string;
     };
-    requestBodies: never;
+    requestBodies: {
+        ObjectBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+    };
     headers: never;
     pathItems: never;
 }
@@ -33559,6 +33751,182 @@ export interface operations {
                 };
                 content?: never;
             };
+        };
+    };
+    adminSyntheticCommerceOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["OkEnvelope"];
+        };
+    };
+    adminSyntheticCommerceEnvironments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["OkEnvelope"];
+        };
+    };
+    adminSyntheticCommerceEnvironmentCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["ObjectBody"];
+        responses: {
+            201: components["responses"]["CreatedEnvelope"];
+        };
+    };
+    adminSyntheticCommercePersonas: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["OkEnvelope"];
+        };
+    };
+    adminSyntheticCommercePersonaCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["ObjectBody"];
+        responses: {
+            201: components["responses"]["CreatedEnvelope"];
+        };
+    };
+    adminSyntheticCommerceSeeds: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["OkEnvelope"];
+        };
+    };
+    adminSyntheticCommerceSeedCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["ObjectBody"];
+        responses: {
+            201: components["responses"]["CreatedEnvelope"];
+        };
+    };
+    adminSyntheticCommerceSeedFreeze: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["OkEnvelope"];
+        };
+    };
+    adminSyntheticCommerceScenarios: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["OkEnvelope"];
+        };
+    };
+    adminSyntheticCommerceScenarioCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["ObjectBody"];
+        responses: {
+            201: components["responses"]["CreatedEnvelope"];
+        };
+    };
+    adminSyntheticCommerceRuns: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["OkEnvelope"];
+        };
+    };
+    adminSyntheticCommerceRunQueue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: components["responses"]["CreatedEnvelope"];
+        };
+    };
+    adminSyntheticCommerceRunDetail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["OkEnvelope"];
+        };
+    };
+    adminSyntheticCommerceRunReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["ObjectBody"];
+        responses: {
+            200: components["responses"]["OkEnvelope"];
         };
     };
 }

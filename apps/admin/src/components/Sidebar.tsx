@@ -94,6 +94,8 @@ const groups: NavGroup[] = [
             { href: "/analytics/taxes", labelKey: "analyticsTaxes", icon: Wallet },
             { href: "/analytics/stock", labelKey: "analyticsStock", icon: Boxes },
             { href: "/analytics/decision-intelligence", label: "هوش تصمیم‌گیری", icon: Sparkles },
+            { href: "/analytics/scenario-war-room", label: "اتاق جنگ سناریو", icon: ChartNoAxesCombined },
+            { href: "/analytics/pre-production-lab", label: "آزمایشگاه پیش‌انتشار", icon: Bug },
             { href: "/experiments", label: "آزمایشگاه آزمایش‌ها", icon: Sparkles },
             { href: "/planning", label: "Planning OS", icon: CalendarClock },
         ],
