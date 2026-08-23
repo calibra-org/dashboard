@@ -1,0 +1,31 @@
+name: Phase 26 Merchant Memory Integrity
+
+on:
+  pull_request:
+    paths:
+      - "apps/api/app/controllers/admin/merchant_memory_controller.ts"
+      - "apps/api/app/services/phase26_merchant_memory_service.ts"
+      - "apps/api/app/validators/admin/phase26_merchant_memory_validator.ts"
+      - "apps/api/database/migrations/1779000000000_create_merchant_memory.ts"
+      - "apps/api/start/routes/admin_merchant_memory.ts"
+      - "apps/api/start/routes.ts"
+      - "scripts/verify-phase26-merchant-memory.mjs"
+      - ".github/workflows/phase26-merchant-memory-check.yml"
+  push:
+    branches:
+      - feat/phase26-merchant-memory-20260823
+
+jobs:
+  integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --global pnpm@10.32.1
+      - run: pnpm install --frozen-lockfile
+      - name: Phase 26 static contract
+        run: node scripts/verify-phase26-merchant-memory.mjs
+      - name: API typecheck
+        run: pnpm --filter @calibra/api run typecheck
