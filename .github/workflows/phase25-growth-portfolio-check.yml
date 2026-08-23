@@ -1,0 +1,35 @@
+name: Phase 25 Growth Portfolio Integrity
+
+on:
+  pull_request:
+    paths:
+      - "apps/api/app/controllers/admin/growth_portfolio_controller.ts"
+      - "apps/api/app/services/phase25_growth_portfolio_service.ts"
+      - "apps/api/app/validators/admin/phase25_growth_portfolio_validator.ts"
+      - "apps/api/start/routes/admin_growth_portfolio.ts"
+      - "apps/api/database/migrations/1778000000000_create_growth_portfolio_engine.ts"
+      - "apps/api/tests/unit/intelligence/growth_portfolio_optimizer.spec.ts"
+      - "apps/admin/src/features/growth-portfolio/**"
+      - "apps/admin/src/lib/queries/growth-portfolio.ts"
+      - "apps/admin/src/app/**/analytics/growth-portfolio/**"
+      - "apps/admin/e2e/phase25-growth-portfolio.spec.ts"
+      - "docs/api/reference/openapi/admin.phase25.v1.yaml"
+      - "scripts/verify-phase25-growth-portfolio.mjs"
+      - ".github/workflows/phase25-growth-portfolio-check.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/api/app/services/phase25_growth_portfolio_service.ts"
+      - "apps/api/database/migrations/1778000000000_create_growth_portfolio_engine.ts"
+      - "scripts/verify-phase25-growth-portfolio.mjs"
+
+jobs:
+  integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify portfolio optimization, policy and governance contracts
+        run: node scripts/verify-phase25-growth-portfolio.mjs

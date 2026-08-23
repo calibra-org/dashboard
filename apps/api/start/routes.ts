@@ -68,6 +68,7 @@ await import("./routes/admin_pricing_brain.js");
 await import("./routes/admin_planning.js");
 await import("./routes/admin_digital_twin.js");
 await import("./routes/admin_synthetic_commerce.js");
+await import("./routes/admin_growth_portfolio.js");
 await import("./routes/admin_procurement.js");
 await import("./routes/admin_quality.js");
 await import("./routes/admin_experiments.js");

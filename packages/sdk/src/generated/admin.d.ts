@@ -11258,6 +11258,215 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/growth-portfolio/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminGrowthPortfolioOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/growth-portfolio/opportunities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read open Phase 10 opportunities and recommendations without copying source authority */
+        get: operations["adminGrowthPortfolioOpportunities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/growth-portfolio/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminGrowthPortfolioPlans"];
+        put?: never;
+        post: operations["adminGrowthPortfolioPlanCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/growth-portfolio/plans/{publicId}/candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminGrowthPortfolioCandidates"];
+        put?: never;
+        post: operations["adminGrowthPortfolioCandidateCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/growth-portfolio/plans/{publicId}/candidates/{candidateId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["adminGrowthPortfolioCandidateDelete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/growth-portfolio/plans/{publicId}/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminGrowthPortfolioRunCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/growth-portfolio/plans/{publicId}/rebalance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminGrowthPortfolioRebalanceCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/growth-portfolio/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminGrowthPortfolioRuns"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/growth-portfolio/runs/{publicId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminGrowthPortfolioRunDetail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/growth-portfolio/runs/{publicId}/outcomes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminGrowthPortfolioOutcomeCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/growth-portfolio/rebalances": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminGrowthPortfolioRebalances"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/growth-portfolio/rebalances/{publicId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminGrowthPortfolioRebalanceDetail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/growth-portfolio/rebalances/{publicId}/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminGrowthPortfolioRebalanceApply"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -15421,6 +15630,28 @@ export interface components {
                 };
             };
         };
+        /** @description Successful growth portfolio response. */
+        Phase25GrowthPortfolioOverlayOkEnvelope: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": {
+                    data: unknown;
+                };
+            };
+        };
+        /** @description Growth portfolio resource created. */
+        Phase25GrowthPortfolioOverlayCreatedEnvelope: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": {
+                    data: unknown;
+                };
+            };
+        };
     };
     parameters: {
         /** @description 1-indexed page number. Defaults to 1. */
@@ -15466,6 +15697,7 @@ export interface components {
         QualityOverlayIdempotencyKey: string;
         DigitalTwinPublicId: string;
         PublicId: string;
+        CandidateId: number;
     };
     requestBodies: {
         ObjectBody: {
@@ -33927,6 +34159,205 @@ export interface operations {
         requestBody: components["requestBodies"]["ObjectBody"];
         responses: {
             200: components["responses"]["OkEnvelope"];
+        };
+    };
+    adminGrowthPortfolioOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Phase25GrowthPortfolioOverlayOkEnvelope"];
+        };
+    };
+    adminGrowthPortfolioOpportunities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Phase25GrowthPortfolioOverlayOkEnvelope"];
+        };
+    };
+    adminGrowthPortfolioPlans: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Phase25GrowthPortfolioOverlayOkEnvelope"];
+        };
+    };
+    adminGrowthPortfolioPlanCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["ObjectBody"];
+        responses: {
+            201: components["responses"]["Phase25GrowthPortfolioOverlayCreatedEnvelope"];
+        };
+    };
+    adminGrowthPortfolioCandidates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Phase25GrowthPortfolioOverlayOkEnvelope"];
+        };
+    };
+    adminGrowthPortfolioCandidateCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["ObjectBody"];
+        responses: {
+            201: components["responses"]["Phase25GrowthPortfolioOverlayCreatedEnvelope"];
+        };
+    };
+    adminGrowthPortfolioCandidateDelete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+                candidateId: components["parameters"]["CandidateId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Phase25GrowthPortfolioOverlayOkEnvelope"];
+        };
+    };
+    adminGrowthPortfolioRunCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: components["responses"]["Phase25GrowthPortfolioOverlayCreatedEnvelope"];
+        };
+    };
+    adminGrowthPortfolioRebalanceCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["ObjectBody"];
+        responses: {
+            201: components["responses"]["Phase25GrowthPortfolioOverlayCreatedEnvelope"];
+        };
+    };
+    adminGrowthPortfolioRuns: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Phase25GrowthPortfolioOverlayOkEnvelope"];
+        };
+    };
+    adminGrowthPortfolioRunDetail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Phase25GrowthPortfolioOverlayOkEnvelope"];
+        };
+    };
+    adminGrowthPortfolioOutcomeCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["ObjectBody"];
+        responses: {
+            201: components["responses"]["Phase25GrowthPortfolioOverlayCreatedEnvelope"];
+        };
+    };
+    adminGrowthPortfolioRebalances: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Phase25GrowthPortfolioOverlayOkEnvelope"];
+        };
+    };
+    adminGrowthPortfolioRebalanceDetail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Phase25GrowthPortfolioOverlayOkEnvelope"];
+        };
+    };
+    adminGrowthPortfolioRebalanceApply: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Phase25GrowthPortfolioOverlayOkEnvelope"];
         };
     };
 }
