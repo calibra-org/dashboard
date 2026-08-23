@@ -25,7 +25,12 @@ export default class extends BaseSchema {
             t.increments("id");
             t.uuid("public_id").notNullable().unique();
             t.integer("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            t.integer("scenario_id").unsigned().notNullable().references("id").inTable("commerce_twin_scenarios").onDelete("CASCADE");
+            t.integer("scenario_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("commerce_twin_scenarios")
+                .onDelete("CASCADE");
             t.integer("scenario_version").notNullable();
             t.string("engine_version", 48).notNullable();
             t.bigInteger("seed").notNullable();
@@ -56,10 +61,18 @@ export default class extends BaseSchema {
             t.unique(["tenant_id", "run_id", "metric_key"]);
         });
 
-        this.schema.raw(`ALTER TABLE commerce_twin_scenarios ADD CONSTRAINT commerce_twin_scenarios_status_check CHECK (status IN ('draft','ready','archived'))`);
-        this.schema.raw(`ALTER TABLE commerce_twin_scenarios ADD CONSTRAINT commerce_twin_scenarios_version_check CHECK (version >= 1)`);
-        this.schema.raw(`ALTER TABLE commerce_twin_runs ADD CONSTRAINT commerce_twin_runs_status_check CHECK (status IN ('completed','failed'))`);
-        this.schema.raw(`ALTER TABLE commerce_twin_results ADD CONSTRAINT commerce_twin_results_quantiles_check CHECK (p90 >= p50 AND p50 >= p10 AND confidence BETWEEN 0 AND 1)`);
+        this.schema.raw(
+            `ALTER TABLE commerce_twin_scenarios ADD CONSTRAINT commerce_twin_scenarios_status_check CHECK (status IN ('draft','ready','archived'))`,
+        );
+        this.schema.raw(
+            `ALTER TABLE commerce_twin_scenarios ADD CONSTRAINT commerce_twin_scenarios_version_check CHECK (version >= 1)`,
+        );
+        this.schema.raw(
+            `ALTER TABLE commerce_twin_runs ADD CONSTRAINT commerce_twin_runs_status_check CHECK (status IN ('completed','failed'))`,
+        );
+        this.schema.raw(
+            `ALTER TABLE commerce_twin_results ADD CONSTRAINT commerce_twin_results_quantiles_check CHECK (p90 >= p50 AND p50 >= p10 AND confidence BETWEEN 0 AND 1)`,
+        );
 
         for (const table of this.tables) {
             this.defer(async (db) => {
