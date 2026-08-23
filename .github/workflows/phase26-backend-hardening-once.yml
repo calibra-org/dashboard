@@ -1,0 +1,86 @@
+name: Phase 26 Backend Hardening Once
+
+on:
+  push:
+    branches:
+      - feat/phase26-merchant-memory-v2-20260823
+
+permissions:
+  contents: write
+
+jobs:
+  harden:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/phase26-merchant-memory-v2-20260823
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --global pnpm@10.32.1
+      - run: pnpm install --frozen-lockfile
+      - name: Harden canonical authorities and metrics
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('apps/api/app/services/phase26_merchant_memory_service.ts')
+          text = path.read_text()
+          old = '''        phase11_approval: async () => trx.from("governance_approval_requests").where("reference", ref).first(),
+                  phase17_experiment: async () => numberRef && trx.from("experiments").where("id", id).first(),
+                  phase17_causal_knowledge: async () => numberRef && trx.from("experiment_causal_knowledge").where("id", id).first(),
+                  phase22_agent_run: async () => numberRef && trx.from("agent_orchestrator_runs").where("id", id).first(),
+                  phase25_portfolio_run: async () => trx.from("growth_portfolio_runs").where("public_id", ref).first(),'''
+          new = '''        phase11_approval: async () => trx.from("governance_approval_requests").where("reference", ref).first(),
+                  phase11_policy_version: async () => numberRef && trx.from("governance_policy_versions").where("id", id).first(),
+                  phase11_action_ledger: async () => numberRef && trx.from("governance_action_ledger").where("id", id).first(),
+                  phase17_experiment: async () => numberRef && trx.from("experiments").where("id", id).first(),
+                  phase17_causal_knowledge: async () => numberRef && trx.from("experiment_causal_knowledge").where("id", id).first(),
+                  phase22_agent_plan: async () => trx.from("agent_plans").where("public_id", ref).first(),
+                  phase22_tool_run: async () => trx.from("agent_tool_runs").where("public_id", ref).first(),
+                  phase22_outcome_hook: async () => trx.from("agent_outcome_hooks").where("public_id", ref).first(),
+                  phase25_portfolio_run: async () => trx.from("growth_portfolio_runs").where("public_id", ref).first(),'''
+          if old not in text:
+              raise SystemExit('authority patch anchor missing')
+          text = text.replace(old, new)
+          old = '''    if (input.memory_class !== "customer_segment_behavior") return;
+              if ((input.privacy_mode ?? "aggregated") === "aggregated") return;
+              if ((input.purpose_tags ?? []).includes("customer_level_raw")) {'''
+          new = '''    if (input.memory_class !== "customer_segment_behavior") return;
+              if ((input.purpose_tags ?? []).includes("customer_level_raw")) {'''
+          if old not in text:
+              raise SystemExit('privacy patch anchor missing')
+          text = text.replace(old, new)
+          old = '''        trx
+                      .from("merchant_memory_effectiveness")
+                      .where("measured_at", ">=", DateTime.utc().minus({ days: 30 }).toSQL())
+                      .avg("usefulness as usefulness")
+                      .sum("repeat_error_avoided as repeat_error_avoided")
+                      .first(),'''
+          new = '''        trx
+                      .from("merchant_memory_effectiveness")
+                      .where("measured_at", ">=", DateTime.utc().minus({ days: 30 }).toSQL())
+                      .select(
+                          trx.raw(
+                              "AVG(usefulness) AS usefulness, COUNT(*) FILTER (WHERE repeat_error_avoided IS TRUE)::int AS repeat_error_avoided",
+                          ),
+                      )
+                      .first(),'''
+          if old not in text:
+              raise SystemExit('effectiveness patch anchor missing')
+          text = text.replace(old, new)
+          path.write_text(text)
+          PY
+      - name: Canonical format
+        run: pnpm exec biome check --write apps/api/app/services/phase26_merchant_memory_service.ts apps/api/app/validators/admin/phase26_merchant_memory_validator.ts
+      - name: API typecheck
+        run: pnpm --filter @calibra/api run typecheck
+      - name: Commit verified patch and remove workflow
+        run: |
+          rm .github/workflows/phase26-backend-hardening-once.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -- apps/api/app/services/phase26_merchant_memory_service.ts apps/api/app/validators/admin/phase26_merchant_memory_validator.ts .github/workflows/phase26-backend-hardening-once.yml
+          git commit -m "fix(api): harden merchant memory authorities" || exit 0
+          git push origin HEAD:feat/phase26-merchant-memory-v2-20260823
