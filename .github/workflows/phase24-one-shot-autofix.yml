@@ -1,4 +1,4 @@
-name: Phase 24 One-Shot Autofix
+name: Phase 24 One-Shot Navigation Finalizer
 
 on:
   pull_request:
@@ -8,7 +8,7 @@ permissions:
   contents: write
 
 jobs:
-  autofix:
+  finalize:
     if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'feat/phase24-synthetic-commerce-20260823'
     runs-on: ubuntu-latest
     steps:
@@ -20,30 +20,32 @@ jobs:
           node-version: 24.14.0
       - run: npm install --global pnpm@10.32.1
       - run: pnpm install --frozen-lockfile
-      - name: Apply repository formatter and safe lint fixes
-        run: >-
-          pnpm exec biome check --write
-          apps/admin/src/features/synthetic-commerce/SyntheticCommerceWorkspace.tsx
-          apps/admin/src/lib/queries/synthetic-commerce.ts
-          apps/api/app/services/phase24_synthetic_commerce_service.ts
-          apps/api/database/migrations/1777000000000_create_synthetic_commerce_lab.ts
-          scripts/verify-phase24-synthetic-commerce.mjs
-      - name: Regenerate SDK from merged OpenAPI
-        run: pnpm --filter @calibra/sdk run codegen
-      - name: Commit canonical generated output
+      - name: Add Phase 23 and Phase 24 analytics access
         shell: bash
         run: |
-          if git diff --quiet; then
-            exit 0
-          fi
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = 'apps/admin/src/components/Sidebar.tsx';
+          let source = fs.readFileSync(path, 'utf8');
+          const anchor = '            { href: "/analytics/decision-intelligence", label: "هوش تصمیم‌گیری", icon: Sparkles },\n';
+          if (!source.includes(anchor)) throw new Error('analytics navigation anchor not found');
+          if (!source.includes('/analytics/scenario-war-room')) {
+            source = source.replace(
+              anchor,
+              anchor +
+                '            { href: "/analytics/scenario-war-room", label: "اتاق جنگ سناریو", icon: ChartNoAxesCombined },\n' +
+                '            { href: "/analytics/pre-production-lab", label: "آزمایشگاه پیش‌انتشار", icon: Bug },\n',
+            );
+          }
+          fs.writeFileSync(path, source);
+          NODE
+          pnpm exec biome check --write apps/admin/src/components/Sidebar.tsx
+      - name: Remove one-shot workflow and commit final navigation
+        shell: bash
+        run: |
           git config user.name "calibra-ci"
           git config user.email "calibra-ci@users.noreply.github.com"
-          git add \
-            apps/admin/src/features/synthetic-commerce/SyntheticCommerceWorkspace.tsx \
-            apps/admin/src/lib/queries/synthetic-commerce.ts \
-            apps/api/app/services/phase24_synthetic_commerce_service.ts \
-            apps/api/database/migrations/1777000000000_create_synthetic_commerce_lab.ts \
-            scripts/verify-phase24-synthetic-commerce.mjs \
-            packages/sdk/src/generated/
-          git commit -m "chore(phase24): apply canonical format and SDK codegen"
+          git add apps/admin/src/components/Sidebar.tsx
+          git rm .github/workflows/phase24-one-shot-autofix.yml
+          git commit -m "feat(admin): expose Phase 23 and Phase 24 analytics labs"
           git push origin "HEAD:${GITHUB_HEAD_REF}"
