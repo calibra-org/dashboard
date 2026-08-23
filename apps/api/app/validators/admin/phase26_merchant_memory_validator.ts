@@ -11,15 +11,22 @@ const memoryClass = vine.enum([
     "policy_precedent",
 ]);
 
+const memoryConsumer = vine.enum(["human", "agent"]);
+const memorySensitivity = vine.enum(["aggregate", "internal", "customer_level_sensitive"]);
+const retentionClass = vine.enum(["short", "standard", "extended", "legal_hold"]);
+const sourcePhase = vine.enum(["phase10", "phase11", "phase17", "phase22", "phase25", "manual_reviewed"]);
+const evidenceRole = vine.enum(["primary", "supporting", "contradicting", "outcome"]);
+
 const source = vine.object({
-    source_domain: vine.string().trim().minLength(2).maxLength(80),
+    source_phase: sourcePhase,
     source_kind: vine.string().trim().minLength(2).maxLength(100),
-    source_id: vine.string().trim().maxLength(180).nullable().optional(),
+    source_id: vine.string().trim().minLength(1).maxLength(180),
     source_route: vine.string().trim().maxLength(400).nullable().optional(),
     source_hash: vine.string().trim().fixedLength(64).nullable().optional(),
     label: vine.string().trim().minLength(2).maxLength(240),
-    evidence_role: vine.enum(["primary", "supporting", "contradicting"]).optional(),
+    evidence_role: evidenceRole.optional(),
     evidence_summary: vine.record(vine.any()).optional(),
+    sensitivity: memorySensitivity.optional(),
     observed_at: vine.string().trim().minLength(10).maxLength(64),
 });
 
@@ -39,9 +46,9 @@ const memoryBody = {
     lesson: vine.string().trim().minLength(3).maxLength(12000),
     confidence: vine.number().min(0).max(1),
     strength: vine.number().min(0).max(1),
-    sensitivity: vine.enum(["aggregate", "internal", "customer_level_sensitive"]).optional(),
-    retention_class: vine.string().trim().minLength(2).maxLength(40).optional(),
-    allowed_consumers: vine.array(vine.enum(["human", "agent"])).minLength(1).maxLength(2).optional(),
+    sensitivity: memorySensitivity.optional(),
+    retention_class: retentionClass.optional(),
+    allowed_consumers: vine.array(memoryConsumer).minLength(1).maxLength(2).optional(),
     purposes: vine.array(vine.string().trim().minLength(2).maxLength(80)).maxLength(32).optional(),
     relevant_from: vine.string().trim().minLength(10).maxLength(64).optional(),
     expires_at: vine.string().trim().minLength(10).maxLength(64).nullable().optional(),
@@ -62,14 +69,14 @@ export const retrieveMerchantMemoryValidator = vine.compile(
     vine.object({
         query: vine.string().trim().maxLength(4000),
         purpose: vine.string().trim().minLength(2).maxLength(80),
-        principal_kind: vine.enum(["human", "agent"]),
-        principal_id: vine.string().trim().maxLength(160).nullable().optional(),
+        consumer: memoryConsumer,
         memory_classes: vine.array(memoryClass).maxLength(8).optional(),
         subject_type: vine.string().trim().maxLength(80).nullable().optional(),
         subject_id: vine.string().trim().maxLength(160).nullable().optional(),
-        permissions: vine.array(vine.string().trim().minLength(1).maxLength(80)).maxLength(64).optional(),
         min_confidence: vine.number().min(0).max(1).optional(),
+        include_customer_sensitive: vine.boolean().optional(),
         limit: vine.number().positive().withoutDecimals().max(50).optional(),
+        request_correlation_id: vine.string().trim().maxLength(160).nullable().optional(),
     }),
 );
 
@@ -79,7 +86,7 @@ export const recordMerchantMemoryEffectivenessValidator = vine.compile(
         signal: vine.enum(["used", "ignored", "helpful", "harmful", "repeat_error"]),
         usefulness: vine.number().min(0).max(1).nullable().optional(),
         repeat_error_avoided: vine.boolean().nullable().optional(),
-        source_outcome_record_id: vine.number().positive().withoutDecimals().nullable().optional(),
         notes: vine.string().trim().maxLength(4000).nullable().optional(),
+        source_outcome_record_id: vine.number().positive().withoutDecimals().nullable().optional(),
     }),
 );
