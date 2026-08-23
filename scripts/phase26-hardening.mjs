@@ -1,4 +1,9 @@
 import { readFileSync, writeFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const repoPath = (path) => resolve(repoRoot, path);
 
 function replaceOnce(text, oldValue, newValue, label) {
     if (text.includes(newValue)) return text;
@@ -6,7 +11,7 @@ function replaceOnce(text, oldValue, newValue, label) {
     return text.replace(oldValue, newValue);
 }
 
-const servicePath = "apps/api/app/services/phase26_merchant_memory_service.ts";
+const servicePath = repoPath("apps/api/app/services/phase26_merchant_memory_service.ts");
 let service = readFileSync(servicePath, "utf8");
 service = replaceOnce(
     service,
@@ -76,7 +81,7 @@ if (!service.includes("misleading_memory_rate")) {
 }
 writeFileSync(servicePath, service, "utf8");
 
-const controllerPath = "apps/api/app/controllers/admin/merchant_memory_controller.ts";
+const controllerPath = repoPath("apps/api/app/controllers/admin/merchant_memory_controller.ts");
 let controller = readFileSync(controllerPath, "utf8");
 if (!controller.includes("let agentPrincipal: Awaited<ReturnType<typeof requireApprovedAgentPrincipal>>")) {
     controller = replaceOnce(
@@ -88,7 +93,7 @@ if (!controller.includes("let agentPrincipal: Awaited<ReturnType<typeof requireA
 }
 writeFileSync(controllerPath, controller, "utf8");
 
-const uiPath = "apps/admin/src/features/merchant-memory/MerchantMemoryWorkspace.tsx";
+const uiPath = repoPath("apps/admin/src/features/merchant-memory/MerchantMemoryWorkspace.tsx");
 let ui = readFileSync(uiPath, "utf8");
 if (!ui.includes("misleading_memory_rate")) {
     ui = replaceOnce(
@@ -109,7 +114,7 @@ if (!ui.includes("misleading_memory_rate")) {
 }
 writeFileSync(uiPath, ui, "utf8");
 
-const verifierPath = "scripts/verify-phase26-merchant-memory.mjs";
+const verifierPath = repoPath("scripts/verify-phase26-merchant-memory.mjs");
 let verifier = readFileSync(verifierPath, "utf8");
 if (!verifier.includes("server-derived agent principal linkage missing")) {
     const assertions = `\nmust(service.includes("agentPrincipal!.id"), "server-derived agent principal linkage missing");\nmust(service.includes("E_MERCHANT_MEMORY_SOURCE_SENSITIVITY_DOWNGRADE"), "source sensitivity downgrade protection missing");\nmust(service.includes("misleading_memory_rate") && service.includes("source_linked_retrieval_rate"), "Phase 26 effectiveness KPIs incomplete");\nmust(read("apps/api/app/controllers/admin/merchant_memory_controller.ts").includes("agentPrincipal = await requireApprovedAgentPrincipal"), "Governance principal is not bound to retrieval logging");\n`;
