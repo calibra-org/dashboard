@@ -61,7 +61,7 @@ jobs:
       - name: Phase 26 static contract
         run: node scripts/verify-phase26-merchant-memory.mjs
       - name: Ranking and privacy regressions
-        run: pnpm --filter @calibra/api exec node ace test --files='tests/unit/phase26_merchant_memory_*.spec.ts'
+        run: pnpm --filter @calibra/api exec node ace test --force-exit --files='tests/unit/phase26_merchant_memory_*.spec.ts'
       - name: API typecheck
         run: pnpm --filter @calibra/api run typecheck
       - name: Admin typecheck
