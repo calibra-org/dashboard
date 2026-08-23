@@ -13,18 +13,8 @@ Phase 26 creates a durable, structured, source-linked organizational memory laye
 - Agent retrieval is bound to canonical Governance OS principals and data-access classes.
 - Retrieval does not grant new execution permissions.
 - Evidence references are allowlisted and tenant-validated before persistence.
-- Source sensitivity cannot be downgraded while converting evidence into durable memory.
-
-## Final validation checkpoint
-
-- deterministic relevance ranking is active in production retrieval and exposes score decomposition;
-- Governance principal identity is bound server-side to agent retrieval logging;
-- required effectiveness KPIs include retrieval usefulness, repeat-error reduction, misleading-memory rate and source-linked retrieval rate;
-- Phase 26 OpenAPI is part of the canonical Admin specification and generated SDK;
-- Persian RTL Merchant Memory workspace is linked from analytics navigation;
-- dedicated ranking and privacy regression tests are included;
-- temporary canonicalization/hardening workflows and build hooks have been removed; permanent Phase 26 CI is verification-only.
+- Source sensitivity cannot be downgraded when durable memory is created.
 
 ## Release status
 
-Implementation remains in canonical Draft PR #84 until all exact-head repository, migration, typecheck, build, formatting, OpenAPI/SDK and Phase 26 integrity gates are green. Only then may the PR be marked ready and merged into `main`.
+Phase 26 is implementation-complete in PR #84. The final candidate passed the dedicated Merchant Memory integrity workflow, exact ranking and privacy regressions, API/Admin typechecks, production build, canonical Admin OpenAPI and SDK sync, the repository Check including all six API shards and aggregate tests, Migration Smoke, SEO Engines, and Phase 13/14/15/17/19/20/21/23 integrity gates.
