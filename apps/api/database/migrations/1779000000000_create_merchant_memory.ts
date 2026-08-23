@@ -50,7 +50,13 @@ export default class extends BaseSchema {
         this.schema.createTable("merchant_memory_sources", (table) => {
             table.bigIncrements("id");
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("memory_id").unsigned().notNullable().references("id").inTable("merchant_memory_records").onDelete("CASCADE");
+            table
+                .bigInteger("memory_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("merchant_memory_records")
+                .onDelete("CASCADE");
             table.string("source_phase", 24).notNullable();
             table.string("source_kind", 100).notNullable();
             table.string("source_id", 180).notNullable();
@@ -71,8 +77,20 @@ export default class extends BaseSchema {
         this.schema.createTable("merchant_memory_lineage", (table) => {
             table.bigIncrements("id");
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("from_memory_id").unsigned().notNullable().references("id").inTable("merchant_memory_records").onDelete("CASCADE");
-            table.bigInteger("to_memory_id").unsigned().notNullable().references("id").inTable("merchant_memory_records").onDelete("CASCADE");
+            table
+                .bigInteger("from_memory_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("merchant_memory_records")
+                .onDelete("CASCADE");
+            table
+                .bigInteger("to_memory_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("merchant_memory_records")
+                .onDelete("CASCADE");
             table.string("relation", 32).notNullable();
             table.text("reason").notNullable();
             table.bigInteger("created_by_user_id").unsigned().nullable().references("id").inTable("users").onDelete("SET NULL");
@@ -106,12 +124,30 @@ export default class extends BaseSchema {
         this.schema.createTable("merchant_memory_effectiveness", (table) => {
             table.bigIncrements("id");
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("retrieval_id").unsigned().notNullable().references("id").inTable("merchant_memory_retrievals").onDelete("CASCADE");
-            table.bigInteger("memory_id").unsigned().nullable().references("id").inTable("merchant_memory_records").onDelete("SET NULL");
+            table
+                .bigInteger("retrieval_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("merchant_memory_retrievals")
+                .onDelete("CASCADE");
+            table
+                .bigInteger("memory_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("merchant_memory_records")
+                .onDelete("SET NULL");
             table.string("signal", 32).notNullable();
             table.decimal("usefulness", 8, 6).nullable();
             table.boolean("repeat_error_avoided").nullable();
-            table.bigInteger("source_outcome_record_id").unsigned().nullable().references("id").inTable("intelligence_outcome_records").onDelete("SET NULL");
+            table
+                .bigInteger("source_outcome_record_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("intelligence_outcome_records")
+                .onDelete("SET NULL");
             table.text("notes").nullable();
             table.bigInteger("recorded_by_user_id").unsigned().nullable().references("id").inTable("users").onDelete("SET NULL");
             table.timestamp("recorded_at", { useTz: true }).notNullable();
