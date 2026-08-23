@@ -17,33 +17,56 @@ const required = (source, tokens, label) => {
     }
 };
 
-required(service, [
-    "commerce-twin-v1.1.0",
-    "currentTenantId",
-    "currentTrx",
-    "planning_forecast_runs",
-    "planning_source_hash",
-    "seededUncertaintyAdjustment",
-    "service_level_target",
-    "service_level_gap",
-    "recommendation_only_no_operational_mutation",
-    "inputHash",
-], "service");
-required(migration, [
-    "commerce_twin_scenarios",
-    "commerce_twin_runs",
-    "commerce_twin_results",
-    "ENABLE ROW LEVEL SECURITY",
-    "FORCE ROW LEVEL SECURITY",
-    "app.current_tenant",
-    "commerce_twin_runs_repro_unique",
-    "commerce_twin_results_quantiles_check",
-], "migration");
+required(
+    service,
+    [
+        "commerce-twin-v1.1.0",
+        "currentTenantId",
+        "currentTrx",
+        "planning_forecast_runs",
+        "planning_source_hash",
+        "seededUncertaintyAdjustment",
+        "service_level_target",
+        "service_level_gap",
+        "recommendation_only_no_operational_mutation",
+        "inputHash",
+    ],
+    "service",
+);
+required(
+    migration,
+    [
+        "commerce_twin_scenarios",
+        "commerce_twin_runs",
+        "commerce_twin_results",
+        "ENABLE ROW LEVEL SECURITY",
+        "FORCE ROW LEVEL SECURITY",
+        "app.current_tenant",
+        "commerce_twin_runs_repro_unique",
+        "commerce_twin_results_quantiles_check",
+    ],
+    "migration",
+);
 required(routes, ["/overview", "/scenarios", "/compare", "/sensitivity", "/decision-brief", "adminWriteLimiter"], "routes");
 required(rootRoutes, ["./routes/admin_digital_twin.js"], "root routes");
-required(validator, ["demand_multiplier", "price_multiplier", "cost_multiplier", "lead_time_multiplier", "capacity_multiplier", "service_level_target"], "validator");
+required(
+    validator,
+    [
+        "demand_multiplier",
+        "price_multiplier",
+        "cost_multiplier",
+        "lead_time_multiplier",
+        "capacity_multiplier",
+        "service_level_target",
+    ],
+    "validator",
+);
 required(ui, ["اتاق جنگ سناریو", "P10", "P90", "deterministic", "non-mutating"], "admin UI");
-required(openapi, ["/api/v1/admin/digital-twin/overview", "/api/v1/admin/digital-twin/scenarios", "/decision-brief", "DigitalTwinAssumptions"], "OpenAPI");
+required(
+    openapi,
+    ["/api/v1/admin/digital-twin/overview", "/api/v1/admin/digital-twin/scenarios", "/decision-brief", "DigitalTwinAssumptions"],
+    "OpenAPI",
+);
 required(docsPackage, ["build:json:admin-phase23", "admin.phase23.v1.yaml"], "docs package");
 required(mergeSpec, ["admin.phase23.v1.json", "Phase23DigitalTwinOverlay"], "OpenAPI merge");
 

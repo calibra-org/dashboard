@@ -39,7 +39,9 @@ function stable(value: unknown): unknown {
 }
 
 function hash(value: unknown): string {
-    return createHash("sha256").update(JSON.stringify(stable(value))).digest("hex");
+    return createHash("sha256")
+        .update(JSON.stringify(stable(value)))
+        .digest("hex");
 }
 
 function parseJson<T>(value: unknown, fallback: T): T {
@@ -200,9 +202,7 @@ function simulate(snapshot: Awaited<ReturnType<typeof buildInputSnapshot>>, assu
         0.05,
         0.4,
     );
-    const confidence = round4(
-        clamp(0.94 - uncertainty - (snapshot.planning.forecast_run_id ? 0 : 0.25), 0.2, 0.95),
-    );
+    const confidence = round4(clamp(0.94 - uncertainty - (snapshot.planning.forecast_run_id ? 0 : 0.25), 0.2, 0.95));
     const metrics = [
         {
             key: "demand_units",
@@ -297,10 +297,7 @@ export async function updateScenario(
 ) {
     const trx = currentTrx();
     const tenantId = Number(currentTenantId());
-    const current = await trx
-        .from("commerce_twin_scenarios")
-        .where({ tenant_id: tenantId, public_id: publicId })
-        .first();
+    const current = await trx.from("commerce_twin_scenarios").where({ tenant_id: tenantId, public_id: publicId }).first();
     if (!current) {
         throw new Exception("Digital twin scenario not found", {
             status: 404,
@@ -325,10 +322,7 @@ export async function updateScenario(
 export async function runScenario(publicId: string, requestedSeed: number | undefined, actor: User) {
     const trx = currentTrx();
     const tenantId = Number(currentTenantId());
-    const scenario = await trx
-        .from("commerce_twin_scenarios")
-        .where({ tenant_id: tenantId, public_id: publicId })
-        .first();
+    const scenario = await trx.from("commerce_twin_scenarios").where({ tenant_id: tenantId, public_id: publicId }).first();
     if (!scenario) {
         throw new Exception("Digital twin scenario not found", {
             status: 404,

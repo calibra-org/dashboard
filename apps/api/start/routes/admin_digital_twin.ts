@@ -23,12 +23,8 @@ router
             .use(adminWriteLimiter);
         router.get("/runs/:publicId", [DigitalTwinController, "run"]).as("admin.digital_twin.run");
         router.get("/compare", [DigitalTwinController, "compare"]).as("admin.digital_twin.compare");
-        router
-            .get("/runs/:publicId/sensitivity", [DigitalTwinController, "sensitivity"])
-            .as("admin.digital_twin.sensitivity");
-        router
-            .get("/runs/:publicId/decision-brief", [DigitalTwinController, "brief"])
-            .as("admin.digital_twin.decision_brief");
+        router.get("/runs/:publicId/sensitivity", [DigitalTwinController, "sensitivity"]).as("admin.digital_twin.sensitivity");
+        router.get("/runs/:publicId/decision-brief", [DigitalTwinController, "brief"]).as("admin.digital_twin.decision_brief");
     })
     .prefix("/api/v1/admin/digital-twin")
     .use(middleware.auth({ guards: ["api"] }))
