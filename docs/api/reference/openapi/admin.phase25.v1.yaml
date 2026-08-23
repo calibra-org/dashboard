@@ -1,0 +1,159 @@
+openapi: 3.1.0
+info:
+  title: Calibra Admin Phase 25 Growth Portfolio API
+  version: 1.0.0
+tags:
+  - name: Growth Portfolio
+    description: Constrained growth portfolio optimization, outcome learning, and governed dynamic rebalancing.
+paths:
+  /api/v1/admin/growth-portfolio/overview:
+    get:
+      tags: [Growth Portfolio]
+      operationId: adminGrowthPortfolioOverview
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/growth-portfolio/opportunities:
+    get:
+      tags: [Growth Portfolio]
+      operationId: adminGrowthPortfolioOpportunities
+      summary: Read open Phase 10 opportunities and recommendations without copying source authority
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/growth-portfolio/plans:
+    get:
+      tags: [Growth Portfolio]
+      operationId: adminGrowthPortfolioPlans
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+    post:
+      tags: [Growth Portfolio]
+      operationId: adminGrowthPortfolioPlanCreate
+      requestBody: { $ref: '#/components/requestBodies/ObjectBody' }
+      responses:
+        '201': { $ref: '#/components/responses/CreatedEnvelope' }
+  /api/v1/admin/growth-portfolio/plans/{publicId}/candidates:
+    get:
+      tags: [Growth Portfolio]
+      operationId: adminGrowthPortfolioCandidates
+      parameters:
+        - $ref: '#/components/parameters/PublicId'
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+    post:
+      tags: [Growth Portfolio]
+      operationId: adminGrowthPortfolioCandidateCreate
+      parameters:
+        - $ref: '#/components/parameters/PublicId'
+      requestBody: { $ref: '#/components/requestBodies/ObjectBody' }
+      responses:
+        '201': { $ref: '#/components/responses/CreatedEnvelope' }
+  /api/v1/admin/growth-portfolio/plans/{publicId}/candidates/{candidateId}:
+    delete:
+      tags: [Growth Portfolio]
+      operationId: adminGrowthPortfolioCandidateDelete
+      parameters:
+        - $ref: '#/components/parameters/PublicId'
+        - $ref: '#/components/parameters/CandidateId'
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/growth-portfolio/plans/{publicId}/run:
+    post:
+      tags: [Growth Portfolio]
+      operationId: adminGrowthPortfolioRunCreate
+      parameters:
+        - $ref: '#/components/parameters/PublicId'
+      responses:
+        '201': { $ref: '#/components/responses/CreatedEnvelope' }
+  /api/v1/admin/growth-portfolio/plans/{publicId}/rebalance:
+    post:
+      tags: [Growth Portfolio]
+      operationId: adminGrowthPortfolioRebalanceCreate
+      parameters:
+        - $ref: '#/components/parameters/PublicId'
+      requestBody: { $ref: '#/components/requestBodies/ObjectBody' }
+      responses:
+        '201': { $ref: '#/components/responses/CreatedEnvelope' }
+  /api/v1/admin/growth-portfolio/runs:
+    get:
+      tags: [Growth Portfolio]
+      operationId: adminGrowthPortfolioRuns
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/growth-portfolio/runs/{publicId}:
+    get:
+      tags: [Growth Portfolio]
+      operationId: adminGrowthPortfolioRunDetail
+      parameters:
+        - $ref: '#/components/parameters/PublicId'
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/growth-portfolio/runs/{publicId}/outcomes:
+    post:
+      tags: [Growth Portfolio]
+      operationId: adminGrowthPortfolioOutcomeCreate
+      parameters:
+        - $ref: '#/components/parameters/PublicId'
+      requestBody: { $ref: '#/components/requestBodies/ObjectBody' }
+      responses:
+        '201': { $ref: '#/components/responses/CreatedEnvelope' }
+  /api/v1/admin/growth-portfolio/rebalances:
+    get:
+      tags: [Growth Portfolio]
+      operationId: adminGrowthPortfolioRebalances
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/growth-portfolio/rebalances/{publicId}:
+    get:
+      tags: [Growth Portfolio]
+      operationId: adminGrowthPortfolioRebalanceDetail
+      parameters:
+        - $ref: '#/components/parameters/PublicId'
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/growth-portfolio/rebalances/{publicId}/apply:
+    post:
+      tags: [Growth Portfolio]
+      operationId: adminGrowthPortfolioRebalanceApply
+      parameters:
+        - $ref: '#/components/parameters/PublicId'
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+components:
+  parameters:
+    PublicId:
+      name: publicId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    CandidateId:
+      name: candidateId
+      in: path
+      required: true
+      schema: { type: integer, minimum: 1 }
+  requestBodies:
+    ObjectBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: true
+  responses:
+    OkEnvelope:
+      description: Successful growth portfolio response.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data: {}
+    CreatedEnvelope:
+      description: Growth portfolio resource created.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data: {}
