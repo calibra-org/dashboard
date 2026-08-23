@@ -13,9 +13,8 @@ export default class MerchantMemoryController {
         return response.ok({ data: await memory.merchantMemoryOverview() });
     }
 
-    async show({ params, request, response }: HttpContext) {
-        const requesterKind = request.input("requester_kind", "human") as "human" | "agent" | "system";
-        return response.ok({ data: await memory.getMerchantMemory(params.publicId, requesterKind) });
+    async show({ params, response }: HttpContext) {
+        return response.ok({ data: await memory.getMerchantMemory(params.publicId, "human") });
     }
 
     async create({ request, auth, response }: HttpContext) {
@@ -25,7 +24,16 @@ export default class MerchantMemoryController {
 
     async retrieve({ request, auth, response }: HttpContext) {
         const payload = await request.validateUsing(retrieveMerchantMemoryValidator);
-        return response.ok({ data: await memory.retrieveMerchantMemory(payload, auth.user!) });
+        return response.ok({
+            data: await memory.retrieveMerchantMemory(
+                {
+                    ...payload,
+                    requester_kind: "human",
+                    requester_id: String(auth.user!.id),
+                },
+                auth.user!,
+            ),
+        });
     }
 
     async supersede({ params, request, auth, response }: HttpContext) {
