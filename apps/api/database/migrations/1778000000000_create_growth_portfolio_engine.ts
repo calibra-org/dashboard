@@ -6,6 +6,7 @@ const TABLES = [
     "growth_portfolio_runs",
     "growth_portfolio_run_items",
     "growth_portfolio_outcomes",
+    "growth_portfolio_rebalance_events",
 ] as const;
 
 const TENANT = "tenant_id = NULLIF(current_setting('app.current_tenant', true), '')::bigint";
@@ -36,8 +37,20 @@ export default class extends BaseSchema {
         this.schema.createTable("growth_portfolio_candidates", (table) => {
             table.bigIncrements("id");
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("plan_id").unsigned().notNullable().references("id").inTable("growth_portfolio_plans").onDelete("CASCADE");
-            table.bigInteger("intelligence_case_id").unsigned().notNullable().references("id").inTable("intelligence_cases").onDelete("CASCADE");
+            table
+                .bigInteger("plan_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("growth_portfolio_plans")
+                .onDelete("CASCADE");
+            table
+                .bigInteger("intelligence_case_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("intelligence_cases")
+                .onDelete("CASCADE");
             table.bigInteger("expected_incremental_contribution_minor").notNullable().defaultTo(0);
             table.decimal("confidence", 8, 6).notNullable().defaultTo(0);
             table.bigInteger("required_cash_minor").notNullable().defaultTo(0);
@@ -65,7 +78,13 @@ export default class extends BaseSchema {
             table.bigIncrements("id");
             table.uuid("public_id").notNullable().unique();
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("plan_id").unsigned().notNullable().references("id").inTable("growth_portfolio_plans").onDelete("CASCADE");
+            table
+                .bigInteger("plan_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("growth_portfolio_plans")
+                .onDelete("CASCADE");
             table.integer("plan_version").notNullable();
             table.string("solver_version", 80).notNullable();
             table.string("input_hash", 64).notNullable();
@@ -76,6 +95,7 @@ export default class extends BaseSchema {
             table.jsonb("resource_utilization").notNullable().defaultTo(this.raw("'{}'::jsonb"));
             table.jsonb("dependency_plan").notNullable().defaultTo(this.raw("'[]'::jsonb"));
             table.jsonb("constraint_snapshot").notNullable().defaultTo(this.raw("'{}'::jsonb"));
+            table.jsonb("trigger_context").notNullable().defaultTo(this.raw("'{}'::jsonb"));
             table.timestamp("generated_at", { useTz: true }).notNullable();
             table.bigInteger("created_by_user_id").unsigned().nullable().references("id").inTable("users").onDelete("SET NULL");
             table.unique(["tenant_id", "plan_id", "plan_version", "input_hash"], {
@@ -87,8 +107,20 @@ export default class extends BaseSchema {
         this.schema.createTable("growth_portfolio_run_items", (table) => {
             table.bigIncrements("id");
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("run_id").unsigned().notNullable().references("id").inTable("growth_portfolio_runs").onDelete("CASCADE");
-            table.bigInteger("candidate_id").unsigned().notNullable().references("id").inTable("growth_portfolio_candidates").onDelete("CASCADE");
+            table
+                .bigInteger("run_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("growth_portfolio_runs")
+                .onDelete("CASCADE");
+            table
+                .bigInteger("candidate_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("growth_portfolio_candidates")
+                .onDelete("CASCADE");
             table.string("decision", 16).notNullable();
             table.text("reason").notNullable();
             table.bigInteger("expected_weighted_value_minor").notNullable().defaultTo(0);
@@ -103,11 +135,18 @@ export default class extends BaseSchema {
         this.schema.createTable("growth_portfolio_outcomes", (table) => {
             table.bigIncrements("id");
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("run_id").unsigned().notNullable().references("id").inTable("growth_portfolio_runs").onDelete("CASCADE");
+            table
+                .bigInteger("run_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("growth_portfolio_runs")
+                .onDelete("CASCADE");
             table.bigInteger("expected_value_minor").notNullable().defaultTo(0);
             table.bigInteger("realized_value_minor").nullable();
             table.decimal("realization_ratio", 12, 6).nullable();
             table.decimal("attribution_confidence", 8, 6).nullable();
+            table.string("measurement_window", 80).nullable();
             table.jsonb("source_outcome_ids").notNullable().defaultTo(this.raw("'[]'::jsonb"));
             table.text("notes").nullable();
             table.timestamp("measured_at", { useTz: true }).notNullable();
@@ -116,13 +155,47 @@ export default class extends BaseSchema {
             table.index(["tenant_id", "run_id", "measured_at"], "growth_portfolio_outcomes_run_idx");
         });
 
+        this.schema.createTable("growth_portfolio_rebalance_events", (table) => {
+            table.bigIncrements("id");
+            table.uuid("public_id").notNullable().unique();
+            table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
+            table
+                .bigInteger("plan_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("growth_portfolio_plans")
+                .onDelete("CASCADE");
+            table.bigInteger("from_run_id").unsigned().nullable().references("id").inTable("growth_portfolio_runs").onDelete("SET NULL");
+            table
+                .bigInteger("proposed_run_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("growth_portfolio_runs")
+                .onDelete("SET NULL");
+            table.string("trigger_kind", 40).notNullable();
+            table.jsonb("trigger_snapshot").notNullable().defaultTo(this.raw("'{}'::jsonb"));
+            table.jsonb("protected_active_case_ids").notNullable().defaultTo(this.raw("'[]'::jsonb"));
+            table.string("approval_reference", 80).nullable();
+            table.string("status", 32).notNullable().defaultTo("detected");
+            table.timestamp("detected_at", { useTz: true }).notNullable();
+            table.timestamp("applied_at", { useTz: true }).nullable();
+            table.bigInteger("created_by_user_id").unsigned().nullable().references("id").inTable("users").onDelete("SET NULL");
+            table.timestamp("created_at", { useTz: true }).notNullable().defaultTo(this.now());
+            table.index(["tenant_id", "plan_id", "detected_at"], "growth_portfolio_rebalance_plan_idx");
+            table.index(["tenant_id", "status", "detected_at"], "growth_portfolio_rebalance_status_idx");
+        });
+
         const checks = [
             "ALTER TABLE growth_portfolio_plans ADD CONSTRAINT growth_portfolio_plan_status_check CHECK (status IN ('draft','active','paused','archived'))",
             "ALTER TABLE growth_portfolio_plans ADD CONSTRAINT growth_portfolio_plan_ranges_check CHECK ((cash_budget_minor IS NULL OR cash_budget_minor >= 0) AND (team_hours_budget IS NULL OR team_hours_budget >= 0) AND (warehouse_capacity_budget IS NULL OR warehouse_capacity_budget >= 0) AND (supplier_capacity_budget IS NULL OR supplier_capacity_budget >= 0) AND (max_risk IS NULL OR max_risk BETWEEN 0 AND 1) AND version >= 1)",
             "ALTER TABLE growth_portfolio_candidates ADD CONSTRAINT growth_portfolio_candidate_ranges_check CHECK (required_cash_minor >= 0 AND team_hours >= 0 AND warehouse_capacity >= 0 AND supplier_capacity >= 0 AND confidence BETWEEN 0 AND 1 AND risk BETWEEN 0 AND 1 AND reversibility BETWEEN 0 AND 1 AND time_to_value BETWEEN 0 AND 1 AND customer_impact BETWEEN 0 AND 1 AND strategic_alignment BETWEEN 0 AND 1 AND source_case_version >= 1)",
-            "ALTER TABLE growth_portfolio_runs ADD CONSTRAINT growth_portfolio_run_status_check CHECK (status IN ('completed','superseded'))",
+            "ALTER TABLE growth_portfolio_runs ADD CONSTRAINT growth_portfolio_run_status_check CHECK (status IN ('proposed','awaiting_approval','completed','superseded'))",
             "ALTER TABLE growth_portfolio_run_items ADD CONSTRAINT growth_portfolio_item_decision_check CHECK (decision IN ('selected','deferred','infeasible'))",
             "ALTER TABLE growth_portfolio_outcomes ADD CONSTRAINT growth_portfolio_outcome_ranges_check CHECK ((realization_ratio IS NULL OR realization_ratio >= -10) AND (attribution_confidence IS NULL OR attribution_confidence BETWEEN 0 AND 1))",
+            "ALTER TABLE growth_portfolio_rebalance_events ADD CONSTRAINT growth_portfolio_rebalance_trigger_check CHECK (trigger_kind IN ('stockout','campaign_outcome','cash_settlement_delay','supplier_incident'))",
+            "ALTER TABLE growth_portfolio_rebalance_events ADD CONSTRAINT growth_portfolio_rebalance_status_check CHECK (status IN ('detected','proposed','approval_required','applied','rejected'))",
         ];
         for (const sql of checks) this.schema.raw(sql);
 
