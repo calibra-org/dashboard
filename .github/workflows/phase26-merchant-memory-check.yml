@@ -170,7 +170,7 @@ jobs:
             docs/api/scripts/merge-admin-spec.js \
             scripts/verify-phase26-merchant-memory.mjs
           pnpm --filter @calibra/api-docs run build:json:admin
-          pnpm --filter @calibra/sdk run generate:admin
+          pnpm --filter @calibra/sdk run codegen:admin
           pnpm exec biome check --write packages/sdk/src/generated/admin.d.ts
 
           if ! git diff --quiet; then
@@ -193,5 +193,5 @@ jobs:
         run: pnpm --filter @calibra/api-docs run build:json:admin
       - name: SDK sync
         run: |
-          pnpm --filter @calibra/sdk run generate:admin
+          pnpm --filter @calibra/sdk run codegen:admin
           git diff --exit-code -- packages/sdk/src/generated/admin.d.ts
