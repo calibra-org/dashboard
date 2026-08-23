@@ -1,0 +1,238 @@
+name: Phase 26 Hardening Once
+
+on:
+  push:
+    branches: [feat/phase26-merchant-memory-20260823]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: phase26-hardening-once
+  cancel-in-progress: true
+
+jobs:
+  harden:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/phase26-merchant-memory-20260823
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+      - run: npm install --global pnpm@10.32.1
+      - run: pnpm install --frozen-lockfile
+      - name: Harden Phase 26 source
+        run: |
+          python <<'PY'
+          from pathlib import Path
+
+          def once(text, old, new, label):
+              if new in text:
+                  return text
+              if old not in text:
+                  raise SystemExit(f'missing marker: {label}')
+              return text.replace(old, new, 1)
+
+          service_path = Path('apps/api/app/services/phase26_merchant_memory_service.ts')
+          service = service_path.read_text()
+
+          service = once(
+              service,
+              'type SourceTarget = { table: string; idColumn?: string };',
+              'type AgentMemoryPrincipal = { id: number; principal_key: string };\n\ntype SourceTarget = { table: string; idColumn?: string };',
+              'agent principal type',
+          )
+
+          service = once(
+              service,
+              'function assertPrivacyBoundary(input: CreateMemoryInput) {',
+              'export function assertMerchantMemoryPrivacyBoundary(input: CreateMemoryInput) {',
+              'privacy export',
+          )
+          service = service.replace('assertPrivacyBoundary(input);', 'assertMerchantMemoryPrivacyBoundary(input);')
+
+          privacy_old = '''    const sensitivity = input.sensitivity ?? "aggregate";
+              const consumers = input.allowed_consumers ?? ["human"];
+              const subjectType = input.subject_type?.trim().toLowerCase();'''
+          privacy_new = '''    const sensitivity = input.sensitivity ?? "aggregate";
+              const consumers = input.allowed_consumers ?? ["human"];
+              const sourceSensitivities = new Set(input.sources.map((source) => source.sensitivity ?? "aggregate"));
+              if (sourceSensitivities.has("customer_level_sensitive") && sensitivity !== "customer_level_sensitive") {
+                  throw new Exception("Sensitive source evidence requires sensitive memory classification", {
+                      status: 422,
+                      code: "E_MERCHANT_MEMORY_SOURCE_SENSITIVITY_DOWNGRADE",
+                  });
+              }
+              if (sourceSensitivities.has("internal") && sensitivity === "aggregate") {
+                  throw new Exception("Internal source evidence cannot be downgraded to aggregate memory", {
+                      status: 422,
+                      code: "E_MERCHANT_MEMORY_SOURCE_SENSITIVITY_DOWNGRADE",
+                  });
+              }
+              const subjectType = input.subject_type?.trim().toLowerCase();'''
+          if 'E_MERCHANT_MEMORY_SOURCE_SENSITIVITY_DOWNGRADE' not in service:
+              service = once(service, privacy_old, privacy_new, 'source sensitivity')
+
+          retrieve_old = 'export async function retrieveMemories(input: RetrieveMemoryInput, actor: User) {\n    const trx = currentTrx();'
+          retrieve_new = '''export async function retrieveMemories(
+              input: RetrieveMemoryInput,
+              actor: User,
+              agentPrincipal: AgentMemoryPrincipal | null = null,
+          ) {
+              if (input.consumer === "agent" && !agentPrincipal) {
+                  throw new Exception("Approved agent principal is required for agent retrieval", {
+                      status: 403,
+                      code: "E_MERCHANT_MEMORY_AGENT_PRINCIPAL_REQUIRED",
+                  });
+              }
+              if (input.consumer === "human" && agentPrincipal) {
+                  throw new Exception("Agent principal cannot be attached to human retrieval", {
+                      status: 422,
+                      code: "E_MERCHANT_MEMORY_PRINCIPAL_KIND_MISMATCH",
+                  });
+              }
+              const trx = currentTrx();'''
+          if 'agentPrincipal: AgentMemoryPrincipal | null = null' not in service:
+              service = once(service, retrieve_old, retrieve_new, 'retrieve principal')
+
+          service = service.replace(
+              'principal_id: String(actor.id),',
+              'principal_id: input.consumer === "agent" ? String(agentPrincipal!.id) : String(actor.id),',
+              1,
+          )
+
+          overview_old = 'const [active, superseded, expired, retrievals, effectiveness] = await Promise.all(['
+          overview_new = 'const [active, superseded, expired, retrievals, sourceLinkage, effectiveness] = await Promise.all(['
+          if 'sourceLinkage' not in service:
+              service = once(service, overview_old, overview_new, 'overview destructure')
+              retrieval_query = '        trx.from("merchant_memory_retrievals").where("tenant_id", tenantId()).count("* as count").first(),\n'
+              linkage_query = '''        trx.from("merchant_memory_retrievals").where("tenant_id", tenantId()).count("* as count").first(),
+                  trx
+                      .from("merchant_memory_retrievals")
+                      .where("tenant_id", tenantId())
+                      .select(
+                          trx.raw("SUM(source_linked_count)::float / NULLIF(SUM(result_count), 0) AS source_linked_retrieval_rate"),
+                      )
+                      .first(),
+          '''
+              service = once(service, retrieval_query, linkage_query, 'source linkage query')
+
+          repeat_metric = '''                trx.raw(
+                  "AVG(CASE WHEN repeat_error_avoided IS TRUE THEN 1.0 WHEN repeat_error_avoided IS FALSE THEN 0.0 END) AS repeat_error_avoidance_rate",
+              ),'''
+          if 'misleading_memory_rate' not in service:
+              service = once(
+                  service,
+                  repeat_metric,
+                  repeat_metric + '\n                trx.raw("AVG(CASE WHEN signal = \'harmful\' THEN 1.0 ELSE 0.0 END) AS misleading_memory_rate"),',
+                  'misleading metric',
+              )
+              return_old = '''        repeat_error_reduction_proxy:
+                  effectiveness?.repeat_error_avoidance_rate == null ? null : Number(effectiveness.repeat_error_avoidance_rate),
+              };'''
+              return_new = '''        repeat_error_reduction_proxy:
+                  effectiveness?.repeat_error_avoidance_rate == null ? null : Number(effectiveness.repeat_error_avoidance_rate),
+                  misleading_memory_rate:
+                      effectiveness?.misleading_memory_rate == null ? null : Number(effectiveness.misleading_memory_rate),
+                  source_linked_retrieval_rate:
+                      sourceLinkage?.source_linked_retrieval_rate == null ? null : Number(sourceLinkage.source_linked_retrieval_rate),
+              };'''
+              service = once(service, return_old, return_new, 'overview response')
+
+          service_path.write_text(service)
+
+          controller_path = Path('apps/api/app/controllers/admin/merchant_memory_controller.ts')
+          controller = controller_path.read_text()
+          old = '''        if (payload.consumer === "agent") {
+                  if (!payload.agent_principal_key) {
+                      throw new Exception("Agent retrieval requires an approved principal key", {
+                          status: 403,
+                          code: "E_MERCHANT_MEMORY_AGENT_PRINCIPAL_REQUIRED",
+                      });
+                  }
+                  await requireApprovedAgentPrincipal(payload.agent_principal_key);
+                  payload.include_customer_sensitive = false;
+              } else if (payload.include_customer_sensitive) {
+                  await requireExplicitMerchantMemoryPermission(auth.user!, "merchant_memory.restricted");
+              }
+              return response.ok({ data: await memory.retrieveMemories(payload, auth.user!) });'''
+          new = '''        let agentPrincipal: Awaited<ReturnType<typeof requireApprovedAgentPrincipal>> | null = null;
+              if (payload.consumer === "agent") {
+                  if (!payload.agent_principal_key) {
+                      throw new Exception("Agent retrieval requires an approved principal key", {
+                          status: 403,
+                          code: "E_MERCHANT_MEMORY_AGENT_PRINCIPAL_REQUIRED",
+                      });
+                  }
+                  agentPrincipal = await requireApprovedAgentPrincipal(payload.agent_principal_key);
+                  payload.include_customer_sensitive = false;
+              } else if (payload.include_customer_sensitive) {
+                  await requireExplicitMerchantMemoryPermission(auth.user!, "merchant_memory.restricted");
+              }
+              return response.ok({ data: await memory.retrieveMemories(payload, auth.user!, agentPrincipal) });'''
+          if 'let agentPrincipal: Awaited<ReturnType<typeof requireApprovedAgentPrincipal>>' not in controller:
+              controller = once(controller, old, new, 'controller principal')
+          controller_path.write_text(controller)
+
+          ui_path = Path('apps/admin/src/features/merchant-memory/MerchantMemoryWorkspace.tsx')
+          ui = ui_path.read_text()
+          if 'misleading_memory_rate' not in ui:
+              ui = ui.replace(
+                  '    repeat_error_reduction_proxy: number | null;\n',
+                  '    repeat_error_reduction_proxy: number | null;\n    misleading_memory_rate: number | null;\n    source_linked_retrieval_rate: number | null;\n',
+                  1,
+              )
+              ui = ui.replace('className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"', 'className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6"', 1)
+              anchor = '''                <Card className="p-4">
+                      <p className="text-muted-foreground text-sm">کاهش تکرار خطا</p>
+                      <p className="mt-2 font-semibold text-3xl">{percent(overview.data?.repeat_error_reduction_proxy)}</p>
+                  </Card>'''
+              cards = anchor + '''
+                  <Card className="p-4">
+                      <p className="text-muted-foreground text-sm">بازیابی منبع‌دار</p>
+                      <p className="mt-2 font-semibold text-3xl">{percent(overview.data?.source_linked_retrieval_rate)}</p>
+                  </Card>
+                  <Card className="p-4">
+                      <p className="text-muted-foreground text-sm">حافظه گمراه‌کننده</p>
+                      <p className="mt-2 font-semibold text-3xl">{percent(overview.data?.misleading_memory_rate)}</p>
+                  </Card>'''
+              ui = once(ui, anchor, cards, 'KPI cards')
+              ui = ui.replace('<span>Score: {memory.retrieval_score}</span>', '<span>امتیاز: {percent(memory.retrieval_score)}</span>')
+          ui_path.write_text(ui)
+
+          verifier_path = Path('scripts/verify-phase26-merchant-memory.mjs')
+          verifier = verifier_path.read_text()
+          if 'server-derived agent principal linkage missing' not in verifier:
+              insert = '''
+must(service.includes("merchantMemoryRetrievalScore") && service.includes("score_components"), "deterministic retrieval score explanation missing");
+must(service.includes("agentPrincipal!.id"), "server-derived agent principal linkage missing");
+must(service.includes("E_MERCHANT_MEMORY_SOURCE_SENSITIVITY_DOWNGRADE"), "source sensitivity downgrade protection missing");
+must(service.includes("misleading_memory_rate") && service.includes("source_linked_retrieval_rate"), "Phase 26 effectiveness KPIs incomplete");
+must(read("apps/api/app/controllers/admin/merchant_memory_controller.ts").includes("agentPrincipal = await requireApprovedAgentPrincipal"), "Governance principal is not bound to retrieval logging");
+must(read("apps/admin/src/components/Sidebar.tsx").includes("/analytics/merchant-memory"), "Phase 26 navigation missing");
+must(read("docs/api/package.json").includes("build:json:admin-phase26"), "Phase 26 OpenAPI build wiring missing");
+must(read("docs/api/scripts/merge-admin-spec.js").includes("Phase26MerchantMemoryOverlay"), "Phase 26 OpenAPI merge wiring missing");
+'''
+              verifier = verifier.replace('console.log("PASS Phase26 Merchant Memory integrity gate");', insert + '\nconsole.log("PASS Phase26 Merchant Memory integrity gate");')
+          verifier_path.write_text(verifier)
+          PY
+
+          pnpm exec biome check --write \
+            apps/api/app/controllers/admin/merchant_memory_controller.ts \
+            apps/api/app/services/phase26_merchant_memory_service.ts \
+            apps/admin/src/features/merchant-memory/MerchantMemoryWorkspace.tsx \
+            scripts/verify-phase26-merchant-memory.mjs
+          node scripts/verify-phase26-merchant-memory.mjs
+          pnpm --filter @calibra/api run typecheck
+          pnpm --filter @calibra/admin run typecheck
+
+          if ! git diff --quiet; then
+            git config user.name github-actions[bot]
+            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+            git add -A
+            git commit -m "fix(phase26): harden agent identity privacy and effectiveness"
+            git push origin HEAD:feat/phase26-merchant-memory-20260823
+          fi
