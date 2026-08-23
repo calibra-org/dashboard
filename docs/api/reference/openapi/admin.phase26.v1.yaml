@@ -1,0 +1,101 @@
+openapi: 3.1.0
+info:
+  title: Calibra Admin Phase 26 Merchant Memory API
+  version: 1.0.0
+tags:
+  - name: Merchant Memory
+    description: Source-linked organizational memory, lineage, retrieval and effectiveness measurement.
+paths:
+  /api/v1/admin/merchant-memory/overview:
+    get:
+      tags: [Merchant Memory]
+      operationId: adminMerchantMemoryOverview
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/merchant-memory/records:
+    get:
+      tags: [Merchant Memory]
+      operationId: adminMerchantMemoryRecords
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+    post:
+      tags: [Merchant Memory]
+      operationId: adminMerchantMemoryCreate
+      requestBody: { $ref: '#/components/requestBodies/ObjectBody' }
+      responses:
+        '201': { $ref: '#/components/responses/CreatedEnvelope' }
+  /api/v1/admin/merchant-memory/records/{publicId}:
+    get:
+      tags: [Merchant Memory]
+      operationId: adminMerchantMemoryDetail
+      parameters:
+        - $ref: '#/components/parameters/PublicId'
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/merchant-memory/records/{publicId}/supersede:
+    post:
+      tags: [Merchant Memory]
+      operationId: adminMerchantMemorySupersede
+      parameters:
+        - $ref: '#/components/parameters/PublicId'
+      requestBody: { $ref: '#/components/requestBodies/ObjectBody' }
+      responses:
+        '201': { $ref: '#/components/responses/CreatedEnvelope' }
+  /api/v1/admin/merchant-memory/records/{publicId}/revoke:
+    post:
+      tags: [Merchant Memory]
+      operationId: adminMerchantMemoryRevoke
+      parameters:
+        - $ref: '#/components/parameters/PublicId'
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/merchant-memory/retrieve:
+    post:
+      tags: [Merchant Memory]
+      operationId: adminMerchantMemoryRetrieve
+      requestBody: { $ref: '#/components/requestBodies/ObjectBody' }
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/merchant-memory/retrievals/{publicId}/effectiveness:
+    post:
+      tags: [Merchant Memory]
+      operationId: adminMerchantMemoryEffectiveness
+      parameters:
+        - $ref: '#/components/parameters/PublicId'
+      requestBody: { $ref: '#/components/requestBodies/ObjectBody' }
+      responses:
+        '201': { $ref: '#/components/responses/CreatedEnvelope' }
+components:
+  parameters:
+    PublicId:
+      name: publicId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+  requestBodies:
+    ObjectBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: true
+  responses:
+    OkEnvelope:
+      description: Successful merchant memory response.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data: {}
+    CreatedEnvelope:
+      description: Merchant memory resource created.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data: {}
