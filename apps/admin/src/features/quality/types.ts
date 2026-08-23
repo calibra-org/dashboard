@@ -30,7 +30,7 @@ export interface QualityOverview {
 }
 
 export interface QualityCaseDetail extends QualityCase {
-    verification_status?: string | null;
+    verification_status: string | null;
     sources: QualityRecord[];
     evidence: QualityRecord[];
     findings: QualityRecord[];
