@@ -11,25 +11,24 @@ const memoryClass = vine.enum([
     "policy_precedent",
 ]);
 
-const memoryConsumer = vine.enum(["human", "agent"]);
-const memorySensitivity = vine.enum(["aggregate", "internal", "customer_level_sensitive"]);
+const memorySensitivity = vine.enum(["aggregated", "internal", "restricted"]);
+const sourceKind = vine.enum(["decision", "outcome", "approval", "experiment", "portfolio", "incident", "audit", "operator"]);
+const evidenceRole = vine.enum(["primary", "supporting", "contradicting"]);
 
-const evidence = vine.object({
-    source_domain: vine.string().trim().minLength(2).maxLength(80),
-    source_kind: vine.string().trim().minLength(2).maxLength(100),
-    source_id: vine.string().trim().maxLength(180).nullable().optional(),
-    source_route: vine.string().trim().maxLength(400).nullable().optional(),
-    source_hash: vine.string().trim().fixedLength(64).nullable().optional(),
-    label: vine.string().trim().minLength(2).maxLength(240),
-    evidence_summary: vine.record(vine.any()).optional(),
-    observed_at: vine.string().trim().minLength(10).maxLength(64),
+const source = vine.object({
+    source_kind: sourceKind,
+    source_table: vine.string().trim().minLength(2).maxLength(96),
+    source_id: vine.string().trim().minLength(1).maxLength(160),
+    source_public_id: vine.string().trim().maxLength(160).nullable().optional(),
+    evidence_hash: vine.string().trim().fixedLength(64).nullable().optional(),
+    evidence_role: evidenceRole.optional(),
+    observed_at: vine.string().trim().minLength(10).maxLength(64).nullable().optional(),
 });
 
 const memoryBody = {
     memory_class: memoryClass,
-    subject_type: vine.string().trim().maxLength(80).nullable().optional(),
-    subject_id: vine.string().trim().maxLength(160).nullable().optional(),
-    title: vine.string().trim().minLength(3).maxLength(220),
+    subject_type: vine.string().trim().maxLength(64).nullable().optional(),
+    subject_key: vine.string().trim().maxLength(160).nullable().optional(),
     context: vine.string().trim().minLength(3).maxLength(12000),
     observed_signals: vine.array(vine.any()).maxLength(128).optional(),
     decision: vine.string().trim().maxLength(8000).nullable().optional(),
@@ -42,17 +41,10 @@ const memoryBody = {
     confidence: vine.number().min(0).max(1),
     strength: vine.number().min(0).max(1),
     sensitivity: memorySensitivity.optional(),
-    retention_class: vine.string().trim().maxLength(40).optional(),
-    allowed_consumers: vine.array(memoryConsumer).minLength(1).maxLength(2).optional(),
-    purposes: vine.array(vine.string().trim().minLength(2).maxLength(80)).maxLength(32).optional(),
+    required_permission: vine.string().trim().maxLength(80).nullable().optional(),
     relevant_from: vine.string().trim().minLength(10).maxLength(64).optional(),
     expires_at: vine.string().trim().minLength(10).maxLength(64).nullable().optional(),
-    source_case_id: vine.number().positive().withoutDecimals().nullable().optional(),
-    source_decision_id: vine.number().positive().withoutDecimals().nullable().optional(),
-    source_action_record_id: vine.number().positive().withoutDecimals().nullable().optional(),
-    source_outcome_record_id: vine.number().positive().withoutDecimals().nullable().optional(),
-    source_portfolio_run_id: vine.number().positive().withoutDecimals().nullable().optional(),
-    evidence: vine.array(evidence).maxLength(128).optional(),
+    sources: vine.array(source).minLength(1).maxLength(128),
 };
 
 export const createMerchantMemoryValidator = vine.compile(vine.object(memoryBody));
@@ -60,7 +52,7 @@ export const createMerchantMemoryValidator = vine.compile(vine.object(memoryBody
 export const supersedeMerchantMemoryValidator = vine.compile(
     vine.object({
         ...memoryBody,
-        relationship: vine.enum(["supersedes", "contradicts", "refines"]).optional(),
+        relation: vine.enum(["supersedes", "contradicts", "refines"]).optional(),
         supersession_reason: vine.string().trim().minLength(3).maxLength(4000),
     }),
 );
@@ -68,24 +60,24 @@ export const supersedeMerchantMemoryValidator = vine.compile(
 export const retrieveMerchantMemoryValidator = vine.compile(
     vine.object({
         query: vine.string().trim().maxLength(4000),
-        purpose: vine.string().trim().minLength(2).maxLength(80),
-        consumer: memoryConsumer,
+        principal_kind: vine.enum(["admin", "copilot", "automation"]),
+        principal_id: vine.string().trim().maxLength(160).nullable().optional(),
         memory_classes: vine.array(memoryClass).maxLength(8).optional(),
-        subject_type: vine.string().trim().maxLength(80).nullable().optional(),
-        subject_id: vine.string().trim().maxLength(160).nullable().optional(),
-        include_sensitive: vine.boolean().optional(),
+        subject_type: vine.string().trim().maxLength(64).nullable().optional(),
+        subject_key: vine.string().trim().maxLength(160).nullable().optional(),
+        permissions: vine.array(vine.string().trim().minLength(1).maxLength(80)).maxLength(64).optional(),
+        include_restricted: vine.boolean().optional(),
         limit: vine.number().positive().withoutDecimals().max(50).optional(),
-        request_correlation_id: vine.string().trim().maxLength(160).nullable().optional(),
     }),
 );
 
 export const recordMerchantMemoryEffectivenessValidator = vine.compile(
     vine.object({
-        retrieval_id: vine.string().trim().maxLength(64).nullable().optional(),
-        signal: vine.enum(["used", "ignored", "helpful", "harmful", "repeat_error"]),
+        retrieval_public_id: vine.string().trim().maxLength(64),
+        memory_public_id: vine.string().trim().maxLength(64).nullable().optional(),
+        outcome: vine.enum(["used", "ignored", "misleading", "prevented_repeat_error", "unknown"]),
         usefulness: vine.number().min(0).max(1).nullable().optional(),
         repeat_error_avoided: vine.boolean().nullable().optional(),
         notes: vine.string().trim().maxLength(4000).nullable().optional(),
-        source_outcome_record_id: vine.number().positive().withoutDecimals().nullable().optional(),
     }),
 );
