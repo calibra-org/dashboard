@@ -76,8 +76,6 @@ export const supersedeMerchantMemoryValidator = vine.compile(
 
 export const retrieveMerchantMemoryValidator = vine.compile(
     vine.object({
-        principal_type: vine.enum(["human", "agent", "system"]),
-        principal_ref: vine.string().trim().minLength(1).maxLength(160),
         query: vine.string().trim().minLength(2).maxLength(4000),
         purpose: vine.string().trim().minLength(2).maxLength(80).optional(),
         memory_classes: vine.array(memoryClass).maxLength(8).optional(),
