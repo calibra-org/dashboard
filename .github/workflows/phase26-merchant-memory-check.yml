@@ -88,11 +88,16 @@ jobs:
           scripts/verify-phase26-merchant-memory.mjs
       - name: Phase 26 static contract
         run: node scripts/verify-phase26-merchant-memory.mjs
-      - name: Ranking and privacy regressions
+      - name: Ranking regression
         working-directory: apps/api
-        run: pnpm test --force-exit --files=phase26_merchant_memory_*
+        run: pnpm test unit --force-exit --files=phase26_merchant_memory_ranking
+      - name: Privacy regressions
+        working-directory: apps/api
+        run: pnpm exec node ace test unit --force-exit --files=phase26_merchant_memory_privacy
       - name: API typecheck
         run: pnpm --filter @calibra/api run typecheck
+      - name: Build SDK dependency
+        run: pnpm --filter @calibra/sdk run build
       - name: Admin typecheck
         run: pnpm --filter @calibra/admin run typecheck
       - name: Admin production build
