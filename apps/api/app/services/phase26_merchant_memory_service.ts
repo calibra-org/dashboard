@@ -148,6 +148,10 @@ function parsePositiveId(ref: string, code: string) {
     return id;
 }
 
+function isRestricted(row: Pick<MemoryRow, "privacy_mode" | "visibility_scope">) {
+    return row.privacy_mode === "restricted" || row.visibility_scope === "restricted_humans";
+}
+
 function publicMemory(row: MemoryRow, evidence: unknown[] = [], lineage: unknown[] = []) {
     return {
         public_id: row.public_id,
@@ -201,7 +205,6 @@ function assertPrivacy(input: Pick<MemoryCreateInput, "memory_class" | "privacy_
 async function canonicalEvidence(input: MemoryEvidenceInput): Promise<CanonicalEvidence> {
     const trx = currentTrx();
     const tenant = tenantId();
-    const role = input.evidence_role;
     let row: Record<string, unknown> | undefined;
     let authority = "";
     let safeMetadata: Record<string, unknown> = {};
@@ -249,7 +252,7 @@ async function canonicalEvidence(input: MemoryEvidenceInput): Promise<CanonicalE
         authority = "experiment_analysis_runs";
         const id = parsePositiveId(input.source_record_ref, "E_MERCHANT_MEMORY_PHASE17_ANALYSIS_REF");
         row = await trx.from(authority).where("tenant_id", tenant).where("id", id).first();
-        if (row) safeMetadata = { id: row.id, experiment_id: row.experiment_id, analysis_method: row.analysis_method, created_at: row.created_at };
+        if (row) safeMetadata = { id: row.id, experiment_id: row.experiment_id, analysis_version: row.analysis_version, status: row.status, created_at: row.created_at };
     } else if (input.source_type === "phase22_plan") {
         authority = "agent_plans";
         row = await trx.from(authority).where("tenant_id", tenant).where("public_id", input.source_record_ref).first();
@@ -280,7 +283,6 @@ async function canonicalEvidence(input: MemoryEvidenceInput): Promise<CanonicalE
         });
     }
 
-    const observedAt = input.observed_at ?? null;
     const canonicalHash = sha256({ authority, source_record_ref: input.source_record_ref, safeMetadata });
     if (input.content_hash && input.content_hash !== canonicalHash) {
         throw new Exception("Merchant memory evidence integrity hash does not match the canonical source snapshot", {
@@ -293,10 +295,10 @@ async function canonicalEvidence(input: MemoryEvidenceInput): Promise<CanonicalE
         source_type: input.source_type,
         source_authority: authority,
         source_record_ref: input.source_record_ref,
-        evidence_role: role,
+        evidence_role: input.evidence_role,
         content_hash: canonicalHash,
         source_metadata: safeMetadata,
-        observed_at: observedAt,
+        observed_at: input.observed_at ?? null,
     };
 }
 
@@ -370,7 +372,7 @@ async function insertEvidence(memoryId: number, input: MemoryEvidenceInput) {
 
 async function insertMemory(input: MemoryCreateInput, actor: User, version: number) {
     assertPrivacy(input);
-    const canonical = [];
+    const canonical: CanonicalEvidence[] = [];
     for (const evidence of input.evidence) canonical.push(await canonicalEvidence(evidence));
     const publicId = randomUUID();
     const [record] = await currentTrx()
@@ -419,6 +421,17 @@ async function insertMemory(input: MemoryCreateInput, actor: User, version: numb
     return { row: record as MemoryRow, value: publicMemory(record as MemoryRow, evidence.get(Number(record.id)) ?? []) };
 }
 
+export async function expireDueMemory() {
+    const changed = await currentTrx()
+        .from("merchant_memory_records")
+        .where("tenant_id", tenantId())
+        .where("status", "active")
+        .whereNotNull("expires_at")
+        .where("expires_at", "<=", DateTime.utc().toSQL())
+        .update({ status: "expired", updated_at: DateTime.utc().toSQL() });
+    return { expired: Number(changed) };
+}
+
 export async function overview() {
     await expireDueMemory();
     const trx = currentTrx();
@@ -430,8 +443,8 @@ export async function overview() {
             .from("merchant_memory_effectiveness")
             .where("tenant_id", tenantId())
             .where("measured_at", ">=", DateTime.utc().minus({ days: 30 }).toSQL())
-            .avg("usefulness as usefulness")
-            .sum("repeat_error_avoided as repeat_error_avoided")
+            .select(trx.raw("AVG(usefulness) AS usefulness"))
+            .select(trx.raw("SUM(CASE WHEN repeat_error_avoided IS TRUE THEN 1 ELSE 0 END) AS repeat_error_avoided"))
             .first(),
     ]);
     return {
@@ -444,10 +457,25 @@ export async function overview() {
     };
 }
 
-export async function listMemories(filters: { memory_class?: string; status?: string; limit?: number } = {}) {
+export async function memoryAccessClass(publicId: string) {
+    const row = await currentTrx()
+        .from("merchant_memory_records")
+        .where("tenant_id", tenantId())
+        .where("public_id", publicId)
+        .select("privacy_mode", "visibility_scope")
+        .first();
+    if (!row) throw new Exception("Merchant memory record not found", { status: 404, code: "E_MERCHANT_MEMORY_NOT_FOUND" });
+    return { restricted: row.privacy_mode === "restricted" || row.visibility_scope === "restricted_humans" };
+}
+
+export async function listMemories(
+    filters: { memory_class?: string; status?: string; limit?: number } = {},
+    allowRestricted = false,
+) {
     await expireDueMemory();
     const limit = Math.min(100, Math.max(1, Number(filters.limit ?? 50)));
     let query = currentTrx().from("merchant_memory_records").where("tenant_id", tenantId());
+    if (!allowRestricted) query = query.whereNot("privacy_mode", "restricted").whereNot("visibility_scope", "restricted_humans");
     if (filters.memory_class) query = query.where("memory_class", filters.memory_class);
     if (filters.status) query = query.where("status", filters.status);
     const rows = (await query.orderBy("updated_at", "desc").limit(limit)) as MemoryRow[];
@@ -456,14 +484,16 @@ export async function listMemories(filters: { memory_class?: string; status?: st
     return rows.map((row) => publicMemory(row, evidence.get(Number(row.id)) ?? [], lineage.get(Number(row.id)) ?? []));
 }
 
-export async function memoryDetail(publicId: string) {
+export async function memoryDetail(publicId: string, allowRestricted = false) {
     await expireDueMemory();
     const row = (await currentTrx()
         .from("merchant_memory_records")
         .where("tenant_id", tenantId())
         .where("public_id", publicId)
         .first()) as MemoryRow | undefined;
-    if (!row) throw new Exception("Merchant memory record not found", { status: 404, code: "E_MERCHANT_MEMORY_NOT_FOUND" });
+    if (!row || (isRestricted(row) && !allowRestricted)) {
+        throw new Exception("Merchant memory record not found", { status: 404, code: "E_MERCHANT_MEMORY_NOT_FOUND" });
+    }
     const evidence = await evidenceFor([Number(row.id)]);
     const lineage = await lineageFor([Number(row.id)]);
     return publicMemory(row, evidence.get(Number(row.id)) ?? [], lineage.get(Number(row.id)) ?? []);
@@ -484,15 +514,17 @@ export async function createMemory(input: MemoryCreateInput, actor: User) {
     return (await insertMemory(input, actor, 1)).value;
 }
 
-export async function addEvidence(publicId: string, input: MemoryEvidenceInput) {
-    const memory = await currentTrx()
+export async function addEvidence(publicId: string, input: MemoryEvidenceInput, allowRestricted = false) {
+    const memory = (await currentTrx()
         .from("merchant_memory_records")
         .where("tenant_id", tenantId())
         .where("public_id", publicId)
-        .first();
-    if (!memory) throw new Exception("Merchant memory record not found", { status: 404, code: "E_MERCHANT_MEMORY_NOT_FOUND" });
+        .first()) as MemoryRow | undefined;
+    if (!memory || (isRestricted(memory) && !allowRestricted)) {
+        throw new Exception("Merchant memory record not found", { status: 404, code: "E_MERCHANT_MEMORY_NOT_FOUND" });
+    }
     await insertEvidence(Number(memory.id), input);
-    return memoryDetail(publicId);
+    return memoryDetail(publicId, allowRestricted);
 }
 
 function scoreMemory(row: MemoryRow, query: string) {
@@ -516,7 +548,7 @@ function scoreMemory(row: MemoryRow, query: string) {
     };
 }
 
-async function retrievalVisibility(input: MemoryRetrieveInput) {
+async function visibilityPredicate(input: MemoryRetrieveInput, allowRestricted: boolean) {
     if (input.requester_type === "agent") {
         if (!input.requester_ref) {
             throw new Exception("Agent merchant-memory retrieval requires an approved principal reference", {
@@ -528,25 +560,27 @@ async function retrievalVisibility(input: MemoryRetrieveInput) {
         return (row: MemoryRow) => row.visibility_scope === "approved_agents" && row.privacy_mode !== "restricted";
     }
     if (input.requester_type === "system") {
-        return (row: MemoryRow) => row.visibility_scope !== "restricted_humans" && row.privacy_mode !== "restricted";
+        return (row: MemoryRow) =>
+            row.visibility_scope !== "restricted_humans" && row.privacy_mode !== "restricted";
     }
-    return (row: MemoryRow) => row.visibility_scope !== "approved_agents" || row.privacy_mode !== "restricted";
+    return (row: MemoryRow) => allowRestricted || !isRestricted(row);
 }
 
-export async function retrieveMemory(input: MemoryRetrieveInput) {
+export async function retrieveMemory(input: MemoryRetrieveInput, options: { allowRestricted?: boolean } = {}) {
     await expireDueMemory();
     const trx = currentTrx();
     const limit = Math.min(50, Math.max(1, input.limit ?? 12));
     const includeHistory = Boolean(input.include_history && input.requester_type === "human");
     let query = trx.from("merchant_memory_records").where("tenant_id", tenantId());
-    if (!includeHistory) query = query.where("status", "active");
     if (input.memory_classes?.length) query = query.whereIn("memory_class", input.memory_classes);
     if (input.min_confidence != null) query = query.where("confidence", ">=", input.min_confidence);
-    const candidates = (await query.orderBy("updated_at", "desc").limit(500)) as MemoryRow[];
-    const evidence = await evidenceFor(candidates.map((row) => Number(row.id)));
-    const sourceLinked = candidates.filter((row) => (evidence.get(Number(row.id)) ?? []).length > 0);
-    const visiblePredicate = await retrievalVisibility(input);
-    const visible = sourceLinked.filter(visiblePredicate);
+    const allCandidates = (await query.orderBy("updated_at", "desc").limit(500)) as MemoryRow[];
+    const expiredFiltered = includeHistory ? 0 : allCandidates.filter((row) => row.status === "expired").length;
+    const statusFiltered = includeHistory ? allCandidates : allCandidates.filter((row) => row.status === "active");
+    const evidence = await evidenceFor(statusFiltered.map((row) => Number(row.id)));
+    const sourceLinked = statusFiltered.filter((row) => (evidence.get(Number(row.id)) ?? []).length > 0);
+    const canSee = await visibilityPredicate(input, Boolean(options.allowRestricted));
+    const visible = sourceLinked.filter(canSee);
     const ranked = visible
         .map((row) => ({ row, score: scoreMemory(row, input.query) }))
         .sort((left, right) => right.score.total - left.score.total || num(right.row.version) - num(left.row.version))
@@ -571,7 +605,7 @@ export async function retrieveMemory(input: MemoryRetrieveInput) {
         }),
         returned_memory_public_ids: JSON.stringify(data.map((memory) => memory.public_id)),
         permission_filtered_count: sourceLinked.length - visible.length,
-        expired_filtered_count: includeHistory ? 0 : 0,
+        expired_filtered_count: expiredFiltered,
         source_coverage: data.length ? 1 : 0,
         result_count: data.length,
         retrieved_at: DateTime.utc().toISO(),
@@ -581,6 +615,7 @@ export async function retrieveMemory(input: MemoryRetrieveInput) {
         result_count: data.length,
         source_coverage: data.length ? 1 : 0,
         permission_filtered_count: sourceLinked.length - visible.length,
+        expired_filtered_count: expiredFiltered,
         data,
     };
 }
@@ -608,21 +643,24 @@ export async function supersedeMemory(
     reason: string,
     replacement: MemoryReplacementInput,
     actor: User,
+    allowRestricted = false,
 ) {
     const trx = currentTrx();
-    const predecessor = await trx
+    const predecessor = (await trx
         .from("merchant_memory_records")
         .where("tenant_id", tenantId())
         .where("public_id", publicId)
-        .first();
-    if (!predecessor) throw new Exception("Merchant memory record not found", { status: 404, code: "E_MERCHANT_MEMORY_NOT_FOUND" });
+        .first()) as MemoryRow | undefined;
+    if (!predecessor || (isRestricted(predecessor) && !allowRestricted)) {
+        throw new Exception("Merchant memory record not found", { status: 404, code: "E_MERCHANT_MEMORY_NOT_FOUND" });
+    }
     if (predecessor.status === "revoked") {
         throw new Exception("Revoked merchant memory cannot be evolved", {
             status: 409,
             code: "E_MERCHANT_MEMORY_REVOKED",
         });
     }
-    const nextVersion = Number(predecessor.version) + 1;
+    const nextVersion = num(predecessor.version) + 1;
     const created = await insertMemory({ ...replacement, stable_key: predecessor.stable_key }, actor, nextVersion);
     await assertNoLineageCycle(Number(predecessor.id), Number(created.row.id));
     await trx.table("merchant_memory_lineage").insert({
@@ -631,30 +669,22 @@ export async function supersedeMemory(
         to_memory_id: created.row.id,
         relation,
         reason,
-        evidence_refs: JSON.stringify(created.value.evidence.map((item) => ({
-            source_type: (item as Record<string, unknown>).source_type,
-            source_record_ref: (item as Record<string, unknown>).source_record_ref,
-        }))),
+        evidence_refs: JSON.stringify(
+            created.value.evidence.map((item) => ({
+                source_type: (item as Record<string, unknown>).source_type,
+                source_record_ref: (item as Record<string, unknown>).source_record_ref,
+            })),
+        ),
         created_by_user_id: Number(actor.id),
     });
     if (relation !== "contradicts") {
-        await trx.from("merchant_memory_records").where("tenant_id", tenantId()).where("id", predecessor.id).update({
-            status: "superseded",
-            updated_at: DateTime.utc().toSQL(),
-        });
+        await trx
+            .from("merchant_memory_records")
+            .where("tenant_id", tenantId())
+            .where("id", predecessor.id)
+            .update({ status: "superseded", updated_at: DateTime.utc().toSQL() });
     }
-    return memoryDetail(created.row.public_id);
-}
-
-export async function expireDueMemory() {
-    const changed = await currentTrx()
-        .from("merchant_memory_records")
-        .where("tenant_id", tenantId())
-        .where("status", "active")
-        .whereNotNull("expires_at")
-        .where("expires_at", "<=", DateTime.utc().toSQL())
-        .update({ status: "expired", updated_at: DateTime.utc().toSQL() });
-    return { expired: Number(changed) };
+    return memoryDetail(created.row.public_id, allowRestricted || isRestricted(created.row));
 }
 
 export async function recordEffectiveness(
@@ -705,11 +735,11 @@ export async function effectiveness() {
         trx
             .from("merchant_memory_effectiveness")
             .where("tenant_id", tenantId())
-            .avg("usefulness as usefulness")
-            .avg("attribution_confidence as attribution_confidence")
-            .sum("memory_applied as memory_applied")
-            .sum("repeat_error_avoided as repeat_error_avoided")
-            .sum("realized_impact_minor as realized_impact_minor")
+            .select(trx.raw("AVG(usefulness) AS usefulness"))
+            .select(trx.raw("AVG(attribution_confidence) AS attribution_confidence"))
+            .select(trx.raw("SUM(CASE WHEN memory_applied IS TRUE THEN 1 ELSE 0 END) AS memory_applied"))
+            .select(trx.raw("SUM(CASE WHEN repeat_error_avoided IS TRUE THEN 1 ELSE 0 END) AS repeat_error_avoided"))
+            .select(trx.raw("COALESCE(SUM(realized_impact_minor), 0) AS realized_impact_minor"))
             .first(),
         trx.from("merchant_memory_effectiveness").where("tenant_id", tenantId()).count("id as count").first(),
     ]);
