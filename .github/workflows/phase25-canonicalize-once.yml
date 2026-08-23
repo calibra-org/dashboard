@@ -3,7 +3,7 @@ name: Phase 25 Canonicalize Once
 on:
   pull_request:
     branches: [main]
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, ready_for_review]
 
 permissions:
   contents: write
@@ -26,46 +26,38 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-
           sidebar = Path('apps/admin/src/components/Sidebar.tsx')
           text = sidebar.read_text()
           anchor = '            { href: "/analytics/pre-production-lab", label: "آزمایشگاه پیش‌انتشار", icon: Bug },\n'
           addition = '            { href: "/analytics/growth-portfolio", label: "سبد رشد خودکار", icon: TrendingUp },\n'
           if addition not in text:
-              if anchor not in text:
-                  raise SystemExit('Sidebar anchor missing')
+              if anchor not in text: raise SystemExit('Sidebar anchor missing')
               sidebar.write_text(text.replace(anchor, anchor + addition, 1))
-
           package = Path('docs/api/package.json')
           text = package.read_text()
-          chain_old = 'pnpm build:json:admin-phase23 && pnpm build:json:admin-phase24 && pnpm build:json:admin-completion'
-          chain_new = 'pnpm build:json:admin-phase23 && pnpm build:json:admin-phase24 && pnpm build:json:admin-phase25 && pnpm build:json:admin-completion'
-          if chain_new not in text:
-              if chain_old not in text:
-                  raise SystemExit('Admin build-chain anchor missing')
-              text = text.replace(chain_old, chain_new, 1)
-          script_old = '        "build:json:admin-phase24": "redocly bundle reference/openapi/admin.phase24.v1.yaml -o dist/admin.phase24.v1.json --ext json"\n'
-          script_new = '        "build:json:admin-phase24": "redocly bundle reference/openapi/admin.phase24.v1.yaml -o dist/admin.phase24.v1.json --ext json",\n        "build:json:admin-phase25": "redocly bundle reference/openapi/admin.phase25.v1.yaml -o dist/admin.phase25.v1.json --ext json"\n'
+          old = 'pnpm build:json:admin-phase23 && pnpm build:json:admin-phase24 && pnpm build:json:admin-completion'
+          new = 'pnpm build:json:admin-phase23 && pnpm build:json:admin-phase24 && pnpm build:json:admin-phase25 && pnpm build:json:admin-completion'
+          if new not in text:
+              if old not in text: raise SystemExit('Admin build-chain anchor missing')
+              text = text.replace(old, new, 1)
+          old = '        "build:json:admin-phase24": "redocly bundle reference/openapi/admin.phase24.v1.yaml -o dist/admin.phase24.v1.json --ext json"\n'
+          new = '        "build:json:admin-phase24": "redocly bundle reference/openapi/admin.phase24.v1.yaml -o dist/admin.phase24.v1.json --ext json",\n        "build:json:admin-phase25": "redocly bundle reference/openapi/admin.phase25.v1.yaml -o dist/admin.phase25.v1.json --ext json"\n'
           if '"build:json:admin-phase25"' not in text:
-              if script_old not in text:
-                  raise SystemExit('Phase24 package script anchor missing')
-              text = text.replace(script_old, script_new, 1)
+              if old not in text: raise SystemExit('Phase24 package script anchor missing')
+              text = text.replace(old, new, 1)
           package.write_text(text)
-
           merge = Path('docs/api/scripts/merge-admin-spec.js')
           text = merge.read_text()
-          load_anchor = 'const phase24 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase24.v1.json"), "utf8"));\n'
-          load_add = 'const phase25 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase25.v1.json"), "utf8"));\n'
-          if load_add not in text:
-              if load_anchor not in text:
-                  raise SystemExit('Phase24 merge load anchor missing')
-              text = text.replace(load_anchor, load_anchor + load_add, 1)
-          overlay_anchor = '    [phase24, "Phase24SyntheticCommerceOverlay"],\n'
-          overlay_add = '    [phase25, "Phase25GrowthPortfolioOverlay"],\n'
-          if overlay_add not in text:
-              if overlay_anchor not in text:
-                  raise SystemExit('Phase24 overlay anchor missing')
-              text = text.replace(overlay_anchor, overlay_anchor + overlay_add, 1)
+          anchor = 'const phase24 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase24.v1.json"), "utf8"));\n'
+          addition = 'const phase25 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase25.v1.json"), "utf8"));\n'
+          if addition not in text:
+              if anchor not in text: raise SystemExit('Phase24 merge load anchor missing')
+              text = text.replace(anchor, anchor + addition, 1)
+          anchor = '    [phase24, "Phase24SyntheticCommerceOverlay"],\n'
+          addition = '    [phase25, "Phase25GrowthPortfolioOverlay"],\n'
+          if addition not in text:
+              if anchor not in text: raise SystemExit('Phase24 overlay anchor missing')
+              text = text.replace(anchor, anchor + addition, 1)
           merge.write_text(text)
           PY
       - name: Apply canonical Biome formatting
@@ -92,8 +84,6 @@ jobs:
           git config user.name "calibra-dev"
           git config user.email "keshavarz20.com@gmail.com"
           git add -A
-          if git diff --cached --quiet; then
-            exit 0
-          fi
+          if git diff --cached --quiet; then exit 0; fi
           git commit -m "chore(phase25): canonicalize navigation docs and SDK"
           git push origin HEAD:feat/phase25-growth-portfolio-20260823
