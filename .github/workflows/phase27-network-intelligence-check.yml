@@ -31,7 +31,7 @@ on:
       - feat/phase27-private-network-intelligence-20260824
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: phase27-network-intelligence-${{ github.ref }}
@@ -67,7 +67,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: feat/phase27-private-network-intelligence-20260824
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
@@ -78,117 +78,9 @@ jobs:
         env:
           PGPASSWORD: calibra
         run: psql -h localhost -U calibra -d calibra -c "CREATE DATABASE calibra_test OWNER calibra;"
-      - name: Apply deterministic Phase 27 canonical repairs
-        run: |
-          python <<'PY'
-          from pathlib import Path
-          import re
-
-          service_path = Path("apps/api/app/services/network_intelligence/network_service.ts")
-          service = service_path.read_text()
-          service = service.replace(
-              'value.forEach((item, index) => assertAggregateOnlyNetworkPayload(item, `${path}[${index}]`));',
-              'for (const [index, item] of value.entries()) {\n            assertAggregateOnlyNetworkPayload(item, `${path}[${index}]`);\n        }',
-          )
-          service = service.replace('if (!policy || !policy.opted_in) {', 'if (!policy?.opted_in) {')
-          service_path.write_text(service)
-
-          aggregate_path = Path("scripts/aggregate-network-benchmarks.mjs")
-          aggregate = aggregate_path.read_text()
-          aggregate = aggregate.replace(
-              'value.forEach((item, index) => assertNoRawIdentityFields(item, `${location}[${index}]`));',
-              'for (const [index, item] of value.entries()) {\n            assertNoRawIdentityFields(item, `${location}[${index}]`);\n        }',
-          )
-          aggregate_path.write_text(aggregate)
-
-          verifier_path = Path("scripts/verify-phase27-network.mjs")
-          verifier = verifier_path.read_text().replace('"minimum_cohort_size >= 5",', '"NETWORK_MIN_COHORT_FLOOR = 5",')
-          verifier_path.write_text(verifier)
-
-          workspace_path = Path("apps/admin/src/features/network-intelligence/NetworkIntelligenceWorkspace.tsx")
-          workspace = workspace_path.read_text()
-          workspace = workspace.replace(
-              'import { Select } from "#/components/ui/select";',
-              'import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "#/components/ui/select";',
-          )
-
-          replacements = {
-              "network-contribution-metric": '''<Select
-                            value={selectedMetric?.metric_key ?? ""}
-                            onValueChange={(value) => {
-                                if (typeof value === "string") setContributionMetric(value);
-                            }}
-                        >
-                            <SelectTrigger id="network-contribution-metric">
-                                <SelectValue placeholder="انتخاب متریک" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {(metrics.data ?? []).map((metric) => (
-                                    <SelectItem key={metric.public_id} value={metric.metric_key}>
-                                        {metric.metric_key} · v{metric.version}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>''',
-              "privacy-method": '''<Select
-                            value={privacyMethod}
-                            onValueChange={(value) => {
-                                if (value === "aggregate_threshold" || value === "laplace_dp" || value === "secure_aggregate") {
-                                    setPrivacyMethod(value);
-                                }
-                            }}
-                        >
-                            <SelectTrigger id="privacy-method">
-                                <SelectValue placeholder="روش privacy" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="aggregate_threshold">aggregate threshold</SelectItem>
-                                <SelectItem value="laplace_dp">Laplace DP</SelectItem>
-                                <SelectItem value="secure_aggregate">secure aggregate (attested backend)</SelectItem>
-                            </SelectContent>
-                        </Select>''',
-              "access-user": '''<Select
-                            value={targetUser}
-                            onValueChange={(value) => {
-                                if (typeof value === "string") setTargetUser(value);
-                            }}
-                        >
-                            <SelectTrigger id="access-user">
-                                <SelectValue placeholder="انتخاب کنید" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {(access.data ?? []).map((row) => (
-                                    <SelectItem key={row.id} value={String(row.id)}>{row.identity}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>''',
-              "access-preset": '''<Select
-                            value={preset}
-                            onValueChange={(value) => {
-                                if (typeof value === "string") setPreset(value);
-                            }}
-                        >
-                            <SelectTrigger id="access-preset">
-                                <SelectValue placeholder="Preset" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="viewer">viewer</SelectItem>
-                                <SelectItem value="contributor">contributor</SelectItem>
-                                <SelectItem value="privacy_admin">privacy admin</SelectItem>
-                                <SelectItem value="owner">owner</SelectItem>
-                            </SelectContent>
-                        </Select>''',
-          }
-          for select_id, replacement in replacements.items():
-              pattern = rf'<Select id="{re.escape(select_id)}".*?</Select>'
-              workspace, count = re.subn(pattern, replacement, workspace, count=1, flags=re.S)
-              if count != 1 and f'id="{select_id}"' not in workspace:
-                  raise SystemExit(f"failed to canonicalize select: {select_id}")
-          workspace_path.write_text(workspace)
-          PY
-      - name: Canonicalize Phase 27 source
+      - name: Format integrity
         run: >-
-          pnpm exec biome check --write
+          pnpm exec biome check
           apps/api/app/controllers/admin/network_intelligence_controller.ts
           apps/api/app/services/network_intelligence/network_service.ts
           apps/api/app/services/network_intelligence/permissions.ts
@@ -211,19 +103,6 @@ jobs:
           scripts/aggregate-network-benchmarks.mjs
           scripts/test-phase27-network-aggregation.mjs
           scripts/verify-phase27-network.mjs
-      - name: Build canonical Admin OpenAPI
-        run: pnpm --filter @calibra/api-docs run build:json:admin
-      - name: Generate canonical Admin SDK
-        run: pnpm --filter @calibra/sdk run codegen:admin
-      - name: Commit canonical Phase 27 output if needed
-        run: |
-          if ! git diff --quiet; then
-            git config user.name github-actions[bot]
-            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-            git add -A
-            git commit -m "chore(phase27): canonicalize generated contracts"
-            git push origin HEAD:feat/phase27-private-network-intelligence-20260824
-          fi
       - name: Phase 27 static contract
         run: node scripts/verify-phase27-network.mjs
       - name: Offline privacy aggregation regressions
