@@ -62,7 +62,10 @@ export async function listNetworkAccess() {
     const trx = currentTrx();
     const [users, rows] = await Promise.all([
         trx.from("users").where({ tenant_id: tenant, role: "admin" }).whereNull("deleted_at").select("id", "email", "phone"),
-        trx.from("admin_permissions").where("tenant_id", tenant).whereIn("permission", NETWORK_INTELLIGENCE_PERMISSIONS),
+        trx
+            .from("admin_permissions")
+            .where("tenant_id", tenant)
+            .whereIn("permission", [...NETWORK_INTELLIGENCE_PERMISSIONS]),
     ]);
     return users.map((user) => {
         const own = rows.filter((row) => Number(row.user_id) === Number(user.id));
