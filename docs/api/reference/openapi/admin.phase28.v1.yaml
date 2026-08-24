@@ -194,10 +194,9 @@ components:
       additionalProperties: false
     ExecuteStepRequest:
       type: object
-      required: [step_public_id, dry_run]
+      required: [step_public_id]
       properties:
         step_public_id: { type: string, format: uuid }
-        dry_run: { type: boolean }
       additionalProperties: false
     CheckpointRequest:
       type: object
