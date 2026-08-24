@@ -111,12 +111,12 @@ export default class ObjectiveAutonomyController {
         const user = ctx.auth.getUserOrFail();
         await requireObjectiveAutonomyPermission(user, "objective_autonomy.execute");
         const payload = await ctx.request.validateUsing(executeObjectiveStepValidator);
-        const stepUpSatisfied = payload.dry_run ? false : await hasRecentIdentityStepUp(Number(user.id), "agent.action.execute");
+        const stepUpSatisfied = await hasRecentIdentityStepUp(Number(user.id), "agent.action.execute");
         const data = await autonomy.executeObjectiveStep({
             objectivePublicId: ctx.params.publicId,
             cyclePublicId: ctx.params.cyclePublicId,
             stepPublicId: payload.step_public_id,
-            dryRun: payload.dry_run,
+            dryRun: false,
             actor: user,
             stepUpSatisfied,
         });
@@ -130,7 +130,7 @@ export default class ObjectiveAutonomyController {
                 objective_public_id: ctx.params.publicId,
                 cycle_public_id: ctx.params.cyclePublicId,
                 step_public_id: payload.step_public_id,
-                dry_run: payload.dry_run,
+                dry_run: false,
             },
             strict: true,
         });
