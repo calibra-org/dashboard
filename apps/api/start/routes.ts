@@ -71,7 +71,6 @@ await import("./routes/admin_synthetic_commerce.js");
 await import("./routes/admin_growth_portfolio.js");
 await import("./routes/admin_merchant_memory.js");
 await import("./routes/admin_network_intelligence.js");
-await import("./routes/admin_objective_autonomy.js");
 await import("./routes/admin_procurement.js");
 await import("./routes/admin_quality.js");
 await import("./routes/admin_experiments.js");
