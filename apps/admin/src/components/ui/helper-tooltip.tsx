@@ -1,6 +1,21 @@
+import type { ReactNode } from "react";
+
+import {
+    HelperTooltip as PanelHelperTooltip,
+    type HelperTooltipProps as PanelHelperTooltipProps,
+} from "@calibra/panel-kit/helper-tooltip";
+
+export type HelperTooltipProps = Omit<PanelHelperTooltipProps, "children"> & {
+    children?: ReactNode;
+    text?: ReactNode;
+    label?: string;
+};
+
 /**
- * Re-export shim → `@calibra/panel-kit`. The primitive moved into the shared operator-panel
- * package (one set of token-driven base primitives for both `apps/admin` and `apps/platform`).
- * Existing `#/components/ui/<name>` imports keep resolving through this file unchanged.
+ * Compatibility shim around the shared Panel Kit primitive. New code should prefer children;
+ * `text` remains supported for feature modules migrated from the older admin helper contract.
  */
-export * from "@calibra/panel-kit/helper-tooltip";
+export function HelperTooltip({ children, text, label, ...props }: HelperTooltipProps) {
+    void label;
+    return <PanelHelperTooltip {...props}>{children ?? text ?? null}</PanelHelperTooltip>;
+}
