@@ -24,6 +24,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
     const agenticGateway = (await import(`../../../messages/agentic_gateway/${locale}.json`)).default;
     const agentOrchestrator = (await import(`../../../messages/agent_orchestrator/${locale}.json`)).default;
     const customerIntelligence = (await import(`../../../messages/customer-intelligence/${locale}.json`)).default;
+    const networkIntelligence = (await import(`../../../messages/network_intelligence/${locale}.json`)).default;
 
     return {
         locale,
@@ -37,6 +38,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
             ...agenticGateway,
             ...agentOrchestrator,
             ...customerIntelligence,
+            ...networkIntelligence,
             Nav: {
                 ...base.Nav,
                 ...transactions.Nav,
@@ -45,6 +47,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
                 ...trust.Nav,
                 ...agenticGateway.Nav,
                 ...agentOrchestrator.Nav,
+                ...networkIntelligence.Nav,
             },
         },
     };

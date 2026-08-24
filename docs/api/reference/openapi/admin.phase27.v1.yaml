@@ -1,0 +1,195 @@
+openapi: 3.1.0
+info:
+  title: Calibra Admin Phase 27 Private Network Intelligence API
+  version: 1.0.0
+tags:
+  - name: Private Network Intelligence
+    description: Tenant-safe aggregate benchmarking, participation governance, privacy controls, access and own-data export.
+paths:
+  /api/v1/admin/network-intelligence/overview:
+    get:
+      tags: [Private Network Intelligence]
+      operationId: adminNetworkIntelligenceOverview
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/network-intelligence/metrics:
+    get:
+      tags: [Private Network Intelligence]
+      operationId: adminNetworkIntelligenceMetrics
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+    post:
+      tags: [Private Network Intelligence]
+      operationId: adminNetworkIntelligenceCreateMetric
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MetricDefinitionRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/network-intelligence/participation:
+    post:
+      tags: [Private Network Intelligence]
+      operationId: adminNetworkIntelligenceParticipation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ParticipationRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/network-intelligence/contributions:
+    get:
+      tags: [Private Network Intelligence]
+      operationId: adminNetworkIntelligenceContributions
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+    post:
+      tags: [Private Network Intelligence]
+      operationId: adminNetworkIntelligenceUpsertContribution
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ContributionRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/network-intelligence/benchmarks:
+    get:
+      tags: [Private Network Intelligence]
+      operationId: adminNetworkIntelligenceBenchmarks
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/network-intelligence/exports:
+    post:
+      tags: [Private Network Intelligence]
+      operationId: adminNetworkIntelligenceExport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ExportRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/network-intelligence/security-reviews:
+    post:
+      tags: [Private Network Intelligence]
+      operationId: adminNetworkIntelligenceSecurityReview
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SecurityReviewRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/network-intelligence/access:
+    get:
+      tags: [Private Network Intelligence]
+      operationId: adminNetworkIntelligenceAccess
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/network-intelligence/access/preset:
+    post:
+      tags: [Private Network Intelligence]
+      operationId: adminNetworkIntelligenceAccessPreset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AccessPresetRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+components:
+  schemas:
+    PrivacyParameters:
+      type: object
+      properties:
+        epsilon: { type: number, exclusiveMinimum: 0, maximum: 10 }
+        max_cumulative_epsilon: { type: number, exclusiveMinimum: 0, maximum: 100 }
+      additionalProperties: false
+    ParticipationRequest:
+      type: object
+      required: [opted_in, purpose_scopes, minimum_cohort_size, privacy_method, reason]
+      properties:
+        opted_in: { type: boolean }
+        legal_basis: { type: string, maxLength: 96 }
+        terms_version: { type: string, maxLength: 96 }
+        purpose_scopes:
+          type: array
+          items: { type: string, minLength: 2, maxLength: 96 }
+        minimum_cohort_size: { type: integer, minimum: 5, maximum: 100000 }
+        privacy_method: { type: string, enum: [aggregate_threshold, laplace_dp, secure_aggregate] }
+        privacy_parameters: { $ref: '#/components/schemas/PrivacyParameters' }
+        reason: { type: string, minLength: 3, maxLength: 2000 }
+      additionalProperties: false
+    MetricDefinitionRequest:
+      type: object
+      required: [metric_key, unit, numerator_definition, aggregation, period_grain, minimum_records_per_contribution, value_min, value_max, reason]
+      properties:
+        metric_key: { type: string, pattern: '^[a-z0-9][a-z0-9._-]+$' }
+        version: { type: integer, minimum: 1 }
+        unit: { type: string, minLength: 1, maxLength: 48 }
+        numerator_definition: { type: string, minLength: 3, maxLength: 2000 }
+        denominator_definition: { type: string, maxLength: 2000 }
+        aggregation: { type: string, enum: [mean, ratio, median, percentile, rate] }
+        period_grain: { type: string, enum: [day, week, month, quarter] }
+        minimum_records_per_contribution: { type: integer, minimum: 1, maximum: 1000000 }
+        value_min: { type: number }
+        value_max: { type: number }
+        reason: { type: string, minLength: 3, maxLength: 2000 }
+      additionalProperties: false
+    ContributionRequest:
+      type: object
+      required: [metric_key, metric_version, period_key, aggregate_value, record_count]
+      properties:
+        metric_key: { type: string }
+        metric_version: { type: integer, minimum: 1 }
+        period_key: { type: string, minLength: 2, maxLength: 64 }
+        segment_key: { type: string, maxLength: 96 }
+        aggregate_value: { type: number }
+        numerator: { type: number }
+        denominator: { type: number }
+        record_count: { type: integer, minimum: 1, maximum: 1000000000 }
+        source_aggregate_refs:
+          type: array
+          maxItems: 32
+          items: { type: string, maxLength: 220 }
+      additionalProperties: false
+    ExportRequest:
+      type: object
+      required: [scope]
+      properties:
+        scope: { type: string, enum: [participation, contributions, all] }
+      additionalProperties: false
+    SecurityReviewRequest:
+      type: object
+      required: [review_type, status, artifact_ref, decision]
+      properties:
+        review_type: { type: string, minLength: 2, maxLength: 64 }
+        status: { type: string, enum: [approved, changes_required, rejected] }
+        artifact_ref: { type: string, minLength: 2, maxLength: 220 }
+        findings:
+          type: array
+          maxItems: 100
+          items: {}
+        decision: { type: string, minLength: 3, maxLength: 5000 }
+      additionalProperties: false
+    AccessPresetRequest:
+      type: object
+      required: [user_id, preset, reason]
+      properties:
+        user_id: { type: integer, minimum: 1 }
+        preset: { type: string, enum: [owner, privacy_admin, contributor, viewer] }
+        reason: { type: string, minLength: 3, maxLength: 2000 }
+      additionalProperties: false
+  responses:
+    OkEnvelope:
+      description: Successful Phase 27 network intelligence response.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data: {}

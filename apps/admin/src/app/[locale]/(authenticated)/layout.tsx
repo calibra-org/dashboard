@@ -6,6 +6,7 @@ import { ImpersonationBanner } from "#/components/ImpersonationBanner";
 import { Sidebar } from "#/components/Sidebar";
 import { Topbar } from "#/components/Topbar";
 import { Toaster } from "#/components/ui/toast";
+import { DecisionIntelligenceDock } from "#/features/network-intelligence/DecisionIntelligenceDock";
 import { requireSession } from "#/lib/auth";
 import { MoneyFormatProvider } from "#/lib/currency/provider";
 import { getMoneyFormatConfig } from "#/lib/currency/server";
@@ -43,6 +44,7 @@ export default async function AuthenticatedLayout({ children, params }: LayoutPr
                                 <Sidebar userId={session.userId} />
                                 <div className="flex min-w-0 flex-1 flex-col">
                                     <Topbar user={{ email: session.email, displayName: session.displayName }} />
+                                    <DecisionIntelligenceDock />
                                     <main className="min-w-0 flex-1 overflow-y-auto bg-muted/20 p-6">{children}</main>
                                 </div>
                             </div>

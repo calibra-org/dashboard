@@ -2,7 +2,9 @@ import type { HttpContext } from "@adonisjs/core/http";
 
 import { recordAudit } from "#services/admin_audit_log_service";
 import { requireRecentIdentityStepUp } from "#services/identity/step_up";
+import { acquireNetworkConfigurationLock } from "#services/network_intelligence/locks";
 import {
+    assertAggregateOnlyNetworkPayload,
     contributeAggregate,
     listBenchmarks,
     listContributions,
@@ -39,6 +41,7 @@ export default class AdminNetworkIntelligenceController {
         await requireNetworkIntelligencePermission(user, "network_intelligence.participation.manage");
         await requireRecentIdentityStepUp(Number(user.id), "network_intelligence.participation");
         const payload = await ctx.request.validateUsing(participationValidator);
+        await acquireNetworkConfigurationLock();
         const data = await setParticipation({ ...payload, actorUserId: Number(user.id) });
         await recordAudit({
             ctx,
@@ -63,6 +66,7 @@ export default class AdminNetworkIntelligenceController {
         await requireNetworkIntelligencePermission(user, "network_intelligence.metrics.manage");
         await requireRecentIdentityStepUp(Number(user.id), "network_intelligence.metrics.manage");
         const payload = await ctx.request.validateUsing(metricValidator);
+        await acquireNetworkConfigurationLock();
         const data = await saveMetricDefinition({ ...payload, actorUserId: Number(user.id) });
         await recordAudit({
             ctx,
@@ -134,6 +138,7 @@ export default class AdminNetworkIntelligenceController {
         await requireNetworkIntelligencePermission(user, "network_intelligence.security_review");
         await requireRecentIdentityStepUp(Number(user.id), "network_intelligence.security_review");
         const payload = await ctx.request.validateUsing(securityReviewValidator);
+        assertAggregateOnlyNetworkPayload({ artifact_ref: payload.artifact_ref, findings: payload.findings ?? [] });
         const data = await recordSecurityReview({ ...payload, actorUserId: Number(user.id) });
         await recordAudit({
             ctx,
