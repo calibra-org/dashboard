@@ -64,16 +64,23 @@ export async function listObjectiveAutonomyAccess() {
     const trx = currentTrx();
     const [users, rows] = await Promise.all([
         trx.from("users").where({ tenant_id: tenant, role: "admin" }).whereNull("deleted_at").select("id", "email", "phone"),
-        trx.from("admin_permissions").where("tenant_id", tenant).whereIn("permission", [...OBJECTIVE_AUTONOMY_PERMISSIONS]),
+        trx
+            .from("admin_permissions")
+            .where("tenant_id", tenant)
+            .whereIn("permission", [...OBJECTIVE_AUTONOMY_PERMISSIONS]),
     ]);
     return users.map((user) => {
         const map = new Map(
-            rows.filter((row) => Number(row.user_id) === Number(user.id)).map((row) => [String(row.permission), Boolean(row.allowed)]),
+            rows
+                .filter((row) => Number(row.user_id) === Number(user.id))
+                .map((row) => [String(row.permission), Boolean(row.allowed)]),
         );
         return {
             id: Number(user.id),
             identity: maskedIdentity({ id: Number(user.id), email: user.email, phone: user.phone }),
-            permissions: Object.fromEntries(OBJECTIVE_AUTONOMY_PERMISSIONS.map((permission) => [permission, map.get(permission) ?? true])),
+            permissions: Object.fromEntries(
+                OBJECTIVE_AUTONOMY_PERMISSIONS.map((permission) => [permission, map.get(permission) ?? true]),
+            ),
         };
     });
 }
@@ -84,17 +91,30 @@ export async function applyObjectiveAutonomyAccessPreset(actorUserId: number, ta
     }
     const allowed = ACCESS_PRESETS[preset];
     if (!allowed) {
-        throw new Exception("Unknown objective autonomy access preset", { status: 422, code: "E_AUTONOMY_ACCESS_PRESET_INVALID" });
+        throw new Exception("Unknown objective autonomy access preset", {
+            status: 422,
+            code: "E_AUTONOMY_ACCESS_PRESET_INVALID",
+        });
     }
     const tenant = Number(currentTenantId());
     const trx = currentTrx();
-    const target = await trx.from("users").where({ tenant_id: tenant, id: targetUserId, role: "admin" }).whereNull("deleted_at").first();
+    const target = await trx
+        .from("users")
+        .where({ tenant_id: tenant, id: targetUserId, role: "admin" })
+        .whereNull("deleted_at")
+        .first();
     if (!target) throw new Exception("Target admin not found in tenant", { status: 404, code: "E_AUTONOMY_ADMIN_NOT_FOUND" });
     const allowedSet = new Set(allowed);
     for (const permission of OBJECTIVE_AUTONOMY_PERMISSIONS) {
         await trx
             .table("admin_permissions")
-            .insert({ tenant_id: tenant, user_id: targetUserId, permission, allowed: allowedSet.has(permission), updated_by: actorUserId })
+            .insert({
+                tenant_id: tenant,
+                user_id: targetUserId,
+                permission,
+                allowed: allowedSet.has(permission),
+                updated_by: actorUserId,
+            })
             .onConflict(["tenant_id", "user_id", "permission"])
             .merge({ allowed: allowedSet.has(permission), updated_by: actorUserId, updated_at: new Date() });
     }

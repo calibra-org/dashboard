@@ -33,6 +33,9 @@ test.group("Phase 28 objective autonomy controls", () => {
     });
 
     test("forbids high risk bounded auto execution", ({ assert }) => {
-        assert.throws(() => assertRiskWithinCeiling("high", "high", "bounded_auto"), /High and critical actions cannot be auto-executed/);
+        assert.throws(
+            () => assertRiskWithinCeiling("high", "high", "bounded_auto"),
+            /High and critical actions cannot be auto-executed/,
+        );
     });
 });

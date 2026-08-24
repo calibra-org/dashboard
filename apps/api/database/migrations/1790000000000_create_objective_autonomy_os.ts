@@ -48,7 +48,13 @@ export default class extends BaseSchema {
             table.increments("id");
             table.uuid("public_id").notNullable().unique();
             table.integer("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.integer("objective_id").unsigned().notNullable().references("id").inTable("autonomy_objectives").onDelete("CASCADE");
+            table
+                .integer("objective_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("autonomy_objectives")
+                .onDelete("CASCADE");
             table.integer("sequence").notNullable();
             table.string("status", 32).notNullable();
             table.uuid("twin_run_public_id").nullable();
@@ -71,7 +77,13 @@ export default class extends BaseSchema {
             table.increments("id");
             table.uuid("public_id").notNullable().unique();
             table.integer("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.integer("objective_id").unsigned().notNullable().references("id").inTable("autonomy_objectives").onDelete("CASCADE");
+            table
+                .integer("objective_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("autonomy_objectives")
+                .onDelete("CASCADE");
             table.integer("cycle_id").unsigned().nullable().references("id").inTable("autonomy_cycles").onDelete("SET NULL");
             table.decimal("observed_value", 28, 8).notNullable();
             table.bigInteger("budget_spent_minor").notNullable().defaultTo(0);
@@ -90,7 +102,13 @@ export default class extends BaseSchema {
             table.increments("id");
             table.uuid("public_id").notNullable().unique();
             table.integer("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.integer("objective_id").unsigned().notNullable().references("id").inTable("autonomy_objectives").onDelete("CASCADE");
+            table
+                .integer("objective_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("autonomy_objectives")
+                .onDelete("CASCADE");
             table.string("outcome", 32).notNullable();
             table.decimal("final_value", 28, 8).notNullable();
             table.text("summary").notNullable();
@@ -103,10 +121,18 @@ export default class extends BaseSchema {
         });
 
         this.defer(async (db) => {
-            await db.rawQuery("ALTER TABLE autonomy_objectives ADD CONSTRAINT autonomy_objective_direction_check CHECK (direction IN ('maximize','minimize','target'))");
-            await db.rawQuery("ALTER TABLE autonomy_objectives ADD CONSTRAINT autonomy_confidence_check CHECK (minimum_confidence >= 0 AND minimum_confidence <= 1)");
-            await db.rawQuery("ALTER TABLE autonomy_checkpoints ADD CONSTRAINT autonomy_checkpoint_confidence_check CHECK (confidence >= 0 AND confidence <= 1)");
-            await db.rawQuery("ALTER TABLE autonomy_checkpoints ADD CONSTRAINT autonomy_checkpoint_budget_check CHECK (budget_spent_minor >= 0)");
+            await db.rawQuery(
+                "ALTER TABLE autonomy_objectives ADD CONSTRAINT autonomy_objective_direction_check CHECK (direction IN ('maximize','minimize','target'))",
+            );
+            await db.rawQuery(
+                "ALTER TABLE autonomy_objectives ADD CONSTRAINT autonomy_confidence_check CHECK (minimum_confidence >= 0 AND minimum_confidence <= 1)",
+            );
+            await db.rawQuery(
+                "ALTER TABLE autonomy_checkpoints ADD CONSTRAINT autonomy_checkpoint_confidence_check CHECK (confidence >= 0 AND confidence <= 1)",
+            );
+            await db.rawQuery(
+                "ALTER TABLE autonomy_checkpoints ADD CONSTRAINT autonomy_checkpoint_budget_check CHECK (budget_spent_minor >= 0)",
+            );
         });
 
         for (const table of this.tenantTables) {

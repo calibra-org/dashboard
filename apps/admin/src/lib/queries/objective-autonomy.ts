@@ -113,7 +113,12 @@ export function useObjectiveAutonomyPrerequisites() {
                 apiGet<{ data: Prerequisites["plans"] }>("agentic-commerce/orchestrator/plans", { locale }),
                 apiGet<{ data: Prerequisites["tools"] }>("agentic-commerce/orchestrator/tools", { locale }),
             ]);
-            return { scenarios: scenarioPayload.data, portfolios: portfolioPayload.data, plans: planPayload.data, tools: toolPayload.data };
+            return {
+                scenarios: scenarioPayload.data,
+                portfolios: portfolioPayload.data,
+                plans: planPayload.data,
+                tools: toolPayload.data,
+            };
         },
         staleTime: 10_000,
     });

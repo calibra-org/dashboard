@@ -1,6 +1,11 @@
 import vine from "@vinejs/vine";
 
-const toolKey = vine.string().trim().minLength(2).maxLength(160).regex(/^[a-z0-9][a-z0-9._-]+$/);
+const toolKey = vine
+    .string()
+    .trim()
+    .minLength(2)
+    .maxLength(160)
+    .regex(/^[a-z0-9][a-z0-9._-]+$/);
 const evidenceRef = vine.object({
     source: vine.string().trim().minLength(2).maxLength(80),
     id: vine.string().trim().minLength(1).maxLength(160),
@@ -30,18 +35,13 @@ export const objectiveValidator = vine.compile(
     }),
 );
 
-export const objectiveStateValidator = vine.compile(
-    vine.object({ reason: vine.string().trim().minLength(3).maxLength(2000) }),
-);
+export const objectiveStateValidator = vine.compile(vine.object({ reason: vine.string().trim().minLength(3).maxLength(2000) }));
 
-export const cycleValidator = vine.compile(
-    vine.object({ seed: vine.number().min(1).max(2147483647).optional() }),
-);
+export const cycleValidator = vine.compile(vine.object({ seed: vine.number().min(1).max(2147483647).optional() }));
 
 export const executeObjectiveStepValidator = vine.compile(
     vine.object({
         step_public_id: vine.string().uuid(),
-        idempotency_key: vine.string().trim().minLength(8).maxLength(180),
         dry_run: vine.boolean(),
     }),
 );

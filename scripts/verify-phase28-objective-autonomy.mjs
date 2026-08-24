@@ -12,13 +12,33 @@ const permissions = read("apps/api/app/services/objective_autonomy/permissions.t
 const controller = read("apps/api/app/controllers/admin/objective_autonomy_controller.ts");
 const routes = read("apps/api/start/routes/admin_objective_autonomy.ts");
 
-for (const marker of ["ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY", "autonomy_objectives", "autonomy_cycles", "autonomy_checkpoints", "autonomy_postmortems"]) {
+for (const marker of [
+    "ENABLE ROW LEVEL SECURITY",
+    "FORCE ROW LEVEL SECURITY",
+    "autonomy_objectives",
+    "autonomy_cycles",
+    "autonomy_checkpoints",
+    "autonomy_postmortems",
+]) {
     must(migration.includes(marker), `Phase 28 migration contract missing: ${marker}`);
 }
-for (const marker of ["runScenario", "runPlan", "executeStep", "createMemory", "assertRiskWithinCeiling", "E_AUTONOMY_HIGH_RISK_AUTO_FORBIDDEN", "evaluateControlDecision", "phase22_registered_tools_only"]) {
+for (const marker of [
+    "runScenario",
+    "runPlan",
+    "executeStep",
+    "createMemory",
+    "assertRiskWithinCeiling",
+    "E_AUTONOMY_HIGH_RISK_AUTO_FORBIDDEN",
+    "evaluateControlDecision",
+    "phase22_registered_tools_only",
+    "step.idempotency_key",
+]) {
     must(service.includes(marker), `Phase 28 integration invariant missing: ${marker}`);
 }
-must(service.includes("manual_reviewed") && service.includes("phase28_postmortem"), "Phase 28 postmortem must feed Phase 26 Memory");
+must(
+    service.includes("manual_reviewed") && service.includes("phase28_postmortem"),
+    "Phase 28 postmortem must feed Phase 26 Memory",
+);
 must(permissions.includes("E_AUTONOMY_SELF_LOCKOUT"), "Phase 28 access self-lockout protection missing");
 for (const action of [
     "objective_autonomy.objective.create",
@@ -29,7 +49,8 @@ for (const action of [
     "objective_autonomy.checkpoint.record",
     "objective_autonomy.postmortem.create",
     "objective_autonomy.access.preset.apply",
-]) must(controller.includes(action), `strict audit action missing: ${action}`);
+])
+    must(controller.includes(action), `strict audit action missing: ${action}`);
 const postCount = (routes.match(/\.post\(/g) ?? []).length;
 const limitedCount = (routes.match(/\.use\(adminWriteLimiter\)/g) ?? []).length;
 must(postCount === limitedCount, "every Phase 28 mutation must use adminWriteLimiter");
