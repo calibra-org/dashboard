@@ -110,8 +110,8 @@ export function useObjectiveAutonomyPrerequisites() {
             const [scenarioPayload, portfolioPayload, planPayload, toolPayload] = await Promise.all([
                 apiGet<{ data: Prerequisites["scenarios"] }>("digital-twin/scenarios", { locale }),
                 apiGet<{ data: Prerequisites["portfolios"] }>("growth-portfolio/plans", { locale }),
-                apiGet<{ data: Prerequisites["plans"] }>("agent-orchestrator/plans", { locale }),
-                apiGet<{ data: Prerequisites["tools"] }>("agent-orchestrator/tools", { locale }),
+                apiGet<{ data: Prerequisites["plans"] }>("agentic-commerce/orchestrator/plans", { locale }),
+                apiGet<{ data: Prerequisites["tools"] }>("agentic-commerce/orchestrator/tools", { locale }),
             ]);
             return { scenarios: scenarioPayload.data, portfolios: portfolioPayload.data, plans: planPayload.data, tools: toolPayload.data };
         },
