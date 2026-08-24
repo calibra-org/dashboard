@@ -17,6 +17,7 @@ on:
       - "apps/admin/src/app/[locale]/(authenticated)/decision-intelligence/network-intelligence/**"
       - "apps/admin/src/app/[locale]/(authenticated)/layout.tsx"
       - "apps/admin/messages/network_intelligence/**"
+      - "apps/admin/src/components/ui/helper-tooltip.tsx"
       - "docs/api/package.json"
       - "docs/api/reference/openapi/admin.phase27.v1.yaml"
       - "docs/api/scripts/merge-admin-spec.js"
@@ -90,12 +91,13 @@ jobs:
           apps/api/start/routes.ts
           apps/api/tests/unit/phase27_network_privacy.spec.ts
           apps/api/tests/functional/network_intelligence/phase27_network.spec.ts
-          apps/admin/src/features/network-intelligence/NetworkIntelligenceWorkspace.tsx
-          apps/admin/src/features/network-intelligence/DecisionIntelligenceDock.tsx
+          apps/admin/src/features/network-intelligence
           apps/admin/src/lib/queries/network-intelligence.ts
           apps/admin/src/lib/i18n/request.ts
           apps/admin/src/components/ui/helper-tooltip.tsx
-          apps/admin/src/app/[locale]/(authenticated)/layout.tsx
+          "apps/admin/src/app/[locale]/(authenticated)/layout.tsx"
+          "apps/admin/src/app/[locale]/(authenticated)/decision-intelligence/network-intelligence"
+          apps/admin/messages/network_intelligence
           docs/api/package.json
           docs/api/scripts/merge-admin-spec.js
           scripts/aggregate-network-benchmarks.mjs
