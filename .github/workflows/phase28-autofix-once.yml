@@ -1,0 +1,101 @@
+name: Phase 28 One-shot Autofix
+
+on:
+  push:
+    branches:
+      - feat/phase28-objective-autonomy-20260825
+    paths:
+      - ".github/workflows/phase28-autofix-once.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  autofix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/phase28-objective-autonomy-20260825
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+      - run: npm install --global pnpm@10.32.1
+      - run: pnpm install --frozen-lockfile
+      - name: Apply Phase 28 correctness fixes
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              if old not in text:
+                  raise SystemExit(f"pattern not found in {path}: {old[:100]!r}")
+              p.write_text(text.replace(old, new))
+
+          validator = "apps/api/app/validators/objective_autonomy/objective_autonomy_validator.ts"
+          replace(validator,
+              '        idempotency_key: vine.string().trim().minLength(8).maxLength(180),\n        dry_run: vine.boolean(),',
+              '        dry_run: vine.boolean(),')
+
+          controller = "apps/api/app/controllers/admin/objective_autonomy_controller.ts"
+          replace(controller,
+              'stepPublicId: payload.step_public_id, idempotencyKey: payload.idempotency_key, dryRun: payload.dry_run, actor: user, stepUpSatisfied',
+              'stepPublicId: payload.step_public_id, dryRun: payload.dry_run, actor: user, stepUpSatisfied')
+
+          service = "apps/api/app/services/objective_autonomy/objective_autonomy_service.ts"
+          replace(service,
+              'export type AutonomyLevel = "recommend" | "propose" | "bounded_auto";\n',
+              'export type AutonomyLevel = "recommend" | "propose" | "bounded_auto";\n\ntype ObjectiveRow = Record<string, unknown> & {\n    id: number;\n    public_id: string;\n    scenario_public_id: string;\n    portfolio_plan_public_id: string;\n    agent_plan_public_id: string;\n    allowed_tool_keys: string[] | string;\n    autonomy_level: AutonomyLevel;\n    effective_autonomy_level: AutonomyLevel;\n    risk_ceiling: ToolRisk;\n};\n')
+          replace(service, 'async function objectiveDependencies(objective: Record<string, any>) {', 'async function objectiveDependencies(objective: ObjectiveRow) {')
+          replace(service, 'async function assertRegisteredPlanBoundary(objective: Record<string, any>) {', 'async function assertRegisteredPlanBoundary(objective: ObjectiveRow) {')
+          replace(service,
+              '    const steps = await trx.from("agent_plan_steps").where({ tenant_id: tenantId(), plan_id: objectiveDependencies ? (await objectiveDependencies(objective)).agentPlan.id : 0 }).orderBy("sequence");',
+              '    const { agentPlan } = await objectiveDependencies(objective);\n    const steps = await trx.from("agent_plan_steps").where({ tenant_id: tenantId(), plan_id: agentPlan.id }).orderBy("sequence");')
+          replace(service, '    await objectiveDependencies(objective);\n    const steps = await assertRegisteredPlanBoundary(objective);', '    const steps = await assertRegisteredPlanBoundary(objective);')
+          replace(service, '    idempotencyKey: string;\n    dryRun: boolean;', '    dryRun: boolean;')
+          replace(service,
+              'stepPublicId: input.stepPublicId, idempotencyKey: input.idempotencyKey, dryRun: input.dryRun, actor: input.actor, stepUpSatisfied: input.stepUpSatisfied,',
+              'stepPublicId: input.stepPublicId, idempotencyKey: String(step.idempotency_key), dryRun: input.dryRun, actor: input.actor, stepUpSatisfied: input.stepUpSatisfied,')
+
+          ui = "apps/admin/src/features/objective-autonomy/ObjectiveAutonomyWorkspace.tsx"
+          replace(ui, '    type AutonomyCycle,\n', '')
+          replace(ui, '    const access = useObjectiveAutonomyResource<AccessRow[]>("access");\n    const prerequisites = useObjectiveAutonomyPrerequisites();\n    const mutate = useObjectiveAutonomyMutation<any>();\n    const [tab, setTab] = useState<Tab>("command");',
+              '    const [tab, setTab] = useState<Tab>("command");\n    const access = useObjectiveAutonomyResource<AccessRow[]>("access", tab === "access");\n    const prerequisites = useObjectiveAutonomyPrerequisites();\n    const mutate = useObjectiveAutonomyMutation<unknown>();')
+          replace(ui, '    const explanation = parse<Record<string, any>>(latestCycle?.explanation, {});\n    const policy = parse<Record<string, any>>(latestCycle?.policy_snapshot, {});\n    const registeredSteps = Array.isArray(policy.registered_steps) ? policy.registered_steps : [];',
+              '    const explanation = parse<Record<string, unknown>>(latestCycle?.explanation, {});\n    const policy = parse<Record<string, unknown>>(latestCycle?.policy_snapshot, {});\n    type RegisteredStep = { public_id: string; tool_key: string; risk_class: string; approval_required: boolean };\n    const registeredSteps = Array.isArray(policy.registered_steps) ? (policy.registered_steps as RegisteredStep[]) : [];')
+          replace(ui, 'horizon_end: horizon,', 'horizon_end: new Date(horizon).toISOString(),')
+          replace(ui,
+              'registeredSteps.map((step: any) => <div key={step.public_id} className="flex items-center justify-between gap-3 rounded-lg bg-muted/30 p-2 text-xs"><span>{step.tool_key} · {step.risk_class}</span><Button size="sm" variant="outline" disabled={busy || !selected || !latestCycle} onClick={() => mutate.mutate({ path: `objectives/${selected.public_id}/cycles/${latestCycle.public_id}/execute`, body: { step_public_id: step.public_id, idempotency_key: `phase28-${latestCycle.public_id}-${step.public_id}`, dry_run: true } })}>Dry run</Button></div>)',
+              'registeredSteps.map((step) => <div key={step.public_id} className="flex items-center justify-between gap-3 rounded-lg bg-muted/30 p-2 text-xs"><span>{step.tool_key} · {step.risk_class}</span><Button size="sm" variant="outline" disabled={busy || !selected || !latestCycle || selected.effective_autonomy_level !== "bounded_auto"} onClick={() => mutate.mutate({ path: `objectives/${selected.public_id}/cycles/${latestCycle.public_id}/execute`, body: { step_public_id: step.public_id, dry_run: false } })}>اجرای کنترل‌شده</Button></div>)')
+
+          verifier = "scripts/verify-phase28-objective-autonomy.mjs"
+          replace(verifier,
+              '"phase22_registered_tools_only"]) {',
+              '"phase22_registered_tools_only", "step.idempotency_key"]) {')
+          PY
+      - name: Format and lint-safe-fix Phase 28 files
+        run: >-
+          pnpm exec biome check --write --unsafe
+          apps/api/app/controllers/admin/objective_autonomy_controller.ts
+          apps/api/app/services/objective_autonomy
+          apps/api/app/validators/objective_autonomy
+          apps/api/database/migrations/1790000000000_create_objective_autonomy_os.ts
+          apps/api/start/routes/admin_objective_autonomy.ts
+          apps/api/start/routes.ts
+          apps/api/tests/unit/phase28_objective_autonomy.spec.ts
+          apps/admin/src/features/objective-autonomy
+          apps/admin/src/lib/queries/objective-autonomy.ts
+          "apps/admin/src/app/[locale]/(authenticated)/analytics/objective-autonomy"
+          apps/admin/src/features/network-intelligence/DecisionIntelligenceDock.tsx
+          scripts/verify-phase28-objective-autonomy.mjs
+      - name: Commit fixes
+        run: |
+          git config user.name "calibra-phase28-ci"
+          git config user.email "actions@users.noreply.github.com"
+          git add apps/api apps/admin scripts/verify-phase28-objective-autonomy.mjs
+          git commit -m "fix: harden and format Phase 28 autonomy" || exit 0
+          git push origin HEAD:feat/phase28-objective-autonomy-20260825
