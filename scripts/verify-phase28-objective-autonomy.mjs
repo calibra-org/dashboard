@@ -10,7 +10,11 @@ const migration = read("apps/api/database/migrations/1790000000000_create_object
 const service = read("apps/api/app/services/objective_autonomy/objective_autonomy_service.ts");
 const permissions = read("apps/api/app/services/objective_autonomy/permissions.ts");
 const controller = read("apps/api/app/controllers/admin/objective_autonomy_controller.ts");
+const validator = read("apps/api/app/validators/objective_autonomy/objective_autonomy_validator.ts");
 const routes = read("apps/api/start/routes/admin_objective_autonomy.ts");
+const openapi = read("docs/api/reference/openapi/admin.phase28.v1.yaml");
+const apiDocsPackage = read("docs/api/package.json");
+const mergeAdminSpec = read("docs/api/scripts/merge-admin-spec.js");
 
 for (const marker of [
     "ENABLE ROW LEVEL SECURITY",
@@ -40,6 +44,21 @@ must(
     "Phase 28 postmortem must feed Phase 26 Memory",
 );
 must(permissions.includes("E_AUTONOMY_SELF_LOCKOUT"), "Phase 28 access self-lockout protection missing");
+must(controller.includes("dryRun: false"), "Phase 28 controller must make execution non-dry-run only");
+must(!validator.includes("dry_run"), "Phase 28 external validator must not expose Phase 22 dry-run");
+must(!openapi.includes("dry_run"), "Phase 28 OpenAPI must not expose Phase 22 dry-run");
+for (const operation of [
+    "adminObjectiveAutonomyOverview",
+    "adminObjectiveAutonomyCreateObjective",
+    "adminObjectiveAutonomyExecuteStep",
+    "adminObjectiveAutonomyCheckpoint",
+    "adminObjectiveAutonomyPostmortem",
+    "adminObjectiveAutonomyAccessPreset",
+]) {
+    must(openapi.includes(operation), `Phase 28 OpenAPI operation missing: ${operation}`);
+}
+must(apiDocsPackage.includes("build:json:admin-phase28"), "Phase 28 OpenAPI overlay is not registered in API docs build");
+must(mergeAdminSpec.includes("Phase28ObjectiveAutonomyOverlay"), "Phase 28 OpenAPI overlay is not merged into admin spec");
 for (const action of [
     "objective_autonomy.objective.create",
     "objective_autonomy.objective.activate",
@@ -49,8 +68,9 @@ for (const action of [
     "objective_autonomy.checkpoint.record",
     "objective_autonomy.postmortem.create",
     "objective_autonomy.access.preset.apply",
-])
+]) {
     must(controller.includes(action), `strict audit action missing: ${action}`);
+}
 const postCount = (routes.match(/\.post\(/g) ?? []).length;
 const limitedCount = (routes.match(/\.use\(adminWriteLimiter\)/g) ?? []).length;
 must(postCount === limitedCount, "every Phase 28 mutation must use adminWriteLimiter");
