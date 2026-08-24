@@ -104,7 +104,8 @@ test.group("shard-specs script", () => {
     });
 
     test("bad args exit 1 with a helpful stderr message", ({ assert }) => {
-        for (const args of [[], ["0", "5"], ["6", "5"], ["1", "0"], ["a", "5"], ["1", "200"]]) {
+        const tooManyShards = String(discoverAllSpecs().length + 1);
+        for (const args of [[], ["0", "5"], ["6", "5"], ["1", "0"], ["a", "5"], ["1", tooManyShards]]) {
             const { status, stderr } = runShardFailing(...args);
             assert.equal(status, 1, `args ${JSON.stringify(args)} should exit 1`);
             assert.isAbove(stderr.length, 0, `args ${JSON.stringify(args)} should emit a stderr message`);
