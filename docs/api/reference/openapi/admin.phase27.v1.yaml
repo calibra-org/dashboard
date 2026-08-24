@@ -105,8 +105,8 @@ components:
     PrivacyParameters:
       type: object
       properties:
-        epsilon: { type: number, exclusiveMinimum: 0, maximum: 10 }
-        max_cumulative_epsilon: { type: number, exclusiveMinimum: 0, maximum: 100 }
+        epsilon: { type: number, minimum: 0.000001, maximum: 10 }
+        max_cumulative_epsilon: { type: number, minimum: 0.000001, maximum: 100 }
       additionalProperties: false
     ParticipationRequest:
       type: object
