@@ -1,0 +1,15 @@
+{
+  "NetworkIntelligence": {
+    "title": "هوش شبکه خصوصی",
+    "subtitle": "مقایسه شبکه‌ای فقط با aggregateهای محدودشده، رضایت و مبنای حقوقی صریح، حداقل cohort و سیاست حریم خصوصی نسخه‌بندی‌شده",
+    "tabsLabel": "بخش‌های هوش شبکه خصوصی",
+    "tabs": {
+      "benchmarks": "بنچمارک‌ها",
+      "participation": "مشارکت و مبنای حقوقی",
+      "privacy": "حریم خصوصی و دسترسی"
+    }
+  },
+  "Nav": {
+    "networkIntelligence": "هوش شبکه خصوصی"
+  }
+}
