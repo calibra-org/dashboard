@@ -1,0 +1,254 @@
+openapi: 3.1.0
+info:
+  title: Calibra Admin Phase 28 Objective Autonomy API
+  version: 1.0.0
+tags:
+  - name: Objective Autonomy
+    description: Bounded objective-driven commerce autonomy with simulation, portfolio ranking, registered actions, checkpoints, kill switch and postmortems.
+paths:
+  /api/v1/admin/objective-autonomy/overview:
+    get:
+      tags: [Objective Autonomy]
+      operationId: adminObjectiveAutonomyOverview
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/objective-autonomy/objectives:
+    get:
+      tags: [Objective Autonomy]
+      operationId: adminObjectiveAutonomyObjectives
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+    post:
+      tags: [Objective Autonomy]
+      operationId: adminObjectiveAutonomyCreateObjective
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ObjectiveRequest' }
+      responses:
+        '201': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/objective-autonomy/objectives/{publicId}:
+    parameters:
+      - { $ref: '#/components/parameters/PublicId' }
+    get:
+      tags: [Objective Autonomy]
+      operationId: adminObjectiveAutonomyObjective
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/objective-autonomy/objectives/{publicId}/activate:
+    parameters:
+      - { $ref: '#/components/parameters/PublicId' }
+    post:
+      tags: [Objective Autonomy]
+      operationId: adminObjectiveAutonomyActivate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReasonRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/objective-autonomy/objectives/{publicId}/halt:
+    parameters:
+      - { $ref: '#/components/parameters/PublicId' }
+    post:
+      tags: [Objective Autonomy]
+      operationId: adminObjectiveAutonomyHalt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReasonRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/objective-autonomy/objectives/{publicId}/cycles:
+    parameters:
+      - { $ref: '#/components/parameters/PublicId' }
+    post:
+      tags: [Objective Autonomy]
+      operationId: adminObjectiveAutonomyStartCycle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CycleRequest' }
+      responses:
+        '201': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/objective-autonomy/objectives/{publicId}/cycles/{cyclePublicId}/execute:
+    parameters:
+      - { $ref: '#/components/parameters/PublicId' }
+      - name: cyclePublicId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      tags: [Objective Autonomy]
+      operationId: adminObjectiveAutonomyExecuteStep
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ExecuteStepRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/objective-autonomy/objectives/{publicId}/checkpoints:
+    parameters:
+      - { $ref: '#/components/parameters/PublicId' }
+    post:
+      tags: [Objective Autonomy]
+      operationId: adminObjectiveAutonomyCheckpoint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CheckpointRequest' }
+      responses:
+        '201': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/objective-autonomy/objectives/{publicId}/postmortem:
+    parameters:
+      - { $ref: '#/components/parameters/PublicId' }
+    post:
+      tags: [Objective Autonomy]
+      operationId: adminObjectiveAutonomyPostmortem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PostmortemRequest' }
+      responses:
+        '201': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/objective-autonomy/access:
+    get:
+      tags: [Objective Autonomy]
+      operationId: adminObjectiveAutonomyAccess
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/objective-autonomy/access/preset:
+    post:
+      tags: [Objective Autonomy]
+      operationId: adminObjectiveAutonomyAccessPreset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AccessPresetRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+components:
+  parameters:
+    PublicId:
+      name: publicId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+  schemas:
+    EvidenceRef:
+      type: object
+      required: [source, id, label]
+      properties:
+        source: { type: string, minLength: 2, maxLength: 80 }
+        id: { type: string, minLength: 1, maxLength: 160 }
+        label: { type: string, minLength: 2, maxLength: 220 }
+      additionalProperties: false
+    ObjectiveRequest:
+      type: object
+      required: [name, target_metric, direction, baseline_value, target_value, horizon_end, constraints, allowed_tool_keys, autonomy_level, risk_ceiling, minimum_confidence, stop_loss, approvers, scenario_public_id, portfolio_plan_public_id, agent_plan_public_id, reason]
+      properties:
+        name: { type: string, minLength: 3, maxLength: 180 }
+        target_metric: { type: string, pattern: '^[a-z0-9][a-z0-9._-]+$' }
+        direction: { type: string, enum: [maximize, minimize, target] }
+        baseline_value: { type: number }
+        target_value: { type: number }
+        horizon_end: { type: string, format: date-time }
+        budget_minor: { type: integer, minimum: 0 }
+        constraints: { type: object, additionalProperties: true }
+        allowed_tool_keys:
+          type: array
+          minItems: 1
+          maxItems: 64
+          items: { type: string, pattern: '^[a-z0-9][a-z0-9._-]+$' }
+        autonomy_level: { type: string, enum: [recommend, propose, bounded_auto] }
+        risk_ceiling: { type: string, enum: [read_only, low, medium, high, critical] }
+        minimum_confidence: { type: number, minimum: 0, maximum: 1 }
+        stop_loss: { type: object, additionalProperties: true }
+        approvers:
+          type: array
+          maxItems: 32
+          items: { type: string, maxLength: 160 }
+        scenario_public_id: { type: string, format: uuid }
+        portfolio_plan_public_id: { type: string, format: uuid }
+        agent_plan_public_id: { type: string, format: uuid }
+        reason: { type: string, minLength: 3, maxLength: 2000 }
+      additionalProperties: false
+    ReasonRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 3, maxLength: 2000 }
+      additionalProperties: false
+    CycleRequest:
+      type: object
+      properties:
+        seed: { type: integer, minimum: 1, maximum: 2147483647 }
+      additionalProperties: false
+    ExecuteStepRequest:
+      type: object
+      required: [step_public_id, dry_run]
+      properties:
+        step_public_id: { type: string, format: uuid }
+        dry_run: { type: boolean }
+      additionalProperties: false
+    CheckpointRequest:
+      type: object
+      required: [observed_value, budget_spent_minor, confidence, constraint_breaches, unexpected_harm, evidence_refs, reason]
+      properties:
+        cycle_public_id: { type: string, format: uuid }
+        observed_value: { type: number }
+        budget_spent_minor: { type: integer, minimum: 0 }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        constraint_breaches:
+          type: array
+          maxItems: 64
+          items: { type: string, minLength: 2, maxLength: 180 }
+        unexpected_harm: { type: boolean }
+        evidence_refs:
+          type: array
+          minItems: 1
+          maxItems: 64
+          items: { $ref: '#/components/schemas/EvidenceRef' }
+        reason: { type: string, minLength: 3, maxLength: 2000 }
+      additionalProperties: false
+    PostmortemRequest:
+      type: object
+      required: [final_value, summary, lesson, residual_uncertainty, confidence, evidence_refs]
+      properties:
+        final_value: { type: number }
+        summary: { type: string, minLength: 10, maxLength: 8000 }
+        lesson: { type: string, minLength: 10, maxLength: 8000 }
+        residual_uncertainty: { type: object, additionalProperties: true }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        evidence_refs:
+          type: array
+          minItems: 1
+          maxItems: 64
+          items: { $ref: '#/components/schemas/EvidenceRef' }
+      additionalProperties: false
+    AccessPresetRequest:
+      type: object
+      required: [user_id, preset, reason]
+      properties:
+        user_id: { type: integer, minimum: 1 }
+        preset: { type: string, enum: [owner, operator, strategist, viewer] }
+        reason: { type: string, minLength: 3, maxLength: 2000 }
+      additionalProperties: false
+  responses:
+    OkEnvelope:
+      description: Successful Phase 28 objective autonomy response.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data: {}
