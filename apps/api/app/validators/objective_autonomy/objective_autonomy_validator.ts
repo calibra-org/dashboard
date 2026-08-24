@@ -37,7 +37,7 @@ export const objectiveValidator = vine.compile(
 
 export const objectiveStateValidator = vine.compile(vine.object({ reason: vine.string().trim().minLength(3).maxLength(2000) }));
 
-export const cycleValidator = vine.compile(vine.object({ seed: vine.number().min(1).maxLength?.(2147483647) }));
+export const cycleValidator = vine.compile(vine.object({ seed: vine.number().min(1).max(2147483647).optional() }));
 
 export const executeObjectiveStepValidator = vine.compile(
     vine.object({
