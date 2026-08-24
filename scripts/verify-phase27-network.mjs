@@ -11,11 +11,12 @@ const service = read("apps/api/app/services/network_intelligence/network_service
 const controller = read("apps/api/app/controllers/admin/network_intelligence_controller.ts");
 const routes = read("apps/api/start/routes/admin_network_intelligence.ts");
 const permissions = read("apps/api/app/services/network_intelligence/permissions.ts");
+const locks = read("apps/api/app/services/network_intelligence/locks.ts");
 const aggregate = read("scripts/aggregate-network-benchmarks.mjs");
 const aggregationTests = read("scripts/test-phase27-network-aggregation.mjs");
 const ui = read("apps/admin/src/features/network-intelligence/NetworkIntelligenceWorkspace.tsx");
+const dock = read("apps/admin/src/features/network-intelligence/DecisionIntelligenceDock.tsx");
 const queries = read("apps/admin/src/lib/queries/network-intelligence.ts");
-const sidebar = read("apps/admin/src/components/Sidebar.tsx");
 const i18n = read("apps/admin/src/lib/i18n/request.ts");
 const routesIndex = read("apps/api/start/routes.ts");
 const docsPackage = read("docs/api/package.json");
@@ -30,6 +31,8 @@ must(service.includes("assertAggregateOnlyNetworkPayload"), "aggregate-only requ
 must(service.includes("definition_digest"), "metric semantic digest missing");
 must(service.includes("E_NETWORK_CONTRIBUTION_OUT_OF_BOUNDS"), "contribution bound enforcement missing");
 must(permissions.includes("E_NETWORK_SELF_LOCKOUT"), "access self-lockout protection missing");
+must(locks.includes("pg_advisory_xact_lock"), "versioned policy/metric transaction lock missing");
+must(controller.includes("findings: payload.findings ?? []"), "security review aggregate-only findings guard missing");
 for (const action of [
     "network_intelligence.participation.set",
     "network_intelligence.metric_definition.create",
@@ -51,11 +54,23 @@ must(aggregationTests.includes("PASS Phase 27 network aggregation privacy tests"
 must(ui.includes("HelperTooltip"), "UI help contract missing");
 must(ui.includes("NetworkTabs"), "contextual Phase 27 navigation missing");
 must(queries.includes("apiMutate") && queries.includes("apiGet"), "same-origin authenticated query wiring missing");
-must(sidebar.includes("/decision-intelligence/network-intelligence/benchmarks"), "Phase 27 sidebar entry missing");
+must(dock.includes("/decision-intelligence/network-intelligence/benchmarks"), "Decision Intelligence contextual Phase 27 entry missing");
 must(i18n.includes("network_intelligence"), "Phase 27 i18n catalog wiring missing");
 must(routesIndex.includes("admin_network_intelligence"), "Phase 27 route registry missing");
 must(docsPackage.includes("build:json:admin-phase27"), "Phase 27 OpenAPI build wiring missing");
 must(mergeSpec.includes("Phase27NetworkIntelligenceOverlay"), "Phase 27 OpenAPI merge wiring missing");
-must(openapi.includes("/api/v1/admin/network-intelligence/benchmarks"), "Phase 27 benchmark OpenAPI route missing");
+for (const path of [
+    "/api/v1/admin/network-intelligence/overview",
+    "/api/v1/admin/network-intelligence/metrics",
+    "/api/v1/admin/network-intelligence/participation",
+    "/api/v1/admin/network-intelligence/contributions",
+    "/api/v1/admin/network-intelligence/benchmarks",
+    "/api/v1/admin/network-intelligence/exports",
+    "/api/v1/admin/network-intelligence/security-reviews",
+    "/api/v1/admin/network-intelligence/access",
+    "/api/v1/admin/network-intelligence/access/preset",
+]) {
+    must(openapi.includes(path), `Phase 27 OpenAPI route missing: ${path}`);
+}
 
 console.log("PASS Phase 27 Network Intelligence integrity gate");
