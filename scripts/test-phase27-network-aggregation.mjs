@@ -20,7 +20,10 @@ const baseConfig = {
     metric_bounds: { "conversion.rate@1": { lower: 0, upper: 100 } },
 };
 
-assert.equal(aggregateNetworkBenchmarks({ config: baseConfig, contributions: [1, 2, 3, 4].map(contribution) }).publications.length, 0);
+assert.equal(
+    aggregateNetworkBenchmarks({ config: baseConfig, contributions: [1, 2, 3, 4].map(contribution) }).publications.length,
+    0,
+);
 const thresholded = aggregateNetworkBenchmarks({ config: baseConfig, contributions: [1, 2, 3, 4, 5].map(contribution) });
 assert.equal(thresholded.publications.length, 1);
 assert.equal(thresholded.publications[0].cohort_size, 5);
@@ -32,19 +35,30 @@ assert.throws(
     /raw\/identity field forbidden|PII-shaped value forbidden/,
 );
 assert.throws(
-    () => aggregateNetworkBenchmarks({ config: baseConfig, contributions: [contribution(1), contribution(1), contribution(2), contribution(3), contribution(4)] }),
+    () =>
+        aggregateNetworkBenchmarks({
+            config: baseConfig,
+            contributions: [contribution(1), contribution(1), contribution(2), contribution(3), contribution(4)],
+        }),
     /duplicate tenant contribution/,
 );
 assert.throws(
     () =>
         aggregateNetworkBenchmarks({
             config: baseConfig,
-            contributions: [1, 2, 3, 4, 5].map((tenant) => ({ ...contribution(tenant), definition_digest: tenant === 5 ? "b".repeat(64) : "a".repeat(64) })),
+            contributions: [1, 2, 3, 4, 5].map((tenant) => ({
+                ...contribution(tenant),
+                definition_digest: tenant === 5 ? "b".repeat(64) : "a".repeat(64),
+            })),
         }),
     /metric definition mismatch/,
 );
 assert.throws(
-    () => aggregateNetworkBenchmarks({ config: baseConfig, contributions: [1, 2, 3, 4, 5].map((tenant) => contribution(tenant, tenant === 5 ? 101 : 10)) }),
+    () =>
+        aggregateNetworkBenchmarks({
+            config: baseConfig,
+            contributions: [1, 2, 3, 4, 5].map((tenant) => contribution(tenant, tenant === 5 ? 101 : 10)),
+        }),
     /outside approved bounds/,
 );
 

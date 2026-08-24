@@ -10,7 +10,8 @@ const links = [
 
 export function DecisionIntelligenceDock() {
     const pathname = usePathname();
-    const visible = pathname === "/analytics/decision-intelligence" || pathname.startsWith("/decision-intelligence/network-intelligence/");
+    const visible =
+        pathname === "/analytics/decision-intelligence" || pathname.startsWith("/decision-intelligence/network-intelligence/");
     if (!visible) return null;
 
     return (
@@ -25,7 +26,9 @@ export function DecisionIntelligenceDock() {
                             href={item.href as never}
                             className={cn(
                                 "rounded-full border px-3 py-1.5 text-xs transition-colors",
-                                active ? "border-primary/30 bg-primary/10 font-medium text-primary" : "bg-card text-muted-foreground hover:text-foreground",
+                                active
+                                    ? "border-primary/30 bg-primary/10 font-medium text-primary"
+                                    : "bg-card text-muted-foreground hover:text-foreground",
                             )}
                         >
                             {item.label}

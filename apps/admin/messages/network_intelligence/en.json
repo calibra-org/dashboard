@@ -1,15 +1,15 @@
 {
-  "NetworkIntelligence": {
-    "title": "Private Network Intelligence",
-    "subtitle": "Network benchmarking with bounded aggregates, explicit legal basis, minimum cohort thresholds, and versioned privacy policy",
-    "tabsLabel": "Private Network Intelligence sections",
-    "tabs": {
-      "benchmarks": "Benchmarks",
-      "participation": "Participation & legal basis",
-      "privacy": "Privacy & access"
+    "NetworkIntelligence": {
+        "title": "Private Network Intelligence",
+        "subtitle": "Network benchmarking with bounded aggregates, explicit legal basis, minimum cohort thresholds, and versioned privacy policy",
+        "tabsLabel": "Private Network Intelligence sections",
+        "tabs": {
+            "benchmarks": "Benchmarks",
+            "participation": "Participation & legal basis",
+            "privacy": "Privacy & access"
+        }
+    },
+    "Nav": {
+        "networkIntelligence": "Private Network Intelligence"
     }
-  },
-  "Nav": {
-    "networkIntelligence": "Private Network Intelligence"
-  }
 }

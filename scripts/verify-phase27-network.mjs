@@ -23,7 +23,12 @@ const docsPackage = read("docs/api/package.json");
 const mergeSpec = read("docs/api/scripts/merge-admin-spec.js");
 const openapi = read("docs/api/reference/openapi/admin.phase27.v1.yaml");
 
-for (const marker of ["ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY", "minimum_cohort_size >= 5", "network_metric_bounds_check"]) {
+for (const marker of [
+    "ENABLE ROW LEVEL SECURITY",
+    "FORCE ROW LEVEL SECURITY",
+    "NETWORK_MIN_COHORT_FLOOR = 5",
+    "network_metric_bounds_check",
+]) {
     must(migration.includes(marker), `migration contract missing: ${marker}`);
 }
 must(service.includes("contains_peer_raw_records: false"), "peer raw export guard missing");
@@ -46,7 +51,13 @@ for (const action of [
 const postCount = (routes.match(/\.post\(/g) ?? []).length;
 const limitedCount = (routes.match(/\.use\(adminWriteLimiter\)/g) ?? []).length;
 must(postCount === limitedCount, "every Phase 27 mutation must use adminWriteLimiter");
-for (const marker of ["raw/identity field forbidden", "metric_bounds", "privacy budget exceeded", "randomBytes", "contains_peer_raw_records: false"]) {
+for (const marker of [
+    "raw/identity field forbidden",
+    "metric_bounds",
+    "privacy budget exceeded",
+    "randomBytes",
+    "contains_peer_raw_records: false",
+]) {
     must(aggregate.includes(marker), `offline aggregate guard missing: ${marker}`);
 }
 must(!aggregate.includes("cfg.seed"), "deterministic public DP seed is forbidden");
@@ -54,7 +65,10 @@ must(aggregationTests.includes("PASS Phase 27 network aggregation privacy tests"
 must(ui.includes("HelperTooltip"), "UI help contract missing");
 must(ui.includes("NetworkTabs"), "contextual Phase 27 navigation missing");
 must(queries.includes("apiMutate") && queries.includes("apiGet"), "same-origin authenticated query wiring missing");
-must(dock.includes("/decision-intelligence/network-intelligence/benchmarks"), "Decision Intelligence contextual Phase 27 entry missing");
+must(
+    dock.includes("/decision-intelligence/network-intelligence/benchmarks"),
+    "Decision Intelligence contextual Phase 27 entry missing",
+);
 must(i18n.includes("network_intelligence"), "Phase 27 i18n catalog wiring missing");
 must(routesIndex.includes("admin_network_intelligence"), "Phase 27 route registry missing");
 must(docsPackage.includes("build:json:admin-phase27"), "Phase 27 OpenAPI build wiring missing");

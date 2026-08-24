@@ -20,7 +20,12 @@ export const participationValidator = vine.compile(
 
 export const metricValidator = vine.compile(
     vine.object({
-        metric_key: vine.string().trim().minLength(2).maxLength(120).regex(/^[a-z0-9][a-z0-9._-]+$/),
+        metric_key: vine
+            .string()
+            .trim()
+            .minLength(2)
+            .maxLength(120)
+            .regex(/^[a-z0-9][a-z0-9._-]+$/),
         version: vine.number().min(1).optional(),
         unit: vine.string().trim().minLength(1).maxLength(48),
         numerator_definition: vine.string().trim().minLength(3).maxLength(2000),
@@ -36,10 +41,25 @@ export const metricValidator = vine.compile(
 
 export const contributionValidator = vine.compile(
     vine.object({
-        metric_key: vine.string().trim().minLength(2).maxLength(120).regex(/^[a-z0-9][a-z0-9._-]+$/),
+        metric_key: vine
+            .string()
+            .trim()
+            .minLength(2)
+            .maxLength(120)
+            .regex(/^[a-z0-9][a-z0-9._-]+$/),
         metric_version: vine.number().min(1),
-        period_key: vine.string().trim().minLength(2).maxLength(64).regex(/^[A-Za-z0-9._:-]+$/),
-        segment_key: vine.string().trim().maxLength(96).regex(/^[A-Za-z0-9._:-]+$/).optional(),
+        period_key: vine
+            .string()
+            .trim()
+            .minLength(2)
+            .maxLength(64)
+            .regex(/^[A-Za-z0-9._:-]+$/),
+        segment_key: vine
+            .string()
+            .trim()
+            .maxLength(96)
+            .regex(/^[A-Za-z0-9._:-]+$/)
+            .optional(),
         aggregate_value: vine.number(),
         numerator: vine.number().optional(),
         denominator: vine.number().optional(),

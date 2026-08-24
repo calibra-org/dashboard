@@ -1,9 +1,8 @@
-import type { ReactNode } from "react";
-
 import {
     HelperTooltip as PanelHelperTooltip,
     type HelperTooltipProps as PanelHelperTooltipProps,
 } from "@calibra/panel-kit/helper-tooltip";
+import type { ReactNode } from "react";
 
 export type HelperTooltipProps = Omit<PanelHelperTooltipProps, "children"> & {
     children?: ReactNode;

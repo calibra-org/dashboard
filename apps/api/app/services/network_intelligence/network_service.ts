@@ -1,5 +1,4 @@
 import { createHash, randomUUID } from "node:crypto";
-
 import { Exception } from "@adonisjs/core/exceptions";
 import { DateTime } from "luxon";
 
@@ -30,7 +29,9 @@ function stable(value: unknown): unknown {
 }
 
 function hash(value: unknown): string {
-    return createHash("sha256").update(JSON.stringify(stable(value))).digest("hex");
+    return createHash("sha256")
+        .update(JSON.stringify(stable(value)))
+        .digest("hex");
 }
 
 function json(value: unknown): string {
@@ -50,7 +51,9 @@ function parseJsonArray(value: unknown): string[] {
 
 export function assertAggregateOnlyNetworkPayload(value: unknown, path = "payload"): void {
     if (Array.isArray(value)) {
-        value.forEach((item, index) => assertAggregateOnlyNetworkPayload(item, `${path}[${index}]`));
+        for (const [index, item] of value.entries()) {
+            assertAggregateOnlyNetworkPayload(item, `${path}[${index}]`);
+        }
         return;
     }
     if (value && typeof value === "object") {
@@ -149,7 +152,7 @@ async function activeParticipation() {
         .where("tenant_id", tenantId())
         .orderBy("version", "desc")
         .first();
-    if (!policy || !Boolean(policy.opted_in)) {
+    if (!policy || !policy.opted_in) {
         throw new Exception("Tenant has not opted in to network intelligence", {
             status: 409,
             code: "E_NETWORK_NOT_OPTED_IN",
@@ -210,11 +213,7 @@ export async function setParticipation(input: {
     const privacyParameters = normalizeNetworkPrivacyPolicy(input);
     const trx = currentTrx();
     const tenant = tenantId();
-    const latest = await trx
-        .from("network_participation_policies")
-        .where("tenant_id", tenant)
-        .max("version as version")
-        .first();
+    const latest = await trx.from("network_participation_policies").where("tenant_id", tenant).max("version as version").first();
     const version = Number(latest?.version ?? 0) + 1;
     const canonical = {
         version,

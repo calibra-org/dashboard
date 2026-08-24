@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
-import { randomBytes, createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import fs from "node:fs";
-import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 export const NETWORK_AGGREGATION_ALGORITHM_VERSION = "phase27-network-v1";
 export const NETWORK_MIN_COHORT_FLOOR = 5;
@@ -25,12 +25,16 @@ function stable(value) {
 }
 
 function digest(value) {
-    return createHash("sha256").update(JSON.stringify(stable(value))).digest("hex");
+    return createHash("sha256")
+        .update(JSON.stringify(stable(value)))
+        .digest("hex");
 }
 
 function assertNoRawIdentityFields(value, location = "input") {
     if (Array.isArray(value)) {
-        value.forEach((item, index) => assertNoRawIdentityFields(item, `${location}[${index}]`));
+        for (const [index, item] of value.entries()) {
+            assertNoRawIdentityFields(item, `${location}[${index}]`);
+        }
         return;
     }
     if (value && typeof value === "object") {
@@ -162,7 +166,8 @@ export function aggregateNetworkBenchmarks(input) {
 
         if (privacyMethod === "laplace_dp") {
             const epsilon = Number(config.epsilon);
-            if (!Number.isFinite(epsilon) || !(epsilon > 0 && epsilon <= 10)) throw new Error("laplace_dp requires 0 < epsilon <= 10");
+            if (!Number.isFinite(epsilon) || !(epsilon > 0 && epsilon <= 10))
+                throw new Error("laplace_dp requires 0 < epsilon <= 10");
             const sensitivity = (bounds.upper - bounds.lower) / cohortSize;
             const noiseScale = sensitivity / epsilon;
             benchmarkValue = Math.min(bounds.upper, Math.max(bounds.lower, rawMean + laplace(noiseScale)));

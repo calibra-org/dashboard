@@ -17,7 +17,9 @@ router
             .post("/participation", [NetworkIntelligenceController, "participation"])
             .as("admin.network_intelligence.participation")
             .use(adminWriteLimiter);
-        router.get("/contributions", [NetworkIntelligenceController, "contributions"]).as("admin.network_intelligence.contributions");
+        router
+            .get("/contributions", [NetworkIntelligenceController, "contributions"])
+            .as("admin.network_intelligence.contributions");
         router
             .post("/contributions", [NetworkIntelligenceController, "contribution"])
             .as("admin.network_intelligence.contributions.upsert")

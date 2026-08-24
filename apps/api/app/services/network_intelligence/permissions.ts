@@ -43,7 +43,7 @@ export async function requireNetworkIntelligencePermission(user: AdminPrincipal,
         throw new Exception("Admin access required", { status: 403, code: "E_NETWORK_ADMIN_REQUIRED" });
     }
     const row = await permissionRow(user, permission);
-    if (row && !Boolean(row.allowed)) {
+    if (row && !row.allowed) {
         throw new Exception("Network intelligence permission denied", {
             status: 403,
             code: "E_NETWORK_PERMISSION_DENIED",
@@ -73,7 +73,9 @@ export async function listNetworkAccess() {
         return {
             id: Number(user.id),
             identity: maskedIdentity({ id: Number(user.id), email: user.email, phone: user.phone }),
-            permissions: Object.fromEntries(NETWORK_INTELLIGENCE_PERMISSIONS.map((permission) => [permission, map.get(permission) ?? true])),
+            permissions: Object.fromEntries(
+                NETWORK_INTELLIGENCE_PERMISSIONS.map((permission) => [permission, map.get(permission) ?? true]),
+            ),
         };
     });
 }
@@ -100,7 +102,13 @@ export async function applyNetworkAccessPreset(actorUserId: number, targetUserId
     for (const permission of NETWORK_INTELLIGENCE_PERMISSIONS) {
         await trx
             .table("admin_permissions")
-            .insert({ tenant_id: tenant, user_id: targetUserId, permission, allowed: allowedSet.has(permission), updated_by: actorUserId })
+            .insert({
+                tenant_id: tenant,
+                user_id: targetUserId,
+                permission,
+                allowed: allowedSet.has(permission),
+                updated_by: actorUserId,
+            })
             .onConflict(["tenant_id", "user_id", "permission"])
             .merge({ allowed: allowedSet.has(permission), updated_by: actorUserId, updated_at: new Date() });
     }

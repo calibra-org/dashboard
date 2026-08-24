@@ -1,6 +1,5 @@
 import fs from "node:fs";
 import path from "node:path";
-
 import { test } from "@japa/runner";
 
 const read = (relativePath: string) => fs.readFileSync(path.join(process.cwd(), relativePath), "utf8");

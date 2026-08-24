@@ -11579,6 +11579,150 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/network-intelligence/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminNetworkIntelligenceOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/network-intelligence/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminNetworkIntelligenceMetrics"];
+        put?: never;
+        post: operations["adminNetworkIntelligenceCreateMetric"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/network-intelligence/participation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminNetworkIntelligenceParticipation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/network-intelligence/contributions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminNetworkIntelligenceContributions"];
+        put?: never;
+        post: operations["adminNetworkIntelligenceUpsertContribution"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/network-intelligence/benchmarks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminNetworkIntelligenceBenchmarks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/network-intelligence/exports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminNetworkIntelligenceExport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/network-intelligence/security-reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminNetworkIntelligenceSecurityReview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/network-intelligence/access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminNetworkIntelligenceAccess"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/network-intelligence/access/preset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminNetworkIntelligenceAccessPreset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -15663,6 +15807,65 @@ export interface components {
         DigitalTwinEnvelope: {
             data: unknown;
         };
+        PrivacyParameters: {
+            epsilon?: number;
+            max_cumulative_epsilon?: number;
+        };
+        ParticipationRequest: {
+            opted_in: boolean;
+            legal_basis?: string;
+            terms_version?: string;
+            purpose_scopes: string[];
+            minimum_cohort_size: number;
+            /** @enum {string} */
+            privacy_method: "aggregate_threshold" | "laplace_dp" | "secure_aggregate";
+            privacy_parameters?: components["schemas"]["PrivacyParameters"];
+            reason: string;
+        };
+        MetricDefinitionRequest: {
+            metric_key: string;
+            version?: number;
+            unit: string;
+            numerator_definition: string;
+            denominator_definition?: string;
+            /** @enum {string} */
+            aggregation: "mean" | "ratio" | "median" | "percentile" | "rate";
+            /** @enum {string} */
+            period_grain: "day" | "week" | "month" | "quarter";
+            minimum_records_per_contribution: number;
+            value_min: number;
+            value_max: number;
+            reason: string;
+        };
+        ContributionRequest: {
+            metric_key: string;
+            metric_version: number;
+            period_key: string;
+            segment_key?: string;
+            aggregate_value: number;
+            numerator?: number;
+            denominator?: number;
+            record_count: number;
+            source_aggregate_refs?: string[];
+        };
+        ExportRequest: {
+            /** @enum {string} */
+            scope: "participation" | "contributions" | "all";
+        };
+        SecurityReviewRequest: {
+            review_type: string;
+            /** @enum {string} */
+            status: "approved" | "changes_required" | "rejected";
+            artifact_ref: string;
+            findings?: unknown[];
+            decision: string;
+        };
+        AccessPresetRequest: {
+            user_id: number;
+            /** @enum {string} */
+            preset: "owner" | "privacy_admin" | "contributor" | "viewer";
+            reason: string;
+        };
     };
     responses: {
         /** @description Unauthorized (401) — the request did not include a valid bearer token, or the token has been revoked. */
@@ -15777,6 +15980,17 @@ export interface components {
         };
         /** @description Merchant memory resource created. */
         Phase26MerchantMemoryOverlayCreatedEnvelope: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": {
+                    data: unknown;
+                };
+            };
+        };
+        /** @description Successful Phase 27 network intelligence response. */
+        Phase27NetworkIntelligenceOverlayOkEnvelope: {
             headers: {
                 [name: string]: unknown;
             };
@@ -34596,6 +34810,162 @@ export interface operations {
         requestBody: components["requestBodies"]["ObjectBody"];
         responses: {
             201: components["responses"]["Phase26MerchantMemoryOverlayCreatedEnvelope"];
+        };
+    };
+    adminNetworkIntelligenceOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Phase27NetworkIntelligenceOverlayOkEnvelope"];
+        };
+    };
+    adminNetworkIntelligenceMetrics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Phase27NetworkIntelligenceOverlayOkEnvelope"];
+        };
+    };
+    adminNetworkIntelligenceCreateMetric: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MetricDefinitionRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["Phase27NetworkIntelligenceOverlayOkEnvelope"];
+        };
+    };
+    adminNetworkIntelligenceParticipation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ParticipationRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["Phase27NetworkIntelligenceOverlayOkEnvelope"];
+        };
+    };
+    adminNetworkIntelligenceContributions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Phase27NetworkIntelligenceOverlayOkEnvelope"];
+        };
+    };
+    adminNetworkIntelligenceUpsertContribution: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContributionRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["Phase27NetworkIntelligenceOverlayOkEnvelope"];
+        };
+    };
+    adminNetworkIntelligenceBenchmarks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Phase27NetworkIntelligenceOverlayOkEnvelope"];
+        };
+    };
+    adminNetworkIntelligenceExport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["Phase27NetworkIntelligenceOverlayOkEnvelope"];
+        };
+    };
+    adminNetworkIntelligenceSecurityReview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SecurityReviewRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["Phase27NetworkIntelligenceOverlayOkEnvelope"];
+        };
+    };
+    adminNetworkIntelligenceAccess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Phase27NetworkIntelligenceOverlayOkEnvelope"];
+        };
+    };
+    adminNetworkIntelligenceAccessPreset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccessPresetRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["Phase27NetworkIntelligenceOverlayOkEnvelope"];
         };
     };
 }
