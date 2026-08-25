@@ -23,4 +23,11 @@ test.group("Phase 29 product passport public boundary", () => {
     test("rejects token-like fields case-insensitively", ({ assert }) => {
         assert.throws(() => assertPublicPayloadSafe({ certificate: { accessToken: "secret" } }), /restricted field/);
     });
+
+    test("rejects private_fields if nested into a public payload", ({ assert }) => {
+        assert.throws(
+            () => assertPublicPayloadSafe({ lifecycle: { private_fields: { supplier_terms: "internal" } } }),
+            /restricted field/,
+        );
+    });
 });
