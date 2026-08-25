@@ -1,0 +1,56 @@
+name: Phase 29 Backend Format Materializer
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/phase29-format-materialize.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'feat/phase29-product-passport-20260825'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+      - run: npm install --global pnpm@10.32.1
+      - run: pnpm install --frozen-lockfile
+      - name: Format Phase 29 backend
+        run: |
+          pnpm exec biome check --write \
+            apps/api/database/migrations/1800000000000_create_product_passport_os.ts \
+            apps/api/app/services/product_passport/product_passport_service.ts \
+            apps/api/app/services/product_passport/permissions.ts \
+            apps/api/app/controllers/admin/product_passport_controller.ts \
+            apps/api/app/controllers/product_passport_public_controller.ts \
+            apps/api/app/validators/product_passport/product_passport_validator.ts \
+            apps/api/start/routes/admin_product_passports.ts \
+            apps/api/start/routes/product_passports_public.ts \
+            scripts/verify-phase29-product-passport.mjs
+      - name: Verify static Phase 29 contract
+        run: node scripts/verify-phase29-product-passport.mjs
+      - name: Commit formatting and remove materializer
+        run: |
+          git rm .github/workflows/phase29-format-materialize.yml
+          git add -- \
+            apps/api/database/migrations/1800000000000_create_product_passport_os.ts \
+            apps/api/app/services/product_passport/product_passport_service.ts \
+            apps/api/app/services/product_passport/permissions.ts \
+            apps/api/app/controllers/admin/product_passport_controller.ts \
+            apps/api/app/controllers/product_passport_public_controller.ts \
+            apps/api/app/validators/product_passport/product_passport_validator.ts \
+            apps/api/start/routes/admin_product_passports.ts \
+            apps/api/start/routes/product_passports_public.ts \
+            scripts/verify-phase29-product-passport.mjs
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "style(api): format Phase 29 backend"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
