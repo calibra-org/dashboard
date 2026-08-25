@@ -1,0 +1,191 @@
+name: Phase 29 Invariant Hardening Materializer
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/phase29-hardening-materialize.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  harden:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'feat/phase29-product-passport-20260825'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: calibra
+          POSTGRES_PASSWORD: calibra
+          POSTGRES_DB: calibra
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U calibra -d calibra"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+      - run: npm install --global pnpm@10.32.1
+      - run: pnpm install --frozen-lockfile
+      - name: Harden Phase 29 identity and version invariants
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs')
+
+          const migrationPath = 'apps/api/database/migrations/1800000000000_create_product_passport_os.ts'
+          let migration = fs.readFileSync(migrationPath, 'utf8')
+          const oldHash = '            table.unique(["tenant_id", "passport_id", "content_hash"], { indexName: "product_passport_versions_hash_unique" });'
+          const newHash = '            table.index(["tenant_id", "passport_id", "content_hash"], "product_passport_versions_hash_idx");'
+          if (!migration.includes(oldHash)) throw new Error('version hash constraint marker not found')
+          migration = migration.replace(oldHash, newHash)
+          const oldIdentity = "            `ALTER TABLE product_passports ADD CONSTRAINT product_passports_identity_required_check CHECK ((identity_level <> 'batch' OR batch_code IS NOT NULL) AND (identity_level <> 'item' OR serial_number IS NOT NULL))`,"
+          const newIdentity = "            `ALTER TABLE product_passports ADD CONSTRAINT product_passports_identity_required_check CHECK ((identity_level <> 'product' OR (variation_id IS NULL AND batch_code IS NULL AND serial_number IS NULL)) AND (identity_level <> 'model' OR (variation_id IS NOT NULL AND batch_code IS NULL AND serial_number IS NULL)) AND (identity_level <> 'batch' OR (batch_code IS NOT NULL AND serial_number IS NULL)) AND (identity_level <> 'item' OR serial_number IS NOT NULL))`,"
+          if (!migration.includes(oldIdentity)) throw new Error('identity constraint marker not found')
+          migration = migration.replace(oldIdentity, newIdentity)
+          fs.writeFileSync(migrationPath, migration)
+
+          const servicePath = 'apps/api/app/services/product_passport/product_passport_service.ts'
+          let service = fs.readFileSync(servicePath, 'utf8')
+          const start = service.indexOf('function assertIdentityInput(input: {')
+          const endMarker = '\n}\n\nasync function findSupplyReceiptLine'
+          const end = service.indexOf(endMarker, start)
+          if (start < 0 || end < 0) throw new Error('assertIdentityInput block not found')
+          const replacement = `export function assertIdentityInput(input: {
+              identity_level: "product" | "model" | "batch" | "item";
+              variation_id?: number;
+              batch_code?: string;
+              serial_number?: string;
+          }) {
+              const hasVariation = input.variation_id != null;
+              const hasBatch = Boolean(input.batch_code);
+              const hasSerial = Boolean(input.serial_number);
+              if (input.identity_level === "product" && (hasVariation || hasBatch || hasSerial)) {
+                  throw new Exception("Product passports cannot carry model, batch, or serial identity", {
+                      status: 422,
+                      code: "E_PRODUCT_PASSPORT_PRODUCT_SCOPE_INVALID",
+                  });
+              }
+              if (input.identity_level === "model") {
+                  if (!hasVariation) {
+                      throw new Exception("Model passports require variation_id", {
+                          status: 422,
+                          code: "E_PRODUCT_PASSPORT_MODEL_VARIATION_REQUIRED",
+                      });
+                  }
+                  if (hasBatch || hasSerial) {
+                      throw new Exception("Model passports cannot carry batch or serial identity", {
+                          status: 422,
+                          code: "E_PRODUCT_PASSPORT_MODEL_SCOPE_INVALID",
+                      });
+                  }
+              }
+              if (input.identity_level === "batch") {
+                  if (!hasBatch) {
+                      throw new Exception("Batch passports require batch_code", {
+                          status: 422,
+                          code: "E_PRODUCT_PASSPORT_BATCH_REQUIRED",
+                      });
+                  }
+                  if (hasSerial) {
+                      throw new Exception("Batch passports cannot carry item serial identity", {
+                          status: 422,
+                          code: "E_PRODUCT_PASSPORT_BATCH_SCOPE_INVALID",
+                      });
+                  }
+              }
+              if (input.identity_level === "item" && !hasSerial) {
+                  throw new Exception("Item passports require serial_number", {
+                      status: 422,
+                      code: "E_PRODUCT_PASSPORT_SERIAL_REQUIRED",
+                  });
+              }
+          }`
+          service = service.slice(0, start) + replacement + service.slice(end + 2)
+          fs.writeFileSync(servicePath, service)
+
+          const testPath = 'apps/api/tests/unit/phase29_product_passport.spec.ts'
+          let tests = fs.readFileSync(testPath, 'utf8')
+          const oldImport = 'import { assertPublicPayloadSafe } from "#services/product_passport/product_passport_service";'
+          const newImport = 'import { assertIdentityInput, assertPublicPayloadSafe } from "#services/product_passport/product_passport_service";'
+          if (!tests.includes(oldImport)) throw new Error('unit import marker not found')
+          tests = tests.replace(oldImport, newImport)
+          tests += `
+
+test.group("Phase 29 product passport identity boundary", () => {
+    test("product identity rejects lower-level identity fields", ({ assert }) => {
+        assert.throws(() => assertIdentityInput({ identity_level: "product", variation_id: 10 }), /cannot carry model/);
+    });
+
+    test("model identity requires a variation and rejects batch fields", ({ assert }) => {
+        assert.throws(() => assertIdentityInput({ identity_level: "model" }), /require variation_id/);
+        assert.doesNotThrow(() => assertIdentityInput({ identity_level: "model", variation_id: 10 }));
+        assert.throws(
+            () => assertIdentityInput({ identity_level: "model", variation_id: 10, batch_code: "LOT-1" }),
+            /cannot carry batch/,
+        );
+    });
+
+    test("batch identity requires a batch and cannot carry an item serial", ({ assert }) => {
+        assert.throws(() => assertIdentityInput({ identity_level: "batch" }), /require batch_code/);
+        assert.doesNotThrow(() => assertIdentityInput({ identity_level: "batch", batch_code: "LOT-1" }));
+        assert.throws(
+            () => assertIdentityInput({ identity_level: "batch", batch_code: "LOT-1", serial_number: "SN-1" }),
+            /cannot carry item serial/,
+        );
+    });
+
+    test("item identity requires a serial and may retain batch provenance", ({ assert }) => {
+        assert.throws(() => assertIdentityInput({ identity_level: "item" }), /require serial_number/);
+        assert.doesNotThrow(() =>
+            assertIdentityInput({ identity_level: "item", variation_id: 10, batch_code: "LOT-1", serial_number: "SN-1" }),
+        );
+    });
+});
+`
+          fs.writeFileSync(testPath, tests)
+          NODE
+      - name: Format hardened files
+        run: >-
+          pnpm exec biome check --write
+          apps/api/database/migrations/1800000000000_create_product_passport_os.ts
+          apps/api/app/services/product_passport/product_passport_service.ts
+          apps/api/tests/unit/phase29_product_passport.spec.ts
+      - name: Create test database
+        env:
+          PGPASSWORD: calibra
+        run: psql -h localhost -U calibra -d calibra -c "CREATE DATABASE calibra_test OWNER calibra;"
+      - name: Run Phase 29 unit controls
+        working-directory: apps/api
+        run: pnpm test --force-exit --suite=unit --files='phase29_product_passport'
+      - name: API typecheck
+        run: pnpm --filter @calibra/api run typecheck
+      - name: Assert generated SDK remains drift-free
+        run: pnpm --filter @calibra/sdk run codegen:check
+      - name: Commit hardening and remove materializer
+        run: |
+          git rm .github/workflows/phase29-hardening-materialize.yml
+          git add -- apps/api/database/migrations/1800000000000_create_product_passport_os.ts apps/api/app/services/product_passport/product_passport_service.ts apps/api/tests/unit/phase29_product_passport.spec.ts
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "fix(phase29): harden passport identity and version invariants"
+          test -z "$(git status --porcelain)"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
