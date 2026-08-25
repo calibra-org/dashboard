@@ -65,7 +65,7 @@ export default class extends BaseSchema {
 
             table.unique(["public_id"], { indexName: "product_passport_versions_public_id_unique" });
             table.unique(["tenant_id", "passport_id", "version"], { indexName: "product_passport_versions_version_unique" });
-            table.unique(["tenant_id", "passport_id", "content_hash"], { indexName: "product_passport_versions_hash_unique" });
+            table.index(["tenant_id", "passport_id", "content_hash"], "product_passport_versions_hash_idx");
         });
 
         this.schema.createTable("product_passport_evidence", (table) => {
@@ -151,7 +151,7 @@ export default class extends BaseSchema {
 
         for (const sql of [
             `ALTER TABLE product_passports ADD CONSTRAINT product_passports_identity_level_check CHECK (identity_level IN ('product','model','batch','item'))`,
-            `ALTER TABLE product_passports ADD CONSTRAINT product_passports_identity_required_check CHECK ((identity_level <> 'batch' OR batch_code IS NOT NULL) AND (identity_level <> 'item' OR serial_number IS NOT NULL))`,
+            `ALTER TABLE product_passports ADD CONSTRAINT product_passports_identity_required_check CHECK ((identity_level <> 'model' OR variation_id IS NOT NULL) AND (identity_level <> 'batch' OR batch_code IS NOT NULL) AND (identity_level <> 'item' OR serial_number IS NOT NULL))`,
             `ALTER TABLE product_passports ADD CONSTRAINT product_passports_status_check CHECK (status IN ('draft','published','revoked'))`,
             `ALTER TABLE product_passport_evidence ADD CONSTRAINT product_passport_evidence_visibility_check CHECK (visibility IN ('public','private'))`,
             `ALTER TABLE product_passport_evidence ADD CONSTRAINT product_passport_evidence_status_check CHECK (verification_status IN ('unverified','verified','rejected','expired'))`,
