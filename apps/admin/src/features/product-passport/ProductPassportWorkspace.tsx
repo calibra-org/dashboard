@@ -173,7 +173,8 @@ export function ProductPassportWorkspace() {
     const publicResolverPath = selectedPassport ? `/api/v1/product-passports/${selectedPassport.resolver_key}` : "";
     const verifiedEvidence = detail.data?.evidence.filter((item) => item.verification_status === "verified").length ?? 0;
     const publicVerifiedEvidence =
-        detail.data?.evidence.filter((item) => item.visibility === "public" && item.verification_status === "verified").length ?? 0;
+        detail.data?.evidence.filter((item) => item.visibility === "public" && item.verification_status === "verified").length ??
+        0;
 
     const identityLabel = useMemo<Record<PassportIdentityLevel, string>>(
         () => ({ product: "محصول", model: "مدل/واریانت", batch: "بچ/لات", item: "آیتم سریال‌دار" }),
@@ -313,7 +314,8 @@ export function ProductPassportWorkspace() {
                         <div>
                             <p className="font-semibold">مرز استاندارد و انطباق</p>
                             <p className="mt-1 max-w-4xl text-muted-foreground text-sm">
-                                Resolver برای QR و Digital Link آماده است، اما این پنل بدون review رسمی، ادعای GS1 یا انطباق حقوقی حوزه قضایی نمی‌کند. Mappingهای مقررات نسخه‌دار هستند.
+                                Resolver برای QR و Digital Link آماده است، اما این پنل بدون review رسمی، ادعای GS1 یا انطباق حقوقی
+                                حوزه قضایی نمی‌کند. Mappingهای مقررات نسخه‌دار هستند.
                             </p>
                         </div>
                     </div>
@@ -367,7 +369,9 @@ export function ProductPassportWorkspace() {
                                 </div>
                                 <div>
                                     <h2 className="font-semibold">ساخت پاسپورت جدید</h2>
-                                    <p className="text-muted-foreground text-xs">Product Master موجود reuse می‌شود؛ رکورد موازی ساخته نمی‌شود.</p>
+                                    <p className="text-muted-foreground text-xs">
+                                        Product Master موجود reuse می‌شود؛ رکورد موازی ساخته نمی‌شود.
+                                    </p>
                                 </div>
                             </div>
                             <div className="space-y-4">
@@ -380,7 +384,9 @@ export function ProductPassportWorkspace() {
                                             setVariationId("");
                                         }}
                                     >
-                                        <SelectTrigger><SelectValue placeholder="انتخاب محصول واقعی" /></SelectTrigger>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="انتخاب محصول واقعی" />
+                                        </SelectTrigger>
                                         <SelectContent>
                                             {(products.data?.data ?? []).map((product) => (
                                                 <SelectItem key={product.id} value={String(product.id)}>
@@ -389,7 +395,9 @@ export function ProductPassportWorkspace() {
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    {products.isLoading ? <p className="text-muted-foreground text-xs">در حال بارگذاری محصولات…</p> : null}
+                                    {products.isLoading ? (
+                                        <p className="text-muted-foreground text-xs">در حال بارگذاری محصولات…</p>
+                                    ) : null}
                                 </div>
 
                                 <div className="grid gap-4 sm:grid-cols-2">
@@ -397,24 +405,36 @@ export function ProductPassportWorkspace() {
                                         <Label>سطح هویت</Label>
                                         <Select
                                             value={identityLevel}
-                                            onValueChange={(value) => setIdentityLevel(String(value ?? "product") as PassportIdentityLevel)}
+                                            onValueChange={(value) =>
+                                                setIdentityLevel(String(value ?? "product") as PassportIdentityLevel)
+                                            }
                                         >
-                                            <SelectTrigger><SelectValue /></SelectTrigger>
+                                            <SelectTrigger>
+                                                <SelectValue />
+                                            </SelectTrigger>
                                             <SelectContent>
                                                 {(Object.keys(identityLabel) as PassportIdentityLevel[]).map((level) => (
-                                                    <SelectItem key={level} value={level}>{identityLabel[level]}</SelectItem>
+                                                    <SelectItem key={level} value={level}>
+                                                        {identityLabel[level]}
+                                                    </SelectItem>
                                                 ))}
                                             </SelectContent>
                                         </Select>
                                     </div>
                                     <div className="space-y-2">
                                         <Label>مدل / واریانت</Label>
-                                        <Select value={variationId} onValueChange={(value) => setVariationId(String(value ?? ""))}>
-                                            <SelectTrigger><SelectValue placeholder="اختیاری" /></SelectTrigger>
+                                        <Select
+                                            value={variationId}
+                                            onValueChange={(value) => setVariationId(String(value ?? ""))}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="اختیاری" />
+                                            </SelectTrigger>
                                             <SelectContent>
                                                 {(variations.data ?? []).map((variation) => (
                                                     <SelectItem key={variation.id} value={String(variation.id)}>
-                                                        {variation.sku || `#${variation.id}`}{variation.gtin ? ` · ${variation.gtin}` : ""}
+                                                        {variation.sku || `#${variation.id}`}
+                                                        {variation.gtin ? ` · ${variation.gtin}` : ""}
                                                     </SelectItem>
                                                 ))}
                                             </SelectContent>
@@ -425,41 +445,79 @@ export function ProductPassportWorkspace() {
                                 {identityLevel === "batch" || identityLevel === "item" ? (
                                     <div className="space-y-2">
                                         <Label>کد Batch / Lot</Label>
-                                        <Input value={batchCode} onChange={(event) => setBatchCode(event.target.value)} placeholder="LOT-2026-..." />
+                                        <Input
+                                            value={batchCode}
+                                            onChange={(event) => setBatchCode(event.target.value)}
+                                            placeholder="LOT-2026-..."
+                                        />
                                     </div>
                                 ) : null}
                                 {identityLevel === "item" ? (
                                     <div className="space-y-2">
                                         <Label>Serial Number</Label>
-                                        <Input value={serialNumber} onChange={(event) => setSerialNumber(event.target.value)} placeholder="SN-..." />
+                                        <Input
+                                            value={serialNumber}
+                                            onChange={(event) => setSerialNumber(event.target.value)}
+                                            placeholder="SN-..."
+                                        />
                                     </div>
                                 ) : null}
 
                                 <div className="space-y-2">
                                     <Label>کلید Resolver پایدار</Label>
-                                    <Input value={resolverKey} onChange={(event) => setResolverKey(event.target.value)} placeholder="product-123-batch-a" dir="ltr" />
-                                    <p className="text-muted-foreground text-xs">فقط کلید پایدار ذخیره می‌شود؛ QR می‌تواند به URL Resolver اشاره کند.</p>
+                                    <Input
+                                        value={resolverKey}
+                                        onChange={(event) => setResolverKey(event.target.value)}
+                                        placeholder="product-123-batch-a"
+                                        dir="ltr"
+                                    />
+                                    <p className="text-muted-foreground text-xs">
+                                        فقط کلید پایدار ذخیره می‌شود؛ QR می‌تواند به URL Resolver اشاره کند.
+                                    </p>
                                 </div>
 
                                 <div className="grid gap-4 lg:grid-cols-3">
                                     <div className="space-y-2">
                                         <Label>شناسه‌ها JSON</Label>
-                                        <Textarea value={identifiersJson} onChange={(event) => setIdentifiersJson(event.target.value)} className="min-h-32 font-mono text-xs" dir="ltr" />
+                                        <Textarea
+                                            value={identifiersJson}
+                                            onChange={(event) => setIdentifiersJson(event.target.value)}
+                                            className="min-h-32 font-mono text-xs"
+                                            dir="ltr"
+                                        />
                                     </div>
                                     <div className="space-y-2">
                                         <Label>داده عمومی JSON</Label>
-                                        <Textarea value={publicJson} onChange={(event) => setPublicJson(event.target.value)} className="min-h-32 font-mono text-xs" dir="ltr" />
+                                        <Textarea
+                                            value={publicJson}
+                                            onChange={(event) => setPublicJson(event.target.value)}
+                                            className="min-h-32 font-mono text-xs"
+                                            dir="ltr"
+                                        />
                                     </div>
                                     <div className="space-y-2">
                                         <Label>داده خصوصی JSON</Label>
-                                        <Textarea value={privateJson} onChange={(event) => setPrivateJson(event.target.value)} className="min-h-32 font-mono text-xs" dir="ltr" />
+                                        <Textarea
+                                            value={privateJson}
+                                            onChange={(event) => setPrivateJson(event.target.value)}
+                                            className="min-h-32 font-mono text-xs"
+                                            dir="ltr"
+                                        />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
                                     <Label>دلیل ایجاد</Label>
-                                    <Textarea value={reason} onChange={(event) => setReason(event.target.value)} placeholder="چرا این پاسپورت ایجاد می‌شود؟" />
+                                    <Textarea
+                                        value={reason}
+                                        onChange={(event) => setReason(event.target.value)}
+                                        placeholder="چرا این پاسپورت ایجاد می‌شود؟"
+                                    />
                                 </div>
-                                <Button disabled={busy || !productId || !reason.trim()} onClick={createPassport} className="w-full">
+                                <Button
+                                    disabled={busy || !productId || !reason.trim()}
+                                    onClick={createPassport}
+                                    className="w-full"
+                                >
                                     ایجاد پاسپورت {selectedProductName ? `برای ${selectedProductName}` : ""}
                                 </Button>
                             </div>
@@ -480,13 +538,18 @@ export function ProductPassportWorkspace() {
                                             onClick={() => setSelectedPassportId(passport.public_id)}
                                             className={cn(
                                                 "w-full rounded-xl border p-3 text-start transition hover:bg-muted/40",
-                                                selectedPassport?.public_id === passport.public_id && "border-primary/50 bg-primary/[0.04]",
+                                                selectedPassport?.public_id === passport.public_id &&
+                                                    "border-primary/50 bg-primary/[0.04]",
                                             )}
                                         >
                                             <div className="flex items-center justify-between gap-3">
                                                 <div>
-                                                    <p className="font-medium text-sm">{identityLabel[passport.identity_level]} · #{passport.product_id}</p>
-                                                    <p className="mt-1 font-mono text-muted-foreground text-xs" dir="ltr">{passport.resolver_key}</p>
+                                                    <p className="font-medium text-sm">
+                                                        {identityLabel[passport.identity_level]} · #{passport.product_id}
+                                                    </p>
+                                                    <p className="mt-1 font-mono text-muted-foreground text-xs" dir="ltr">
+                                                        {passport.resolver_key}
+                                                    </p>
                                                 </div>
                                                 <StatusPill status={passport.status} />
                                             </div>
@@ -499,7 +562,10 @@ export function ProductPassportWorkspace() {
 
                     <div className="space-y-6">
                         {!selectedPassport ? (
-                            <EmptyState title="یک پاسپورت انتخاب کنید" body="جزئیات، نسخه‌ها و مرز عمومی/خصوصی اینجا نمایش داده می‌شود." />
+                            <EmptyState
+                                title="یک پاسپورت انتخاب کنید"
+                                body="جزئیات، نسخه‌ها و مرز عمومی/خصوصی اینجا نمایش داده می‌شود."
+                            />
                         ) : detail.isLoading ? (
                             <Card className="p-8 text-muted-foreground">در حال بارگذاری جزئیات پاسپورت…</Card>
                         ) : detail.data ? (
@@ -508,11 +574,17 @@ export function ProductPassportWorkspace() {
                                     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                                         <div>
                                             <div className="flex flex-wrap items-center gap-2">
-                                                <h2 className="font-semibold text-lg">{identityLabel[detail.data.passport.identity_level]}</h2>
+                                                <h2 className="font-semibold text-lg">
+                                                    {identityLabel[detail.data.passport.identity_level]}
+                                                </h2>
                                                 <StatusPill status={detail.data.passport.status} />
-                                                <span className="rounded-full border px-2.5 py-1 text-[11px]">v{detail.data.passport.current_version}</span>
+                                                <span className="rounded-full border px-2.5 py-1 text-[11px]">
+                                                    v{detail.data.passport.current_version}
+                                                </span>
                                             </div>
-                                            <p className="mt-2 font-mono text-muted-foreground text-xs" dir="ltr">{detail.data.passport.public_id}</p>
+                                            <p className="mt-2 font-mono text-muted-foreground text-xs" dir="ltr">
+                                                {detail.data.passport.public_id}
+                                            </p>
                                         </div>
                                         <div className="flex flex-wrap gap-2">
                                             <Button
@@ -545,10 +617,26 @@ export function ProductPassportWorkspace() {
                                     </div>
 
                                     <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                                        <div className="rounded-xl border bg-muted/20 p-3"><p className="text-muted-foreground text-xs">Product ID</p><p className="mt-1 font-medium">#{detail.data.passport.product_id}</p></div>
-                                        <div className="rounded-xl border bg-muted/20 p-3"><p className="text-muted-foreground text-xs">Variation</p><p className="mt-1 font-medium">{detail.data.passport.variation_id ? `#${detail.data.passport.variation_id}` : "—"}</p></div>
-                                        <div className="rounded-xl border bg-muted/20 p-3"><p className="text-muted-foreground text-xs">Batch</p><p className="mt-1 font-medium">{detail.data.passport.batch_code ?? "—"}</p></div>
-                                        <div className="rounded-xl border bg-muted/20 p-3"><p className="text-muted-foreground text-xs">Serial</p><p className="mt-1 font-medium">{detail.data.passport.serial_number ?? "—"}</p></div>
+                                        <div className="rounded-xl border bg-muted/20 p-3">
+                                            <p className="text-muted-foreground text-xs">Product ID</p>
+                                            <p className="mt-1 font-medium">#{detail.data.passport.product_id}</p>
+                                        </div>
+                                        <div className="rounded-xl border bg-muted/20 p-3">
+                                            <p className="text-muted-foreground text-xs">Variation</p>
+                                            <p className="mt-1 font-medium">
+                                                {detail.data.passport.variation_id
+                                                    ? `#${detail.data.passport.variation_id}`
+                                                    : "—"}
+                                            </p>
+                                        </div>
+                                        <div className="rounded-xl border bg-muted/20 p-3">
+                                            <p className="text-muted-foreground text-xs">Batch</p>
+                                            <p className="mt-1 font-medium">{detail.data.passport.batch_code ?? "—"}</p>
+                                        </div>
+                                        <div className="rounded-xl border bg-muted/20 p-3">
+                                            <p className="text-muted-foreground text-xs">Serial</p>
+                                            <p className="mt-1 font-medium">{detail.data.passport.serial_number ?? "—"}</p>
+                                        </div>
                                     </div>
                                 </Card>
 
@@ -556,18 +644,53 @@ export function ProductPassportWorkspace() {
                                     <div className="mb-4 flex items-center justify-between gap-3">
                                         <div>
                                             <h2 className="font-semibold">نسخه کاری و مرز داده</h2>
-                                            <p className="text-muted-foreground text-xs">ویرایش این بخش تا زمان Publish وارد Resolver عمومی نمی‌شود.</p>
+                                            <p className="text-muted-foreground text-xs">
+                                                ویرایش این بخش تا زمان Publish وارد Resolver عمومی نمی‌شود.
+                                            </p>
                                         </div>
                                         <ShieldCheck className="size-5 text-primary" />
                                     </div>
                                     <div className="grid gap-4 lg:grid-cols-3">
-                                        <div className="space-y-2"><Label>شناسه‌ها</Label><Textarea value={draftIdentifiers} onChange={(event) => setDraftIdentifiers(event.target.value)} className="min-h-52 font-mono text-xs" dir="ltr" /></div>
-                                        <div className="space-y-2"><Label>فیلدهای عمومی</Label><Textarea value={draftPublic} onChange={(event) => setDraftPublic(event.target.value)} className="min-h-52 font-mono text-xs" dir="ltr" /></div>
-                                        <div className="space-y-2"><Label>فیلدهای خصوصی</Label><Textarea value={draftPrivate} onChange={(event) => setDraftPrivate(event.target.value)} className="min-h-52 font-mono text-xs" dir="ltr" /></div>
+                                        <div className="space-y-2">
+                                            <Label>شناسه‌ها</Label>
+                                            <Textarea
+                                                value={draftIdentifiers}
+                                                onChange={(event) => setDraftIdentifiers(event.target.value)}
+                                                className="min-h-52 font-mono text-xs"
+                                                dir="ltr"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>فیلدهای عمومی</Label>
+                                            <Textarea
+                                                value={draftPublic}
+                                                onChange={(event) => setDraftPublic(event.target.value)}
+                                                className="min-h-52 font-mono text-xs"
+                                                dir="ltr"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>فیلدهای خصوصی</Label>
+                                            <Textarea
+                                                value={draftPrivate}
+                                                onChange={(event) => setDraftPrivate(event.target.value)}
+                                                className="min-h-52 font-mono text-xs"
+                                                dir="ltr"
+                                            />
+                                        </div>
                                     </div>
                                     <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]">
-                                        <Input value={editReason} onChange={(event) => setEditReason(event.target.value)} placeholder="دلیل تغییر / انتشار / ابطال" />
-                                        <Button disabled={busy || !editReason.trim() || detail.data.passport.status === "revoked"} onClick={saveDraft}>ذخیره نسخه کاری</Button>
+                                        <Input
+                                            value={editReason}
+                                            onChange={(event) => setEditReason(event.target.value)}
+                                            placeholder="دلیل تغییر / انتشار / ابطال"
+                                        />
+                                        <Button
+                                            disabled={busy || !editReason.trim() || detail.data.passport.status === "revoked"}
+                                            onClick={saveDraft}
+                                        >
+                                            ذخیره نسخه کاری
+                                        </Button>
                                     </div>
                                 </Card>
 
@@ -575,21 +698,44 @@ export function ProductPassportWorkspace() {
                                     <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                         <div>
                                             <h2 className="font-semibold">Resolver عمومی و نسخه منتشرشده</h2>
-                                            <p className="text-muted-foreground text-xs">فقط snapshot منتشرشده + شواهد عمومیِ verified قابل مشاهده است.</p>
+                                            <p className="text-muted-foreground text-xs">
+                                                فقط snapshot منتشرشده + شواهد عمومیِ verified قابل مشاهده است.
+                                            </p>
                                         </div>
                                         <StatusPill status={detail.data.passport.status} />
                                     </div>
-                                    <div className="rounded-xl border bg-muted/20 p-4 font-mono text-xs" dir="ltr">{publicResolverPath}</div>
+                                    <div className="rounded-xl border bg-muted/20 p-4 font-mono text-xs" dir="ltr">
+                                        {publicResolverPath}
+                                    </div>
                                     <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                                        <div className="rounded-xl border p-3"><p className="text-muted-foreground text-xs">نسخه‌ها</p><p className="mt-1 font-semibold">{detail.data.versions.length}</p></div>
-                                        <div className="rounded-xl border p-3"><p className="text-muted-foreground text-xs">شواهد verified</p><p className="mt-1 font-semibold">{verifiedEvidence}</p></div>
-                                        <div className="rounded-xl border p-3"><p className="text-muted-foreground text-xs">عمومی verified</p><p className="mt-1 font-semibold">{publicVerifiedEvidence}</p></div>
+                                        <div className="rounded-xl border p-3">
+                                            <p className="text-muted-foreground text-xs">نسخه‌ها</p>
+                                            <p className="mt-1 font-semibold">{detail.data.versions.length}</p>
+                                        </div>
+                                        <div className="rounded-xl border p-3">
+                                            <p className="text-muted-foreground text-xs">شواهد verified</p>
+                                            <p className="mt-1 font-semibold">{verifiedEvidence}</p>
+                                        </div>
+                                        <div className="rounded-xl border p-3">
+                                            <p className="text-muted-foreground text-xs">عمومی verified</p>
+                                            <p className="mt-1 font-semibold">{publicVerifiedEvidence}</p>
+                                        </div>
                                     </div>
                                     <div className="mt-4 space-y-2">
                                         {detail.data.versions.slice(0, 5).map((version) => (
-                                            <div key={version.public_id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3">
-                                                <div><p className="font-medium text-sm">نسخه {version.version} · {version.schema_version}</p><p className="text-muted-foreground text-xs">{date(version.published_at)}</p></div>
-                                                <code className="text-[10px]" dir="ltr">{version.content_hash.slice(0, 16)}…</code>
+                                            <div
+                                                key={version.public_id}
+                                                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3"
+                                            >
+                                                <div>
+                                                    <p className="font-medium text-sm">
+                                                        نسخه {version.version} · {version.schema_version}
+                                                    </p>
+                                                    <p className="text-muted-foreground text-xs">{date(version.published_at)}</p>
+                                                </div>
+                                                <code className="text-[10px]" dir="ltr">
+                                                    {version.content_hash.slice(0, 16)}…
+                                                </code>
                                             </div>
                                         ))}
                                     </div>
@@ -604,43 +750,152 @@ export function ProductPassportWorkspace() {
                 <div className="grid gap-6 xl:grid-cols-[0.9fr_1.3fr]">
                     <Card className="p-5">
                         <h2 className="font-semibold">ثبت Evidence</h2>
-                        <p className="mb-5 text-muted-foreground text-xs">Evidence عمومی تا زمان verification در Resolver نمایش داده نمی‌شود.</p>
-                        {!selectedPassport ? <EmptyState title="پاسپورتی انتخاب نشده" body="از تب پاسپورت‌ها یک رکورد انتخاب کنید." /> : (
+                        <p className="mb-5 text-muted-foreground text-xs">
+                            Evidence عمومی تا زمان verification در Resolver نمایش داده نمی‌شود.
+                        </p>
+                        {!selectedPassport ? (
+                            <EmptyState title="پاسپورتی انتخاب نشده" body="از تب پاسپورت‌ها یک رکورد انتخاب کنید." />
+                        ) : (
                             <div className="space-y-4">
                                 <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="space-y-2"><Label>نوع</Label><Input value={evidenceType} onChange={(event) => setEvidenceType(event.target.value)} placeholder="authenticity / warranty / manual" /></div>
-                                    <div className="space-y-2"><Label>Visibility</Label><Select value={evidenceVisibility} onValueChange={(value) => setEvidenceVisibility(String(value ?? "private") as "public" | "private")}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="private">خصوصی</SelectItem><SelectItem value="public">عمومی</SelectItem></SelectContent></Select></div>
+                                    <div className="space-y-2">
+                                        <Label>نوع</Label>
+                                        <Input
+                                            value={evidenceType}
+                                            onChange={(event) => setEvidenceType(event.target.value)}
+                                            placeholder="authenticity / warranty / manual"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Visibility</Label>
+                                        <Select
+                                            value={evidenceVisibility}
+                                            onValueChange={(value) =>
+                                                setEvidenceVisibility(String(value ?? "private") as "public" | "private")
+                                            }
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="private">خصوصی</SelectItem>
+                                                <SelectItem value="public">عمومی</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
                                 </div>
                                 <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="space-y-2"><Label>Source kind</Label><Input value={sourceKind} onChange={(event) => setSourceKind(event.target.value)} /></div>
-                                    <div className="space-y-2"><Label>Source ref</Label><Input value={sourceRef} onChange={(event) => setSourceRef(event.target.value)} /></div>
+                                    <div className="space-y-2">
+                                        <Label>Source kind</Label>
+                                        <Input value={sourceKind} onChange={(event) => setSourceKind(event.target.value)} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Source ref</Label>
+                                        <Input value={sourceRef} onChange={(event) => setSourceRef(event.target.value)} />
+                                    </div>
                                 </div>
-                                <div className="space-y-2"><Label>Issuer</Label><Input value={issuer} onChange={(event) => setIssuer(event.target.value)} /></div>
-                                <div className="space-y-2"><Label>خلاصه</Label><Textarea value={evidenceSummary} onChange={(event) => setEvidenceSummary(event.target.value)} /></div>
-                                <div className="space-y-2"><Label>Payload JSON</Label><Textarea value={evidenceJson} onChange={(event) => setEvidenceJson(event.target.value)} className="min-h-40 font-mono text-xs" dir="ltr" /></div>
-                                <div className="space-y-2"><Label>دلیل ثبت</Label><Input value={evidenceReason} onChange={(event) => setEvidenceReason(event.target.value)} /></div>
-                                <Button className="w-full" disabled={busy || !evidenceReason.trim()} onClick={addEvidence}>ثبت Evidence</Button>
+                                <div className="space-y-2">
+                                    <Label>Issuer</Label>
+                                    <Input value={issuer} onChange={(event) => setIssuer(event.target.value)} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>خلاصه</Label>
+                                    <Textarea
+                                        value={evidenceSummary}
+                                        onChange={(event) => setEvidenceSummary(event.target.value)}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Payload JSON</Label>
+                                    <Textarea
+                                        value={evidenceJson}
+                                        onChange={(event) => setEvidenceJson(event.target.value)}
+                                        className="min-h-40 font-mono text-xs"
+                                        dir="ltr"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>دلیل ثبت</Label>
+                                    <Input value={evidenceReason} onChange={(event) => setEvidenceReason(event.target.value)} />
+                                </div>
+                                <Button className="w-full" disabled={busy || !evidenceReason.trim()} onClick={addEvidence}>
+                                    ثبت Evidence
+                                </Button>
                             </div>
                         )}
                     </Card>
 
                     <div className="space-y-6">
                         <Card className="p-5">
-                            <div className="mb-4 flex items-center justify-between gap-3"><div><h2 className="font-semibold">Evidence ledger</h2><p className="text-muted-foreground text-xs">Issuer، source، hash، visibility و verification state قابل ردیابی است.</p></div><FileText className="size-5 text-primary" /></div>
-                            {!detail.data?.evidence.length ? <EmptyState title="Evidence ثبت نشده" body="شواهد اصالت، راهنما، ضمانت، سرویس یا ایمنی را اضافه کنید." /> : (
+                            <div className="mb-4 flex items-center justify-between gap-3">
+                                <div>
+                                    <h2 className="font-semibold">Evidence ledger</h2>
+                                    <p className="text-muted-foreground text-xs">
+                                        Issuer، source، hash، visibility و verification state قابل ردیابی است.
+                                    </p>
+                                </div>
+                                <FileText className="size-5 text-primary" />
+                            </div>
+                            {!detail.data?.evidence.length ? (
+                                <EmptyState
+                                    title="Evidence ثبت نشده"
+                                    body="شواهد اصالت، راهنما، ضمانت، سرویس یا ایمنی را اضافه کنید."
+                                />
+                            ) : (
                                 <div className="space-y-3">
                                     {detail.data.evidence.map((item: PassportEvidence) => (
                                         <div key={item.public_id} className="rounded-xl border p-4">
                                             <div className="flex flex-wrap items-start justify-between gap-3">
-                                                <div><p className="font-medium">{item.evidence_type}</p><p className="mt-1 text-muted-foreground text-xs">{item.issuer || item.source_kind} · {date(item.occurred_at ?? item.created_at)}</p></div>
-                                                <div className="flex gap-2"><StatusPill status={item.visibility} /><StatusPill status={item.verification_status} /></div>
+                                                <div>
+                                                    <p className="font-medium">{item.evidence_type}</p>
+                                                    <p className="mt-1 text-muted-foreground text-xs">
+                                                        {item.issuer || item.source_kind} ·{" "}
+                                                        {date(item.occurred_at ?? item.created_at)}
+                                                    </p>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <StatusPill status={item.visibility} />
+                                                    <StatusPill status={item.verification_status} />
+                                                </div>
                                             </div>
                                             {item.summary ? <p className="mt-3 text-sm">{item.summary}</p> : null}
-                                            <code className="mt-3 block text-muted-foreground text-[10px]" dir="ltr">sha256:{item.content_hash}</code>
+                                            <code className="mt-3 block text-[10px] text-muted-foreground" dir="ltr">
+                                                sha256:{item.content_hash}
+                                            </code>
                                             {item.verification_status === "unverified" ? (
                                                 <div className="mt-3 flex gap-2">
-                                                    <Button size="sm" variant="outline" disabled={busy} onClick={() => commandMutation.mutate({ path: `passports/${selectedPassport?.public_id}/evidence/${item.public_id}/status`, body: { verification_status: "verified", reason: "Evidence reviewed in product passport workspace" } })}>تأیید</Button>
-                                                    <Button size="sm" variant="ghost" disabled={busy} onClick={() => commandMutation.mutate({ path: `passports/${selectedPassport?.public_id}/evidence/${item.public_id}/status`, body: { verification_status: "rejected", reason: "Evidence rejected in product passport workspace" } })}>رد</Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        disabled={busy}
+                                                        onClick={() =>
+                                                            commandMutation.mutate({
+                                                                path: `passports/${selectedPassport?.public_id}/evidence/${item.public_id}/status`,
+                                                                body: {
+                                                                    verification_status: "verified",
+                                                                    reason: "Evidence reviewed in product passport workspace",
+                                                                },
+                                                            })
+                                                        }
+                                                    >
+                                                        تأیید
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        disabled={busy}
+                                                        onClick={() =>
+                                                            commandMutation.mutate({
+                                                                path: `passports/${selectedPassport?.public_id}/evidence/${item.public_id}/status`,
+                                                                body: {
+                                                                    verification_status: "rejected",
+                                                                    reason: "Evidence rejected in product passport workspace",
+                                                                },
+                                                            })
+                                                        }
+                                                    >
+                                                        رد
+                                                    </Button>
                                                 </div>
                                             ) : null}
                                         </div>
@@ -651,19 +906,69 @@ export function ProductPassportWorkspace() {
 
                         <Card className="p-5">
                             <h2 className="font-semibold">Provenance graph</h2>
-                            <p className="mb-4 text-muted-foreground text-xs">اتصال خودکار receipt lineهای Phase 14 و edgeهای provenance در یک زنجیره.</p>
-                            {!detail.data?.edges.length ? <EmptyState title="Edge ثبت نشده" body="برای Batch/Serial موجود، اتصال دریافت تأمین‌کننده به‌صورت خودکار ساخته می‌شود." /> : (
+                            <p className="mb-4 text-muted-foreground text-xs">
+                                اتصال خودکار receipt lineهای Phase 14 و edgeهای provenance در یک زنجیره.
+                            </p>
+                            {!detail.data?.edges.length ? (
+                                <EmptyState
+                                    title="Edge ثبت نشده"
+                                    body="برای Batch/Serial موجود، اتصال دریافت تأمین‌کننده به‌صورت خودکار ساخته می‌شود."
+                                />
+                            ) : (
                                 <div className="overflow-x-auto">
-                                    <table className="w-full min-w-[720px] text-sm"><thead><tr className="border-b text-muted-foreground text-xs"><th className="p-3 text-start">از</th><th className="p-3 text-start">رابطه</th><th className="p-3 text-start">به</th><th className="p-3 text-start">دید</th></tr></thead><tbody>{detail.data.edges.map((edge) => <tr key={edge.public_id} className="border-b last:border-0"><td className="p-3 font-mono text-xs" dir="ltr">{edge.from_node_type}:{edge.from_node_ref}</td><td className="p-3">{edge.relation_type}</td><td className="p-3 font-mono text-xs" dir="ltr">{edge.to_node_type}:{edge.to_node_ref}</td><td className="p-3"><StatusPill status={edge.visibility} /></td></tr>)}</tbody></table>
+                                    <table className="w-full min-w-[720px] text-sm">
+                                        <thead>
+                                            <tr className="border-b text-muted-foreground text-xs">
+                                                <th className="p-3 text-start">از</th>
+                                                <th className="p-3 text-start">رابطه</th>
+                                                <th className="p-3 text-start">به</th>
+                                                <th className="p-3 text-start">دید</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {detail.data.edges.map((edge) => (
+                                                <tr key={edge.public_id} className="border-b last:border-0">
+                                                    <td className="p-3 font-mono text-xs" dir="ltr">
+                                                        {edge.from_node_type}:{edge.from_node_ref}
+                                                    </td>
+                                                    <td className="p-3">{edge.relation_type}</td>
+                                                    <td className="p-3 font-mono text-xs" dir="ltr">
+                                                        {edge.to_node_type}:{edge.to_node_ref}
+                                                    </td>
+                                                    <td className="p-3">
+                                                        <StatusPill status={edge.visibility} />
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
                                 </div>
                             )}
                         </Card>
 
                         <Card className="p-5">
                             <h2 className="font-semibold">سیگنال‌های کیفیت مرتبط</h2>
-                            <p className="mb-4 text-muted-foreground text-xs">Quality Caseهای Phase 19 بر اساس Product/Variation reuse می‌شوند.</p>
-                            {!detail.data?.quality_cases.length ? <EmptyState title="Quality Case مرتبط نیست" body="در حال حاضر سیگنال کیفیت متصل به این هویت وجود ندارد." /> : (
-                                <div className="space-y-2">{detail.data.quality_cases.map((item, index) => <div key={String(item.id ?? index)} className="rounded-xl border p-3 text-sm"><p className="font-medium">{String(item.title ?? item.reference ?? `Case ${index + 1}`)}</p><p className="mt-1 text-muted-foreground text-xs">{String(item.status ?? "open")} · {String(item.severity ?? "—")}</p></div>)}</div>
+                            <p className="mb-4 text-muted-foreground text-xs">
+                                Quality Caseهای Phase 19 بر اساس Product/Variation reuse می‌شوند.
+                            </p>
+                            {!detail.data?.quality_cases.length ? (
+                                <EmptyState
+                                    title="Quality Case مرتبط نیست"
+                                    body="در حال حاضر سیگنال کیفیت متصل به این هویت وجود ندارد."
+                                />
+                            ) : (
+                                <div className="space-y-2">
+                                    {detail.data.quality_cases.map((item, index) => (
+                                        <div key={String(item.id ?? index)} className="rounded-xl border p-3 text-sm">
+                                            <p className="font-medium">
+                                                {String(item.title ?? item.reference ?? `Case ${index + 1}`)}
+                                            </p>
+                                            <p className="mt-1 text-muted-foreground text-xs">
+                                                {String(item.status ?? "open")} · {String(item.severity ?? "—")}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
                             )}
                         </Card>
                     </div>
@@ -674,21 +979,148 @@ export function ProductPassportWorkspace() {
                 <div className="grid gap-6 xl:grid-cols-[0.9fr_1.3fr]">
                     <Card className="p-5">
                         <h2 className="font-semibold">Regulatory mapping نسخه‌دار</h2>
-                        <p className="mb-5 text-muted-foreground text-xs">Mapping داده است، نه حقیقت hard-coded؛ note انطباق اجباری است.</p>
+                        <p className="mb-5 text-muted-foreground text-xs">
+                            Mapping داده است، نه حقیقت hard-coded؛ note انطباق اجباری است.
+                        </p>
                         <div className="space-y-4">
-                            <div className="grid gap-4 sm:grid-cols-2"><div className="space-y-2"><Label>Jurisdiction</Label><Input value={jurisdiction} onChange={(event) => setJurisdiction(event.target.value)} dir="ltr" /></div><div className="space-y-2"><Label>Framework</Label><Input value={framework} onChange={(event) => setFramework(event.target.value)} placeholder="مثلاً DPP profile / national rule set" /></div></div>
-                            <div className="grid gap-4 sm:grid-cols-2"><div className="space-y-2"><Label>Framework version</Label><Input value={frameworkVersion} onChange={(event) => setFrameworkVersion(event.target.value)} dir="ltr" /></div><div className="space-y-2"><Label>Mapping version</Label><Input type="number" min="1" value={mappingVersion} onChange={(event) => setMappingVersion(event.target.value)} dir="ltr" /></div></div>
-                            <div className="space-y-2"><Label>Field mapping JSON</Label><Textarea value={fieldMappingJson} onChange={(event) => setFieldMappingJson(event.target.value)} className="min-h-44 font-mono text-xs" dir="ltr" /></div>
-                            <div className="space-y-2"><Label>Conformance note</Label><Textarea value={conformanceNote} onChange={(event) => setConformanceNote(event.target.value)} placeholder="حدود اعتبار، منبع و مواردی که هنوز نیاز به sign-off دارد." /></div>
-                            <div className="space-y-2"><Label>دلیل</Label><Input value={regulatoryReason} onChange={(event) => setRegulatoryReason(event.target.value)} /></div>
-                            <Button className="w-full" disabled={busy || !framework || !frameworkVersion || !conformanceNote || !regulatoryReason} onClick={createRegulatory}>ایجاد Mapping</Button>
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="space-y-2">
+                                    <Label>Jurisdiction</Label>
+                                    <Input
+                                        value={jurisdiction}
+                                        onChange={(event) => setJurisdiction(event.target.value)}
+                                        dir="ltr"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Framework</Label>
+                                    <Input
+                                        value={framework}
+                                        onChange={(event) => setFramework(event.target.value)}
+                                        placeholder="مثلاً DPP profile / national rule set"
+                                    />
+                                </div>
+                            </div>
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="space-y-2">
+                                    <Label>Framework version</Label>
+                                    <Input
+                                        value={frameworkVersion}
+                                        onChange={(event) => setFrameworkVersion(event.target.value)}
+                                        dir="ltr"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Mapping version</Label>
+                                    <Input
+                                        type="number"
+                                        min="1"
+                                        value={mappingVersion}
+                                        onChange={(event) => setMappingVersion(event.target.value)}
+                                        dir="ltr"
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Field mapping JSON</Label>
+                                <Textarea
+                                    value={fieldMappingJson}
+                                    onChange={(event) => setFieldMappingJson(event.target.value)}
+                                    className="min-h-44 font-mono text-xs"
+                                    dir="ltr"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Conformance note</Label>
+                                <Textarea
+                                    value={conformanceNote}
+                                    onChange={(event) => setConformanceNote(event.target.value)}
+                                    placeholder="حدود اعتبار، منبع و مواردی که هنوز نیاز به sign-off دارد."
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>دلیل</Label>
+                                <Input value={regulatoryReason} onChange={(event) => setRegulatoryReason(event.target.value)} />
+                            </div>
+                            <Button
+                                className="w-full"
+                                disabled={busy || !framework || !frameworkVersion || !conformanceNote || !regulatoryReason}
+                                onClick={createRegulatory}
+                            >
+                                ایجاد Mapping
+                            </Button>
                         </div>
                     </Card>
                     <Card className="p-5">
-                        <div className="mb-4 flex items-center justify-between gap-3"><div><h2 className="font-semibold">Mapping registry</h2><p className="text-muted-foreground text-xs">فقط یک mapping فعال برای هر framework/jurisdiction نگه داشته می‌شود.</p></div><ShieldCheck className="size-5 text-primary" /></div>
+                        <div className="mb-4 flex items-center justify-between gap-3">
+                            <div>
+                                <h2 className="font-semibold">Mapping registry</h2>
+                                <p className="text-muted-foreground text-xs">
+                                    فقط یک mapping فعال برای هر framework/jurisdiction نگه داشته می‌شود.
+                                </p>
+                            </div>
+                            <ShieldCheck className="size-5 text-primary" />
+                        </div>
                         {regulatory.isLoading ? <p className="text-muted-foreground text-sm">در حال بارگذاری…</p> : null}
-                        {!regulatory.isLoading && !regulatory.data?.length ? <EmptyState title="Mapping وجود ندارد" body="نسخه و حوزه قضایی را ثبت کنید؛ بدون sign-off ادعای انطباق نکنید." /> : (
-                            <div className="space-y-3">{(regulatory.data ?? []).map((mapping) => <div key={mapping.public_id} className="rounded-xl border p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-medium">{mapping.jurisdiction} · {mapping.framework}</p><p className="mt-1 text-muted-foreground text-xs">framework {mapping.framework_version} · mapping v{mapping.mapping_version}</p></div><StatusPill status={mapping.status} /></div><p className="mt-3 text-sm">{mapping.conformance_note}</p><div className="mt-3 flex gap-2">{mapping.status === "draft" ? <Button size="sm" variant="outline" disabled={busy} onClick={() => commandMutation.mutate({ path: `regulatory-mappings/${mapping.public_id}/status`, body: { status: "active", reason: "Regulatory mapping reviewed and activated" } })}>فعال‌سازی</Button> : null}{mapping.status === "active" ? <Button size="sm" variant="ghost" disabled={busy} onClick={() => commandMutation.mutate({ path: `regulatory-mappings/${mapping.public_id}/status`, body: { status: "retired", reason: "Regulatory mapping superseded" } })}>بازنشسته‌کردن</Button> : null}</div></div>)}</div>
+                        {!regulatory.isLoading && !regulatory.data?.length ? (
+                            <EmptyState
+                                title="Mapping وجود ندارد"
+                                body="نسخه و حوزه قضایی را ثبت کنید؛ بدون sign-off ادعای انطباق نکنید."
+                            />
+                        ) : (
+                            <div className="space-y-3">
+                                {(regulatory.data ?? []).map((mapping) => (
+                                    <div key={mapping.public_id} className="rounded-xl border p-4">
+                                        <div className="flex flex-wrap items-start justify-between gap-3">
+                                            <div>
+                                                <p className="font-medium">
+                                                    {mapping.jurisdiction} · {mapping.framework}
+                                                </p>
+                                                <p className="mt-1 text-muted-foreground text-xs">
+                                                    framework {mapping.framework_version} · mapping v{mapping.mapping_version}
+                                                </p>
+                                            </div>
+                                            <StatusPill status={mapping.status} />
+                                        </div>
+                                        <p className="mt-3 text-sm">{mapping.conformance_note}</p>
+                                        <div className="mt-3 flex gap-2">
+                                            {mapping.status === "draft" ? (
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    disabled={busy}
+                                                    onClick={() =>
+                                                        commandMutation.mutate({
+                                                            path: `regulatory-mappings/${mapping.public_id}/status`,
+                                                            body: {
+                                                                status: "active",
+                                                                reason: "Regulatory mapping reviewed and activated",
+                                                            },
+                                                        })
+                                                    }
+                                                >
+                                                    فعال‌سازی
+                                                </Button>
+                                            ) : null}
+                                            {mapping.status === "active" ? (
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    disabled={busy}
+                                                    onClick={() =>
+                                                        commandMutation.mutate({
+                                                            path: `regulatory-mappings/${mapping.public_id}/status`,
+                                                            body: { status: "retired", reason: "Regulatory mapping superseded" },
+                                                        })
+                                                    }
+                                                >
+                                                    بازنشسته‌کردن
+                                                </Button>
+                                            ) : null}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         )}
                     </Card>
                 </div>
@@ -696,10 +1128,56 @@ export function ProductPassportWorkspace() {
 
             {tab === "access" ? (
                 <Card className="p-5">
-                    <div className="mb-5 flex items-center justify-between gap-3"><div><h2 className="font-semibold">دسترسی و تفکیک وظایف</h2><p className="text-muted-foreground text-xs">Publish، revoke، verification و regulatory mutation علاوه بر permission به step-up نیاز دارند.</p></div><Settings2 className="size-5 text-primary" /></div>
+                    <div className="mb-5 flex items-center justify-between gap-3">
+                        <div>
+                            <h2 className="font-semibold">دسترسی و تفکیک وظایف</h2>
+                            <p className="text-muted-foreground text-xs">
+                                Publish، revoke، verification و regulatory mutation علاوه بر permission به step-up نیاز دارند.
+                            </p>
+                        </div>
+                        <Settings2 className="size-5 text-primary" />
+                    </div>
                     {access.isLoading ? <p className="text-muted-foreground text-sm">در حال بارگذاری…</p> : null}
-                    {!access.isLoading && !access.data?.length ? <EmptyState title="ادمینی برای نمایش نیست" body="دسترسی‌ها tenant-scoped و fail-closed هستند." /> : (
-                        <div className="space-y-3">{(access.data ?? []).map((row) => <div key={row.id} className="rounded-xl border p-4"><div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"><div><p className="font-medium">{row.identity}</p><p className="mt-1 text-muted-foreground text-xs">{Object.values(row.permissions).filter(Boolean).length} از {Object.keys(row.permissions).length} permission فعال</p></div><div className="flex flex-wrap gap-2">{["owner", "compliance", "operator", "viewer"].map((preset) => <Button key={preset} size="sm" variant="outline" disabled={busy} onClick={() => commandMutation.mutate({ path: "access/preset", body: { user_id: row.id, preset, reason: `Apply ${preset} product passport access preset` } })}>{preset}</Button>)}</div></div></div>)}</div>
+                    {!access.isLoading && !access.data?.length ? (
+                        <EmptyState title="ادمینی برای نمایش نیست" body="دسترسی‌ها tenant-scoped و fail-closed هستند." />
+                    ) : (
+                        <div className="space-y-3">
+                            {(access.data ?? []).map((row) => (
+                                <div key={row.id} className="rounded-xl border p-4">
+                                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                                        <div>
+                                            <p className="font-medium">{row.identity}</p>
+                                            <p className="mt-1 text-muted-foreground text-xs">
+                                                {Object.values(row.permissions).filter(Boolean).length} از{" "}
+                                                {Object.keys(row.permissions).length} permission فعال
+                                            </p>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2">
+                                            {["owner", "compliance", "operator", "viewer"].map((preset) => (
+                                                <Button
+                                                    key={preset}
+                                                    size="sm"
+                                                    variant="outline"
+                                                    disabled={busy}
+                                                    onClick={() =>
+                                                        commandMutation.mutate({
+                                                            path: "access/preset",
+                                                            body: {
+                                                                user_id: row.id,
+                                                                preset,
+                                                                reason: `Apply ${preset} product passport access preset`,
+                                                            },
+                                                        })
+                                                    }
+                                                >
+                                                    {preset}
+                                                </Button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     )}
                 </Card>
             ) : null}
