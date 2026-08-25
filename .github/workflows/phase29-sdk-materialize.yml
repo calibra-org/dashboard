@@ -37,10 +37,8 @@ jobs:
           fi
           printf '%s\n' "$changed" | grep -q '^packages/sdk/src/generated/admin\.d\.ts$'
           printf '%s\n' "$changed" | grep -q '^packages/sdk/src/generated/storefront\.d\.ts$'
-      - name: Verify generated SDK and build
-        run: |
-          pnpm --filter @calibra/sdk run codegen:check
-          pnpm --filter @calibra/sdk run build
+      - name: Build generated SDK
+        run: pnpm --filter @calibra/sdk run build
       - name: Commit generated SDK and remove materializer
         run: |
           git rm .github/workflows/phase29-sdk-materialize.yml
@@ -48,4 +46,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "chore(sdk): generate Phase 29 passport contracts"
-          git push origin HEAD:${{ github.event.pull_request.head.ref }}
+      - name: Verify committed SDK is drift-free
+        run: |
+          pnpm --filter @calibra/sdk run codegen:check
+          test -z "$(git status --porcelain)"
+      - name: Push materialized SDK commit
+        run: git push origin HEAD:${{ github.event.pull_request.head.ref }}
