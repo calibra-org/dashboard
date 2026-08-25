@@ -2290,6 +2290,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/product-passports/{resolverKey}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["storefrontProductPassportResolve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/storefront/discovery/search": {
         parameters: {
             query?: never;
@@ -3437,6 +3453,57 @@ export interface components {
             schema_version: 1;
         } & {
             [key: string]: unknown;
+        };
+        ProductPassportJsonObject: {
+            [key: string]: unknown;
+        };
+        PublicProductPassport: {
+            resolver_key: string;
+            /** @enum {string} */
+            status: "published" | "revoked";
+            version: number;
+            schema_version: string;
+            /** Format: date-time */
+            published_at: string;
+            /** @enum {string} */
+            authenticity: "verified" | "not_verified" | "revoked";
+            public_snapshot: components["schemas"]["PublicProductPassportSnapshot"];
+            evidence: components["schemas"]["PublicProductPassportEvidence"][];
+            graph: components["schemas"]["PublicProductPassportEdge"][];
+            resolver: {
+                path: string;
+            };
+            /** @enum {string} */
+            standards_posture: "standards_ready_not_conformance_certified";
+        };
+        PublicProductPassportSnapshot: {
+            /** @enum {string} */
+            identity_level: "product" | "model" | "batch" | "item";
+            batch_code: string | null;
+            serial_number: string | null;
+            fields: components["schemas"]["ProductPassportJsonObject"];
+        };
+        PublicProductPassportEvidence: {
+            /** Format: uuid */
+            public_id: string;
+            evidence_type: string;
+            issuer: string | null;
+            summary: string | null;
+            payload: components["schemas"]["ProductPassportJsonObject"];
+            /** Format: date-time */
+            occurred_at: string | null;
+            /** Format: date-time */
+            verified_at: string | null;
+        };
+        PublicProductPassportEdge: {
+            /** Format: uuid */
+            public_id: string;
+            from_node_type: string;
+            from_node_ref: string;
+            relation_type: string;
+            to_node_type: string;
+            to_node_ref: string;
+            metadata: components["schemas"]["ProductPassportJsonObject"];
         };
         DiscoverySearchRequest: {
             query: string;
@@ -6502,6 +6569,37 @@ export interface operations {
         responses: {
             /** @description Observation accepted or deduplicated */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    storefrontProductPassportResolve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                resolverKey: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Published or revoked product passport. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PublicProductPassport"];
+                    };
+                };
+            };
+            /** @description Resolver key is not available for the active tenant. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
