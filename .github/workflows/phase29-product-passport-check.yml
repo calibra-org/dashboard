@@ -35,7 +35,7 @@ concurrency:
 jobs:
   integrity:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
@@ -57,6 +57,10 @@ jobs:
           apps/api/start/routes/admin_product_passports.ts
           apps/api/start/routes/product_passports_public.ts
           apps/api/tests/unit/phase29_product_passport.spec.ts
+          apps/admin/src/lib/queries/product-passport.ts
+          apps/admin/src/features/product-passport/ProductPassportWorkspace.tsx
+          "apps/admin/src/app/[locale]/(authenticated)/products/product-passports/page.tsx"
+          apps/admin/src/components/Sidebar.tsx
           docs/api/package.json
           docs/api/scripts/merge-admin-spec.js
           scripts/verify-phase29-product-passport.mjs
@@ -71,3 +75,9 @@ jobs:
         run: pnpm --filter @calibra/api-docs run build:json:admin-phase29
       - name: OpenAPI and SDK drift check
         run: pnpm --filter @calibra/sdk run codegen:check
+      - name: Build SDK dependency
+        run: pnpm --filter @calibra/sdk run build
+      - name: Admin typecheck
+        run: pnpm --filter @calibra/admin run typecheck
+      - name: Admin production build
+        run: pnpm --filter @calibra/admin run build
