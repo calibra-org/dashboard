@@ -23,9 +23,20 @@ jobs:
           node-version: 24.14.0
       - run: npm install --global pnpm@10.32.1
       - run: pnpm install --frozen-lockfile
+      - name: Normalize recursive validator callback
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = 'apps/api/app/services/product_passport/product_passport_service.ts';
+          const before = '        value.forEach((item, index) => assertPublicPayloadSafe(item, `${path}[${index}]`));';
+          const after = '        value.forEach((item, index) => {\n            assertPublicPayloadSafe(item, `${path}[${index}]`);\n        });';
+          const source = fs.readFileSync(path, 'utf8');
+          if (!source.includes(before)) throw new Error('Expected Phase 29 callback marker not found');
+          fs.writeFileSync(path, source.replace(before, after));
+          NODE
       - name: Format Phase 29 backend
         run: |
-          pnpm exec biome check --write --unsafe \
+          pnpm exec biome check --write \
             apps/api/database/migrations/1800000000000_create_product_passport_os.ts \
             apps/api/app/services/product_passport/product_passport_service.ts \
             apps/api/app/services/product_passport/permissions.ts \
