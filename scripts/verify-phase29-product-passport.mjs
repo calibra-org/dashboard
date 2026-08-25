@@ -16,6 +16,8 @@ const publicRoutes = read("apps/api/start/routes/product_passports_public.ts");
 const routes = read("apps/api/start/routes.ts");
 const adminOpenapi = read("docs/api/reference/openapi/admin.phase29.v1.yaml");
 const storefrontOpenapi = read("docs/api/reference/openapi/storefront.phase29.v1.yaml");
+const generatedAdminSdk = read("packages/sdk/src/generated/admin.d.ts");
+const generatedStorefrontSdk = read("packages/sdk/src/generated/storefront.d.ts");
 const docsPackage = read("docs/api/package.json");
 const mergeAdminSpec = read("docs/api/scripts/merge-admin-spec.js");
 const mergeStorefrontSpec = read("docs/api/scripts/merge-storefront-spec.js");
@@ -36,9 +38,21 @@ for (const level of ["'product'", "'model'", "'batch'", "'item'"]) {
     must(migration.includes(level), `Phase 29 identity level missing: ${level}`);
 }
 
+must(
+    migration.includes("identity_level <> 'model' OR variation_id IS NOT NULL"),
+    "Model passports must require variation_id at the database boundary",
+);
 must(migration.includes("identity_level <> 'batch' OR batch_code IS NOT NULL"), "Batch passports must require batch_code");
 must(migration.includes("identity_level <> 'item' OR serial_number IS NOT NULL"), "Item passports must require serial_number");
 must(migration.includes("product_passports_identity_unique"), "Product identity passports require a dedupe boundary");
+must(
+    migration.includes("product_passport_versions_hash_idx"),
+    "Published version hashes need a lookup index without blocking legitimate content reversion",
+);
+must(
+    !migration.includes("product_passport_versions_hash_unique"),
+    "Published version content hashes must not be unique across monotonically increasing versions",
+);
 must(migration.includes("public_fields") && migration.includes("private_fields"), "Phase 29 visibility boundary is missing");
 must(migration.includes("content_hash"), "Phase 29 evidence/version content addressing is missing");
 must(migration.includes("framework_version") && migration.includes("mapping_version"), "Regulatory mappings must be versioned");
@@ -131,6 +145,7 @@ for (const operationId of [
     "adminProductPassportAccessPreset",
 ]) {
     must(adminOpenapi.includes(`operationId: ${operationId}`), `Phase 29 Admin OpenAPI operation missing: ${operationId}`);
+    must(generatedAdminSdk.includes(operationId), `Generated Admin SDK operation missing: ${operationId}`);
 }
 
 must(adminOpenapi.includes("private_fields"), "Admin Phase 29 contract must support private passport fields");
@@ -141,6 +156,10 @@ must(
 must(
     storefrontOpenapi.includes("operationId: storefrontProductPassportResolve"),
     "Phase 29 Storefront resolver operation is missing",
+);
+must(
+    generatedStorefrontSdk.includes("storefrontProductPassportResolve"),
+    "Generated Storefront SDK must include the Phase 29 public resolver operation",
 );
 must(storefrontOpenapi.includes("PublicProductPassport"), "Phase 29 Storefront public passport schema is missing");
 must(
