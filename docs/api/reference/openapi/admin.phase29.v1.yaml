@@ -1,0 +1,279 @@
+openapi: 3.1.0
+info:
+  title: Calibra Admin Phase 29 Product Passport API
+  version: 1.0.0
+tags:
+  - name: Product Passport
+    description: Tenant-scoped product provenance, digital product passports, evidence verification, publication, lifecycle graph and versioned regulatory mappings.
+paths:
+  /api/v1/admin/product-passports/overview:
+    get:
+      tags: [Product Passport]
+      operationId: adminProductPassportOverview
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/product-passports/passports:
+    get:
+      tags: [Product Passport]
+      operationId: adminProductPassports
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+    post:
+      tags: [Product Passport]
+      operationId: adminProductPassportCreate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PassportCreateRequest' }
+      responses:
+        '201': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/product-passports/passports/{publicId}:
+    parameters:
+      - { $ref: '#/components/parameters/PublicId' }
+    get:
+      tags: [Product Passport]
+      operationId: adminProductPassport
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+    patch:
+      tags: [Product Passport]
+      operationId: adminProductPassportUpdate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PassportUpdateRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/product-passports/passports/{publicId}/publish:
+    parameters:
+      - { $ref: '#/components/parameters/PublicId' }
+    post:
+      tags: [Product Passport]
+      operationId: adminProductPassportPublish
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReasonRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/product-passports/passports/{publicId}/revoke:
+    parameters:
+      - { $ref: '#/components/parameters/PublicId' }
+    post:
+      tags: [Product Passport]
+      operationId: adminProductPassportRevoke
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReasonRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/product-passports/passports/{publicId}/evidence:
+    parameters:
+      - { $ref: '#/components/parameters/PublicId' }
+    post:
+      tags: [Product Passport]
+      operationId: adminProductPassportEvidenceCreate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EvidenceCreateRequest' }
+      responses:
+        '201': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/product-passports/passports/{publicId}/evidence/{evidencePublicId}/status:
+    parameters:
+      - { $ref: '#/components/parameters/PublicId' }
+      - name: evidencePublicId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      tags: [Product Passport]
+      operationId: adminProductPassportEvidenceStatus
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EvidenceStatusRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/product-passports/passports/{publicId}/edges:
+    parameters:
+      - { $ref: '#/components/parameters/PublicId' }
+    post:
+      tags: [Product Passport]
+      operationId: adminProductPassportEdgeCreate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EdgeCreateRequest' }
+      responses:
+        '201': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/product-passports/regulatory-mappings:
+    get:
+      tags: [Product Passport]
+      operationId: adminProductPassportRegulatoryMappings
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+    post:
+      tags: [Product Passport]
+      operationId: adminProductPassportRegulatoryCreate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegulatoryMappingRequest' }
+      responses:
+        '201': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/product-passports/regulatory-mappings/{publicId}/status:
+    parameters:
+      - { $ref: '#/components/parameters/PublicId' }
+    post:
+      tags: [Product Passport]
+      operationId: adminProductPassportRegulatoryStatus
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegulatoryStatusRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/product-passports/access:
+    get:
+      tags: [Product Passport]
+      operationId: adminProductPassportAccess
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+  /api/v1/admin/product-passports/access/preset:
+    post:
+      tags: [Product Passport]
+      operationId: adminProductPassportAccessPreset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AccessPresetRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/OkEnvelope' }
+components:
+  parameters:
+    PublicId:
+      name: publicId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+  schemas:
+    JsonObject:
+      type: object
+      additionalProperties: true
+    ReasonRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 3, maxLength: 2000 }
+      additionalProperties: false
+    PassportCreateRequest:
+      type: object
+      required: [product_id, identity_level, resolver_key, identifiers, public_fields, private_fields, resolver_config, reason]
+      properties:
+        product_id: { type: integer, minimum: 1 }
+        variation_id: { type: integer, minimum: 1 }
+        identity_level: { type: string, enum: [product, model, batch, item] }
+        batch_code: { type: string, minLength: 1, maxLength: 120 }
+        serial_number: { type: string, minLength: 1, maxLength: 190 }
+        resolver_key: { type: string, minLength: 6, maxLength: 190, pattern: '^[A-Za-z0-9][A-Za-z0-9._~-]+$' }
+        identifiers: { $ref: '#/components/schemas/JsonObject' }
+        public_fields: { $ref: '#/components/schemas/JsonObject' }
+        private_fields: { $ref: '#/components/schemas/JsonObject' }
+        resolver_config: { $ref: '#/components/schemas/JsonObject' }
+        reason: { type: string, minLength: 3, maxLength: 2000 }
+      additionalProperties: false
+    PassportUpdateRequest:
+      type: object
+      required: [reason]
+      properties:
+        identifiers: { $ref: '#/components/schemas/JsonObject' }
+        public_fields: { $ref: '#/components/schemas/JsonObject' }
+        private_fields: { $ref: '#/components/schemas/JsonObject' }
+        resolver_config: { $ref: '#/components/schemas/JsonObject' }
+        reason: { type: string, minLength: 3, maxLength: 2000 }
+      additionalProperties: false
+    EvidenceCreateRequest:
+      type: object
+      required: [evidence_type, visibility, source_kind, payload, reason]
+      properties:
+        evidence_type: { type: string, minLength: 2, maxLength: 48 }
+        visibility: { type: string, enum: [public, private] }
+        source_kind: { type: string, minLength: 2, maxLength: 64 }
+        source_ref: { type: string, minLength: 1, maxLength: 190 }
+        issuer: { type: string, minLength: 1, maxLength: 190 }
+        summary: { type: string, maxLength: 8000 }
+        payload: { $ref: '#/components/schemas/JsonObject' }
+        occurred_at: { type: string, format: date-time }
+        reason: { type: string, minLength: 3, maxLength: 2000 }
+      additionalProperties: false
+    EvidenceStatusRequest:
+      type: object
+      required: [verification_status, reason]
+      properties:
+        verification_status: { type: string, enum: [verified, rejected, expired] }
+        reason: { type: string, minLength: 3, maxLength: 2000 }
+      additionalProperties: false
+    EdgeCreateRequest:
+      type: object
+      required: [from_node_type, from_node_ref, relation_type, to_node_type, to_node_ref, visibility, metadata, reason]
+      properties:
+        from_node_type: { type: string, minLength: 2, maxLength: 32 }
+        from_node_ref: { type: string, minLength: 1, maxLength: 190 }
+        relation_type: { type: string, minLength: 2, maxLength: 64 }
+        to_node_type: { type: string, minLength: 2, maxLength: 32 }
+        to_node_ref: { type: string, minLength: 1, maxLength: 190 }
+        visibility: { type: string, enum: [public, private] }
+        metadata: { $ref: '#/components/schemas/JsonObject' }
+        reason: { type: string, minLength: 3, maxLength: 2000 }
+      additionalProperties: false
+    RegulatoryMappingRequest:
+      type: object
+      required: [jurisdiction, framework, framework_version, mapping_version, field_mapping, conformance_note, reason]
+      properties:
+        jurisdiction: { type: string, minLength: 2, maxLength: 64 }
+        framework: { type: string, minLength: 2, maxLength: 120 }
+        framework_version: { type: string, minLength: 1, maxLength: 64 }
+        mapping_version: { type: integer, minimum: 1 }
+        field_mapping: { $ref: '#/components/schemas/JsonObject' }
+        conformance_note: { type: string, minLength: 10, maxLength: 8000 }
+        effective_from: { type: string, format: date-time }
+        effective_to: { type: string, format: date-time }
+        reason: { type: string, minLength: 3, maxLength: 2000 }
+      additionalProperties: false
+    RegulatoryStatusRequest:
+      type: object
+      required: [status, reason]
+      properties:
+        status: { type: string, enum: [active, retired] }
+        reason: { type: string, minLength: 3, maxLength: 2000 }
+      additionalProperties: false
+    AccessPresetRequest:
+      type: object
+      required: [user_id, preset, reason]
+      properties:
+        user_id: { type: integer, minimum: 1 }
+        preset: { type: string, enum: [owner, compliance, operator, viewer] }
+        reason: { type: string, minLength: 3, maxLength: 2000 }
+      additionalProperties: false
+  responses:
+    OkEnvelope:
+      description: Successful Phase 29 product passport response.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data: {}
