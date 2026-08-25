@@ -6,12 +6,15 @@ import { cn } from "#/lib/utils";
 const links = [
     { href: "/analytics/decision-intelligence", label: "مرکز تصمیم‌گیری" },
     { href: "/decision-intelligence/network-intelligence/benchmarks", label: "هوش شبکه خصوصی" },
+    { href: "/analytics/objective-autonomy", label: "خودمختاری هدف‌محور" },
 ] as const;
 
 export function DecisionIntelligenceDock() {
     const pathname = usePathname();
     const visible =
-        pathname === "/analytics/decision-intelligence" || pathname.startsWith("/decision-intelligence/network-intelligence/");
+        pathname === "/analytics/decision-intelligence" ||
+        pathname.startsWith("/decision-intelligence/network-intelligence/") ||
+        pathname.startsWith("/analytics/objective-autonomy");
     if (!visible) return null;
 
     return (

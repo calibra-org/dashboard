@@ -1,0 +1,106 @@
+name: Phase 28 Objective Autonomy Integrity
+
+on:
+  pull_request:
+    paths:
+      - "apps/api/app/controllers/admin/objective_autonomy_controller.ts"
+      - "apps/api/app/services/objective_autonomy/**"
+      - "apps/api/app/validators/objective_autonomy/**"
+      - "apps/api/database/migrations/1790000000000_create_objective_autonomy_os.ts"
+      - "apps/api/start/routes/admin_objective_autonomy.ts"
+      - "apps/api/start/routes.ts"
+      - "apps/api/tests/unit/phase28_objective_autonomy.spec.ts"
+      - "apps/admin/src/features/objective-autonomy/**"
+      - "apps/admin/src/lib/queries/objective-autonomy.ts"
+      - "apps/admin/src/app/[locale]/(authenticated)/analytics/objective-autonomy/**"
+      - "apps/admin/src/features/network-intelligence/DecisionIntelligenceDock.tsx"
+      - "docs/api/reference/openapi/admin.phase28.v1.yaml"
+      - "docs/api/package.json"
+      - "docs/api/scripts/merge-admin-spec.js"
+      - "packages/sdk/src/generated/admin.d.ts"
+      - "scripts/verify-phase28-objective-autonomy.mjs"
+      - ".github/workflows/phase28-objective-autonomy-check.yml"
+  push:
+    branches:
+      - feat/phase28-objective-autonomy-20260825
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phase28-objective-autonomy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: calibra
+          POSTGRES_PASSWORD: calibra
+          POSTGRES_DB: calibra
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U calibra -d calibra"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+      - run: npm install --global pnpm@10.32.1
+      - run: pnpm install --frozen-lockfile
+      - name: Create test database
+        env:
+          PGPASSWORD: calibra
+        run: psql -h localhost -U calibra -d calibra -c "CREATE DATABASE calibra_test OWNER calibra;"
+      - name: Phase 28 format integrity
+        run: >-
+          pnpm exec biome check
+          apps/api/app/controllers/admin/objective_autonomy_controller.ts
+          apps/api/app/services/objective_autonomy
+          apps/api/app/validators/objective_autonomy
+          apps/api/database/migrations/1790000000000_create_objective_autonomy_os.ts
+          apps/api/start/routes/admin_objective_autonomy.ts
+          apps/api/start/routes.ts
+          apps/api/tests/unit/phase28_objective_autonomy.spec.ts
+          apps/admin/src/features/objective-autonomy
+          apps/admin/src/lib/queries/objective-autonomy.ts
+          "apps/admin/src/app/[locale]/(authenticated)/analytics/objective-autonomy"
+          apps/admin/src/features/network-intelligence/DecisionIntelligenceDock.tsx
+          docs/api/package.json
+          docs/api/scripts/merge-admin-spec.js
+          scripts/verify-phase28-objective-autonomy.mjs
+      - name: Phase 28 static contract
+        run: node scripts/verify-phase28-objective-autonomy.mjs
+      - name: Phase 28 unit controls
+        working-directory: apps/api
+        run: pnpm test --force-exit --suite=unit --files='phase28_objective_autonomy'
+      - name: API typecheck
+        run: pnpm --filter @calibra/api run typecheck
+      - name: OpenAPI and SDK drift check
+        run: pnpm --filter @calibra/sdk run codegen:check
+      - name: Build SDK dependency
+        run: pnpm --filter @calibra/sdk run build
+      - name: Admin typecheck
+        run: pnpm --filter @calibra/admin run typecheck
+      - name: Admin production build
+        run: pnpm --filter @calibra/admin run build
