@@ -1,0 +1,389 @@
+openapi: 3.1.0
+info:
+  title: Calibra Admin Phase 30 Retail Media API
+  version: 1.0.0
+tags:
+  - name: Retail Media
+    description: Tenant-scoped retail media, sponsored placements, creator monetization, auditable budgets, refund-aware commissions and privacy-safe measurement.
+paths:
+  /api/v1/admin/retail-media/overview:
+    get:
+      tags: [Retail Media]
+      operationId: adminRetailMediaOverview
+      responses:
+        '200': { $ref: '#/components/responses/RetailMediaOkEnvelope' }
+  /api/v1/admin/retail-media/advertisers:
+    get:
+      tags: [Retail Media]
+      operationId: adminRetailMediaAdvertisers
+      responses:
+        '200': { $ref: '#/components/responses/RetailMediaOkEnvelope' }
+    post:
+      tags: [Retail Media]
+      operationId: adminRetailMediaAdvertiserCreate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RetailMediaAdvertiserCreateRequest' }
+      responses:
+        '201': { $ref: '#/components/responses/RetailMediaOkEnvelope' }
+  /api/v1/admin/retail-media/campaigns:
+    get:
+      tags: [Retail Media]
+      operationId: adminRetailMediaCampaigns
+      responses:
+        '200': { $ref: '#/components/responses/RetailMediaOkEnvelope' }
+    post:
+      tags: [Retail Media]
+      operationId: adminRetailMediaCampaignCreate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RetailMediaCampaignCreateRequest' }
+      responses:
+        '201': { $ref: '#/components/responses/RetailMediaOkEnvelope' }
+  /api/v1/admin/retail-media/campaigns/{publicId}:
+    parameters:
+      - { $ref: '#/components/parameters/RetailMediaPublicId' }
+    get:
+      tags: [Retail Media]
+      operationId: adminRetailMediaCampaign
+      responses:
+        '200': { $ref: '#/components/responses/RetailMediaOkEnvelope' }
+    patch:
+      tags: [Retail Media]
+      operationId: adminRetailMediaCampaignUpdate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RetailMediaCampaignUpdateRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/RetailMediaOkEnvelope' }
+  /api/v1/admin/retail-media/campaigns/{publicId}/status:
+    parameters:
+      - { $ref: '#/components/parameters/RetailMediaPublicId' }
+    post:
+      tags: [Retail Media]
+      operationId: adminRetailMediaCampaignStatus
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RetailMediaCampaignStatusRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/RetailMediaOkEnvelope' }
+  /api/v1/admin/retail-media/campaigns/{publicId}/products:
+    parameters:
+      - { $ref: '#/components/parameters/RetailMediaPublicId' }
+    post:
+      tags: [Retail Media]
+      operationId: adminRetailMediaCampaignProductUpsert
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RetailMediaCampaignProductRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/RetailMediaOkEnvelope' }
+  /api/v1/admin/retail-media/campaigns/{publicId}/placements:
+    parameters:
+      - { $ref: '#/components/parameters/RetailMediaPublicId' }
+    post:
+      tags: [Retail Media]
+      operationId: adminRetailMediaCampaignPlacementUpsert
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RetailMediaCampaignPlacementRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/RetailMediaOkEnvelope' }
+  /api/v1/admin/retail-media/campaigns/{publicId}/funding:
+    parameters:
+      - { $ref: '#/components/parameters/RetailMediaPublicId' }
+    post:
+      tags: [Retail Media]
+      operationId: adminRetailMediaCampaignFund
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RetailMediaFundingRequest' }
+      responses:
+        '201': { $ref: '#/components/responses/RetailMediaOkEnvelope' }
+  /api/v1/admin/retail-media/placements:
+    get:
+      tags: [Retail Media]
+      operationId: adminRetailMediaPlacements
+      responses:
+        '200': { $ref: '#/components/responses/RetailMediaOkEnvelope' }
+    post:
+      tags: [Retail Media]
+      operationId: adminRetailMediaPlacementCreate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RetailMediaPlacementCreateRequest' }
+      responses:
+        '201': { $ref: '#/components/responses/RetailMediaOkEnvelope' }
+  /api/v1/admin/retail-media/placements/{publicId}/status:
+    parameters:
+      - { $ref: '#/components/parameters/RetailMediaPublicId' }
+    post:
+      tags: [Retail Media]
+      operationId: adminRetailMediaPlacementStatus
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RetailMediaPlacementStatusRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/RetailMediaOkEnvelope' }
+  /api/v1/admin/retail-media/creators:
+    get:
+      tags: [Retail Media]
+      operationId: adminRetailMediaCreators
+      responses:
+        '200': { $ref: '#/components/responses/RetailMediaOkEnvelope' }
+    post:
+      tags: [Retail Media]
+      operationId: adminRetailMediaCreatorCreate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RetailMediaCreatorCreateRequest' }
+      responses:
+        '201': { $ref: '#/components/responses/RetailMediaOkEnvelope' }
+  /api/v1/admin/retail-media/creators/{publicId}/links:
+    parameters:
+      - { $ref: '#/components/parameters/RetailMediaPublicId' }
+    post:
+      tags: [Retail Media]
+      operationId: adminRetailMediaCreatorLinkCreate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RetailMediaAffiliateLinkRequest' }
+      responses:
+        '201': { $ref: '#/components/responses/RetailMediaOkEnvelope' }
+  /api/v1/admin/retail-media/creators/{publicId}/payouts:
+    parameters:
+      - { $ref: '#/components/parameters/RetailMediaPublicId' }
+    post:
+      tags: [Retail Media]
+      operationId: adminRetailMediaCreatorPayout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RetailMediaPayoutRequest' }
+      responses:
+        '201': { $ref: '#/components/responses/RetailMediaOkEnvelope' }
+  /api/v1/admin/retail-media/commissions:
+    get:
+      tags: [Retail Media]
+      operationId: adminRetailMediaCommissions
+      responses:
+        '200': { $ref: '#/components/responses/RetailMediaOkEnvelope' }
+  /api/v1/admin/retail-media/measurement:
+    get:
+      tags: [Retail Media]
+      operationId: adminRetailMediaMeasurement
+      responses:
+        '200': { $ref: '#/components/responses/RetailMediaOkEnvelope' }
+  /api/v1/admin/retail-media/access:
+    get:
+      tags: [Retail Media]
+      operationId: adminRetailMediaAccess
+      responses:
+        '200': { $ref: '#/components/responses/RetailMediaOkEnvelope' }
+  /api/v1/admin/retail-media/access/preset:
+    post:
+      tags: [Retail Media]
+      operationId: adminRetailMediaAccessPreset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RetailMediaAccessPresetRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/RetailMediaOkEnvelope' }
+components:
+  parameters:
+    RetailMediaPublicId:
+      name: publicId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+  schemas:
+    RetailMediaJsonObject:
+      type: object
+      additionalProperties: true
+    RetailMediaReason:
+      type: string
+      minLength: 3
+      maxLength: 2000
+    RetailMediaAdvertiserCreateRequest:
+      type: object
+      required: [name, kind, metadata, reason]
+      properties:
+        name: { type: string, minLength: 2, maxLength: 190 }
+        kind: { type: string, enum: [brand, supplier, merchant, agency] }
+        supplier_id: { type: integer, minimum: 1 }
+        metadata: { $ref: '#/components/schemas/RetailMediaJsonObject' }
+        reason: { $ref: '#/components/schemas/RetailMediaReason' }
+      additionalProperties: false
+    RetailMediaCampaignCreateRequest:
+      type: object
+      required: [advertiser_public_id, name, objective, bid_model, default_bid_minor, budget_total_minor, currency, attribution_window_days, reason]
+      properties:
+        advertiser_public_id: { type: string, format: uuid }
+        name: { type: string, minLength: 3, maxLength: 190 }
+        objective: { type: string, minLength: 3, maxLength: 48 }
+        bid_model: { type: string, enum: [cpc, cpm] }
+        default_bid_minor: { type: integer, minimum: 0 }
+        budget_total_minor: { type: integer, minimum: 1 }
+        daily_pacing_cap_minor: { type: integer, minimum: 1 }
+        currency: { type: string, pattern: '^[A-Za-z]{3}$' }
+        attribution_window_days: { type: integer, minimum: 1, maximum: 90 }
+        experiment_id: { type: integer, minimum: 1 }
+        holdout_id: { type: integer, minimum: 1 }
+        starts_at: { type: string, format: date-time }
+        ends_at: { type: string, format: date-time }
+        reason: { $ref: '#/components/schemas/RetailMediaReason' }
+      additionalProperties: false
+    RetailMediaCampaignUpdateRequest:
+      type: object
+      required: [version, reason]
+      properties:
+        version: { type: integer, minimum: 1 }
+        default_bid_minor: { type: integer, minimum: 0 }
+        budget_total_minor: { type: integer, minimum: 1 }
+        daily_pacing_cap_minor: { type: [integer, 'null'], minimum: 1 }
+        attribution_window_days: { type: integer, minimum: 1, maximum: 90 }
+        starts_at: { type: [string, 'null'], format: date-time }
+        ends_at: { type: [string, 'null'], format: date-time }
+        reason: { $ref: '#/components/schemas/RetailMediaReason' }
+      additionalProperties: false
+    RetailMediaCampaignStatusRequest:
+      type: object
+      required: [status, reason]
+      properties:
+        status: { type: string, enum: [review, active, paused, ended, archived] }
+        reason: { $ref: '#/components/schemas/RetailMediaReason' }
+      additionalProperties: false
+    RetailMediaCampaignProductRequest:
+      type: object
+      required: [product_id, relevance_bps, quality_bps, safety_status, reason]
+      properties:
+        product_id: { type: integer, minimum: 1 }
+        variation_id: { type: integer, minimum: 1 }
+        relevance_bps: { type: integer, minimum: 0, maximum: 10000 }
+        quality_bps: { type: integer, minimum: 0, maximum: 10000 }
+        safety_status: { type: string, enum: [review, approved, blocked] }
+        custom_bid_minor: { type: integer, minimum: 0 }
+        reason: { $ref: '#/components/schemas/RetailMediaReason' }
+      additionalProperties: false
+    RetailMediaPlacementCreateRequest:
+      type: object
+      required: [placement_key, name, surface, disclosure_text, minimum_relevance_bps, minimum_quality_bps, privacy_min_cohort, metadata, reason]
+      properties:
+        placement_key: { type: string, minLength: 3, maxLength: 120, pattern: '^[A-Za-z0-9][A-Za-z0-9._~-]+$' }
+        name: { type: string, minLength: 2, maxLength: 190 }
+        surface: { type: string, enum: [search, category, product, story, video, collection, live, email, push] }
+        disclosure_text: { type: string, minLength: 2, maxLength: 80 }
+        minimum_relevance_bps: { type: integer, minimum: 0, maximum: 10000 }
+        minimum_quality_bps: { type: integer, minimum: 0, maximum: 10000 }
+        privacy_min_cohort: { type: integer, minimum: 20, maximum: 100000 }
+        metadata: { $ref: '#/components/schemas/RetailMediaJsonObject' }
+        reason: { $ref: '#/components/schemas/RetailMediaReason' }
+      additionalProperties: false
+    RetailMediaPlacementStatusRequest:
+      type: object
+      required: [status, reason]
+      properties:
+        status: { type: string, enum: [active, paused, archived] }
+        reason: { $ref: '#/components/schemas/RetailMediaReason' }
+      additionalProperties: false
+    RetailMediaCampaignPlacementRequest:
+      type: object
+      required: [placement_public_id, bid_multiplier_bps, creative, reason]
+      properties:
+        placement_public_id: { type: string, format: uuid }
+        bid_multiplier_bps: { type: integer, minimum: 0, maximum: 50000 }
+        creative: { $ref: '#/components/schemas/RetailMediaJsonObject' }
+        creative_source_ref: { type: string, minLength: 1, maxLength: 190 }
+        reason: { $ref: '#/components/schemas/RetailMediaReason' }
+      additionalProperties: false
+    RetailMediaFundingRequest:
+      type: object
+      required: [amount_minor, funding_source, idempotency_key, metadata, reason]
+      properties:
+        amount_minor: { type: integer, minimum: 1 }
+        funding_source: { type: string, enum: [merchant, supplier, brand] }
+        source_ref: { type: string, minLength: 1, maxLength: 190 }
+        idempotency_key: { type: string, minLength: 8, maxLength: 190 }
+        metadata: { $ref: '#/components/schemas/RetailMediaJsonObject' }
+        reason: { $ref: '#/components/schemas/RetailMediaReason' }
+      additionalProperties: false
+    RetailMediaCreatorCreateRequest:
+      type: object
+      required: [display_name, holding_days, disclosure_text, metadata, reason]
+      properties:
+        display_name: { type: string, minLength: 2, maxLength: 190 }
+        handle: { type: string, minLength: 2, maxLength: 120 }
+        holding_days: { type: integer, minimum: 1, maximum: 90 }
+        disclosure_text: { type: string, minLength: 2, maxLength: 120 }
+        payout_ref: { type: string, minLength: 1, maxLength: 190 }
+        metadata: { $ref: '#/components/schemas/RetailMediaJsonObject' }
+        reason: { $ref: '#/components/schemas/RetailMediaReason' }
+      additionalProperties: false
+    RetailMediaAffiliateLinkRequest:
+      type: object
+      required: [code, commission_bps, attribution_window_days, reason]
+      properties:
+        campaign_public_id: { type: string, format: uuid }
+        product_id: { type: integer, minimum: 1 }
+        variation_id: { type: integer, minimum: 1 }
+        code: { type: string, minLength: 4, maxLength: 96, pattern: '^[A-Za-z0-9][A-Za-z0-9._~-]+$' }
+        commission_bps: { type: integer, minimum: 0, maximum: 10000 }
+        fixed_commission_minor: { type: integer, minimum: 0 }
+        attribution_window_days: { type: integer, minimum: 1, maximum: 90 }
+        starts_at: { type: string, format: date-time }
+        ends_at: { type: string, format: date-time }
+        reason: { $ref: '#/components/schemas/RetailMediaReason' }
+      additionalProperties: false
+    RetailMediaPayoutRequest:
+      type: object
+      required: [amount_minor, currency, payout_ref, idempotency_key, reason]
+      properties:
+        amount_minor: { type: integer, minimum: 1 }
+        currency: { type: string, pattern: '^[A-Za-z]{3}$' }
+        payout_ref: { type: string, minLength: 3, maxLength: 190 }
+        idempotency_key: { type: string, minLength: 8, maxLength: 190 }
+        reason: { $ref: '#/components/schemas/RetailMediaReason' }
+      additionalProperties: false
+    RetailMediaAccessPresetRequest:
+      type: object
+      required: [user_id, preset, reason]
+      properties:
+        user_id: { type: integer, minimum: 1 }
+        preset: { type: string, enum: [owner, growth, operator, finance, analyst, viewer] }
+        reason: { $ref: '#/components/schemas/RetailMediaReason' }
+      additionalProperties: false
+  responses:
+    RetailMediaOkEnvelope:
+      description: Successful Phase 30 Retail Media response.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data: {}

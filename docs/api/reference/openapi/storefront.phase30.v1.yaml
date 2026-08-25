@@ -1,0 +1,136 @@
+openapi: 3.1.0
+info:
+  title: Calibra Storefront Phase 30 Retail Media API
+  version: 1.0.0
+tags:
+  - name: Retail Media
+    description: First-party sponsored-placement delivery, click accounting and creator-affiliate touchpoints with mandatory disclosure and privacy-safe context boundaries.
+paths:
+  /api/v1/retail-media/placements/{placementKey}/serve:
+    post:
+      tags: [Retail Media]
+      operationId: storefrontRetailMediaServePlacement
+      parameters:
+        - name: placementKey
+          in: path
+          required: true
+          schema: { type: string, minLength: 3, maxLength: 120 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RetailMediaServeRequest' }
+      responses:
+        '200':
+          description: Eligible sponsored placement decision or an empty decision when no candidate passes trust, availability, schedule or budget gates.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RetailMediaServeResponse' }
+  /api/v1/retail-media/impressions/{eventId}/click:
+    post:
+      tags: [Retail Media]
+      operationId: storefrontRetailMediaRecordClick
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RetailMediaClickRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/RetailMediaStorefrontOkEnvelope' }
+  /api/v1/retail-media/affiliate/{code}/touch:
+    post:
+      tags: [Retail Media]
+      operationId: storefrontRetailMediaAffiliateTouch
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 4
+            maxLength: 96
+            pattern: '^[A-Za-z0-9][A-Za-z0-9._~-]+$'
+      responses:
+        '200': { $ref: '#/components/responses/RetailMediaStorefrontOkEnvelope' }
+components:
+  schemas:
+    RetailMediaStorefrontJsonObject:
+      type: object
+      additionalProperties: true
+    RetailMediaServeRequest:
+      type: object
+      required: [context]
+      properties:
+        subject_hash:
+          type: string
+          minLength: 64
+          maxLength: 64
+          pattern: '^[a-fA-F0-9]{64}$'
+          description: Optional first-party pseudonymous subject hash. Raw PII is forbidden.
+        consent_context: { type: string, minLength: 2, maxLength: 32 }
+        context: { $ref: '#/components/schemas/RetailMediaStorefrontJsonObject' }
+      additionalProperties: false
+    RetailMediaClickRequest:
+      type: object
+      required: [context]
+      properties:
+        context: { $ref: '#/components/schemas/RetailMediaStorefrontJsonObject' }
+      additionalProperties: false
+    RetailMediaServeResponse:
+      type: object
+      properties:
+        data:
+          oneOf:
+            - { type: 'null' }
+            - { $ref: '#/components/schemas/RetailMediaSponsoredDecision' }
+      required: [data]
+      additionalProperties: false
+    RetailMediaSponsoredDecision:
+      type: object
+      required: [event_id, sponsored, disclosure, advertiser, campaign, product, creative, ranking_policy]
+      properties:
+        event_id: { type: string, format: uuid }
+        sponsored: { const: true }
+        disclosure: { type: string, minLength: 2 }
+        advertiser:
+          type: object
+          required: [public_id, name]
+          properties:
+            public_id: { type: string, format: uuid }
+            name: { type: string }
+          additionalProperties: false
+        campaign:
+          type: object
+          required: [public_id, name]
+          properties:
+            public_id: { type: string, format: uuid }
+            name: { type: string }
+          additionalProperties: false
+        product:
+          type: object
+          required: [id, variation_id]
+          properties:
+            id: { type: integer, minimum: 1 }
+            variation_id: { type: [integer, 'null'], minimum: 1 }
+          additionalProperties: false
+        creative: { $ref: '#/components/schemas/RetailMediaStorefrontJsonObject' }
+        creative_source_ref: { type: [string, 'null'] }
+        ranking_policy:
+          type: string
+          enum: [eligibility_relevance_quality_then_bounded_bid_v1]
+      additionalProperties: false
+  responses:
+    RetailMediaStorefrontOkEnvelope:
+      description: Successful Phase 30 storefront mutation.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data: {}
