@@ -23,6 +23,8 @@ import {
 } from "#/lib/queries/objective-autonomy";
 import { cn } from "#/lib/utils";
 
+import { PostmortemPanel } from "./PostmortemPanel";
+
 type Tab = "command" | "control" | "access";
 
 const parse = <T,>(value: T | string | null | undefined, fallback: T): T => {
@@ -203,7 +205,7 @@ export function ObjectiveAutonomyWorkspace() {
         <div className="space-y-6" dir={fa ? "rtl" : "ltr"}>
             <PageHeader
                 title={fa ? "سیستم خودمختار هدف‌محور" : "Objective-Driven Autonomous Commerce OS"}
-                description={
+                subtitle={
                     fa
                         ? "هدف را تعریف کنید؛ Calibra فقط در مرز ابزارهای ثبت‌شده، شبیه‌سازی، سبد، سیاست و checkpoint حرکت می‌کند."
                         : "Define outcomes while Calibra stays inside registered tools, simulation, portfolio, policy and checkpoint boundaries."
@@ -400,7 +402,10 @@ export function ObjectiveAutonomyWorkspace() {
                                 </div>
                                 <div>
                                     <Label>Autonomy</Label>
-                                    <Select value={autonomyLevel} onValueChange={setAutonomyLevel}>
+                                    <Select
+                                        value={autonomyLevel}
+                                        onValueChange={(value) => setAutonomyLevel(String(value ?? ""))}
+                                    >
                                         <SelectTrigger>
                                             <SelectValue />
                                         </SelectTrigger>
@@ -413,7 +418,7 @@ export function ObjectiveAutonomyWorkspace() {
                                 </div>
                                 <div>
                                     <Label>Risk ceiling</Label>
-                                    <Select value={riskCeiling} onValueChange={setRiskCeiling}>
+                                    <Select value={riskCeiling} onValueChange={(value) => setRiskCeiling(String(value ?? ""))}>
                                         <SelectTrigger>
                                             <SelectValue />
                                         </SelectTrigger>
@@ -428,7 +433,7 @@ export function ObjectiveAutonomyWorkspace() {
                                 </div>
                                 <div className="sm:col-span-2">
                                     <Label>Phase 23 scenario</Label>
-                                    <Select value={scenarioId} onValueChange={setScenarioId}>
+                                    <Select value={scenarioId} onValueChange={(value) => setScenarioId(String(value ?? ""))}>
                                         <SelectTrigger>
                                             <SelectValue placeholder="سناریو" />
                                         </SelectTrigger>
@@ -443,7 +448,7 @@ export function ObjectiveAutonomyWorkspace() {
                                 </div>
                                 <div className="sm:col-span-2">
                                     <Label>Phase 25 portfolio</Label>
-                                    <Select value={portfolioId} onValueChange={setPortfolioId}>
+                                    <Select value={portfolioId} onValueChange={(value) => setPortfolioId(String(value ?? ""))}>
                                         <SelectTrigger>
                                             <SelectValue placeholder="سبد" />
                                         </SelectTrigger>
@@ -458,7 +463,7 @@ export function ObjectiveAutonomyWorkspace() {
                                 </div>
                                 <div className="sm:col-span-2">
                                     <Label>Phase 22 plan</Label>
-                                    <Select value={planId} onValueChange={setPlanId}>
+                                    <Select value={planId} onValueChange={(value) => setPlanId(String(value ?? ""))}>
                                         <SelectTrigger>
                                             <SelectValue placeholder="پلن Agent" />
                                         </SelectTrigger>
@@ -656,7 +661,7 @@ export function ObjectiveAutonomyWorkspace() {
                                     ["عدم قطعیت", JSON.stringify(explanation.uncertainty ?? {})],
                                 ].map(([label, value]) => (
                                     <div key={label as string} className="rounded-xl border bg-muted/20 p-3">
-                                        <p className="font-medium text-xs">{label}</p>
+                                        <p className="font-medium text-xs">{String(label)}</p>
                                         <p className="mt-1 break-words text-muted-foreground text-xs">{String(value ?? "—")}</p>
                                     </div>
                                 ))}
@@ -682,8 +687,8 @@ export function ObjectiveAutonomyWorkspace() {
                                                     }
                                                     onClick={() =>
                                                         mutate.mutate({
-                                                            path: `objectives/${selected.public_id}/cycles/${latestCycle.public_id}/execute`,
-                                                            body: { step_public_id: step.public_id, dry_run: false },
+                                                            path: `objectives/${selected?.public_id ?? "missing"}/cycles/${latestCycle.public_id}/execute`,
+                                                            body: { step_public_id: step.public_id },
                                                         })
                                                     }
                                                 >
@@ -700,6 +705,11 @@ export function ObjectiveAutonomyWorkspace() {
                             </div>
                         )}
                     </Card>
+                    <PostmortemPanel
+                        objectivePublicId={selected?.public_id}
+                        existing={detail.data?.postmortem ?? null}
+                        latestCyclePublicId={latestCycle?.public_id}
+                    />
                 </div>
             ) : null}
 

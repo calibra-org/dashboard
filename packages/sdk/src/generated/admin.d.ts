@@ -11723,6 +11723,197 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/objective-autonomy/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminObjectiveAutonomyOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/objective-autonomy/objectives": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminObjectiveAutonomyObjectives"];
+        put?: never;
+        post: operations["adminObjectiveAutonomyCreateObjective"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/objective-autonomy/objectives/{publicId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        get: operations["adminObjectiveAutonomyObjective"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/objective-autonomy/objectives/{publicId}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminObjectiveAutonomyActivate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/objective-autonomy/objectives/{publicId}/halt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminObjectiveAutonomyHalt"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/objective-autonomy/objectives/{publicId}/cycles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminObjectiveAutonomyStartCycle"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/objective-autonomy/objectives/{publicId}/cycles/{cyclePublicId}/execute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+                cyclePublicId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminObjectiveAutonomyExecuteStep"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/objective-autonomy/objectives/{publicId}/checkpoints": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminObjectiveAutonomyCheckpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/objective-autonomy/objectives/{publicId}/postmortem": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminObjectiveAutonomyPostmortem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/objective-autonomy/access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminObjectiveAutonomyAccess"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/objective-autonomy/access/preset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminObjectiveAutonomyAccessPreset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -15866,6 +16057,79 @@ export interface components {
             preset: "owner" | "privacy_admin" | "contributor" | "viewer";
             reason: string;
         };
+        EvidenceRef: {
+            source: string;
+            id: string;
+            label: string;
+        };
+        ObjectiveRequest: {
+            name: string;
+            target_metric: string;
+            /** @enum {string} */
+            direction: "maximize" | "minimize" | "target";
+            baseline_value: number;
+            target_value: number;
+            /** Format: date-time */
+            horizon_end: string;
+            budget_minor?: number;
+            constraints: {
+                [key: string]: unknown;
+            };
+            allowed_tool_keys: string[];
+            /** @enum {string} */
+            autonomy_level: "recommend" | "propose" | "bounded_auto";
+            /** @enum {string} */
+            risk_ceiling: "read_only" | "low" | "medium" | "high" | "critical";
+            minimum_confidence: number;
+            stop_loss: {
+                [key: string]: unknown;
+            };
+            approvers: string[];
+            /** Format: uuid */
+            scenario_public_id: string;
+            /** Format: uuid */
+            portfolio_plan_public_id: string;
+            /** Format: uuid */
+            agent_plan_public_id: string;
+            reason: string;
+        };
+        ReasonRequest: {
+            reason: string;
+        };
+        CycleRequest: {
+            seed?: number;
+        };
+        ExecuteStepRequest: {
+            /** Format: uuid */
+            step_public_id: string;
+        };
+        CheckpointRequest: {
+            /** Format: uuid */
+            cycle_public_id?: string;
+            observed_value: number;
+            budget_spent_minor: number;
+            confidence: number;
+            constraint_breaches: string[];
+            unexpected_harm: boolean;
+            evidence_refs: components["schemas"]["EvidenceRef"][];
+            reason: string;
+        };
+        PostmortemRequest: {
+            final_value: number;
+            summary: string;
+            lesson: string;
+            residual_uncertainty: {
+                [key: string]: unknown;
+            };
+            confidence: number;
+            evidence_refs: components["schemas"]["EvidenceRef"][];
+        };
+        Phase28ObjectiveAutonomyOverlayAccessPresetRequest: {
+            user_id: number;
+            /** @enum {string} */
+            preset: "owner" | "operator" | "strategist" | "viewer";
+            reason: string;
+        };
     };
     responses: {
         /** @description Unauthorized (401) — the request did not include a valid bearer token, or the token has been revoked. */
@@ -15991,6 +16255,17 @@ export interface components {
         };
         /** @description Successful Phase 27 network intelligence response. */
         Phase27NetworkIntelligenceOverlayOkEnvelope: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": {
+                    data: unknown;
+                };
+            };
+        };
+        /** @description Successful Phase 28 objective autonomy response. */
+        Phase28ObjectiveAutonomyOverlayOkEnvelope: {
             headers: {
                 [name: string]: unknown;
             };
@@ -34966,6 +35241,197 @@ export interface operations {
         };
         responses: {
             200: components["responses"]["Phase27NetworkIntelligenceOverlayOkEnvelope"];
+        };
+    };
+    adminObjectiveAutonomyOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Phase28ObjectiveAutonomyOverlayOkEnvelope"];
+        };
+    };
+    adminObjectiveAutonomyObjectives: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Phase28ObjectiveAutonomyOverlayOkEnvelope"];
+        };
+    };
+    adminObjectiveAutonomyCreateObjective: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ObjectiveRequest"];
+            };
+        };
+        responses: {
+            201: components["responses"]["Phase28ObjectiveAutonomyOverlayOkEnvelope"];
+        };
+    };
+    adminObjectiveAutonomyObjective: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Phase28ObjectiveAutonomyOverlayOkEnvelope"];
+        };
+    };
+    adminObjectiveAutonomyActivate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReasonRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["Phase28ObjectiveAutonomyOverlayOkEnvelope"];
+        };
+    };
+    adminObjectiveAutonomyHalt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReasonRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["Phase28ObjectiveAutonomyOverlayOkEnvelope"];
+        };
+    };
+    adminObjectiveAutonomyStartCycle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CycleRequest"];
+            };
+        };
+        responses: {
+            201: components["responses"]["Phase28ObjectiveAutonomyOverlayOkEnvelope"];
+        };
+    };
+    adminObjectiveAutonomyExecuteStep: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+                cyclePublicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExecuteStepRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["Phase28ObjectiveAutonomyOverlayOkEnvelope"];
+        };
+    };
+    adminObjectiveAutonomyCheckpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CheckpointRequest"];
+            };
+        };
+        responses: {
+            201: components["responses"]["Phase28ObjectiveAutonomyOverlayOkEnvelope"];
+        };
+    };
+    adminObjectiveAutonomyPostmortem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PostmortemRequest"];
+            };
+        };
+        responses: {
+            201: components["responses"]["Phase28ObjectiveAutonomyOverlayOkEnvelope"];
+        };
+    };
+    adminObjectiveAutonomyAccess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Phase28ObjectiveAutonomyOverlayOkEnvelope"];
+        };
+    };
+    adminObjectiveAutonomyAccessPreset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Phase28ObjectiveAutonomyOverlayAccessPresetRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["Phase28ObjectiveAutonomyOverlayOkEnvelope"];
         };
     };
 }
