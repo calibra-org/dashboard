@@ -143,7 +143,10 @@ must(
     "Phase 29 Storefront resolver operation is missing",
 );
 must(storefrontOpenapi.includes("PublicProductPassport"), "Phase 29 Storefront public passport schema is missing");
-must(storefrontOpenapi.includes("verification_status") === false, "Public resolver contract must not expose internal verification fields");
+must(
+    storefrontOpenapi.includes("verification_status") === false,
+    "Public resolver contract must not expose internal verification fields",
+);
 must(storefrontOpenapi.includes("private_fields") === false, "Public resolver contract must never expose private_fields");
 must(storefrontOpenapi.includes("ProductPassportJsonObject"), "Public Phase 29 schemas must use collision-safe component names");
 
