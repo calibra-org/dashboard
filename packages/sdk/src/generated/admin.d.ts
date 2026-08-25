@@ -11914,6 +11914,213 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/product-passports/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminProductPassportOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/product-passports/passports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminProductPassports"];
+        put?: never;
+        post: operations["adminProductPassportCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/product-passports/passports/{publicId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        get: operations["adminProductPassport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["adminProductPassportUpdate"];
+        trace?: never;
+    };
+    "/api/v1/admin/product-passports/passports/{publicId}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminProductPassportPublish"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/product-passports/passports/{publicId}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminProductPassportRevoke"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/product-passports/passports/{publicId}/evidence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminProductPassportEvidenceCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/product-passports/passports/{publicId}/evidence/{evidencePublicId}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+                evidencePublicId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminProductPassportEvidenceStatus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/product-passports/passports/{publicId}/edges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminProductPassportEdgeCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/product-passports/regulatory-mappings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminProductPassportRegulatoryMappings"];
+        put?: never;
+        post: operations["adminProductPassportRegulatoryCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/product-passports/regulatory-mappings/{publicId}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminProductPassportRegulatoryStatus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/product-passports/access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminProductPassportAccess"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/product-passports/access/preset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminProductPassportAccessPreset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -16130,6 +16337,83 @@ export interface components {
             preset: "owner" | "operator" | "strategist" | "viewer";
             reason: string;
         };
+        JsonObject: {
+            [key: string]: unknown;
+        };
+        PassportCreateRequest: {
+            product_id: number;
+            variation_id?: number;
+            /** @enum {string} */
+            identity_level: "product" | "model" | "batch" | "item";
+            batch_code?: string;
+            serial_number?: string;
+            resolver_key: string;
+            identifiers: components["schemas"]["JsonObject"];
+            public_fields: components["schemas"]["JsonObject"];
+            private_fields: components["schemas"]["JsonObject"];
+            resolver_config: components["schemas"]["JsonObject"];
+            reason: string;
+        };
+        PassportUpdateRequest: {
+            identifiers?: components["schemas"]["JsonObject"];
+            public_fields?: components["schemas"]["JsonObject"];
+            private_fields?: components["schemas"]["JsonObject"];
+            resolver_config?: components["schemas"]["JsonObject"];
+            reason: string;
+        };
+        EvidenceCreateRequest: {
+            evidence_type: string;
+            /** @enum {string} */
+            visibility: "public" | "private";
+            source_kind: string;
+            source_ref?: string;
+            issuer?: string;
+            summary?: string;
+            payload: components["schemas"]["JsonObject"];
+            /** Format: date-time */
+            occurred_at?: string;
+            reason: string;
+        };
+        EvidenceStatusRequest: {
+            /** @enum {string} */
+            verification_status: "verified" | "rejected" | "expired";
+            reason: string;
+        };
+        EdgeCreateRequest: {
+            from_node_type: string;
+            from_node_ref: string;
+            relation_type: string;
+            to_node_type: string;
+            to_node_ref: string;
+            /** @enum {string} */
+            visibility: "public" | "private";
+            metadata: components["schemas"]["JsonObject"];
+            reason: string;
+        };
+        RegulatoryMappingRequest: {
+            jurisdiction: string;
+            framework: string;
+            framework_version: string;
+            mapping_version: number;
+            field_mapping: components["schemas"]["JsonObject"];
+            conformance_note: string;
+            /** Format: date-time */
+            effective_from?: string;
+            /** Format: date-time */
+            effective_to?: string;
+            reason: string;
+        };
+        RegulatoryStatusRequest: {
+            /** @enum {string} */
+            status: "active" | "retired";
+            reason: string;
+        };
+        Phase29ProductPassportOverlayAccessPresetRequest: {
+            user_id: number;
+            /** @enum {string} */
+            preset: "owner" | "compliance" | "operator" | "viewer";
+            reason: string;
+        };
     };
     responses: {
         /** @description Unauthorized (401) — the request did not include a valid bearer token, or the token has been revoked. */
@@ -16266,6 +16550,17 @@ export interface components {
         };
         /** @description Successful Phase 28 objective autonomy response. */
         Phase28ObjectiveAutonomyOverlayOkEnvelope: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": {
+                    data: unknown;
+                };
+            };
+        };
+        /** @description Successful Phase 29 product passport response. */
+        Phase29ProductPassportOverlayOkEnvelope: {
             headers: {
                 [name: string]: unknown;
             };
@@ -35432,6 +35727,243 @@ export interface operations {
         };
         responses: {
             200: components["responses"]["Phase28ObjectiveAutonomyOverlayOkEnvelope"];
+        };
+    };
+    adminProductPassportOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Phase29ProductPassportOverlayOkEnvelope"];
+        };
+    };
+    adminProductPassports: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Phase29ProductPassportOverlayOkEnvelope"];
+        };
+    };
+    adminProductPassportCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PassportCreateRequest"];
+            };
+        };
+        responses: {
+            201: components["responses"]["Phase29ProductPassportOverlayOkEnvelope"];
+        };
+    };
+    adminProductPassport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Phase29ProductPassportOverlayOkEnvelope"];
+        };
+    };
+    adminProductPassportUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PassportUpdateRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["Phase29ProductPassportOverlayOkEnvelope"];
+        };
+    };
+    adminProductPassportPublish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReasonRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["Phase29ProductPassportOverlayOkEnvelope"];
+        };
+    };
+    adminProductPassportRevoke: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReasonRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["Phase29ProductPassportOverlayOkEnvelope"];
+        };
+    };
+    adminProductPassportEvidenceCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvidenceCreateRequest"];
+            };
+        };
+        responses: {
+            201: components["responses"]["Phase29ProductPassportOverlayOkEnvelope"];
+        };
+    };
+    adminProductPassportEvidenceStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+                evidencePublicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvidenceStatusRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["Phase29ProductPassportOverlayOkEnvelope"];
+        };
+    };
+    adminProductPassportEdgeCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EdgeCreateRequest"];
+            };
+        };
+        responses: {
+            201: components["responses"]["Phase29ProductPassportOverlayOkEnvelope"];
+        };
+    };
+    adminProductPassportRegulatoryMappings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Phase29ProductPassportOverlayOkEnvelope"];
+        };
+    };
+    adminProductPassportRegulatoryCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegulatoryMappingRequest"];
+            };
+        };
+        responses: {
+            201: components["responses"]["Phase29ProductPassportOverlayOkEnvelope"];
+        };
+    };
+    adminProductPassportRegulatoryStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["PublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegulatoryStatusRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["Phase29ProductPassportOverlayOkEnvelope"];
+        };
+    };
+    adminProductPassportAccess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Phase29ProductPassportOverlayOkEnvelope"];
+        };
+    };
+    adminProductPassportAccessPreset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Phase29ProductPassportOverlayAccessPresetRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["Phase29ProductPassportOverlayOkEnvelope"];
         };
     };
 }

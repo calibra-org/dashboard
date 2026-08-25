@@ -65,6 +65,7 @@ const groups: NavGroup[] = [
         titleKey: "catalog",
         items: [
             { href: "/products", labelKey: "products", icon: Package },
+            { href: "/products/product-passports", label: "گذرنامه محصول", icon: ShieldCheck },
             { href: "/products/amazing-deals", labelKey: "amazingDeals", icon: BadgePercent },
             { href: "/products/categories", labelKey: "categories", icon: ListTree },
             { href: "/products/tags", labelKey: "tags", icon: TagsIcon },

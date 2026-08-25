@@ -1,0 +1,97 @@
+openapi: 3.1.0
+info:
+  title: Calibra Storefront Phase 29 Product Passport API
+  version: 1.0.0
+tags:
+  - name: Product Passport
+    description: Public, tenant-scoped resolver for immutable published product-passport snapshots and verified public evidence.
+paths:
+  /api/v1/product-passports/{resolverKey}:
+    get:
+      tags: [Product Passport]
+      operationId: storefrontProductPassportResolve
+      parameters:
+        - name: resolverKey
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 6
+            maxLength: 190
+      responses:
+        '200':
+          description: Published or revoked product passport.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: '#/components/schemas/PublicProductPassport' }
+        '404':
+          description: Resolver key is not available for the active tenant.
+components:
+  schemas:
+    ProductPassportJsonObject:
+      type: object
+      additionalProperties: true
+    PublicProductPassport:
+      type: object
+      required: [resolver_key, status, version, schema_version, published_at, authenticity, public_snapshot, evidence, graph, resolver, standards_posture]
+      properties:
+        resolver_key: { type: string }
+        status: { type: string, enum: [published, revoked] }
+        version: { type: integer, minimum: 1 }
+        schema_version: { type: string }
+        published_at: { type: string, format: date-time }
+        authenticity: { type: string, enum: [verified, not_verified, revoked] }
+        public_snapshot: { $ref: '#/components/schemas/PublicProductPassportSnapshot' }
+        evidence:
+          type: array
+          items: { $ref: '#/components/schemas/PublicProductPassportEvidence' }
+        graph:
+          type: array
+          items: { $ref: '#/components/schemas/PublicProductPassportEdge' }
+        resolver:
+          type: object
+          required: [path]
+          properties:
+            path: { type: string }
+          additionalProperties: false
+        standards_posture:
+          type: string
+          enum: [standards_ready_not_conformance_certified]
+      additionalProperties: false
+    PublicProductPassportSnapshot:
+      type: object
+      required: [identity_level, batch_code, serial_number, fields]
+      properties:
+        identity_level: { type: string, enum: [product, model, batch, item] }
+        batch_code: { type: [string, 'null'] }
+        serial_number: { type: [string, 'null'] }
+        fields: { $ref: '#/components/schemas/ProductPassportJsonObject' }
+      additionalProperties: false
+    PublicProductPassportEvidence:
+      type: object
+      required: [public_id, evidence_type, issuer, summary, payload, occurred_at, verified_at]
+      properties:
+        public_id: { type: string, format: uuid }
+        evidence_type: { type: string }
+        issuer: { type: [string, 'null'] }
+        summary: { type: [string, 'null'] }
+        payload: { $ref: '#/components/schemas/ProductPassportJsonObject' }
+        occurred_at: { type: [string, 'null'], format: date-time }
+        verified_at: { type: [string, 'null'], format: date-time }
+      additionalProperties: false
+    PublicProductPassportEdge:
+      type: object
+      required: [public_id, from_node_type, from_node_ref, relation_type, to_node_type, to_node_ref, metadata]
+      properties:
+        public_id: { type: string, format: uuid }
+        from_node_type: { type: string }
+        from_node_ref: { type: string }
+        relation_type: { type: string }
+        to_node_type: { type: string }
+        to_node_ref: { type: string }
+        metadata: { $ref: '#/components/schemas/ProductPassportJsonObject' }
+      additionalProperties: false
