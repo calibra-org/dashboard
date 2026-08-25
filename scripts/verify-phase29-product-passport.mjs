@@ -134,8 +134,8 @@ must(openapi.includes("private_fields"), "Admin Phase 29 contract must support p
 must(!openapi.includes("/api/v1/product-passports/{resolverKey}"), "Public resolver must not be mixed into the admin overlay");
 must(docsPackage.includes('"build:json:admin-phase29"'), "Phase 29 docs build script is missing");
 must(docsPackage.includes("pnpm build:json:admin-phase29"), "Aggregate admin OpenAPI build must include Phase 29");
-must(mergeAdminSpec.includes('dist/admin.phase29.v1.json'), "Admin OpenAPI merge must load Phase 29 overlay");
-must(mergeAdminSpec.includes('Phase29ProductPassportOverlay'), "Admin OpenAPI merge must namespace Phase 29 overlay");
+must(mergeAdminSpec.includes("dist/admin.phase29.v1.json"), "Admin OpenAPI merge must load Phase 29 overlay");
+must(mergeAdminSpec.includes("Phase29ProductPassportOverlay"), "Admin OpenAPI merge must namespace Phase 29 overlay");
 
 must(!migration.includes('createTable("phase29_products"'), "Phase 29 must not create a parallel product master");
 console.log("PASS Phase 29 Product Provenance & Digital Product Passport contract integrity gate");
