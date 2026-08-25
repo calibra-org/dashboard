@@ -64,7 +64,10 @@ export async function listProductPassportAccess() {
     const trx = currentTrx();
     const [users, rows] = await Promise.all([
         trx.from("users").where({ tenant_id: tenant, role: "admin" }).whereNull("deleted_at").select("id", "email", "phone"),
-        trx.from("admin_permissions").where("tenant_id", tenant).whereIn("permission", [...PRODUCT_PASSPORT_PERMISSIONS]),
+        trx
+            .from("admin_permissions")
+            .where("tenant_id", tenant)
+            .whereIn("permission", [...PRODUCT_PASSPORT_PERMISSIONS]),
     ]);
     return users.map((user) => {
         const map = new Map(
@@ -75,7 +78,9 @@ export async function listProductPassportAccess() {
         return {
             id: Number(user.id),
             identity: maskedIdentity({ id: Number(user.id), email: user.email, phone: user.phone }),
-            permissions: Object.fromEntries(PRODUCT_PASSPORT_PERMISSIONS.map((permission) => [permission, map.get(permission) ?? true])),
+            permissions: Object.fromEntries(
+                PRODUCT_PASSPORT_PERMISSIONS.map((permission) => [permission, map.get(permission) ?? true]),
+            ),
         };
     });
 }

@@ -55,8 +55,8 @@ for (const marker of [
     'relation_type: "received_from"',
     "quality_cases",
     "product_passport_versions",
-    "visibility: \"public\"",
-    "verification_status: \"verified\"",
+    'visibility: "public"',
+    'verification_status: "verified"',
     "standards_ready_not_conformance_certified",
     "assertPublicPayloadSafe",
 ]) {
@@ -64,7 +64,10 @@ for (const marker of [
 }
 
 must(service.includes("version.public_snapshot"), "Public resolver must serve the published version snapshot");
-must(!service.includes("public_snapshot: passport.public_fields"), "Public resolver must not serve mutable draft fields directly");
+must(
+    !service.includes("public_snapshot: passport.public_fields"),
+    "Public resolver must not serve mutable draft fields directly",
+);
 must(service.includes("maybeTenantContext"), "Public resolver must remain tenant fail-closed");
 
 for (const permission of [
@@ -91,7 +94,7 @@ for (const auditAction of [
     "product_passport.regulatory.status",
     "product_passport.access.preset.apply",
 ]) {
-    must(controller.includes(`action: \"${auditAction}\"`), `Strict audit action missing: ${auditAction}`);
+    must(controller.includes(`action: "${auditAction}"`), `Strict audit action missing: ${auditAction}`);
 }
 must(controller.includes("strict: true"), "Phase 29 mutations require strict audit logging");
 must(controller.includes("requireRecentIdentityStepUp"), "Sensitive Phase 29 mutations require identity step-up");

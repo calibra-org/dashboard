@@ -59,7 +59,9 @@ const FORBIDDEN_PUBLIC_KEY = /(password|secret|token|credential|private|internal
 
 export function assertPublicPayloadSafe(value: unknown, path = "public") {
     if (Array.isArray(value)) {
-        value.forEach((item, index) => assertPublicPayloadSafe(item, `${path}[${index}]`));
+        value.forEach((item, index) => {
+            assertPublicPayloadSafe(item, `${path}[${index}]`);
+        });
         return;
     }
     if (!value || typeof value !== "object") return;
@@ -173,11 +175,7 @@ export async function overview() {
             .where({ tenant_id: tenant, verification_status: "verified" })
             .count("* as c")
             .first(),
-        trx
-            .from("product_passport_regulatory_mappings")
-            .where({ tenant_id: tenant, status: "active" })
-            .count("* as c")
-            .first(),
+        trx.from("product_passport_regulatory_mappings").where({ tenant_id: tenant, status: "active" }).count("* as c").first(),
     ]);
     return {
         engine_version: PRODUCT_PASSPORT_ENGINE_VERSION,
@@ -202,7 +200,9 @@ export async function passportDetail(publicId: string) {
     const trx = currentTrx();
     const [product, variation, versions, evidence, edges, qualityCases] = await Promise.all([
         trx.from("products").where("id", passport.product_id).first(),
-        passport.variation_id == null ? Promise.resolve(null) : trx.from("product_variations").where("id", passport.variation_id).first(),
+        passport.variation_id == null
+            ? Promise.resolve(null)
+            : trx.from("product_variations").where("id", passport.variation_id).first(),
         trx
             .from("product_passport_versions")
             .where({ tenant_id: tenantId(), passport_id: passport.id })
