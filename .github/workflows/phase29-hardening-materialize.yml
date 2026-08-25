@@ -1,4 +1,5 @@
 name: Phase 29 Invariant Hardening Materializer
+# One-shot: applies DB/service identity invariants, verifies them, then removes itself.
 
 on:
   pull_request:
