@@ -14,9 +14,11 @@ const controller = read("apps/api/app/controllers/admin/product_passport_control
 const adminRoutes = read("apps/api/start/routes/admin_product_passports.ts");
 const publicRoutes = read("apps/api/start/routes/product_passports_public.ts");
 const routes = read("apps/api/start/routes.ts");
-const openapi = read("docs/api/reference/openapi/admin.phase29.v1.yaml");
+const adminOpenapi = read("docs/api/reference/openapi/admin.phase29.v1.yaml");
+const storefrontOpenapi = read("docs/api/reference/openapi/storefront.phase29.v1.yaml");
 const docsPackage = read("docs/api/package.json");
 const mergeAdminSpec = read("docs/api/scripts/merge-admin-spec.js");
+const mergeStorefrontSpec = read("docs/api/scripts/merge-storefront-spec.js");
 
 for (const marker of [
     "product_passports",
@@ -107,6 +109,7 @@ const limiterCount = (adminRoutes.match(/\.use\(adminWriteLimiter\)/g) ?? []).le
 must(mutationCount === limiterCount, "Every Phase 29 admin mutation must use adminWriteLimiter");
 must(adminRoutes.includes("/api/v1/admin/product-passports"), "Phase 29 admin prefix is missing");
 must(publicRoutes.includes("/api/v1/product-passports/:resolverKey"), "Phase 29 public resolver route is missing");
+must(publicRoutes.includes("contentPublicLimiter"), "Phase 29 public resolver must use the bounded public-content limiter");
 must(routes.includes('await import("./routes/admin_product_passports.js")'), "Phase 29 admin routes are not registered");
 must(routes.includes('await import("./routes/product_passports_public.js")'), "Phase 29 public routes are not registered");
 
@@ -127,15 +130,31 @@ for (const operationId of [
     "adminProductPassportAccess",
     "adminProductPassportAccessPreset",
 ]) {
-    must(openapi.includes(`operationId: ${operationId}`), `Phase 29 OpenAPI operation missing: ${operationId}`);
+    must(adminOpenapi.includes(`operationId: ${operationId}`), `Phase 29 Admin OpenAPI operation missing: ${operationId}`);
 }
 
-must(openapi.includes("private_fields"), "Admin Phase 29 contract must support private passport fields");
-must(!openapi.includes("/api/v1/product-passports/{resolverKey}"), "Public resolver must not be mixed into the admin overlay");
-must(docsPackage.includes('"build:json:admin-phase29"'), "Phase 29 docs build script is missing");
+must(adminOpenapi.includes("private_fields"), "Admin Phase 29 contract must support private passport fields");
+must(
+    !adminOpenapi.includes("/api/v1/product-passports/{resolverKey}"),
+    "Public resolver must not be mixed into the admin overlay",
+);
+must(
+    storefrontOpenapi.includes("operationId: storefrontProductPassportResolve"),
+    "Phase 29 Storefront resolver operation is missing",
+);
+must(storefrontOpenapi.includes("PublicProductPassport"), "Phase 29 Storefront public passport schema is missing");
+must(storefrontOpenapi.includes("verification_status") === false, "Public resolver contract must not expose internal verification fields");
+must(storefrontOpenapi.includes("private_fields") === false, "Public resolver contract must never expose private_fields");
+must(storefrontOpenapi.includes("ProductPassportJsonObject"), "Public Phase 29 schemas must use collision-safe component names");
+
+must(docsPackage.includes('"build:json:admin-phase29"'), "Phase 29 admin docs build script is missing");
 must(docsPackage.includes("pnpm build:json:admin-phase29"), "Aggregate admin OpenAPI build must include Phase 29");
+must(docsPackage.includes('"build:json:storefront-phase29"'), "Phase 29 storefront docs build script is missing");
+must(docsPackage.includes("pnpm build:json:storefront-phase29"), "Aggregate storefront OpenAPI build must include Phase 29");
 must(mergeAdminSpec.includes("dist/admin.phase29.v1.json"), "Admin OpenAPI merge must load Phase 29 overlay");
 must(mergeAdminSpec.includes("Phase29ProductPassportOverlay"), "Admin OpenAPI merge must namespace Phase 29 overlay");
+must(mergeStorefrontSpec.includes("dist/storefront.phase29.v1.json"), "Storefront OpenAPI merge must load Phase 29 overlay");
+must(mergeStorefrontSpec.includes("phase17, phase29, discovery"), "Storefront OpenAPI merge order must include Phase 29");
 
 must(!migration.includes('createTable("phase29_products"'), "Phase 29 must not create a parallel product master");
-console.log("PASS Phase 29 Product Provenance & Digital Product Passport contract integrity gate");
+console.log("PASS Phase 29 Product Provenance & Digital Product Passport full-stack contract integrity gate");
