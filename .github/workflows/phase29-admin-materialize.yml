@@ -1,0 +1,52 @@
+name: Phase 29 Admin Materializer
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/phase29-admin-materialize.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'feat/phase29-product-passport-20260825'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+      - run: npm install --global pnpm@10.32.1
+      - run: pnpm install --frozen-lockfile
+      - name: Add Phase 29 catalog navigation
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = 'apps/admin/src/components/Sidebar.tsx';
+          const source = fs.readFileSync(path, 'utf8');
+          const marker = '            { href: "/products", labelKey: "products", icon: Package },';
+          const addition = `${marker}\n            { href: "/products/product-passports", label: "گذرنامه محصول", icon: ShieldCheck },`;
+          if (source.includes('/products/product-passports')) process.exit(0);
+          if (!source.includes(marker)) throw new Error('Catalog products marker not found');
+          fs.writeFileSync(path, source.replace(marker, addition));
+          NODE
+      - name: Format Phase 29 admin
+        run: >-
+          pnpm exec biome check --write
+          apps/admin/src/lib/queries/product-passport.ts
+          apps/admin/src/features/product-passport/ProductPassportWorkspace.tsx
+          "apps/admin/src/app/[locale]/(authenticated)/products/product-passports/page.tsx"
+          apps/admin/src/components/Sidebar.tsx
+      - name: Commit admin workspace and remove materializer
+        run: |
+          git rm .github/workflows/phase29-admin-materialize.yml
+          git add apps/admin/src/lib/queries/product-passport.ts apps/admin/src/features/product-passport/ProductPassportWorkspace.tsx "apps/admin/src/app/[locale]/(authenticated)/products/product-passports/page.tsx" apps/admin/src/components/Sidebar.tsx
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "style(admin): polish Phase 29 passport workspace"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
