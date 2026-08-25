@@ -15,6 +15,7 @@ const routes = read("apps/api/start/routes/admin_objective_autonomy.ts");
 const openapi = read("docs/api/reference/openapi/admin.phase28.v1.yaml");
 const apiDocsPackage = read("docs/api/package.json");
 const mergeAdminSpec = read("docs/api/scripts/merge-admin-spec.js");
+const generatedAdminSdk = read("packages/sdk/src/generated/admin.d.ts");
 
 for (const marker of [
     "ENABLE ROW LEVEL SECURITY",
@@ -56,6 +57,7 @@ for (const operation of [
     "adminObjectiveAutonomyAccessPreset",
 ]) {
     must(openapi.includes(operation), `Phase 28 OpenAPI operation missing: ${operation}`);
+    must(generatedAdminSdk.includes(operation), `Phase 28 generated Admin SDK operation missing: ${operation}`);
 }
 must(apiDocsPackage.includes("build:json:admin-phase28"), "Phase 28 OpenAPI overlay is not registered in API docs build");
 must(mergeAdminSpec.includes("Phase28ObjectiveAutonomyOverlay"), "Phase 28 OpenAPI overlay is not merged into admin spec");
