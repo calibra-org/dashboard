@@ -25,7 +25,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Format Phase 29 backend
         run: |
-          pnpm exec biome check --write \
+          pnpm exec biome check --write --unsafe \
             apps/api/database/migrations/1800000000000_create_product_passport_os.ts \
             apps/api/app/services/product_passport/product_passport_service.ts \
             apps/api/app/services/product_passport/permissions.ts \
