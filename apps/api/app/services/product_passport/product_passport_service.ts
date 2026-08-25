@@ -143,9 +143,10 @@ async function findSupplyReceiptLine(input: {
         .where("po_line.tenant_id", tenantId())
         .where("po_line.product_id", input.productId);
     if (input.variationId != null) query = query.where("po_line.variation_id", input.variationId);
-    if (input.batchCode) {
+    const batchCode = input.batchCode;
+    if (batchCode) {
         query = query.where((builder) => {
-            builder.where("receipt_line.batch_code", input.batchCode).orWhere("receipt_line.lot_code", input.batchCode);
+            builder.where("receipt_line.batch_code", batchCode).orWhere("receipt_line.lot_code", batchCode);
         });
     }
     if (input.serialNumber) {
@@ -198,6 +199,8 @@ export async function listPassports() {
 export async function passportDetail(publicId: string) {
     const passport = await requirePassport(publicId);
     const trx = currentTrx();
+    let qualityCasesQuery = trx.from("quality_cases").where({ tenant_id: tenantId(), product_id: passport.product_id });
+    if (passport.variation_id != null) qualityCasesQuery = qualityCasesQuery.where("variation_id", passport.variation_id);
     const [product, variation, versions, evidence, edges, qualityCases] = await Promise.all([
         trx.from("products").where("id", passport.product_id).first(),
         passport.variation_id == null
@@ -218,14 +221,7 @@ export async function passportDetail(publicId: string) {
             .where({ tenant_id: tenantId(), passport_id: passport.id })
             .orderBy("created_at", "desc")
             .limit(200),
-        trx
-            .from("quality_cases")
-            .where({ tenant_id: tenantId(), product_id: passport.product_id })
-            .modify((query) => {
-                if (passport.variation_id != null) query.where("variation_id", passport.variation_id);
-            })
-            .orderBy("updated_at", "desc")
-            .limit(50),
+        qualityCasesQuery.orderBy("updated_at", "desc").limit(50),
     ]);
     return { passport, product, variation, versions, evidence, edges, quality_cases: qualityCases };
 }
