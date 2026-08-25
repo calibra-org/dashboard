@@ -1,0 +1,40 @@
+name: Phase 30 Source Bootstrap
+
+on:
+  push:
+    branches:
+      - feat/phase30-retail-media-creator-20260826
+    paths:
+      - '.phase30_payload_*'
+      - '.github/workflows/phase30-bootstrap.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: phase30-source-bootstrap
+  cancel-in-progress: true
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/phase30-retail-media-creator-20260826
+          fetch-depth: 0
+      - name: Verify and extract source payload
+        shell: bash
+        run: |
+          cat .phase30_payload_* | base64 --decode > /tmp/phase30-source.tar.gz
+          echo 'dd45d8da9a6ae1bd88e329be07d9d9c8119b1996af28faa989a94cf60feb8d24  /tmp/phase30-source.tar.gz' | sha256sum --check --strict
+          tar -xzf /tmp/phase30-source.tar.gz -C .
+          rm -f .phase30_payload_* .github/workflows/phase30-bootstrap.yml
+      - name: Commit Phase 30 source
+        shell: bash
+        run: |
+          git config user.name 'calibra-phase-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -A
+          git commit -m 'feat(phase30): implement retail media and creator monetization OS'
+          git push origin HEAD:feat/phase30-retail-media-creator-20260826
