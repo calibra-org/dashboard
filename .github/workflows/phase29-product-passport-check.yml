@@ -16,11 +16,15 @@ on:
       - "apps/admin/src/lib/queries/product-passport.ts"
       - "apps/admin/src/app/**/product-passports/**"
       - "apps/admin/src/components/Sidebar.tsx"
+      - "apps/web/src/app/**/passport/**"
       - "docs/api/reference/openapi/admin.phase29.v1.yaml"
+      - "docs/api/reference/openapi/storefront.phase29.v1.yaml"
       - "docs/api/package.json"
       - "docs/api/scripts/merge-admin-spec.js"
+      - "docs/api/scripts/merge-storefront-spec.js"
       - "docs/calibra/phase29-product-passport-conformance-posture.md"
       - "packages/sdk/src/generated/admin.d.ts"
+      - "packages/sdk/src/generated/storefront.d.ts"
       - "scripts/verify-phase29-product-passport.mjs"
       - ".github/workflows/phase29-product-passport-check.yml"
   workflow_dispatch:
@@ -35,7 +39,30 @@ concurrency:
 jobs:
   integrity:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: calibra
+          POSTGRES_PASSWORD: calibra
+          POSTGRES_DB: calibra
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U calibra -d calibra"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
         with:
@@ -46,6 +73,10 @@ jobs:
           node-version: 24.14.0
       - run: npm install --global pnpm@10.32.1
       - run: pnpm install --frozen-lockfile
+      - name: Create test database
+        env:
+          PGPASSWORD: calibra
+        run: psql -h localhost -U calibra -d calibra -c "CREATE DATABASE calibra_test OWNER calibra;"
       - name: Phase 29 format integrity
         run: >-
           pnpm exec biome check
@@ -61,8 +92,10 @@ jobs:
           apps/admin/src/features/product-passport/ProductPassportWorkspace.tsx
           "apps/admin/src/app/[locale]/(authenticated)/products/product-passports/page.tsx"
           apps/admin/src/components/Sidebar.tsx
+          "apps/web/src/app/[locale]/passport/[resolverKey]/page.tsx"
           docs/api/package.json
           docs/api/scripts/merge-admin-spec.js
+          docs/api/scripts/merge-storefront-spec.js
           scripts/verify-phase29-product-passport.mjs
       - name: Phase 29 static contract
         run: node scripts/verify-phase29-product-passport.mjs
@@ -71,8 +104,10 @@ jobs:
         run: pnpm test --force-exit --suite=unit --files='phase29_product_passport'
       - name: API typecheck
         run: pnpm --filter @calibra/api run typecheck
-      - name: Phase 29 OpenAPI bundle
-        run: pnpm --filter @calibra/api-docs run build:json:admin-phase29
+      - name: Phase 29 OpenAPI bundles
+        run: |
+          pnpm --filter @calibra/api-docs run build:json:admin-phase29
+          pnpm --filter @calibra/api-docs run build:json:storefront-phase29
       - name: OpenAPI and SDK drift check
         run: pnpm --filter @calibra/sdk run codegen:check
       - name: Build SDK dependency
@@ -81,3 +116,7 @@ jobs:
         run: pnpm --filter @calibra/admin run typecheck
       - name: Admin production build
         run: pnpm --filter @calibra/admin run build
+      - name: Storefront typecheck
+        run: pnpm --filter @calibra/web run typecheck
+      - name: Storefront production build
+        run: pnpm --filter @calibra/web run build
