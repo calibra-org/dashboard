@@ -5,10 +5,12 @@ on:
     paths:
       - "apps/api/database/migrations/1800000000000_create_product_passport_os.ts"
       - "apps/api/app/services/product_passport/**"
-      - "apps/api/app/controllers/admin/product_passports_controller.ts"
+      - "apps/api/app/controllers/admin/product_passport_controller.ts"
+      - "apps/api/app/controllers/product_passport_public_controller.ts"
       - "apps/api/app/validators/product_passport/**"
       - "apps/api/start/routes/admin_product_passports.ts"
-      - "apps/api/start/routes/public_product_passports.ts"
+      - "apps/api/start/routes/product_passports_public.ts"
+      - "apps/api/start/routes.ts"
       - "apps/admin/src/features/product-passport/**"
       - "apps/admin/src/lib/queries/product-passport.ts"
       - "apps/admin/src/app/**/product-passports/**"
@@ -23,9 +25,9 @@ permissions:
   contents: read
 
 jobs:
-  foundation-integrity:
+  backend-integrity:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -37,8 +39,15 @@ jobs:
         run: |
           pnpm exec biome check \
             apps/api/database/migrations/1800000000000_create_product_passport_os.ts \
+            apps/api/app/services/product_passport/product_passport_service.ts \
+            apps/api/app/services/product_passport/permissions.ts \
+            apps/api/app/controllers/admin/product_passport_controller.ts \
+            apps/api/app/controllers/product_passport_public_controller.ts \
+            apps/api/app/validators/product_passport/product_passport_validator.ts \
+            apps/api/start/routes/admin_product_passports.ts \
+            apps/api/start/routes/product_passports_public.ts \
             scripts/verify-phase29-product-passport.mjs
-      - name: Phase 29 foundation contract
+      - name: Phase 29 backend contract
         run: node scripts/verify-phase29-product-passport.mjs
       - name: API typecheck
         run: pnpm --filter @calibra/api run typecheck

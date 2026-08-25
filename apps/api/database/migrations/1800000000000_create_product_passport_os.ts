@@ -16,7 +16,13 @@ export default class extends BaseSchema {
             table.uuid("public_id").notNullable().defaultTo(this.raw("gen_random_uuid()"));
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
             table.bigInteger("product_id").unsigned().notNullable().references("id").inTable("products").onDelete("RESTRICT");
-            table.bigInteger("variation_id").unsigned().nullable().references("id").inTable("product_variations").onDelete("SET NULL");
+            table
+                .bigInteger("variation_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("product_variations")
+                .onDelete("SET NULL");
             table.string("identity_level", 16).notNullable();
             table.string("batch_code", 120).nullable();
             table.string("serial_number", 190).nullable();
@@ -43,7 +49,13 @@ export default class extends BaseSchema {
             table.bigIncrements("id");
             table.uuid("public_id").notNullable().defaultTo(this.raw("gen_random_uuid()"));
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("passport_id").unsigned().notNullable().references("id").inTable("product_passports").onDelete("CASCADE");
+            table
+                .bigInteger("passport_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("product_passports")
+                .onDelete("CASCADE");
             table.integer("version").notNullable();
             table.string("schema_version", 48).notNullable().defaultTo("calibra-dpp-v1");
             table.jsonb("public_snapshot").notNullable().defaultTo(this.raw("'{}'::jsonb"));
@@ -60,7 +72,13 @@ export default class extends BaseSchema {
             table.bigIncrements("id");
             table.uuid("public_id").notNullable().defaultTo(this.raw("gen_random_uuid()"));
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("passport_id").unsigned().notNullable().references("id").inTable("product_passports").onDelete("CASCADE");
+            table
+                .bigInteger("passport_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("product_passports")
+                .onDelete("CASCADE");
             table.string("evidence_type", 48).notNullable();
             table.string("visibility", 16).notNullable().defaultTo("private");
             table.string("verification_status", 24).notNullable().defaultTo("unverified");
@@ -84,7 +102,13 @@ export default class extends BaseSchema {
             table.bigIncrements("id");
             table.uuid("public_id").notNullable().defaultTo(this.raw("gen_random_uuid()"));
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("passport_id").unsigned().notNullable().references("id").inTable("product_passports").onDelete("CASCADE");
+            table
+                .bigInteger("passport_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("product_passports")
+                .onDelete("CASCADE");
             table.string("from_node_type", 32).notNullable();
             table.string("from_node_ref", 190).notNullable();
             table.string("relation_type", 64).notNullable();
@@ -138,6 +162,10 @@ export default class extends BaseSchema {
             this.schema.raw(sql);
         }
 
+        this.schema.raw(
+            `CREATE UNIQUE INDEX product_passports_identity_unique ON product_passports (tenant_id, product_id, COALESCE(variation_id, 0), identity_level, COALESCE(batch_code, ''), COALESCE(serial_number, ''))`,
+        );
+
         for (const table of TABLES) this.schema.raw(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`);
         for (const table of TABLES) this.schema.raw(`ALTER TABLE ${table} FORCE ROW LEVEL SECURITY`);
         for (const table of TABLES) {
@@ -146,6 +174,7 @@ export default class extends BaseSchema {
     }
 
     async down() {
+        this.schema.raw("DROP INDEX IF EXISTS product_passports_identity_unique");
         for (const table of [...TABLES].reverse()) this.schema.dropTable(table);
     }
 }
