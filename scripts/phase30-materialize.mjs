@@ -64,6 +64,28 @@ replaceIfMissing(
     '            { href: "/analytics/growth-portfolio", label: "سبد رشد خودکار", icon: TrendingUp },\n            { href: "/analytics/retail-media", label: "رسانه تجاری و سازندگان", icon: BadgePercent },',
 );
 
+const workspacePath = "apps/admin/src/features/retail-media/RetailMediaWorkspace.tsx";
+replaceIfMissing(
+    workspacePath,
+    'subtitle="کنترل یکپارچه تبلیغات بومی',
+    'description="کنترل یکپارچه تبلیغات بومی، بودجه و pacing، جایگاه‌های Sponsored، همکاری سازندگان و سنجش incrementality با guardrailهای اعتماد."',
+    'subtitle="کنترل یکپارچه تبلیغات بومی، بودجه و pacing، جایگاه‌های Sponsored، همکاری سازندگان و سنجش incrementality با guardrailهای اعتماد."',
+);
+for (const setter of ["setAdvertiserId", "setSelectedCampaign", "setPlacementId", "setSurface", "setCreatorId", "setCampaignId"]) {
+    replaceIfMissing(
+        workspacePath,
+        `onValueChange={(value) => ${setter}(String(value))}`,
+        `onValueChange={${setter}}`,
+        `onValueChange={(value) => ${setter}(String(value))}`,
+    );
+}
+replaceIfMissing(
+    workspacePath,
+    "[row.id]: String(value)",
+    "[row.id]: value",
+    "[row.id]: String(value)",
+);
+
 replaceIfMissing(
     "apps/api/app/services/retail_media/retail_media_service.ts",
     "type EligibleRetailMediaCandidate = RetailMediaRankCandidate &",
