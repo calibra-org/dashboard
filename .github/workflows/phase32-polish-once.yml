@@ -24,8 +24,8 @@ jobs:
       - run: npm install --global pnpm@10.32.1
       - run: pnpm install --frozen-lockfile
       - name: Apply Phase 32 correctness fixes
-        shell: python
         run: |
+          python - <<'PY'
           from pathlib import Path
           service = Path("apps/api/app/services/reliability_guardian/reliability_guardian_service.ts")
           text = service.read_text()
@@ -84,12 +84,13 @@ jobs:
           verify = Path("scripts/verify-phase32-reliability-guardian.mjs")
           v = verify.read_text()
           marker = 'must(service.includes("no_evidence"), "Phase32 service boundary missing no_evidence");'
-          if marker in v:
+          if "scorecards must not invent perfect reliability" not in v:
               v = v.replace(marker, marker + '\nmust(service.includes("if (!evaluations.length) return null"), "Phase32 scorecards must not invent perfect reliability when evidence is absent");')
           verify.write_text(v)
+          PY
       - name: Add navigation entry
-        shell: python
         run: |
+          python - <<'PY'
           from pathlib import Path
           p = Path("apps/admin/src/components/Sidebar.tsx")
           s = p.read_text()
@@ -100,6 +101,7 @@ jobs:
                   raise SystemExit("sidebar anchor not found")
               s = s.replace(anchor, addition)
           p.write_text(s)
+          PY
       - name: Format Phase 32 source
         run: >-
           pnpm exec biome check --write
