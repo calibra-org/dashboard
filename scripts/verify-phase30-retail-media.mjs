@@ -23,6 +23,7 @@ const storefrontOpenapi = read("docs/api/reference/openapi/storefront.phase30.v1
 const generatedAdminSdk = read("packages/sdk/src/generated/admin.d.ts");
 const generatedStorefrontSdk = read("packages/sdk/src/generated/storefront.d.ts");
 const docsPackage = read("docs/api/package.json");
+const docsPackageJson = JSON.parse(docsPackage);
 const mergeAdminSpec = read("docs/api/scripts/merge-admin-spec.js");
 const mergeStorefrontSpec = read("docs/api/scripts/merge-storefront-spec.js");
 const posture = read("docs/calibra/phase30-retail-media-conformance-posture.md");
@@ -158,8 +159,19 @@ must(storefrontOpenapi.includes("sponsored: { const: true }"), "Storefront contr
 must(storefrontOpenapi.includes("subject_hash") && !storefrontOpenapi.includes("customer_email"), "Storefront measurement contract must remain pseudonymous");
 must(docsPackage.includes('"build:json:admin-phase30"'), "Phase 30 admin OpenAPI build script is missing");
 must(docsPackage.includes('"build:json:storefront-phase30"'), "Phase 30 storefront OpenAPI build script is missing");
+must(
+    String(docsPackageJson.scripts?.["build:json:admin"] ?? "").includes("pnpm build:json:admin-phase30"),
+    "Aggregate admin OpenAPI build must include Phase 30 before merge",
+);
+must(
+    String(docsPackageJson.scripts?.["build:json:storefront"] ?? "").includes("pnpm build:json:storefront-phase30"),
+    "Aggregate storefront OpenAPI build must include Phase 30 before merge",
+);
+must(!docsPackageJson.scripts?.["build:json:admin-parts"], "Phase 30 must not invent a non-canonical admin-parts aggregate");
+must(!docsPackageJson.scripts?.["build:json:storefront-parts"], "Phase 30 must not invent a non-canonical storefront-parts aggregate");
 must(mergeAdminSpec.includes("dist/admin.phase30.v1.json") && mergeAdminSpec.includes("Phase30RetailMediaOverlay"), "Admin OpenAPI merge is missing Phase 30");
-must(mergeStorefrontSpec.includes("dist/storefront.phase30.v1.json"), "Storefront OpenAPI merge is missing Phase 30");
+must(mergeStorefrontSpec.includes('const phase30 = JSON.parse(readFileSync(resolve(root, "dist/storefront.phase30.v1.json"), "utf8"));'), "Storefront Phase 30 merge must load the Phase 30 bundle, not another phase");
+must(mergeStorefrontSpec.includes("phase29, phase30, discovery"), "Storefront merge order must include Phase 30 exactly once");
 
 for (const statement of [
     "does not create a parallel commerce master",
