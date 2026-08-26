@@ -30,6 +30,7 @@ on:
       - "scripts/phase31-materialize.mjs"
       - "scripts/phase31-policy-materialize.mjs"
       - "scripts/verify-phase31-fulfillment-promise.mjs"
+      - "scripts/verify-phase31-policy-runtime.mjs"
       - ".github/workflows/phase31-fulfillment-promise-check.yml"
   workflow_dispatch:
 
@@ -110,6 +111,7 @@ jobs:
           scripts/phase31-materialize.mjs
           scripts/phase31-policy-materialize.mjs
           scripts/verify-phase31-fulfillment-promise.mjs
+          scripts/verify-phase31-policy-runtime.mjs
       - name: Phase 31 patch whitespace integrity
         run: git diff --check "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}"
       - name: Build Phase 31 OpenAPI overlays
@@ -118,9 +120,8 @@ jobs:
           pnpm --filter @calibra/api-docs run build:json:storefront-phase31
       - name: Phase 31 static contract
         run: node scripts/verify-phase31-fulfillment-promise.mjs
-      - name: Phase 31 promise safety unit controls
-        working-directory: apps/api
-        run: pnpm test --force-exit --suite=unit --files='phase31_fulfillment_promise'
+      - name: Phase 31 promise safety runtime controls
+        run: node scripts/verify-phase31-policy-runtime.mjs
       - name: API typecheck
         run: pnpm --filter @calibra/api run typecheck
       - name: OpenAPI and SDK drift check
