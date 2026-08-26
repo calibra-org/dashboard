@@ -5,7 +5,7 @@ on:
     paths:
       - "apps/api/database/migrations/1802000000000_create_hyperlocal_promise_fulfillment_os.ts"
       - "apps/api/database/migrations/1802000000001_support_split_fulfillment_promise_quotes.ts"
-      - "apps/api/database/migrations/1802000000002_add_fulfillment_capacity_holds.ts"
+      - "apps/api/database/migrations/1802000002_add_fulfillment_capacity_holds.ts"
       - "apps/api/app/services/fulfillment_promise/**"
       - "apps/api/app/controllers/admin/fulfillment_promise_controller.ts"
       - "apps/api/app/controllers/fulfillment_promise_storefront_controller.ts"
@@ -110,6 +110,8 @@ jobs:
           scripts/phase31-materialize.mjs
           scripts/phase31-policy-materialize.mjs
           scripts/verify-phase31-fulfillment-promise.mjs
+      - name: Phase 31 patch whitespace integrity
+        run: git diff --check "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}"
       - name: Build Phase 31 OpenAPI overlays
         run: |
           pnpm --filter @calibra/api-docs run build:json:admin-phase31
