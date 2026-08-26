@@ -12,6 +12,11 @@ on:
       - "apps/admin/src/features/reliability-guardian/**"
       - "apps/admin/src/lib/queries/reliability-guardian.ts"
       - "apps/admin/src/app/**/analytics/reliability-guardian/**"
+      - "apps/admin/src/components/Sidebar.tsx"
+      - "docs/api/reference/openapi/admin.phase32.v1.yaml"
+      - "docs/api/package.json"
+      - "docs/api/scripts/merge-admin-spec.js"
+      - "docs/calibra/phase32-reliability-guardian-conformance-posture.md"
       - "scripts/verify-phase32-reliability-guardian.mjs"
       - ".github/workflows/phase32-reliability-guardian-check.yml"
   workflow_dispatch:
@@ -74,9 +79,16 @@ jobs:
           apps/admin/src/features/reliability-guardian/ReliabilityGuardianWorkspace.tsx
           apps/admin/src/lib/queries/reliability-guardian.ts
           "apps/admin/src/app/[locale]/(authenticated)/analytics/reliability-guardian/page.tsx"
+          apps/admin/src/components/Sidebar.tsx
+          docs/api/package.json
+          docs/api/scripts/merge-admin-spec.js
           scripts/verify-phase32-reliability-guardian.mjs
+      - name: Build Phase 32 OpenAPI overlay
+        run: pnpm --filter @calibra/api-docs run build:json:admin-phase32
       - name: API typecheck
         run: pnpm --filter @calibra/api run typecheck
+      - name: OpenAPI and SDK drift check
+        run: pnpm --filter @calibra/sdk run codegen:check
       - name: Build SDK dependency
         run: pnpm --filter @calibra/sdk run build
       - name: Admin typecheck
