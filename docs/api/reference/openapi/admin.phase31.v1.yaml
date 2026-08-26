@@ -1,0 +1,63 @@
+openapi: 3.1.0
+info:
+  title: Calibra Admin Phase 31 Fulfillment Promise API
+  version: 1.0.0
+paths:
+  /api/v1/admin/fulfillment-promise/overview:
+    get:
+      operationId: adminFulfillmentPromiseOverview
+      responses: { '200': { description: Promise overview } }
+  /api/v1/admin/fulfillment-promise/nodes:
+    get:
+      operationId: adminFulfillmentPromiseNodes
+      responses: { '200': { description: Nodes } }
+    post:
+      operationId: adminFulfillmentPromiseNodeCreate
+      responses: { '201': { description: Node created } }
+  /api/v1/admin/fulfillment-promise/nodes/{publicId}/inventory-source:
+    post:
+      operationId: adminFulfillmentPromiseInventorySourceMap
+      parameters: [{ in: path, name: publicId, required: true, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: Inventory source mapped } }
+  /api/v1/admin/fulfillment-promise/nodes/{publicId}/capacity:
+    post:
+      operationId: adminFulfillmentPromiseCapacityUpsert
+      parameters: [{ in: path, name: publicId, required: true, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: Capacity upserted } }
+  /api/v1/admin/fulfillment-promise/service-profiles:
+    get:
+      operationId: adminFulfillmentPromiseServiceProfiles
+      responses: { '200': { description: Service profiles } }
+  /api/v1/admin/fulfillment-promise/nodes/{publicId}/service-profiles:
+    post:
+      operationId: adminFulfillmentPromiseServiceProfileUpsert
+      parameters: [{ in: path, name: publicId, required: true, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: Service profile upserted } }
+  /api/v1/admin/fulfillment-promise/transfer-lanes:
+    post:
+      operationId: adminFulfillmentPromiseTransferLaneUpsert
+      responses: { '200': { description: Transfer lane upserted } }
+  /api/v1/admin/fulfillment-promise/promises:
+    get:
+      operationId: adminFulfillmentPromises
+      responses: { '200': { description: Recent promises } }
+  /api/v1/admin/fulfillment-promise/allocations:
+    get:
+      operationId: adminFulfillmentPromiseAllocations
+      responses: { '200': { description: Allocation recommendations } }
+  /api/v1/admin/fulfillment-promise/accuracy:
+    get:
+      operationId: adminFulfillmentPromiseAccuracy
+      responses: { '200': { description: Predicted versus actual accuracy } }
+  /api/v1/admin/fulfillment-promise/outcomes/sync:
+    post:
+      operationId: adminFulfillmentPromiseOutcomesSync
+      responses: { '200': { description: Delivery outcomes synchronized } }
+  /api/v1/admin/fulfillment-promise/access:
+    get:
+      operationId: adminFulfillmentPromiseAccess
+      responses: { '200': { description: Access matrix } }
+  /api/v1/admin/fulfillment-promise/access/preset:
+    post:
+      operationId: adminFulfillmentPromiseAccessPreset
+      responses: { '200': { description: Access preset applied } }

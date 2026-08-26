@@ -1,0 +1,27 @@
+openapi: 3.1.0
+info:
+  title: Calibra Storefront Phase 31 Fulfillment Promise API
+  version: 1.0.0
+paths:
+  /api/v1/fulfillment-promises/quote:
+    post:
+      operationId: storefrontFulfillmentPromiseQuote
+      responses:
+        '200':
+          description: Fresh calibrated fulfillment promise options. Empty options means Calibra cannot make a reliable promise.
+  /api/v1/fulfillment-promises/select:
+    post:
+      operationId: storefrontFulfillmentPromiseSelect
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [promise_public_id]
+              properties:
+                promise_public_id: { type: string, format: uuid }
+      responses:
+        '200': { description: Promise selected for the current canonical cart }
+        '409': { description: Promise expired, inventory stale, cart changed, or source changed }

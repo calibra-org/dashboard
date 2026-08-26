@@ -2354,6 +2354,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/fulfillment-promises/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["storefrontFulfillmentPromiseQuote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fulfillment-promises/select": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["storefrontFulfillmentPromiseSelect"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/storefront/discovery/search": {
         parameters: {
             query?: never;
@@ -6762,6 +6794,56 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["RetailMediaStorefrontOkEnvelope"];
+        };
+    };
+    storefrontFulfillmentPromiseQuote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Fresh calibrated fulfillment promise options. Empty options means Calibra cannot make a reliable promise. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    storefrontFulfillmentPromiseSelect: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    promise_public_id: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Promise selected for the current canonical cart */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Promise expired */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     storefrontDiscoverySearch: {
