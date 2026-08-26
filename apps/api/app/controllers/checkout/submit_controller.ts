@@ -4,6 +4,7 @@ import type { HttpContext } from "@adonisjs/core/http";
 import { OrderStatus } from "#enums/order_status";
 import type Cart from "#models/cart";
 import Order from "#models/order";
+import * as fulfillmentCapacity from "#services/fulfillment_promise/capacity_service";
 import * as fulfillmentPromise from "#services/fulfillment_promise/promise_service";
 import { orderFinalizer } from "#services/order_finalizer";
 import { paymentService } from "#services/payment_service";
@@ -29,15 +30,23 @@ export default class CheckoutSubmitController {
         });
 
         const selectedPromiseId = await fulfillmentPromise.checkoutGuard(cart, draft);
+        await fulfillmentCapacity.holdPromiseCapacity(selectedPromiseId);
 
-        const result = await orderFinalizer.finalize(cart, draft, {
-            idempotencyKey: ctx.idempotencyKey ?? null,
-            actor: ctx.auth?.user ?? null,
-            locale: ctx.i18n.locale,
-            ipAddress: ctx.request.ip(),
-            userAgent: ctx.request.header("user-agent") ?? null,
-        });
+        let result: Awaited<ReturnType<typeof orderFinalizer.finalize>>;
+        try {
+            result = await orderFinalizer.finalize(cart, draft, {
+                idempotencyKey: ctx.idempotencyKey ?? null,
+                actor: ctx.auth?.user ?? null,
+                locale: ctx.i18n.locale,
+                ipAddress: ctx.request.ip(),
+                userAgent: ctx.request.header("user-agent") ?? null,
+            });
+        } catch (error) {
+            await fulfillmentCapacity.releasePromiseCapacity(selectedPromiseId);
+            throw error;
+        }
 
+        await fulfillmentCapacity.commitPromiseCapacity(selectedPromiseId, Number(result.order.id));
         await fulfillmentPromise.commitOrderPromise(result.order, selectedPromiseId);
 
         let redirectUrl: string | null = result.payment.redirectUrl;
