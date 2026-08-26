@@ -46,8 +46,20 @@ export default class extends BaseSchema {
         this.schema.createTable("fulfillment_node_inventory_sources", (table) => {
             table.bigIncrements("id");
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("node_id").unsigned().notNullable().references("id").inTable("fulfillment_network_nodes").onDelete("CASCADE");
-            table.bigInteger("inventory_item_id").unsigned().notNullable().references("id").inTable("inventory_items").onDelete("CASCADE");
+            table
+                .bigInteger("node_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("fulfillment_network_nodes")
+                .onDelete("CASCADE");
+            table
+                .bigInteger("inventory_item_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("inventory_items")
+                .onDelete("CASCADE");
             table.string("status", 16).notNullable().defaultTo("active");
             table.timestamps(true, true);
             table.unique(["tenant_id", "inventory_item_id"], { indexName: "fulfillment_inventory_source_single_truth_unique" });
@@ -57,7 +69,13 @@ export default class extends BaseSchema {
         this.schema.createTable("fulfillment_capacity_windows", (table) => {
             table.bigIncrements("id");
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("node_id").unsigned().notNullable().references("id").inTable("fulfillment_network_nodes").onDelete("CASCADE");
+            table
+                .bigInteger("node_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("fulfillment_network_nodes")
+                .onDelete("CASCADE");
             table.date("service_date").notNullable();
             table.time("window_start_local").notNullable();
             table.time("window_end_local").notNullable();
@@ -75,7 +93,13 @@ export default class extends BaseSchema {
         this.schema.createTable("fulfillment_service_profiles", (table) => {
             table.bigIncrements("id");
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("node_id").unsigned().notNullable().references("id").inTable("fulfillment_network_nodes").onDelete("CASCADE");
+            table
+                .bigInteger("node_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("fulfillment_network_nodes")
+                .onDelete("CASCADE");
             table
                 .bigInteger("shipping_zone_method_id")
                 .unsigned()
@@ -95,15 +119,29 @@ export default class extends BaseSchema {
             table.jsonb("metadata").notNullable().defaultTo(this.raw("'{}'::jsonb"));
             table.integer("version").notNullable().defaultTo(1);
             table.timestamps(true, true);
-            table.unique(["tenant_id", "node_id", "shipping_zone_method_id"], { indexName: "fulfillment_service_profile_unique" });
+            table.unique(["tenant_id", "node_id", "shipping_zone_method_id"], {
+                indexName: "fulfillment_service_profile_unique",
+            });
             table.index(["tenant_id", "shipping_zone_method_id", "status"], "fulfillment_service_profile_lookup_idx");
         });
 
         this.schema.createTable("fulfillment_transfer_lanes", (table) => {
             table.bigIncrements("id");
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("from_node_id").unsigned().notNullable().references("id").inTable("fulfillment_network_nodes").onDelete("CASCADE");
-            table.bigInteger("to_node_id").unsigned().notNullable().references("id").inTable("fulfillment_network_nodes").onDelete("CASCADE");
+            table
+                .bigInteger("from_node_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("fulfillment_network_nodes")
+                .onDelete("CASCADE");
+            table
+                .bigInteger("to_node_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("fulfillment_network_nodes")
+                .onDelete("CASCADE");
             table.string("status", 16).notNullable().defaultTo("active");
             table.integer("transfer_minutes_p90").notNullable();
             table.bigInteger("cost_minor").notNullable().defaultTo(0);
@@ -120,7 +158,13 @@ export default class extends BaseSchema {
             table.uuid("public_id").notNullable().defaultTo(this.raw("gen_random_uuid()"));
             table.bigInteger("cart_id").unsigned().nullable().references("id").inTable("carts").onDelete("SET NULL");
             table.bigInteger("order_id").unsigned().nullable().references("id").inTable("orders").onDelete("SET NULL");
-            table.bigInteger("node_id").unsigned().notNullable().references("id").inTable("fulfillment_network_nodes").onDelete("RESTRICT");
+            table
+                .bigInteger("node_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("fulfillment_network_nodes")
+                .onDelete("RESTRICT");
             table
                 .bigInteger("shipping_zone_method_id")
                 .unsigned()
@@ -128,8 +172,20 @@ export default class extends BaseSchema {
                 .references("id")
                 .inTable("shipping_zone_methods")
                 .onDelete("RESTRICT");
-            table.bigInteger("capacity_window_id").unsigned().nullable().references("id").inTable("fulfillment_capacity_windows").onDelete("SET NULL");
-            table.bigInteger("service_profile_id").unsigned().notNullable().references("id").inTable("fulfillment_service_profiles").onDelete("RESTRICT");
+            table
+                .bigInteger("capacity_window_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("fulfillment_capacity_windows")
+                .onDelete("SET NULL");
+            table
+                .bigInteger("service_profile_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("fulfillment_service_profiles")
+                .onDelete("RESTRICT");
             table.string("strategy", 32).notNullable().defaultTo("single_location");
             table.string("status", 16).notNullable().defaultTo("quoted");
             table.timestamp("window_start_at", { useTz: true }).notNullable();
@@ -156,7 +212,13 @@ export default class extends BaseSchema {
             table.bigIncrements("id");
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
             table.bigInteger("order_id").unsigned().notNullable().references("id").inTable("orders").onDelete("CASCADE");
-            table.bigInteger("promise_quote_id").unsigned().nullable().references("id").inTable("fulfillment_promise_quotes").onDelete("SET NULL");
+            table
+                .bigInteger("promise_quote_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("fulfillment_promise_quotes")
+                .onDelete("SET NULL");
             table.string("strategy", 32).notNullable();
             table.integer("score_bps").notNullable();
             table.jsonb("recommendation").notNullable();
@@ -171,9 +233,21 @@ export default class extends BaseSchema {
         this.schema.createTable("fulfillment_promise_outcomes", (table) => {
             table.bigIncrements("id");
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("promise_quote_id").unsigned().notNullable().references("id").inTable("fulfillment_promise_quotes").onDelete("CASCADE");
+            table
+                .bigInteger("promise_quote_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("fulfillment_promise_quotes")
+                .onDelete("CASCADE");
             table.bigInteger("order_id").unsigned().notNullable().references("id").inTable("orders").onDelete("CASCADE");
-            table.bigInteger("shipment_id").unsigned().nullable().references("id").inTable("order_shipments").onDelete("SET NULL");
+            table
+                .bigInteger("shipment_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("order_shipments")
+                .onDelete("SET NULL");
             table.timestamp("actual_delivered_at", { useTz: true }).nullable();
             table.integer("lateness_minutes").nullable();
             table.boolean("on_time").nullable();

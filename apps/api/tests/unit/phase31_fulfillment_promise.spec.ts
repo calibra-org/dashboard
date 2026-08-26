@@ -1,10 +1,6 @@
 import { test } from "@japa/runner";
 
-import {
-    comparePromiseOptions,
-    isCalibratedServiceProfile,
-    isInventoryFreshAt,
-} from "#services/fulfillment_promise/policy";
+import { comparePromiseOptions, isCalibratedServiceProfile, isInventoryFreshAt } from "#services/fulfillment_promise/policy";
 
 test.group("Phase 31 fulfillment promise safety boundaries", () => {
     test("rejects stale, future and unknown inventory observations", ({ assert }) => {
@@ -62,6 +58,9 @@ test.group("Phase 31 fulfillment promise safety boundaries", () => {
             { id: "same-confidence-faster", confidenceBps: 9200, windowEndMs: 200, costMinor: 2000 },
         ];
         options.sort(comparePromiseOptions);
-        assert.deepEqual(options.map((item) => item.id), ["same-confidence-faster", "reliable", "cheap-fast-low-confidence"]);
+        assert.deepEqual(
+            options.map((item) => item.id),
+            ["same-confidence-faster", "reliable", "cheap-fast-low-confidence"],
+        );
     });
 });

@@ -4,6 +4,7 @@ import type { HttpContext } from "@adonisjs/core/http";
 import { OrderStatus } from "#enums/order_status";
 import type Cart from "#models/cart";
 import Order from "#models/order";
+import * as fulfillmentPromise from "#services/fulfillment_promise/promise_service";
 import { orderFinalizer } from "#services/order_finalizer";
 import { paymentService } from "#services/payment_service";
 import { phase20TrustRiskService } from "#services/phase20_trust_risk_service";
@@ -27,6 +28,8 @@ export default class CheckoutSubmitController {
             idempotencyKey: ctx.idempotencyKey ?? null,
         });
 
+        const selectedPromiseId = await fulfillmentPromise.checkoutGuard(cart, draft);
+
         const result = await orderFinalizer.finalize(cart, draft, {
             idempotencyKey: ctx.idempotencyKey ?? null,
             actor: ctx.auth?.user ?? null,
@@ -34,6 +37,8 @@ export default class CheckoutSubmitController {
             ipAddress: ctx.request.ip(),
             userAgent: ctx.request.header("user-agent") ?? null,
         });
+
+        await fulfillmentPromise.commitOrderPromise(result.order, selectedPromiseId);
 
         let redirectUrl: string | null = result.payment.redirectUrl;
         if (result.payment.gateway.id) {

@@ -42,7 +42,12 @@ export default class FulfillmentPromiseController {
             action: "fulfillment_promise.node.create",
             entityKind: "fulfillment_network_node",
             entityId: data.id,
-            payload: { public_id: data.public_id, node_code: payload.node_code, node_type: payload.node_type, reason: payload.reason },
+            payload: {
+                public_id: data.public_id,
+                node_code: payload.node_code,
+                node_type: payload.node_type,
+                reason: payload.reason,
+            },
             strict: true,
         });
         return ctx.response.created({ data });
@@ -59,7 +64,11 @@ export default class FulfillmentPromiseController {
             action: "fulfillment_promise.node.inventory_source.map",
             entityKind: "fulfillment_node_inventory_source",
             entityId: data.id,
-            payload: { node_public_id: ctx.params.publicId, inventory_item_id: payload.inventory_item_id, reason: payload.reason },
+            payload: {
+                node_public_id: ctx.params.publicId,
+                inventory_item_id: payload.inventory_item_id,
+                reason: payload.reason,
+            },
             strict: true,
         });
         return { data };

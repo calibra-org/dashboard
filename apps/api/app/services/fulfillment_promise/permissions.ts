@@ -25,11 +25,7 @@ const ACCESS_PRESETS: Record<string, readonly FulfillmentPromisePermission[]> = 
         "fulfillment_promise.allocation.view",
         "fulfillment_promise.outcome.manage",
     ],
-    warehouse: [
-        "fulfillment_promise.view",
-        "fulfillment_promise.capacity.manage",
-        "fulfillment_promise.allocation.view",
-    ],
+    warehouse: ["fulfillment_promise.view", "fulfillment_promise.capacity.manage", "fulfillment_promise.allocation.view"],
     logistics: [
         "fulfillment_promise.view",
         "fulfillment_promise.service.manage",
@@ -119,7 +115,13 @@ export async function applyFulfillmentPromiseAccessPreset(actorUserId: number, t
     for (const permission of FULFILLMENT_PROMISE_PERMISSIONS) {
         await trx
             .table("admin_permissions")
-            .insert({ tenant_id: tenant, user_id: targetUserId, permission, allowed: allowedSet.has(permission), updated_by: actorUserId })
+            .insert({
+                tenant_id: tenant,
+                user_id: targetUserId,
+                permission,
+                allowed: allowedSet.has(permission),
+                updated_by: actorUserId,
+            })
             .onConflict(["tenant_id", "user_id", "permission"])
             .merge({ allowed: allowedSet.has(permission), updated_by: actorUserId, updated_at: new Date() });
     }

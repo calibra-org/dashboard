@@ -13,7 +13,9 @@ export default class extends BaseSchema {
 
     async down() {
         this.schema.raw("ALTER TABLE fulfillment_promise_quotes DROP CONSTRAINT IF EXISTS fulfillment_promise_anchor_check");
-        this.schema.raw("DELETE FROM fulfillment_promise_quotes WHERE node_id IS NULL OR capacity_window_id IS NULL OR service_profile_id IS NULL");
+        this.schema.raw(
+            "DELETE FROM fulfillment_promise_quotes WHERE node_id IS NULL OR capacity_window_id IS NULL OR service_profile_id IS NULL",
+        );
         this.schema.raw("ALTER TABLE fulfillment_promise_quotes ALTER COLUMN service_profile_id SET NOT NULL");
         this.schema.raw("ALTER TABLE fulfillment_promise_quotes ALTER COLUMN capacity_window_id SET NOT NULL");
         this.schema.raw("ALTER TABLE fulfillment_promise_quotes ALTER COLUMN node_id SET NOT NULL");

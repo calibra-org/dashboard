@@ -5,6 +5,7 @@ import { DateTime } from "luxon";
 
 import type Cart from "#models/cart";
 import type Order from "#models/order";
+import { comparePromiseOptions, isCalibratedServiceProfile, isInventoryFreshAt } from "#services/fulfillment_promise/policy";
 import { enumerateShippingRates, type ShippingRateOption } from "#services/shipping_rate_service";
 import { currentTenantId, currentTrx } from "#services/tenant_context";
 
@@ -113,7 +114,11 @@ async function resolveInventoryItem(
 ): Promise<DbRow | null> {
     let effectiveVariationId = variationId;
     if (effectiveVariationId !== null) {
-        const variation = await trx.from("product_variations").where("id", effectiveVariationId).select("manage_stock_mode").first();
+        const variation = await trx
+            .from("product_variations")
+            .where("id", effectiveVariationId)
+            .select("manage_stock_mode")
+            .first();
         if (variation?.manage_stock_mode === "parent") effectiveVariationId = null;
     }
     const query = trx.from("inventory_items").where("product_id", productId);
@@ -183,13 +188,16 @@ async function loadPromiseLines(cart: Cart): Promise<PromiseLine[]> {
 }
 
 function calibratedProfile(profile: DbRow, now: DateTime): boolean {
-    const sampleCount = numberValue(profile.calibration_sample_count);
-    const minimum = Math.max(1, numberValue(profile.minimum_sample_count));
-    const calibratedAt = asDateTime(profile.last_calibrated_at);
-    if (sampleCount < minimum || !calibratedAt) return false;
-    const maxAgeHours = Math.max(1, numberValue(profile.max_calibration_age_hours));
-    if (calibratedAt.plus({ hours: maxAgeHours }) < now) return false;
-    return numberValue(profile.confidence_bps) > 0;
+    return isCalibratedServiceProfile(
+        {
+            calibrationSampleCount: numberValue(profile.calibration_sample_count),
+            minimumSampleCount: Math.max(1, numberValue(profile.minimum_sample_count)),
+            confidenceBps: numberValue(profile.confidence_bps),
+            lastCalibratedAt: asDateTime(profile.last_calibrated_at)?.toISO() ?? null,
+            maxCalibrationAgeHours: Math.max(1, numberValue(profile.max_calibration_age_hours)),
+        },
+        now.toISO()!,
+    );
 }
 
 async function selectCapacityWindow(node: DbRow, quantity: number, now: DateTime): Promise<DbRow | null> {
@@ -223,7 +231,12 @@ async function selectCapacityWindow(node: DbRow, quantity: number, now: DateTime
     return null;
 }
 
-async function nodeCandidate(nodeId: number, rate: ShippingRateOption, lines: PromiseLine[], now: DateTime): Promise<NodeCandidate | null> {
+async function nodeCandidate(
+    nodeId: number,
+    rate: ShippingRateOption,
+    lines: PromiseLine[],
+    now: DateTime,
+): Promise<NodeCandidate | null> {
     const trx = currentTrx();
     const node = await trx.from("fulfillment_network_nodes").where("id", nodeId).where("status", "active").first();
     if (!node) return null;
@@ -231,7 +244,7 @@ async function nodeCandidate(nodeId: number, rate: ShippingRateOption, lines: Pr
     const staleMinutes = Math.max(1, numberValue(node.inventory_stale_after_minutes));
     for (const line of lines) {
         const observed = DateTime.fromISO(line.inventory_updated_at, { zone: "utc" });
-        if (!observed.isValid || observed.plus({ minutes: staleMinutes }) < now) return null;
+        if (!observed.isValid || !isInventoryFreshAt(observed.toISO(), staleMinutes, now.toISO()!)) return null;
         if (line.manage_stock && line.stock_quantity < line.quantity) return null;
     }
 
@@ -281,11 +294,21 @@ async function persistOption(
     now: DateTime,
 ): Promise<PromiseOption> {
     const trx = currentTrx();
-    const startAt = candidates.reduce((latest, candidate) => (candidate.startAt > latest ? candidate.startAt : latest), candidates[0].startAt);
-    const endAt = candidates.reduce((latest, candidate) => (candidate.endAt > latest ? candidate.endAt : latest), candidates[0].endAt);
+    const startAt = candidates.reduce(
+        (latest, candidate) => (candidate.startAt > latest ? candidate.startAt : latest),
+        candidates[0].startAt,
+    );
+    const endAt = candidates.reduce(
+        (latest, candidate) => (candidate.endAt > latest ? candidate.endAt : latest),
+        candidates[0].endAt,
+    );
     const confidence = Math.min(...candidates.map((candidate) => candidate.confidenceBps));
     const freshness = candidates.flatMap((candidate) =>
-        candidate.lines.map((line) => DateTime.fromISO(line.inventory_updated_at, { zone: "utc" }).plus({ minutes: numberValue(candidate.node.inventory_stale_after_minutes) })),
+        candidate.lines.map((line) =>
+            DateTime.fromISO(line.inventory_updated_at, { zone: "utc" }).plus({
+                minutes: numberValue(candidate.node.inventory_stale_after_minutes),
+            }),
+        ),
     );
     const freshUntil = freshness.reduce((earliest, value) => (value < earliest ? value : earliest), freshness[0]);
     const expiresAt = DateTime.min(now.plus({ minutes: QUOTE_TTL_MINUTES }), freshUntil);
@@ -381,7 +404,12 @@ export async function quoteCart(cart: Cart): Promise<{ options: PromiseOption[];
         const strategy = candidates.length === 1 ? "single_location" : "split_shipment";
         options.push(await persistOption(cart, rate, candidates, strategy, lines, now));
     }
-    options.sort((a, b) => b.confidence_bps - a.confidence_bps || a.window_end_at.localeCompare(b.window_end_at) || a.cost_minor - b.cost_minor);
+    options.sort((a, b) =>
+        comparePromiseOptions(
+            { confidenceBps: a.confidence_bps, windowEndMs: new Date(a.window_end_at).getTime(), costMinor: a.cost_minor },
+            { confidenceBps: b.confidence_bps, windowEndMs: new Date(b.window_end_at).getTime(), costMinor: b.cost_minor },
+        ),
+    );
     return {
         options: options.slice(0, MAX_PROMISE_OPTIONS),
         unavailable_reasons: options.length === 0 ? ["no_fresh_calibrated_capacity_candidate"] : [],
@@ -400,7 +428,8 @@ async function assertQuoteMatchesCart(cart: Cart, quote: DbRow): Promise<void> {
         throw new Exception("Promise quote is no longer selectable", { status: 409, code: "E_PROMISE_QUOTE_STATE" });
     }
     const expires = asDateTime(quote.expires_at);
-    if (!expires || expires <= now) throw new Exception("Promise quote expired", { status: 409, code: "E_PROMISE_QUOTE_EXPIRED" });
+    if (!expires || expires <= now)
+        throw new Exception("Promise quote expired", { status: 409, code: "E_PROMISE_QUOTE_EXPIRED" });
     if (stringValue(quote.destination_fingerprint) !== destinationFingerprint(cart)) {
         throw new Exception("Shipping destination changed after promise creation", {
             status: 409,
@@ -414,15 +443,30 @@ async function assertQuoteMatchesCart(cart: Cart, quote: DbRow): Promise<void> {
     }
     for (const line of currentLines) {
         const prior = snapshot.find(
-            (item) => item.product_id === line.product_id && item.variation_id === line.variation_id && item.quantity === line.quantity,
+            (item) =>
+                item.product_id === line.product_id && item.variation_id === line.variation_id && item.quantity === line.quantity,
         );
         if (!prior || prior.inventory_item_id !== line.inventory_item_id || prior.node_id !== line.node_id) {
-            throw new Exception("Fulfillment source changed after promise creation", { status: 409, code: "E_PROMISE_SOURCE_CHANGED" });
+            throw new Exception("Fulfillment source changed after promise creation", {
+                status: 409,
+                code: "E_PROMISE_SOURCE_CHANGED",
+            });
         }
-        const sourceNode = await currentTrx().from("fulfillment_network_nodes").where("id", line.node_id).where("status", "active").first();
-        if (!sourceNode) throw new Exception("Fulfillment source is unavailable", { status: 409, code: "E_PROMISE_SOURCE_UNAVAILABLE" });
+        const sourceNode = await currentTrx()
+            .from("fulfillment_network_nodes")
+            .where("id", line.node_id)
+            .where("status", "active")
+            .first();
+        if (!sourceNode)
+            throw new Exception("Fulfillment source is unavailable", { status: 409, code: "E_PROMISE_SOURCE_UNAVAILABLE" });
         const observed = DateTime.fromISO(line.inventory_updated_at, { zone: "utc" });
-        if (observed.plus({ minutes: Math.max(1, numberValue(sourceNode.inventory_stale_after_minutes)) }) < now) {
+        if (
+            !isInventoryFreshAt(
+                observed.toISO(),
+                Math.max(1, numberValue(sourceNode.inventory_stale_after_minutes)),
+                now.toISO()!,
+            )
+        ) {
             throw new Exception("Inventory became stale before checkout", { status: 409, code: "E_PROMISE_INVENTORY_STALE" });
         }
     }
@@ -444,7 +488,10 @@ export async function selectCartPromise(cart: Cart, publicId: string) {
 
 export async function checkoutGuard(cart: Cart, draft: Order): Promise<string | null> {
     const attributes = (cart.attributes as Record<string, unknown> | null) ?? {};
-    const publicId = typeof attributes.fulfillment_promise_quote_public_id === "string" ? attributes.fulfillment_promise_quote_public_id : null;
+    const publicId =
+        typeof attributes.fulfillment_promise_quote_public_id === "string"
+            ? attributes.fulfillment_promise_quote_public_id
+            : null;
     if (!publicId) return null;
     const quote = await quoteByPublicId(publicId);
     if (Number(quote.cart_id) !== Number(cart.id)) {
@@ -500,7 +547,11 @@ export async function overview() {
             .where("status", "active")
             .whereRaw("calibration_sample_count >= minimum_sample_count")
             .first(),
-        trx.from("fulfillment_promise_quotes").where("created_at", ">=", DateTime.utc().minus({ days: 30 }).toJSDate()).count("id as count").first(),
+        trx
+            .from("fulfillment_promise_quotes")
+            .where("created_at", ">=", DateTime.utc().minus({ days: 30 }).toJSDate())
+            .count("id as count")
+            .first(),
         trx
             .from("fulfillment_promise_outcomes")
             .whereNotNull("on_time")
@@ -527,7 +578,23 @@ export async function overview() {
 export async function listNodes() {
     return currentTrx()
         .from("fulfillment_network_nodes")
-        .select("id", "public_id", "node_code", "name", "node_type", "status", "timezone", "country", "region_id", "city", "cutoff_local_time", "handling_minutes", "inventory_stale_after_minutes", "version", "updated_at")
+        .select(
+            "id",
+            "public_id",
+            "node_code",
+            "name",
+            "node_type",
+            "status",
+            "timezone",
+            "country",
+            "region_id",
+            "city",
+            "cutoff_local_time",
+            "handling_minutes",
+            "inventory_stale_after_minutes",
+            "version",
+            "updated_at",
+        )
         .orderBy("name", "asc");
 }
 
@@ -560,7 +627,8 @@ export async function mapInventorySource(nodePublicId: string, inventoryItemId: 
     const node = await trx.from("fulfillment_network_nodes").where("public_id", nodePublicId).where("status", "active").first();
     if (!node) throw new Exception("Fulfillment node not found", { status: 404, code: "E_FULFILLMENT_NODE_NOT_FOUND" });
     const inventory = await trx.from("inventory_items").where("id", inventoryItemId).first();
-    if (!inventory) throw new Exception("Canonical inventory item not found", { status: 404, code: "E_INVENTORY_ITEM_NOT_FOUND" });
+    if (!inventory)
+        throw new Exception("Canonical inventory item not found", { status: 404, code: "E_INVENTORY_ITEM_NOT_FOUND" });
     const existing = await trx.from("fulfillment_node_inventory_sources").where("inventory_item_id", inventoryItemId).first();
     if (existing && Number(existing.node_id) !== Number(node.id)) {
         throw new Exception("Canonical inventory item already has a source node", {
@@ -592,7 +660,12 @@ export async function upsertCapacity(nodePublicId: string, payload: Record<strin
             status: payload.status ?? "open",
         })
         .onConflict(["tenant_id", "node_id", "service_date", "window_start_local", "window_end_local"])
-        .merge({ capacity_units: payload.capacity_units, status: payload.status ?? "open", version: trx.raw("fulfillment_capacity_windows.version + 1"), updated_at: new Date() })
+        .merge({
+            capacity_units: payload.capacity_units,
+            status: payload.status ?? "open",
+            version: trx.raw("fulfillment_capacity_windows.version + 1"),
+            updated_at: new Date(),
+        })
         .returning("*");
     return row;
 }
@@ -603,7 +676,13 @@ export async function listServiceProfiles() {
         .innerJoin("fulfillment_network_nodes as node", "node.id", "profile.node_id")
         .innerJoin("shipping_zone_methods as szm", "szm.id", "profile.shipping_zone_method_id")
         .innerJoin("shipping_methods as method", "method.id", "szm.method_id")
-        .select("profile.*", "node.public_id as node_public_id", "node.name as node_name", "method.code as method_code", "method.title_default as method_title")
+        .select(
+            "profile.*",
+            "node.public_id as node_public_id",
+            "node.name as node_name",
+            "method.code as method_code",
+            "method.title_default as method_title",
+        )
         .orderBy("node.name", "asc");
 }
 
@@ -612,7 +691,8 @@ export async function upsertServiceProfile(nodePublicId: string, payload: Record
     const node = await trx.from("fulfillment_network_nodes").where("public_id", nodePublicId).first();
     if (!node) throw new Exception("Fulfillment node not found", { status: 404, code: "E_FULFILLMENT_NODE_NOT_FOUND" });
     const rate = await trx.from("shipping_zone_methods").where("id", Number(payload.shipping_zone_method_id)).first();
-    if (!rate) throw new Exception("Canonical shipping method instance not found", { status: 404, code: "E_SHIPPING_METHOD_NOT_FOUND" });
+    if (!rate)
+        throw new Exception("Canonical shipping method instance not found", { status: 404, code: "E_SHIPPING_METHOD_NOT_FOUND" });
     const [row] = await trx
         .table("fulfillment_service_profiles")
         .insert({
@@ -655,7 +735,8 @@ export async function upsertTransferLane(payload: Record<string, unknown>) {
         trx.from("fulfillment_network_nodes").where("public_id", payload.to_node_public_id).first(),
     ]);
     if (!from || !to) throw new Exception("Transfer lane node not found", { status: 404, code: "E_TRANSFER_NODE_NOT_FOUND" });
-    if (Number(from.id) === Number(to.id)) throw new Exception("Transfer lane nodes must differ", { status: 422, code: "E_TRANSFER_NODE_SAME" });
+    if (Number(from.id) === Number(to.id))
+        throw new Exception("Transfer lane nodes must differ", { status: 422, code: "E_TRANSFER_NODE_SAME" });
     const [row] = await trx
         .table("fulfillment_transfer_lanes")
         .insert({
@@ -686,7 +767,19 @@ export async function listRecentPromises(limit = 100) {
     return currentTrx()
         .from("fulfillment_promise_quotes as quote")
         .leftJoin("fulfillment_network_nodes as node", "node.id", "quote.node_id")
-        .select("quote.public_id", "quote.strategy", "quote.status", "quote.window_start_at", "quote.window_end_at", "quote.confidence_bps", "quote.shipping_cost_minor", "quote.currency", "quote.constraints", "quote.created_at", "node.name as source_name")
+        .select(
+            "quote.public_id",
+            "quote.strategy",
+            "quote.status",
+            "quote.window_start_at",
+            "quote.window_end_at",
+            "quote.confidence_bps",
+            "quote.shipping_cost_minor",
+            "quote.currency",
+            "quote.constraints",
+            "quote.created_at",
+            "node.name as source_name",
+        )
         .orderBy("quote.created_at", "desc")
         .limit(Math.min(500, Math.max(1, limit)));
 }
@@ -711,7 +804,13 @@ export async function syncDeliveryOutcomes() {
         .where("quote.status", "consumed")
         .where("event.status", "delivered")
         .whereNull("outcome.id")
-        .select("quote.id as quote_id", "quote.order_id", "quote.window_end_at", "shipment.id as shipment_id", "event.occurred_at")
+        .select(
+            "quote.id as quote_id",
+            "quote.order_id",
+            "quote.window_end_at",
+            "shipment.id as shipment_id",
+            "event.occurred_at",
+        )
         .orderBy("event.occurred_at", "asc");
     let inserted = 0;
     for (const row of rows) {
@@ -743,7 +842,15 @@ export async function promiseAccuracy() {
         .from("fulfillment_promise_outcomes as outcome")
         .innerJoin("fulfillment_promise_quotes as quote", "quote.id", "outcome.promise_quote_id")
         .leftJoin("fulfillment_network_nodes as node", "node.id", "quote.node_id")
-        .select("outcome.on_time", "outcome.lateness_minutes", "outcome.actual_delivered_at", "quote.strategy", "quote.confidence_bps", "quote.window_end_at", "node.name as node_name")
+        .select(
+            "outcome.on_time",
+            "outcome.lateness_minutes",
+            "outcome.actual_delivered_at",
+            "quote.strategy",
+            "quote.confidence_bps",
+            "quote.window_end_at",
+            "node.name as node_name",
+        )
         .orderBy("outcome.actual_delivered_at", "desc")
         .limit(500);
     const measured = rows.filter((row) => row.on_time !== null);

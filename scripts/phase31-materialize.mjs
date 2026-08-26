@@ -35,15 +35,15 @@ replaceOnce(
 );
 replaceOnce(
     "apps/api/app/controllers/checkout/submit_controller.ts",
-    '        const result = await orderFinalizer.finalize(cart, draft, {',
-    '        const selectedPromiseId = await fulfillmentPromise.checkoutGuard(cart, draft);\n\n        const result = await orderFinalizer.finalize(cart, draft, {',
-    'const selectedPromiseId = await fulfillmentPromise.checkoutGuard(cart, draft);',
+    "        const result = await orderFinalizer.finalize(cart, draft, {",
+    "        const selectedPromiseId = await fulfillmentPromise.checkoutGuard(cart, draft);\n\n        const result = await orderFinalizer.finalize(cart, draft, {",
+    "const selectedPromiseId = await fulfillmentPromise.checkoutGuard(cart, draft);",
 );
 replaceOnce(
     "apps/api/app/controllers/checkout/submit_controller.ts",
-    '        let redirectUrl: string | null = result.payment.redirectUrl;',
-    '        await fulfillmentPromise.commitOrderPromise(result.order, selectedPromiseId);\n\n        let redirectUrl: string | null = result.payment.redirectUrl;',
-    'await fulfillmentPromise.commitOrderPromise(result.order, selectedPromiseId);',
+    "        let redirectUrl: string | null = result.payment.redirectUrl;",
+    "        await fulfillmentPromise.commitOrderPromise(result.order, selectedPromiseId);\n\n        let redirectUrl: string | null = result.payment.redirectUrl;",
+    "await fulfillmentPromise.commitOrderPromise(result.order, selectedPromiseId);",
 );
 
 replaceOnce(
@@ -77,25 +77,25 @@ replaceOnce(
     "docs/api/scripts/merge-admin-spec.js",
     'const phase30 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase30.v1.json"), "utf8"));',
     'const phase30 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase30.v1.json"), "utf8"));\nconst phase31 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase31.v1.json"), "utf8"));',
-    'dist/admin.phase31.v1.json',
+    "dist/admin.phase31.v1.json",
 );
 replaceOnce(
     "docs/api/scripts/merge-admin-spec.js",
     '    [phase30, "Phase30RetailMediaOverlay"],',
     '    [phase30, "Phase30RetailMediaOverlay"],\n    [phase31, "Phase31FulfillmentPromiseOverlay"],',
-    'Phase31FulfillmentPromiseOverlay',
+    "Phase31FulfillmentPromiseOverlay",
 );
 replaceOnce(
     "docs/api/scripts/merge-storefront-spec.js",
     'const phase30 = JSON.parse(readFileSync(resolve(root, "dist/storefront.phase30.v1.json"), "utf8"));',
     'const phase30 = JSON.parse(readFileSync(resolve(root, "dist/storefront.phase30.v1.json"), "utf8"));\nconst phase31 = JSON.parse(readFileSync(resolve(root, "dist/storefront.phase31.v1.json"), "utf8"));',
-    'dist/storefront.phase31.v1.json',
+    "dist/storefront.phase31.v1.json",
 );
 replaceOnce(
     "docs/api/scripts/merge-storefront-spec.js",
-    'for (const overlay of [completion, identity, phase9, phase17, phase29, phase30, discovery]) {',
-    'for (const overlay of [completion, identity, phase9, phase17, phase29, phase30, phase31, discovery]) {',
-    'phase30, phase31, discovery',
+    "for (const overlay of [completion, identity, phase9, phase17, phase29, phase30, discovery]) {",
+    "for (const overlay of [completion, identity, phase9, phase17, phase29, phase30, phase31, discovery]) {",
+    "phase30, phase31, discovery",
 );
 
 console.log("Phase 31 materialization complete");

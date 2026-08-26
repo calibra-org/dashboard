@@ -116,8 +116,7 @@ export function useFulfillmentPromiseMutation<T = unknown, B = Record<string, un
     const locale = useLocale() as Locale;
     const queryClient = useQueryClient();
     return useMutation<T, Error, { path: string; body: B }>({
-        mutationFn: async ({ path, body }) =>
-            (await apiMutate<{ data: T }>(method, `${base}/${path}`, { locale, body })).data,
+        mutationFn: async ({ path, body }) => (await apiMutate<{ data: T }>(method, `${base}/${path}`, { locale, body })).data,
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin", "fulfillment-promise"] }),
     });
 }

@@ -6,11 +6,7 @@ export interface CalibrationEvidence {
     maxCalibrationAgeHours: number;
 }
 
-export function isInventoryFreshAt(
-    observedAt: string | Date | null,
-    staleAfterMinutes: number,
-    now: string | Date,
-): boolean {
+export function isInventoryFreshAt(observedAt: string | Date | null, staleAfterMinutes: number, now: string | Date): boolean {
     if (!observedAt || !Number.isFinite(staleAfterMinutes) || staleAfterMinutes < 1) return false;
     const observed = new Date(observedAt).getTime();
     const current = new Date(now).getTime();

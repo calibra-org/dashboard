@@ -21,7 +21,9 @@ router
             .post("/nodes/:publicId/capacity", [FulfillmentPromiseController, "upsertCapacity"])
             .as("admin.fulfillment_promise.nodes.capacity")
             .use(adminWriteLimiter);
-        router.get("/service-profiles", [FulfillmentPromiseController, "serviceProfiles"]).as("admin.fulfillment_promise.service_profiles");
+        router
+            .get("/service-profiles", [FulfillmentPromiseController, "serviceProfiles"])
+            .as("admin.fulfillment_promise.service_profiles");
         router
             .post("/nodes/:publicId/service-profiles", [FulfillmentPromiseController, "upsertServiceProfile"])
             .as("admin.fulfillment_promise.service_profiles.upsert")
