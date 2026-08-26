@@ -17,6 +17,7 @@ concurrency:
     cancel-in-progress: true
 
 env:
+    NODE_ENV: development
     NODE_VERSION: "24.14.0"
     PNPM_VERSION: "10.32.1"
     TURBO_TELEMETRY_DISABLED: 1
@@ -84,9 +85,9 @@ jobs:
                     --health-retries 10
 
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v7
 
-            - uses: actions/setup-node@v4
+            - uses: actions/setup-node@v6
               with:
                   node-version: ${{ env.NODE_VERSION }}
 
@@ -115,7 +116,8 @@ jobs:
 
             - name: Start API
               run: |
-                  pnpm dev:api > /tmp/calibra-api.log 2>&1 &
+                  mkdir -p apps/admin/test-results
+                  pnpm dev:api > apps/admin/test-results/api.log 2>&1 &
                   echo $! > /tmp/calibra-api.pid
                   for attempt in $(seq 1 60); do
                       if curl --fail --silent http://localhost:3333/health >/dev/null; then
@@ -123,7 +125,7 @@ jobs:
                       fi
                       sleep 2
                   done
-                  cat /tmp/calibra-api.log
+                  cat apps/admin/test-results/api.log
                   exit 1
 
             - name: Run authenticated admin browser audit
@@ -131,7 +133,7 @@ jobs:
 
             - name: Upload Playwright report and diagnostics
               if: always()
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v7
               with:
                   name: admin-ui-audit-${{ github.run_id }}
                   if-no-files-found: warn
@@ -139,4 +141,3 @@ jobs:
                   path: |
                       apps/admin/playwright-report/
                       apps/admin/test-results/
-                      /tmp/calibra-api.log
