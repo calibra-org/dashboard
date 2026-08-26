@@ -1,0 +1,142 @@
+name: Admin UI Audit
+
+on:
+    pull_request:
+        branches: ["main"]
+        paths:
+            - "apps/admin/**"
+            - "apps/api/**"
+            - "packages/**"
+            - "pnpm-lock.yaml"
+            - "pnpm-workspace.yaml"
+            - ".github/workflows/admin-ui-audit.yml"
+    workflow_dispatch:
+
+concurrency:
+    group: admin-ui-audit-${{ github.ref }}
+    cancel-in-progress: true
+
+env:
+    NODE_VERSION: "24.14.0"
+    PNPM_VERSION: "10.32.1"
+    TURBO_TELEMETRY_DISABLED: 1
+    DO_NOT_TRACK: 1
+    PORT: "3333"
+    HOST: "0.0.0.0"
+    APP_NAME: calibra-api
+    APP_KEY: ci-admin-ui-audit-key-32-chars-ok
+    LOG_LEVEL: warn
+    DB_HOST: localhost
+    DB_PORT: "5432"
+    DB_USER: calibra_app
+    DB_PASSWORD: calibra_app
+    DB_DATABASE: calibra
+    DB_ADMIN_USER: calibra_admin
+    DB_ADMIN_PASSWORD: calibra_admin
+    DB_SUPERUSER_USER: calibra
+    DB_SUPERUSER_PASSWORD: calibra
+    REDIS_HOST: localhost
+    REDIS_PORT: "16379"
+    TRANSMIT_TRANSPORT: none
+    QUEUE_DRIVER: sync
+    LIMITER_STORE: memory
+    CACHE_DRIVER: memory
+    MAIL_FROM_ADDRESS: ops@calibra.local
+    MAIL_FROM_NAME: Calibra
+    MAIL_NOTIFICATIONS_ENABLED: "false"
+    SMTP_HOST: localhost
+    SMTP_PORT: "11025"
+    ALLOWED_ORIGINS: http://localhost:3001,http://aurora.admin.localhost:3001
+    NEXT_PUBLIC_API_BASE_URL: http://localhost:3333
+    NEXT_PUBLIC_SITE_URL: http://aurora.admin.localhost:3001
+    NEXT_PUBLIC_ADMIN_ROOT: admin.localhost
+    ADMIN_ROOT: admin.localhost
+    ADMIN_PORT: "3001"
+    ADMIN_LOGIN_EMAIL: admin@bulk.calibra.dev
+    ADMIN_LOGIN_PASSWORD: Passw0rd1!
+
+jobs:
+    authenticated-ui-audit:
+        runs-on: ubuntu-latest
+        timeout-minutes: 25
+        services:
+            postgres:
+                image: postgres:17-alpine
+                env:
+                    POSTGRES_USER: calibra
+                    POSTGRES_PASSWORD: calibra
+                    POSTGRES_DB: calibra
+                ports:
+                    - 5432:5432
+                options: >-
+                    --health-cmd "pg_isready -U calibra -d calibra"
+                    --health-interval 5s
+                    --health-timeout 5s
+                    --health-retries 10
+            redis:
+                image: redis:7-alpine
+                ports:
+                    - 16379:6379
+                options: >-
+                    --health-cmd "redis-cli ping"
+                    --health-interval 5s
+                    --health-timeout 3s
+                    --health-retries 10
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+
+            - name: Install pnpm
+              run: npm install --global pnpm@${PNPM_VERSION}
+
+            - name: Install workspace dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Install Chromium
+              run: pnpm exec playwright install --with-deps chromium
+
+            - name: Bootstrap database roles
+              working-directory: apps/api
+              run: pnpm exec node ace db:bootstrap-roles
+
+            - name: Run migrations
+              working-directory: apps/api
+              run: pnpm exec node ace migration:run --connection=postgres_admin
+
+            - name: Seed compact demo tenants
+              working-directory: apps/api
+              env:
+                  NODE_ENV: test
+              run: pnpm exec node ace db:seed --connection=postgres_admin
+
+            - name: Start API
+              run: |
+                  pnpm dev:api > /tmp/calibra-api.log 2>&1 &
+                  echo $! > /tmp/calibra-api.pid
+                  for attempt in $(seq 1 60); do
+                      if curl --fail --silent http://localhost:3333/health >/dev/null; then
+                          exit 0
+                      fi
+                      sleep 2
+                  done
+                  cat /tmp/calibra-api.log
+                  exit 1
+
+            - name: Run authenticated admin browser audit
+              run: pnpm --filter @calibra/admin run test:e2e ui-audit --reporter=html
+
+            - name: Upload Playwright report and diagnostics
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: admin-ui-audit-${{ github.run_id }}
+                  if-no-files-found: warn
+                  retention-days: 14
+                  path: |
+                      apps/admin/playwright-report/
+                      apps/admin/test-results/
+                      /tmp/calibra-api.log
