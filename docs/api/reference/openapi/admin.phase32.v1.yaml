@@ -1,0 +1,54 @@
+openapi: 3.1.0
+info:
+  title: Calibra Admin Phase 32 Reliability Guardian API
+  version: 1.0.0
+paths:
+  /api/v1/admin/reliability-guardian/overview:
+    get:
+      operationId: adminReliabilityGuardianOverview
+      responses: { '200': { description: Reliability overview } }
+  /api/v1/admin/reliability-guardian/invariants:
+    get:
+      operationId: adminReliabilityGuardianInvariants
+      responses: { '200': { description: Reliability invariants } }
+    post:
+      operationId: adminReliabilityGuardianInvariantCreate
+      responses: { '201': { description: Reliability invariant created } }
+  /api/v1/admin/reliability-guardian/invariants/{publicId}/observations:
+    post:
+      operationId: adminReliabilityGuardianObservationRecord
+      parameters: [{ in: path, name: publicId, required: true, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: Manual reliability observation recorded } }
+  /api/v1/admin/reliability-guardian/policies:
+    get:
+      operationId: adminReliabilityGuardianPolicies
+      responses: { '200': { description: Remediation policies } }
+    post:
+      operationId: adminReliabilityGuardianPolicyCreate
+      responses: { '201': { description: Remediation policy created } }
+  /api/v1/admin/reliability-guardian/incidents:
+    get:
+      operationId: adminReliabilityGuardianIncidents
+      responses: { '200': { description: Reliability incidents } }
+  /api/v1/admin/reliability-guardian/remediations:
+    get:
+      operationId: adminReliabilityGuardianRemediations
+      responses: { '200': { description: Remediation runs } }
+  /api/v1/admin/reliability-guardian/scorecards:
+    get:
+      operationId: adminReliabilityGuardianScorecards
+      responses: { '200': { description: Reliability scorecards } }
+  /api/v1/admin/reliability-guardian/cycle:
+    post:
+      operationId: adminReliabilityGuardianCycleRun
+      responses: { '200': { description: Reliability evaluation cycle completed } }
+  /api/v1/admin/reliability-guardian/incidents/{publicId}/remediate:
+    post:
+      operationId: adminReliabilityGuardianRemediationExecute
+      parameters: [{ in: path, name: publicId, required: true, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: Remediation executed or approval requested } }
+  /api/v1/admin/reliability-guardian/remediations/{publicId}/rollback:
+    post:
+      operationId: adminReliabilityGuardianRemediationRollback
+      parameters: [{ in: path, name: publicId, required: true, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: Remediation rolled back } }
