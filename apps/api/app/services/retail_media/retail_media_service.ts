@@ -77,7 +77,9 @@ const FORBIDDEN_EVENT_KEY = /(email|phone|mobile|name|address|password|secret|to
 
 export function assertPrivacySafeContext(value: unknown, path = "context") {
     if (Array.isArray(value)) {
-        value.forEach((item, index) => assertPrivacySafeContext(item, `${path}[${index}]`));
+        value.forEach((item, index) => {
+            assertPrivacySafeContext(item, `${path}[${index}]`);
+        });
         return;
     }
     if (!value || typeof value !== "object") return;
@@ -346,7 +348,14 @@ export async function campaignDetail(publicId: string) {
             .from("retail_media_campaign_placements as link")
             .innerJoin("retail_media_placements as p", "p.id", "link.placement_id")
             .where({ "link.tenant_id": tenantId(), "link.campaign_id": campaign.id })
-            .select("link.*", "p.public_id as placement_public_id", "p.placement_key", "p.name", "p.surface", "p.disclosure_text"),
+            .select(
+                "link.*",
+                "p.public_id as placement_public_id",
+                "p.placement_key",
+                "p.name",
+                "p.surface",
+                "p.disclosure_text",
+            ),
         trx
             .from("retail_media_budget_ledger")
             .where({ tenant_id: tenantId(), campaign_id: campaign.id })
@@ -455,22 +464,34 @@ export async function updateCampaign(
     }
     if (input.daily_pacing_cap_minor !== undefined) patch.daily_pacing_cap_minor = input.daily_pacing_cap_minor;
     if (input.attribution_window_days !== undefined) patch.attribution_window_days = input.attribution_window_days;
-    if (input.starts_at !== undefined) patch.starts_at = input.starts_at === null ? null : parseOptionalDate(input.starts_at, "starts_at");
+    if (input.starts_at !== undefined)
+        patch.starts_at = input.starts_at === null ? null : parseOptionalDate(input.starts_at, "starts_at");
     if (input.ends_at !== undefined) patch.ends_at = input.ends_at === null ? null : parseOptionalDate(input.ends_at, "ends_at");
     const startCandidate = input.starts_at === undefined ? campaign.starts_at : input.starts_at;
     const endCandidate = input.ends_at === undefined ? campaign.ends_at : input.ends_at;
-    if (startCandidate && endCandidate && new Date(String(endCandidate)).getTime() <= new Date(String(startCandidate)).getTime()) {
+    if (
+        startCandidate &&
+        endCandidate &&
+        new Date(String(endCandidate)).getTime() <= new Date(String(startCandidate)).getTime()
+    ) {
         throw new Exception("Campaign end must be after start", { status: 422, code: "E_RETAIL_MEDIA_WINDOW_INVALID" });
     }
     await currentTrx().from("retail_media_campaigns").where({ tenant_id: tenantId(), id: campaign.id }).update(patch);
     return requireCampaign(publicId);
 }
 
-export async function setCampaignStatus(publicId: string, status: "review" | "active" | "paused" | "ended" | "archived", actor: AdminActor) {
+export async function setCampaignStatus(
+    publicId: string,
+    status: "review" | "active" | "paused" | "ended" | "archived",
+    actor: AdminActor,
+) {
     const campaign = await requireCampaign(publicId, true);
     if (status === "active") {
         if (!activeNow(campaign)) {
-            throw new Exception("Campaign schedule is not active", { status: 422, code: "E_RETAIL_MEDIA_CAMPAIGN_SCHEDULE_INACTIVE" });
+            throw new Exception("Campaign schedule is not active", {
+                status: 422,
+                code: "E_RETAIL_MEDIA_CAMPAIGN_SCHEDULE_INACTIVE",
+            });
         }
         const [product, placement, funded] = await Promise.all([
             currentTrx()
@@ -518,7 +539,11 @@ export async function addCampaignProduct(
             .where({ id: input.variation_id, product_id: input.product_id })
             .whereNull("deleted_at")
             .first();
-        if (!variation) throw new Exception("Variation does not belong to product", { status: 422, code: "E_RETAIL_MEDIA_VARIATION_MISMATCH" });
+        if (!variation)
+            throw new Exception("Variation does not belong to product", {
+                status: 422,
+                code: "E_RETAIL_MEDIA_VARIATION_MISMATCH",
+            });
     }
     const existing = await trx
         .from("retail_media_campaign_products")
@@ -526,13 +551,16 @@ export async function addCampaignProduct(
         .whereRaw("COALESCE(variation_id, 0) = ?", [input.variation_id ?? 0])
         .first();
     if (existing) {
-        await trx.from("retail_media_campaign_products").where({ tenant_id: tenantId(), id: existing.id }).update({
-            relevance_bps: input.relevance_bps,
-            quality_bps: input.quality_bps,
-            safety_status: input.safety_status,
-            custom_bid_minor: input.custom_bid_minor ?? null,
-            updated_at: new Date(),
-        });
+        await trx
+            .from("retail_media_campaign_products")
+            .where({ tenant_id: tenantId(), id: existing.id })
+            .update({
+                relevance_bps: input.relevance_bps,
+                quality_bps: input.quality_bps,
+                safety_status: input.safety_status,
+                custom_bid_minor: input.custom_bid_minor ?? null,
+                updated_at: new Date(),
+            });
         return trx.from("retail_media_campaign_products").where({ tenant_id: tenantId(), id: existing.id }).first();
     }
     const [row] = await trx
@@ -581,7 +609,10 @@ export async function createPlacement(
 export async function setPlacementStatus(publicId: string, status: "active" | "paused" | "archived") {
     const row = await currentTrx().from("retail_media_placements").where({ tenant_id: tenantId(), public_id: publicId }).first();
     if (!row) notFound("Placement not found", "E_RETAIL_MEDIA_PLACEMENT_NOT_FOUND");
-    await currentTrx().from("retail_media_placements").where({ tenant_id: tenantId(), id: row.id }).update({ status, updated_at: new Date() });
+    await currentTrx()
+        .from("retail_media_placements")
+        .where({ tenant_id: tenantId(), id: row.id })
+        .update({ status, updated_at: new Date() });
     return currentTrx().from("retail_media_placements").where({ tenant_id: tenantId(), id: row.id }).first();
 }
 
@@ -628,7 +659,13 @@ export async function attachCampaignPlacement(
 
 export async function fundCampaign(
     campaignPublicId: string,
-    input: { amount_minor: number; funding_source: "merchant" | "supplier" | "brand"; source_ref?: string; idempotency_key: string; metadata: JsonRecord },
+    input: {
+        amount_minor: number;
+        funding_source: "merchant" | "supplier" | "brand";
+        source_ref?: string;
+        idempotency_key: string;
+        metadata: JsonRecord;
+    },
     actor: AdminActor,
 ) {
     const campaign = await requireCampaign(campaignPublicId, true);
@@ -681,7 +718,10 @@ export async function servePlacement(
         .first();
     if (!placement) notFound("Sponsored placement not found", "E_RETAIL_MEDIA_PUBLIC_NOT_FOUND");
     if (!String(placement.disclosure_text ?? "").trim()) {
-        throw new Exception("Sponsored disclosure is unavailable", { status: 503, code: "E_RETAIL_MEDIA_DISCLOSURE_UNAVAILABLE" });
+        throw new Exception("Sponsored disclosure is unavailable", {
+            status: 503,
+            code: "E_RETAIL_MEDIA_DISCLOSURE_UNAVAILABLE",
+        });
     }
 
     const now = new Date();
@@ -729,7 +769,10 @@ export async function servePlacement(
 
     const eligible: Array<JsonRecord & { paid_bid_minor: number; relevance_bps: number; quality_bps: number }> = [];
     for (const candidate of candidates) {
-        const available = await productAvailable(Number(candidate.product_id), candidate.variation_id == null ? null : Number(candidate.variation_id));
+        const available = await productAvailable(
+            Number(candidate.product_id),
+            candidate.variation_id == null ? null : Number(candidate.variation_id),
+        );
         if (!available) continue;
         const snapshot = await budgetSnapshot({
             id: Number(candidate.campaign_id),
@@ -884,7 +927,11 @@ export async function recordClick(impressionEventId: string, input: { context: J
 
 export async function listCreators() {
     const trx = currentTrx();
-    const creators = await trx.from("retail_media_creators").where("tenant_id", tenantId()).orderBy("updated_at", "desc").limit(300);
+    const creators = await trx
+        .from("retail_media_creators")
+        .where("tenant_id", tenantId())
+        .orderBy("updated_at", "desc")
+        .limit(300);
     return Promise.all(
         creators.map(async (creator) => {
             const [links, balance] = await Promise.all([
@@ -900,7 +947,14 @@ export async function listCreators() {
 }
 
 export async function createCreator(
-    input: { display_name: string; handle?: string; holding_days: number; disclosure_text: string; payout_ref?: string; metadata: JsonRecord },
+    input: {
+        display_name: string;
+        handle?: string;
+        holding_days: number;
+        disclosure_text: string;
+        payout_ref?: string;
+        metadata: JsonRecord;
+    },
     actor: AdminActor,
 ) {
     if (!input.disclosure_text.trim()) {
@@ -938,22 +992,35 @@ export async function createAffiliateLink(
 ) {
     assertSchedule(input.starts_at, input.ends_at);
     const creator = await requireCreator(creatorPublicId);
-    if (creator.status !== "active") throw new Exception("Creator is not active", { status: 422, code: "E_RETAIL_MEDIA_CREATOR_INACTIVE" });
+    if (creator.status !== "active")
+        throw new Exception("Creator is not active", { status: 422, code: "E_RETAIL_MEDIA_CREATOR_INACTIVE" });
     const trx = currentTrx();
     let campaignId: number | null = null;
     if (input.campaign_public_id) campaignId = (await requireCampaign(input.campaign_public_id)).id;
     if (input.product_id) {
-        const product = await trx.from("products").where({ id: input.product_id, status: "publish" }).whereNull("deleted_at").first();
+        const product = await trx
+            .from("products")
+            .where({ id: input.product_id, status: "publish" })
+            .whereNull("deleted_at")
+            .first();
         if (!product) notFound("Published product not found", "E_RETAIL_MEDIA_PRODUCT_NOT_FOUND");
     }
     if (input.variation_id) {
-        if (!input.product_id) throw new Exception("variation_id requires product_id", { status: 422, code: "E_RETAIL_MEDIA_VARIATION_PRODUCT_REQUIRED" });
+        if (!input.product_id)
+            throw new Exception("variation_id requires product_id", {
+                status: 422,
+                code: "E_RETAIL_MEDIA_VARIATION_PRODUCT_REQUIRED",
+            });
         const variation = await trx
             .from("product_variations")
             .where({ id: input.variation_id, product_id: input.product_id })
             .whereNull("deleted_at")
             .first();
-        if (!variation) throw new Exception("Variation does not belong to product", { status: 422, code: "E_RETAIL_MEDIA_VARIATION_MISMATCH" });
+        if (!variation)
+            throw new Exception("Variation does not belong to product", {
+                status: 422,
+                code: "E_RETAIL_MEDIA_VARIATION_MISMATCH",
+            });
     }
     const [row] = await trx
         .table("retail_media_affiliate_links")
@@ -1004,7 +1071,12 @@ export async function touchAffiliate(code: string, cart: Cart) {
     const attributes = parseJsonRecord(cart.attributes);
     cart.attributes = { ...attributes, retail_media_attribution: touch };
     await cart.save();
-    return { applied: true, creator_public_id: touch.creator_public_id, disclosure: touch.disclosure_text, expires_at: touch.expires_at };
+    return {
+        applied: true,
+        creator_public_id: touch.creator_public_id,
+        disclosure: touch.disclosure_text,
+        expires_at: touch.expires_at,
+    };
 }
 
 function readAffiliateTouch(attributes: unknown): AffiliateTouch | null {
@@ -1075,7 +1147,10 @@ export async function settleCreatorCommissions(orderId: number) {
                 currency: order.currency,
                 idempotency_key: idempotencyKey,
                 source_ref: `order:${orderId}`,
-                available_at: completedAt.plus({ days: Number(link.holding_days) }).toUTC().toSQL(),
+                available_at: completedAt
+                    .plus({ days: Number(link.holding_days) })
+                    .toUTC()
+                    .toSQL(),
                 occurred_at: completedAt.toUTC().toSQL(),
                 metadata: { commission_basis_minor: base, holding_days: Number(link.holding_days) },
             })
@@ -1121,15 +1196,21 @@ export async function reconcileCreatorRefund(refundId: number) {
         .from("order_refund_line_items")
         .where({ tenant_id: tenantId(), refund_id: refundId })
         .orderBy("id");
-    const refundByLine = new Map(refundLines.map((line) => [Number(line.order_line_item_id), asNumber(line.refund_amount_minor)]));
-    const orderLines = await trx.from("order_line_items").where({ tenant_id: tenantId(), order_id: refund.order_id }).select("id", "total");
+    const refundByLine = new Map(
+        refundLines.map((line) => [Number(line.order_line_item_id), asNumber(line.refund_amount_minor)]),
+    );
+    const orderLines = await trx
+        .from("order_line_items")
+        .where({ tenant_id: tenantId(), order_id: refund.order_id })
+        .select("id", "total");
     const lineTotals = new Map(orderLines.map((line) => [Number(line.id), Math.max(1, asNumber(line.total))]));
     const orderTotal = Math.max(1, asNumber(order.grand_total));
     let created = 0;
 
     for (const commission of commissions) {
         const lineId = commission.order_line_item_id == null ? null : Number(commission.order_line_item_id);
-        const refundBasis = lineId !== null && refundByLine.has(lineId) ? (refundByLine.get(lineId) ?? 0) : asNumber(refund.amount_minor);
+        const refundBasis =
+            lineId !== null && refundByLine.has(lineId) ? (refundByLine.get(lineId) ?? 0) : asNumber(refund.amount_minor);
         const denominator = lineId !== null && refundByLine.has(lineId) ? (lineTotals.get(lineId) ?? orderTotal) : orderTotal;
         if (refundBasis <= 0 || denominator <= 0) continue;
         const prior = await trx
@@ -1162,7 +1243,11 @@ export async function reconcileCreatorRefund(refundId: number) {
                 source_ref: `refund:${refundId}`,
                 available_at: null,
                 occurred_at: refund.processed_at ?? new Date(),
-                metadata: { commission_ledger_id: Number(commission.id), refund_basis_minor: refundBasis, denominator_minor: denominator },
+                metadata: {
+                    commission_ledger_id: Number(commission.id),
+                    refund_basis_minor: refundBasis,
+                    denominator_minor: denominator,
+                },
             })
             .onConflict(["tenant_id", "idempotency_key"])
             .ignore()
@@ -1228,7 +1313,10 @@ export async function recordCreatorPayout(
     }
     const balance = await creatorBalance(Number(creator.id));
     if (input.amount_minor > balance.available_minor) {
-        throw new Exception("Payout exceeds available creator balance", { status: 422, code: "E_RETAIL_MEDIA_PAYOUT_EXCEEDS_BALANCE" });
+        throw new Exception("Payout exceeds available creator balance", {
+            status: 422,
+            code: "E_RETAIL_MEDIA_PAYOUT_EXCEEDS_BALANCE",
+        });
     }
     const [row] = await trx
         .table("retail_media_commission_ledger")
