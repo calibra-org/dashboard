@@ -28,7 +28,15 @@ export default class ReliabilityGuardianController {
         const payload = await ctx.request.validateUsing(reliabilityInvariantValidator);
         const { reason, ...input } = payload;
         const data = await guardian.createInvariant(input, Number(user.id));
-        await recordAudit({ ctx, actorUserId: Number(user.id), action: "reliability_guardian.invariant.create", entityKind: "reliability_invariant", entityId: data.id, payload: { invariant_key: input.invariant_key, severity: input.severity, source_kind: input.source_kind, reason }, strict: true });
+        await recordAudit({
+            ctx,
+            actorUserId: Number(user.id),
+            action: "reliability_guardian.invariant.create",
+            entityKind: "reliability_invariant",
+            entityId: data.id,
+            payload: { invariant_key: input.invariant_key, severity: input.severity, source_kind: input.source_kind, reason },
+            strict: true,
+        });
         return ctx.response.created({ data });
     }
     async policies(ctx: HttpContext) {
@@ -43,7 +51,21 @@ export default class ReliabilityGuardianController {
         const payload = await ctx.request.validateUsing(reliabilityPolicyValidator);
         const { reason, ...input } = payload;
         const data = await guardian.createPolicy(input, Number(user.id));
-        await recordAudit({ ctx, actorUserId: Number(user.id), action: "reliability_guardian.policy.create", entityKind: "reliability_remediation_policy", entityId: data.id, payload: { policy_key: input.policy_key, action_type: input.action_type, risk_level: input.risk_level, auto_execute: input.auto_execute, reason }, strict: true });
+        await recordAudit({
+            ctx,
+            actorUserId: Number(user.id),
+            action: "reliability_guardian.policy.create",
+            entityKind: "reliability_remediation_policy",
+            entityId: data.id,
+            payload: {
+                policy_key: input.policy_key,
+                action_type: input.action_type,
+                risk_level: input.risk_level,
+                auto_execute: input.auto_execute,
+                reason,
+            },
+            strict: true,
+        });
         return ctx.response.created({ data });
     }
     async observe(ctx: HttpContext) {
@@ -51,7 +73,15 @@ export default class ReliabilityGuardianController {
         await requireReliabilityGuardianPermission(user, "reliability_guardian.invariant.manage");
         const payload = await ctx.request.validateUsing(reliabilityObservationValidator);
         const data = await guardian.recordManualObservation(ctx.params.publicId, payload.value, payload.evidence);
-        await recordAudit({ ctx, actorUserId: Number(user.id), action: "reliability_guardian.observation.record", entityKind: "reliability_invariant", entityId: null, payload: { invariant_public_id: ctx.params.publicId, passed: data.passed }, strict: true });
+        await recordAudit({
+            ctx,
+            actorUserId: Number(user.id),
+            action: "reliability_guardian.observation.record",
+            entityKind: "reliability_invariant",
+            entityId: null,
+            payload: { invariant_public_id: ctx.params.publicId, passed: data.passed },
+            strict: true,
+        });
         return { data };
     }
     async incidents(ctx: HttpContext) {
@@ -73,7 +103,15 @@ export default class ReliabilityGuardianController {
         const user = ctx.auth.getUserOrFail();
         await requireReliabilityGuardianPermission(user, "reliability_guardian.cycle.run");
         const data = await guardian.runCycle(Number(user.id));
-        await recordAudit({ ctx, actorUserId: Number(user.id), action: "reliability_guardian.cycle.run", entityKind: "reliability_guardian", entityId: null, payload: { evaluated: data.evaluated }, strict: true });
+        await recordAudit({
+            ctx,
+            actorUserId: Number(user.id),
+            action: "reliability_guardian.cycle.run",
+            entityKind: "reliability_guardian",
+            entityId: null,
+            payload: { evaluated: data.evaluated },
+            strict: true,
+        });
         return { data };
     }
     async executeRemediation(ctx: HttpContext) {
@@ -82,7 +120,15 @@ export default class ReliabilityGuardianController {
         await requireRecentIdentityStepUp(Number(user.id), "reliability.guardian.remediation.execute");
         const payload = await ctx.request.validateUsing(reliabilityRemediationExecuteValidator);
         const data = await guardian.executeRemediation(ctx.params.publicId, Number(user.id), true);
-        await recordAudit({ ctx, actorUserId: Number(user.id), action: "reliability_guardian.remediation.execute", entityKind: "reliability_incident", entityId: null, payload: { incident_public_id: ctx.params.publicId, reason: payload.reason }, strict: true });
+        await recordAudit({
+            ctx,
+            actorUserId: Number(user.id),
+            action: "reliability_guardian.remediation.execute",
+            entityKind: "reliability_incident",
+            entityId: null,
+            payload: { incident_public_id: ctx.params.publicId, reason: payload.reason },
+            strict: true,
+        });
         return { data };
     }
     async rollbackRemediation(ctx: HttpContext) {
@@ -91,7 +137,15 @@ export default class ReliabilityGuardianController {
         await requireRecentIdentityStepUp(Number(user.id), "reliability.guardian.remediation.rollback");
         const payload = await ctx.request.validateUsing(reliabilityRemediationExecuteValidator);
         const data = await guardian.rollbackRemediation(ctx.params.publicId, Number(user.id));
-        await recordAudit({ ctx, actorUserId: Number(user.id), action: "reliability_guardian.remediation.rollback", entityKind: "reliability_remediation_run", entityId: null, payload: { remediation_public_id: ctx.params.publicId, reason: payload.reason }, strict: true });
+        await recordAudit({
+            ctx,
+            actorUserId: Number(user.id),
+            action: "reliability_guardian.remediation.rollback",
+            entityKind: "reliability_remediation_run",
+            entityId: null,
+            payload: { remediation_public_id: ctx.params.publicId, reason: payload.reason },
+            strict: true,
+        });
         return { data };
     }
 }

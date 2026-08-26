@@ -6,7 +6,12 @@ const jsonRecord = vine.record(vine.any());
 
 export const reliabilityInvariantValidator = vine.compile(
     vine.object({
-        invariant_key: vine.string().trim().minLength(2).maxLength(120).regex(/^[a-z0-9._~-]+$/),
+        invariant_key: vine
+            .string()
+            .trim()
+            .minLength(2)
+            .maxLength(120)
+            .regex(/^[a-z0-9._~-]+$/),
         name: vine.string().trim().minLength(2).maxLength(190),
         domain: vine.string().trim().minLength(2).maxLength(64),
         severity: vine.enum(["info", "warning", "critical"] as const),
@@ -24,7 +29,12 @@ export const reliabilityInvariantValidator = vine.compile(
 
 export const reliabilityPolicyValidator = vine.compile(
     vine.object({
-        policy_key: vine.string().trim().minLength(2).maxLength(120).regex(/^[a-z0-9._~-]+$/),
+        policy_key: vine
+            .string()
+            .trim()
+            .minLength(2)
+            .maxLength(120)
+            .regex(/^[a-z0-9._~-]+$/),
         name: vine.string().trim().minLength(2).maxLength(190),
         action_type: vine.enum(["rollback_configuration", "pause_experiment", "disable_policy"] as const),
         risk_level: vine.enum(["low", "medium", "high", "critical"] as const),
@@ -44,6 +54,4 @@ export const reliabilityObservationValidator = vine.compile(
     }),
 );
 
-export const reliabilityRemediationExecuteValidator = vine.compile(
-    vine.object({ reason }),
-);
+export const reliabilityRemediationExecuteValidator = vine.compile(vine.object({ reason }));

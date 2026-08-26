@@ -48,7 +48,13 @@ export default class extends BaseSchema {
             table.integer("window_seconds").notNullable().defaultTo(900);
             table.integer("min_consecutive_failures").notNullable().defaultTo(2);
             table.integer("recovery_consecutive_passes").notNullable().defaultTo(2);
-            table.bigInteger("remediation_policy_id").unsigned().nullable().references("id").inTable("reliability_remediation_policies").onDelete("SET NULL");
+            table
+                .bigInteger("remediation_policy_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("reliability_remediation_policies")
+                .onDelete("SET NULL");
             table.boolean("enabled").notNullable().defaultTo(true);
             table.bigInteger("created_by_user_id").unsigned().nullable().references("id").inTable("users").onDelete("SET NULL");
             table.timestamps(true, true);
@@ -61,8 +67,20 @@ export default class extends BaseSchema {
             table.bigIncrements("id");
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
             table.uuid("public_id").notNullable().defaultTo(this.raw("gen_random_uuid()"));
-            table.bigInteger("invariant_id").unsigned().notNullable().references("id").inTable("reliability_invariants").onDelete("CASCADE");
-            table.bigInteger("remediation_policy_id").unsigned().nullable().references("id").inTable("reliability_remediation_policies").onDelete("SET NULL");
+            table
+                .bigInteger("invariant_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("reliability_invariants")
+                .onDelete("CASCADE");
+            table
+                .bigInteger("remediation_policy_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("reliability_remediation_policies")
+                .onDelete("SET NULL");
             table.string("status", 20).notNullable().defaultTo("open");
             table.string("severity", 16).notNullable();
             table.integer("failure_count").notNullable().defaultTo(0);
@@ -79,8 +97,20 @@ export default class extends BaseSchema {
         this.schema.createTable("reliability_evaluations", (table) => {
             table.bigIncrements("id");
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("invariant_id").unsigned().notNullable().references("id").inTable("reliability_invariants").onDelete("CASCADE");
-            table.bigInteger("incident_id").unsigned().nullable().references("id").inTable("reliability_incidents").onDelete("SET NULL");
+            table
+                .bigInteger("invariant_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("reliability_invariants")
+                .onDelete("CASCADE");
+            table
+                .bigInteger("incident_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("reliability_incidents")
+                .onDelete("SET NULL");
             table.decimal("observed_value", 18, 6).notNullable();
             table.boolean("passed").notNullable();
             table.string("evidence_ref", 190).nullable();
@@ -93,8 +123,20 @@ export default class extends BaseSchema {
             table.bigIncrements("id");
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
             table.uuid("public_id").notNullable().defaultTo(this.raw("gen_random_uuid()"));
-            table.bigInteger("incident_id").unsigned().notNullable().references("id").inTable("reliability_incidents").onDelete("CASCADE");
-            table.bigInteger("policy_id").unsigned().notNullable().references("id").inTable("reliability_remediation_policies").onDelete("RESTRICT");
+            table
+                .bigInteger("incident_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("reliability_incidents")
+                .onDelete("CASCADE");
+            table
+                .bigInteger("policy_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("reliability_remediation_policies")
+                .onDelete("RESTRICT");
             table.string("action_type", 48).notNullable();
             table.string("status", 20).notNullable().defaultTo("planned");
             table.string("risk_level", 16).notNullable();
@@ -144,7 +186,9 @@ export default class extends BaseSchema {
         for (const check of checks) this.schema.raw(check);
 
         for (const table of TABLES) {
-            this.schema.raw(`ALTER TABLE ${table} ALTER COLUMN tenant_id SET DEFAULT NULLIF(current_setting('app.current_tenant', true), '')::bigint`);
+            this.schema.raw(
+                `ALTER TABLE ${table} ALTER COLUMN tenant_id SET DEFAULT NULLIF(current_setting('app.current_tenant', true), '')::bigint`,
+            );
             this.schema.raw(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`);
             this.schema.raw(`ALTER TABLE ${table} FORCE ROW LEVEL SECURITY`);
             this.schema.raw(`CREATE POLICY ${table}_tenant_isolation ON ${table} USING (${TENANT}) WITH CHECK (${TENANT})`);
