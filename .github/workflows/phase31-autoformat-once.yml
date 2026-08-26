@@ -1,0 +1,42 @@
+name: Phase 31 Autoformat Once
+
+on:
+  push:
+    branches:
+      - feat/phase31-hyperlocal-promise-fulfillment-20260826
+    paths:
+      - ".github/workflows/phase31-autoformat-once.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/phase31-hyperlocal-promise-fulfillment-20260826
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+      - run: npm install --global pnpm@10.32.1
+      - run: pnpm install --frozen-lockfile
+      - name: Apply repository formatter to Phase 31 files
+        run: >-
+          pnpm exec biome check --write
+          apps/api/app/services/fulfillment_promise/capacity_service.ts
+          apps/api/app/services/fulfillment_promise/promise_service.ts
+          apps/api/database/migrations/1802000000002_add_fulfillment_capacity_holds.ts
+          scripts/phase31-materialize.mjs
+          scripts/phase31-policy-materialize.mjs
+          scripts/verify-phase31-fulfillment-promise.mjs
+      - name: Commit formatted source
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/api/app/services/fulfillment_promise/capacity_service.ts apps/api/app/services/fulfillment_promise/promise_service.ts apps/api/database/migrations/1802000000002_add_fulfillment_capacity_holds.ts scripts/phase31-materialize.mjs scripts/phase31-policy-materialize.mjs scripts/verify-phase31-fulfillment-promise.mjs
+          git commit -m "style(phase31): apply repository formatter"
+          git push origin HEAD:feat/phase31-hyperlocal-promise-fulfillment-20260826
