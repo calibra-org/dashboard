@@ -1,0 +1,36 @@
+name: Phase 31 Typefix Once
+
+on:
+  push:
+    branches:
+      - feat/phase31-hyperlocal-promise-fulfillment-20260826
+    paths:
+      - ".github/workflows/phase31-typefix-once.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/phase31-hyperlocal-promise-fulfillment-20260826
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+      - run: npm install --global pnpm@10.32.1
+      - run: pnpm install --frozen-lockfile
+      - run: python scripts/phase31-typefix-once.py
+      - run: pnpm exec biome check --write apps/api/app/services/fulfillment_promise/capacity_service.ts apps/api/app/services/fulfillment_promise/promise_service.ts
+      - run: pnpm --filter @calibra/api run typecheck
+      - name: Commit fixed source
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/api/app/services/fulfillment_promise/capacity_service.ts apps/api/app/services/fulfillment_promise/promise_service.ts
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "fix(phase31): satisfy strict TypeScript invariants"
+          git push origin HEAD:feat/phase31-hyperlocal-promise-fulfillment-20260826
