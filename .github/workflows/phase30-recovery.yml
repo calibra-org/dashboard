@@ -58,6 +58,6 @@ jobs:
           git rm .github/workflows/phase30-recovery.yml
           git config user.name 'calibra-phase-bot'
           git config user.email 'actions@users.noreply.github.com'
-          git add -- apps/admin/src/features/retail-media/RetailMediaWorkspace.tsx apps/api/app/services/retail_media/retail_media_service.ts scripts/phase30-materialize.mjs .github/workflows/phase30-recovery.yml
+          git add -- apps/admin/src/features/retail-media/RetailMediaWorkspace.tsx apps/api/app/services/retail_media/retail_media_service.ts scripts/phase30-materialize.mjs
           git commit -m 'fix(phase30): restore retail media workspace and lint-safe sources'
           git push origin HEAD:feat/phase30-retail-media-creator-20260826
