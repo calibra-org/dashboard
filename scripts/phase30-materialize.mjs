@@ -130,7 +130,7 @@ replaceIfMissing(
     "docs/api/scripts/merge-storefront-spec.js",
     "storefront.phase30.v1.json",
     'const phase29 = JSON.parse(readFileSync(resolve(root, "dist/storefront.phase29.v1.json"), "utf8"));',
-    'const phase29 = JSON.parse(readFileSync(resolve(root, "dist/storefront.phase29.v1.json"), "utf8"));\nconst phase30 = JSON.parse(readFileSync(resolve(root, "dist/storefront.phase29.v1.json"), "utf8"));',
+    'const phase29 = JSON.parse(readFileSync(resolve(root, "dist/storefront.phase29.v1.json"), "utf8"));\nconst phase30 = JSON.parse(readFileSync(resolve(root, "dist/storefront.phase30.v1.json"), "utf8"));',
 );
 replaceIfMissing(
     "docs/api/scripts/merge-storefront-spec.js",
