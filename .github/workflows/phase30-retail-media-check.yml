@@ -1,5 +1,4 @@
 name: Phase 30 Retail Media Integrity
-# Exact-head gate: recovery/materialization must be followed by a normal actor commit before merge.
 
 on:
   pull_request:
@@ -33,7 +32,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: phase30-retail-media-${{ github.ref }}
@@ -81,12 +80,14 @@ jobs:
           PGPASSWORD: calibra
         run: psql -h localhost -U calibra -d calibra -c "CREATE DATABASE calibra_test OWNER calibra;"
 
-      - name: Materialize Phase 30 integration anchors
-        run: node scripts/phase30-materialize.mjs
+      - name: Verify Phase 30 integration is fully materialized
+        run: |
+          node scripts/phase30-materialize.mjs
+          git diff --exit-code
 
-      - name: Format Phase 30 and touched integration files
+      - name: Phase 30 format integrity
         run: >-
-          pnpm exec biome check --write
+          pnpm exec biome check
           apps/api/database/migrations/1801000000000_create_retail_media_creator_os.ts
           apps/api/app/services/retail_media
           apps/api/app/controllers/admin/retail_media_controller.ts
@@ -112,85 +113,6 @@ jobs:
         run: |
           pnpm --filter @calibra/api-docs run build:json:admin-phase30
           pnpm --filter @calibra/api-docs run build:json:storefront-phase30
-
-      - name: Generate SDK contracts
-        run: pnpm --filter @calibra/sdk run codegen
-
-      - name: Commit deterministic Phase 30 materialization
-        if: github.event_name == 'pull_request'
-        shell: bash
-        run: |
-          if [ -z "$(git status --porcelain)" ]; then
-            echo "Phase 30 tree is already materialized at exact head."
-            exit 0
-          fi
-          git config user.name 'calibra-phase-bot'
-          git config user.email 'actions@users.noreply.github.com'
-          git add -- \
-            apps/api/database/migrations/1801000000000_create_retail_media_creator_os.ts \
-            apps/api/app/services/retail_media \
-            apps/api/app/controllers/admin/retail_media_controller.ts \
-            apps/api/app/controllers/retail_media_storefront_controller.ts \
-            apps/api/app/validators/retail_media \
-            apps/api/start/routes/admin_retail_media.ts \
-            apps/api/start/routes/retail_media_storefront.ts \
-            apps/api/start/routes.ts \
-            apps/api/start/events.ts \
-            apps/api/app/services/order_factory.ts \
-            apps/api/tests/unit/phase30_retail_media.spec.ts \
-            apps/admin/src/features/retail-media/RetailMediaWorkspace.tsx \
-            apps/admin/src/lib/queries/retail-media.ts \
-            'apps/admin/src/app/[locale]/(authenticated)/analytics/retail-media/page.tsx' \
-            apps/admin/src/components/Sidebar.tsx \
-            docs/api/reference/openapi/admin.phase30.v1.yaml \
-            docs/api/reference/openapi/storefront.phase30.v1.yaml \
-            docs/api/package.json \
-            docs/api/scripts/merge-admin-spec.js \
-            docs/api/scripts/merge-storefront-spec.js \
-            docs/calibra/phase30-retail-media-conformance-posture.md \
-            packages/sdk/src/generated/admin.d.ts \
-            packages/sdk/src/generated/storefront.d.ts \
-            scripts/phase30-materialize.mjs \
-            scripts/verify-phase30-retail-media.mjs \
-            .github/workflows/phase30-retail-media-check.yml
-          git commit -m 'ci(phase30): materialize integration and sdk contracts'
-          git push origin HEAD:${{ github.head_ref }}
-
-      - name: Upload materialized Phase 30 tree
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: phase30-materialized
-          if-no-files-found: error
-          retention-days: 3
-          path: |
-            apps/api/database/migrations/1801000000000_create_retail_media_creator_os.ts
-            apps/api/app/services/retail_media
-            apps/api/app/controllers/admin/retail_media_controller.ts
-            apps/api/app/controllers/retail_media_storefront_controller.ts
-            apps/api/app/validators/retail_media
-            apps/api/start/routes/admin_retail_media.ts
-            apps/api/start/routes/retail_media_storefront.ts
-            apps/api/start/routes.ts
-            apps/api/start/events.ts
-            apps/api/app/services/order_factory.ts
-            apps/api/tests/unit/phase30_retail_media.spec.ts
-            apps/admin/src/features/retail-media
-            apps/admin/src/lib/queries/retail-media.ts
-            apps/admin/src/app/[locale]/(authenticated)/analytics/retail-media/page.tsx
-            apps/admin/src/components/Sidebar.tsx
-            docs/api/reference/openapi/admin.phase30.v1.yaml
-            docs/api/reference/openapi/storefront.phase30.v1.yaml
-            docs/api/package.json
-            docs/api/scripts/merge-admin-spec.js
-            docs/api/scripts/merge-storefront-spec.js
-            docs/calibra/phase30-retail-media-conformance-posture.md
-            packages/sdk/src/generated/admin.d.ts
-            packages/sdk/src/generated/storefront.d.ts
-            scripts/phase30-materialize.mjs
-            scripts/verify-phase30-retail-media.mjs
-            .github/workflows/phase30-retail-media-check.yml
-
       - name: Phase 30 static contract
         run: node scripts/verify-phase30-retail-media.mjs
       - name: Phase 30 trust and money unit controls
@@ -210,5 +132,5 @@ jobs:
         run: pnpm --filter @calibra/web run typecheck
       - name: Storefront production build
         run: pnpm --filter @calibra/web run build
-      - name: Materialization drift check
+      - name: Final exact-head drift check
         run: git diff --exit-code
