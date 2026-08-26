@@ -1,4 +1,5 @@
 name: Phase 30 Retail Media Integrity
+# Exact-head gate: recovery/materialization must be followed by a normal actor commit before merge.
 
 on:
   pull_request:
