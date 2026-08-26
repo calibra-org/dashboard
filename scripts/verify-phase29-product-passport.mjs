@@ -176,7 +176,9 @@ must(docsPackage.includes("pnpm build:json:storefront-phase29"), "Aggregate stor
 must(mergeAdminSpec.includes("dist/admin.phase29.v1.json"), "Admin OpenAPI merge must load Phase 29 overlay");
 must(mergeAdminSpec.includes("Phase29ProductPassportOverlay"), "Admin OpenAPI merge must namespace Phase 29 overlay");
 must(mergeStorefrontSpec.includes("dist/storefront.phase29.v1.json"), "Storefront OpenAPI merge must load Phase 29 overlay");
-must(mergeStorefrontSpec.includes("phase17, phase29, discovery"), "Storefront OpenAPI merge order must include Phase 29");
+const phase29Index = mergeStorefrontSpec.indexOf("phase29");
+const discoveryIndex = mergeStorefrontSpec.indexOf("discovery", phase29Index);
+must(phase29Index >= 0 && discoveryIndex > phase29Index, "Storefront OpenAPI merge order must include Phase 29 before discovery");
 
 must(!migration.includes('createTable("phase29_products"'), "Phase 29 must not create a parallel product master");
 console.log("PASS Phase 29 Product Provenance & Digital Product Passport full-stack contract integrity gate");

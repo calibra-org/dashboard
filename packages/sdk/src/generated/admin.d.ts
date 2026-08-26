@@ -12121,6 +12121,294 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/retail-media/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminRetailMediaOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/retail-media/advertisers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminRetailMediaAdvertisers"];
+        put?: never;
+        post: operations["adminRetailMediaAdvertiserCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/retail-media/campaigns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminRetailMediaCampaigns"];
+        put?: never;
+        post: operations["adminRetailMediaCampaignCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/retail-media/campaigns/{publicId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["RetailMediaPublicId"];
+            };
+            cookie?: never;
+        };
+        get: operations["adminRetailMediaCampaign"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["adminRetailMediaCampaignUpdate"];
+        trace?: never;
+    };
+    "/api/v1/admin/retail-media/campaigns/{publicId}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["RetailMediaPublicId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminRetailMediaCampaignStatus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/retail-media/campaigns/{publicId}/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["RetailMediaPublicId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminRetailMediaCampaignProductUpsert"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/retail-media/campaigns/{publicId}/placements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["RetailMediaPublicId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminRetailMediaCampaignPlacementUpsert"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/retail-media/campaigns/{publicId}/funding": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["RetailMediaPublicId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminRetailMediaCampaignFund"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/retail-media/placements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminRetailMediaPlacements"];
+        put?: never;
+        post: operations["adminRetailMediaPlacementCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/retail-media/placements/{publicId}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["RetailMediaPublicId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminRetailMediaPlacementStatus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/retail-media/creators": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminRetailMediaCreators"];
+        put?: never;
+        post: operations["adminRetailMediaCreatorCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/retail-media/creators/{publicId}/links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["RetailMediaPublicId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminRetailMediaCreatorLinkCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/retail-media/creators/{publicId}/payouts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["RetailMediaPublicId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminRetailMediaCreatorPayout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/retail-media/commissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminRetailMediaCommissions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/retail-media/measurement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminRetailMediaMeasurement"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/retail-media/access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminRetailMediaAccess"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/retail-media/access/preset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminRetailMediaAccessPreset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -16414,6 +16702,136 @@ export interface components {
             preset: "owner" | "compliance" | "operator" | "viewer";
             reason: string;
         };
+        RetailMediaJsonObject: {
+            [key: string]: unknown;
+        };
+        RetailMediaReason: string;
+        RetailMediaAdvertiserCreateRequest: {
+            name: string;
+            /** @enum {string} */
+            kind: "brand" | "supplier" | "merchant" | "agency";
+            supplier_id?: number;
+            metadata: components["schemas"]["RetailMediaJsonObject"];
+            reason: components["schemas"]["RetailMediaReason"];
+        };
+        RetailMediaCampaignCreateRequest: {
+            /** Format: uuid */
+            advertiser_public_id: string;
+            name: string;
+            objective: string;
+            /** @enum {string} */
+            bid_model: "cpc" | "cpm";
+            default_bid_minor: number;
+            budget_total_minor: number;
+            daily_pacing_cap_minor?: number;
+            currency: string;
+            attribution_window_days: number;
+            experiment_id?: number;
+            holdout_id?: number;
+            /** Format: date-time */
+            starts_at?: string;
+            /** Format: date-time */
+            ends_at?: string;
+            reason: components["schemas"]["RetailMediaReason"];
+        };
+        RetailMediaCampaignUpdateRequest: {
+            version: number;
+            default_bid_minor?: number;
+            budget_total_minor?: number;
+            daily_pacing_cap_minor?: number | null;
+            attribution_window_days?: number;
+            /** Format: date-time */
+            starts_at?: string | null;
+            /** Format: date-time */
+            ends_at?: string | null;
+            reason: components["schemas"]["RetailMediaReason"];
+        };
+        RetailMediaCampaignStatusRequest: {
+            /** @enum {string} */
+            status: "review" | "active" | "paused" | "ended" | "archived";
+            reason: components["schemas"]["RetailMediaReason"];
+        };
+        RetailMediaCampaignProductRequest: {
+            product_id: number;
+            variation_id?: number;
+            relevance_bps: number;
+            quality_bps: number;
+            /** @enum {string} */
+            safety_status: "review" | "approved" | "blocked";
+            custom_bid_minor?: number;
+            reason: components["schemas"]["RetailMediaReason"];
+        };
+        RetailMediaPlacementCreateRequest: {
+            placement_key: string;
+            name: string;
+            /** @enum {string} */
+            surface: "search" | "category" | "product" | "story" | "video" | "collection" | "live" | "email" | "push";
+            disclosure_text: string;
+            minimum_relevance_bps: number;
+            minimum_quality_bps: number;
+            privacy_min_cohort: number;
+            metadata: components["schemas"]["RetailMediaJsonObject"];
+            reason: components["schemas"]["RetailMediaReason"];
+        };
+        RetailMediaPlacementStatusRequest: {
+            /** @enum {string} */
+            status: "active" | "paused" | "archived";
+            reason: components["schemas"]["RetailMediaReason"];
+        };
+        RetailMediaCampaignPlacementRequest: {
+            /** Format: uuid */
+            placement_public_id: string;
+            bid_multiplier_bps: number;
+            creative: components["schemas"]["RetailMediaJsonObject"];
+            creative_source_ref?: string;
+            reason: components["schemas"]["RetailMediaReason"];
+        };
+        RetailMediaFundingRequest: {
+            amount_minor: number;
+            /** @enum {string} */
+            funding_source: "merchant" | "supplier" | "brand";
+            source_ref?: string;
+            idempotency_key: string;
+            metadata: components["schemas"]["RetailMediaJsonObject"];
+            reason: components["schemas"]["RetailMediaReason"];
+        };
+        RetailMediaCreatorCreateRequest: {
+            display_name: string;
+            handle?: string;
+            holding_days: number;
+            disclosure_text: string;
+            payout_ref?: string;
+            metadata: components["schemas"]["RetailMediaJsonObject"];
+            reason: components["schemas"]["RetailMediaReason"];
+        };
+        RetailMediaAffiliateLinkRequest: {
+            /** Format: uuid */
+            campaign_public_id?: string;
+            product_id?: number;
+            variation_id?: number;
+            code: string;
+            commission_bps: number;
+            fixed_commission_minor?: number;
+            attribution_window_days: number;
+            /** Format: date-time */
+            starts_at?: string;
+            /** Format: date-time */
+            ends_at?: string;
+            reason: components["schemas"]["RetailMediaReason"];
+        };
+        RetailMediaPayoutRequest: {
+            amount_minor: number;
+            currency: string;
+            payout_ref: string;
+            idempotency_key: string;
+            reason: components["schemas"]["RetailMediaReason"];
+        };
+        RetailMediaAccessPresetRequest: {
+            user_id: number;
+            /** @enum {string} */
+            preset: "owner" | "growth" | "operator" | "finance" | "analyst" | "viewer";
+            reason: components["schemas"]["RetailMediaReason"];
+        };
     };
     responses: {
         /** @description Unauthorized (401) — the request did not include a valid bearer token, or the token has been revoked. */
@@ -16570,6 +16988,17 @@ export interface components {
                 };
             };
         };
+        /** @description Successful Phase 30 Retail Media response. */
+        RetailMediaOkEnvelope: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": {
+                    data: unknown;
+                };
+            };
+        };
     };
     parameters: {
         /** @description 1-indexed page number. Defaults to 1. */
@@ -16616,6 +17045,7 @@ export interface components {
         DigitalTwinPublicId: string;
         PublicId: string;
         CandidateId: number;
+        RetailMediaPublicId: string;
     };
     requestBodies: {
         ObjectBody: {
@@ -35964,6 +36394,340 @@ export interface operations {
         };
         responses: {
             200: components["responses"]["Phase29ProductPassportOverlayOkEnvelope"];
+        };
+    };
+    adminRetailMediaOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["RetailMediaOkEnvelope"];
+        };
+    };
+    adminRetailMediaAdvertisers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["RetailMediaOkEnvelope"];
+        };
+    };
+    adminRetailMediaAdvertiserCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RetailMediaAdvertiserCreateRequest"];
+            };
+        };
+        responses: {
+            201: components["responses"]["RetailMediaOkEnvelope"];
+        };
+    };
+    adminRetailMediaCampaigns: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["RetailMediaOkEnvelope"];
+        };
+    };
+    adminRetailMediaCampaignCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RetailMediaCampaignCreateRequest"];
+            };
+        };
+        responses: {
+            201: components["responses"]["RetailMediaOkEnvelope"];
+        };
+    };
+    adminRetailMediaCampaign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["RetailMediaPublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["RetailMediaOkEnvelope"];
+        };
+    };
+    adminRetailMediaCampaignUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["RetailMediaPublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RetailMediaCampaignUpdateRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["RetailMediaOkEnvelope"];
+        };
+    };
+    adminRetailMediaCampaignStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["RetailMediaPublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RetailMediaCampaignStatusRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["RetailMediaOkEnvelope"];
+        };
+    };
+    adminRetailMediaCampaignProductUpsert: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["RetailMediaPublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RetailMediaCampaignProductRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["RetailMediaOkEnvelope"];
+        };
+    };
+    adminRetailMediaCampaignPlacementUpsert: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["RetailMediaPublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RetailMediaCampaignPlacementRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["RetailMediaOkEnvelope"];
+        };
+    };
+    adminRetailMediaCampaignFund: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["RetailMediaPublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RetailMediaFundingRequest"];
+            };
+        };
+        responses: {
+            201: components["responses"]["RetailMediaOkEnvelope"];
+        };
+    };
+    adminRetailMediaPlacements: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["RetailMediaOkEnvelope"];
+        };
+    };
+    adminRetailMediaPlacementCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RetailMediaPlacementCreateRequest"];
+            };
+        };
+        responses: {
+            201: components["responses"]["RetailMediaOkEnvelope"];
+        };
+    };
+    adminRetailMediaPlacementStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["RetailMediaPublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RetailMediaPlacementStatusRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["RetailMediaOkEnvelope"];
+        };
+    };
+    adminRetailMediaCreators: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["RetailMediaOkEnvelope"];
+        };
+    };
+    adminRetailMediaCreatorCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RetailMediaCreatorCreateRequest"];
+            };
+        };
+        responses: {
+            201: components["responses"]["RetailMediaOkEnvelope"];
+        };
+    };
+    adminRetailMediaCreatorLinkCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["RetailMediaPublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RetailMediaAffiliateLinkRequest"];
+            };
+        };
+        responses: {
+            201: components["responses"]["RetailMediaOkEnvelope"];
+        };
+    };
+    adminRetailMediaCreatorPayout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: components["parameters"]["RetailMediaPublicId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RetailMediaPayoutRequest"];
+            };
+        };
+        responses: {
+            201: components["responses"]["RetailMediaOkEnvelope"];
+        };
+    };
+    adminRetailMediaCommissions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["RetailMediaOkEnvelope"];
+        };
+    };
+    adminRetailMediaMeasurement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["RetailMediaOkEnvelope"];
+        };
+    };
+    adminRetailMediaAccess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["RetailMediaOkEnvelope"];
+        };
+    };
+    adminRetailMediaAccessPreset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RetailMediaAccessPresetRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["RetailMediaOkEnvelope"];
         };
     };
 }

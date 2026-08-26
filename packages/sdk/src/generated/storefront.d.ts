@@ -2306,6 +2306,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/retail-media/placements/{placementKey}/serve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["storefrontRetailMediaServePlacement"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/retail-media/impressions/{eventId}/click": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["storefrontRetailMediaRecordClick"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/retail-media/affiliate/{code}/touch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["storefrontRetailMediaAffiliateTouch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/storefront/discovery/search": {
         parameters: {
             query?: never;
@@ -3505,6 +3553,46 @@ export interface components {
             to_node_ref: string;
             metadata: components["schemas"]["ProductPassportJsonObject"];
         };
+        RetailMediaStorefrontJsonObject: {
+            [key: string]: unknown;
+        };
+        RetailMediaServeRequest: {
+            /** @description Optional first-party pseudonymous subject hash. Raw PII is forbidden. */
+            subject_hash?: string;
+            consent_context?: string;
+            context: components["schemas"]["RetailMediaStorefrontJsonObject"];
+        };
+        RetailMediaClickRequest: {
+            context: components["schemas"]["RetailMediaStorefrontJsonObject"];
+        };
+        RetailMediaServeResponse: {
+            data: null | components["schemas"]["RetailMediaSponsoredDecision"];
+        };
+        RetailMediaSponsoredDecision: {
+            /** Format: uuid */
+            event_id: string;
+            /** @constant */
+            sponsored: true;
+            disclosure: string;
+            advertiser: {
+                /** Format: uuid */
+                public_id: string;
+                name: string;
+            };
+            campaign: {
+                /** Format: uuid */
+                public_id: string;
+                name: string;
+            };
+            product: {
+                id: number;
+                variation_id: number | null;
+            };
+            creative: components["schemas"]["RetailMediaStorefrontJsonObject"];
+            creative_source_ref?: string | null;
+            /** @enum {string} */
+            ranking_policy: "eligibility_relevance_quality_then_bounded_bid_v1";
+        };
         DiscoverySearchRequest: {
             query: string;
             /** @enum {string} */
@@ -3619,6 +3707,17 @@ export interface components {
             content: {
                 "application/json": {
                     errors: components["schemas"]["BasicMessage"][];
+                };
+            };
+        };
+        /** @description Successful Phase 30 storefront mutation. */
+        RetailMediaStorefrontOkEnvelope: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": {
+                    data: unknown;
                 };
             };
         };
@@ -6605,6 +6704,64 @@ export interface operations {
                 };
                 content?: never;
             };
+        };
+    };
+    storefrontRetailMediaServePlacement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                placementKey: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RetailMediaServeRequest"];
+            };
+        };
+        responses: {
+            /** @description Eligible sponsored placement decision or an empty decision when no candidate passes trust, availability, schedule or budget gates. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetailMediaServeResponse"];
+                };
+            };
+        };
+    };
+    storefrontRetailMediaRecordClick: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RetailMediaClickRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["RetailMediaStorefrontOkEnvelope"];
+        };
+    };
+    storefrontRetailMediaAffiliateTouch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["RetailMediaStorefrontOkEnvelope"];
         };
     };
     storefrontDiscoverySearch: {

@@ -67,6 +67,14 @@ export class OrderFactory {
             order.pricesIncludeTax = await settings.get<boolean>("tax", "prices_include_tax", true);
             order.createdVia = "checkout";
             order.cartHash = String(cart.id);
+            const cartAttributes = (cart.attributes as Record<string, unknown> | null) ?? {};
+            const retailMediaAttribution = cartAttributes.retail_media_attribution;
+            if (retailMediaAttribution && typeof retailMediaAttribution === "object" && !Array.isArray(retailMediaAttribution)) {
+                order.attributes = {
+                    ...((order.attributes as Record<string, unknown> | null) ?? {}),
+                    retail_media_attribution: retailMediaAttribution,
+                };
+            }
             order.itemsTotal = totals.itemsTotal;
             order.itemsTaxTotal = totals.itemsTaxTotal;
             order.shippingTotal = totals.shippingTotal;
