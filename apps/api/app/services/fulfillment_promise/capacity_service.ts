@@ -194,7 +194,7 @@ export async function holdPromiseCapacity(publicId: string | null): Promise<{ he
     for (const item of locked) {
         await trx
             .from("fulfillment_capacity_windows")
-            .where("id", item.window.id)
+            .where("id", Number(item.window.id))
             .update({
                 reserved_units: Number(item.window.reserved_units) + item.units,
                 version: Number(item.window.version) + 1,
@@ -202,7 +202,7 @@ export async function holdPromiseCapacity(publicId: string | null): Promise<{ he
             });
         await trx.table("fulfillment_capacity_holds").insert({
             promise_quote_id: quote.id,
-            capacity_window_id: item.window.id,
+            capacity_window_id: Number(item.window.id),
             units: item.units,
             status: "held",
             idempotency_key: `${publicId}:${item.window.id}`,

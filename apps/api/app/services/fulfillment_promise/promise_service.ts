@@ -563,9 +563,26 @@ async function persistOption(cart: Cart, rate: ShippingRateOption, plan: Promise
         plan.candidates[0].endAt,
     );
     const confidence = Math.min(...plan.candidates.map((candidate) => candidate.confidenceBps));
-    const freshUntil = DateTime.min(...plan.lines.map((line) => DateTime.fromISO(line.inventory_fresh_until, { zone: "utc" })));
-    const observedAt = DateTime.min(...plan.lines.map((line) => DateTime.fromISO(line.inventory_updated_at, { zone: "utc" })));
-    const expiresAt = DateTime.min(now.plus({ minutes: QUOTE_TTL_MINUTES }), freshUntil);
+    const firstLine = plan.lines[0];
+    if (!firstLine) {
+        throw new Exception("Promise plan has no source lines", { status: 409, code: "E_PROMISE_PLAN_EMPTY" });
+    }
+    const freshUntil = plan.lines.slice(1).reduce(
+        (earliest, line) => {
+            const value = DateTime.fromISO(line.inventory_fresh_until, { zone: "utc" });
+            return value < earliest ? value : earliest;
+        },
+        DateTime.fromISO(firstLine.inventory_fresh_until, { zone: "utc" }),
+    );
+    const observedAt = plan.lines.slice(1).reduce(
+        (earliest, line) => {
+            const value = DateTime.fromISO(line.inventory_updated_at, { zone: "utc" });
+            return value < earliest ? value : earliest;
+        },
+        DateTime.fromISO(firstLine.inventory_updated_at, { zone: "utc" }),
+    );
+    const ttlExpiry = now.plus({ minutes: QUOTE_TTL_MINUTES });
+    const expiresAt = freshUntil < ttlExpiry ? freshUntil : ttlExpiry;
     const primary = plan.candidates[0];
     const sources = sourceLocations(plan.lines);
     const constraints = [
@@ -1083,8 +1100,8 @@ export async function upsertServiceProfile(nodePublicId: string, payload: Record
 export async function upsertTransferLane(payload: Record<string, unknown>) {
     const trx = currentTrx();
     const [from, to] = await Promise.all([
-        trx.from("fulfillment_network_nodes").where("public_id", payload.from_node_public_id).first(),
-        trx.from("fulfillment_network_nodes").where("public_id", payload.to_node_public_id).first(),
+        trx.from("fulfillment_network_nodes").where("public_id", String(payload.from_node_public_id)).first(),
+        trx.from("fulfillment_network_nodes").where("public_id", String(payload.to_node_public_id)).first(),
     ]);
     if (!from || !to) throw new Exception("Transfer lane node not found", { status: 404, code: "E_TRANSFER_NODE_NOT_FOUND" });
     if (Number(from.id) === Number(to.id))
