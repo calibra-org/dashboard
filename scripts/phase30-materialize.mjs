@@ -68,9 +68,9 @@ const docsPackagePath = "docs/api/package.json";
 const docsPackage = JSON.parse(read(docsPackagePath));
 const scripts = docsPackage.scripts ?? {};
 scripts["build:json:admin-phase30"] =
-    "redocly bundle reference/openapi/admin.phase30.v1.yaml --output dist/admin.phase30.v1.json";
+    "redocly bundle reference/openapi/admin.phase30.v1.yaml -o dist/admin.phase30.v1.json --ext json";
 scripts["build:json:storefront-phase30"] =
-    "redocly bundle reference/openapi/storefront.phase30.v1.yaml --output dist/storefront.phase30.v1.json";
+    "redocly bundle reference/openapi/storefront.phase30.v1.yaml -o dist/storefront.phase30.v1.json --ext json";
 const adminBuild = String(scripts["build:json:admin"] ?? "");
 if (!adminBuild.includes("build:json:admin-phase30")) {
     const anchor = " && pnpm build:json:admin-merge";
