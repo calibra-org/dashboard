@@ -162,10 +162,7 @@ function sourceFingerprint(lines: PromiseLine[]): string {
     );
 }
 
-async function effectiveVariationId(
-    trx: TransactionClientContract,
-    variationId: number | null,
-): Promise<number | null> {
+async function effectiveVariationId(trx: TransactionClientContract, variationId: number | null): Promise<number | null> {
     if (variationId === null) return null;
     const variation = await trx.from("product_variations").where("id", variationId).select("manage_stock_mode").first();
     return variation?.manage_stock_mode === "parent" ? null : variationId;
@@ -758,9 +755,13 @@ async function assertQuoteMatchesCart(cart: Cart, quote: DbRow): Promise<void> {
         throw new Exception("Promise quote is no longer selectable", { status: 409, code: "E_PROMISE_QUOTE_STATE" });
     }
     const expires = asDateTime(quote.expires_at);
-    if (!expires || expires <= now) throw new Exception("Promise quote expired", { status: 409, code: "E_PROMISE_QUOTE_EXPIRED" });
+    if (!expires || expires <= now)
+        throw new Exception("Promise quote expired", { status: 409, code: "E_PROMISE_QUOTE_EXPIRED" });
     if (stringValue(quote.destination_fingerprint) !== destinationFingerprint(cart)) {
-        throw new Exception("Shipping destination changed after promise creation", { status: 409, code: "E_PROMISE_DESTINATION_CHANGED" });
+        throw new Exception("Shipping destination changed after promise creation", {
+            status: 409,
+            code: "E_PROMISE_DESTINATION_CHANGED",
+        });
     }
     await cart.load("items");
     const currentShape = cart.items.map((item) => ({
@@ -787,9 +788,14 @@ async function assertQuoteMatchesCart(cart: Cart, quote: DbRow): Promise<void> {
     }
     if (stringValue(quote.strategy) === "transfer_then_fulfill") {
         const lanes = parseJson<TransferEvidence[]>(trace.transfer_lanes, []);
-        if (!lanes.length) throw new Exception("Transfer evidence is missing", { status: 409, code: "E_PROMISE_TRANSFER_EVIDENCE" });
+        if (!lanes.length)
+            throw new Exception("Transfer evidence is missing", { status: 409, code: "E_PROMISE_TRANSFER_EVIDENCE" });
         for (const evidence of lanes) {
-            const lane = await currentTrx().from("fulfillment_transfer_lanes").where("id", evidence.lane_id).where("status", "active").first();
+            const lane = await currentTrx()
+                .from("fulfillment_transfer_lanes")
+                .where("id", evidence.lane_id)
+                .where("status", "active")
+                .first();
             if (!lane || !calibratedTransferLane(lane, now)) {
                 throw new Exception("Transfer lane is no longer calibrated", { status: 409, code: "E_PROMISE_TRANSFER_STALE" });
             }
@@ -797,9 +803,19 @@ async function assertQuoteMatchesCart(cart: Cart, quote: DbRow): Promise<void> {
     }
     const requirements = parseJson<Array<{ capacity_window_id: number; units: number }>>(trace.capacity_requirements, []);
     for (const requirement of requirements) {
-        const window = await currentTrx().from("fulfillment_capacity_windows").where("id", requirement.capacity_window_id).first();
-        if (!window || window.status !== "open" || numberValue(window.capacity_units) - numberValue(window.reserved_units) < requirement.units) {
-            throw new Exception("Promise capacity is no longer available", { status: 409, code: "E_PROMISE_CAPACITY_UNAVAILABLE" });
+        const window = await currentTrx()
+            .from("fulfillment_capacity_windows")
+            .where("id", requirement.capacity_window_id)
+            .first();
+        if (
+            !window ||
+            window.status !== "open" ||
+            numberValue(window.capacity_units) - numberValue(window.reserved_units) < requirement.units
+        ) {
+            throw new Exception("Promise capacity is no longer available", {
+                status: 409,
+                code: "E_PROMISE_CAPACITY_UNAVAILABLE",
+            });
         }
     }
 }
@@ -963,10 +979,14 @@ export async function mapInventorySource(nodePublicId: string, inventoryItemId: 
     const node = await trx.from("fulfillment_network_nodes").where("public_id", nodePublicId).where("status", "active").first();
     if (!node) throw new Exception("Fulfillment node not found", { status: 404, code: "E_FULFILLMENT_NODE_NOT_FOUND" });
     const inventory = await trx.from("inventory_items").where("id", inventoryItemId).first();
-    if (!inventory) throw new Exception("Canonical inventory item not found", { status: 404, code: "E_INVENTORY_ITEM_NOT_FOUND" });
+    if (!inventory)
+        throw new Exception("Canonical inventory item not found", { status: 404, code: "E_INVENTORY_ITEM_NOT_FOUND" });
     const existing = await trx.from("fulfillment_node_inventory_sources").where("inventory_item_id", inventoryItemId).first();
     if (existing && Number(existing.node_id) !== Number(node.id)) {
-        throw new Exception("Canonical inventory item already has a source node", { status: 409, code: "E_INVENTORY_SOURCE_ALREADY_MAPPED" });
+        throw new Exception("Canonical inventory item already has a source node", {
+            status: 409,
+            code: "E_INVENTORY_SOURCE_ALREADY_MAPPED",
+        });
     }
     const [row] = await trx
         .table("fulfillment_node_inventory_sources")
@@ -1023,7 +1043,8 @@ export async function upsertServiceProfile(nodePublicId: string, payload: Record
     const node = await trx.from("fulfillment_network_nodes").where("public_id", nodePublicId).first();
     if (!node) throw new Exception("Fulfillment node not found", { status: 404, code: "E_FULFILLMENT_NODE_NOT_FOUND" });
     const rate = await trx.from("shipping_zone_methods").where("id", Number(payload.shipping_zone_method_id)).first();
-    if (!rate) throw new Exception("Canonical shipping method instance not found", { status: 404, code: "E_SHIPPING_METHOD_NOT_FOUND" });
+    if (!rate)
+        throw new Exception("Canonical shipping method instance not found", { status: 404, code: "E_SHIPPING_METHOD_NOT_FOUND" });
     const [row] = await trx
         .table("fulfillment_service_profiles")
         .insert({
@@ -1066,7 +1087,8 @@ export async function upsertTransferLane(payload: Record<string, unknown>) {
         trx.from("fulfillment_network_nodes").where("public_id", payload.to_node_public_id).first(),
     ]);
     if (!from || !to) throw new Exception("Transfer lane node not found", { status: 404, code: "E_TRANSFER_NODE_NOT_FOUND" });
-    if (Number(from.id) === Number(to.id)) throw new Exception("Transfer lane nodes must differ", { status: 422, code: "E_TRANSFER_NODE_SAME" });
+    if (Number(from.id) === Number(to.id))
+        throw new Exception("Transfer lane nodes must differ", { status: 422, code: "E_TRANSFER_NODE_SAME" });
     const [row] = await trx
         .table("fulfillment_transfer_lanes")
         .insert({
@@ -1136,7 +1158,13 @@ export async function syncDeliveryOutcomes() {
         .where("quote.status", "consumed")
         .where("event.status", "delivered")
         .whereNull("outcome.id")
-        .select("quote.id as quote_id", "quote.order_id", "quote.window_end_at", "shipment.id as shipment_id", "event.occurred_at")
+        .select(
+            "quote.id as quote_id",
+            "quote.order_id",
+            "quote.window_end_at",
+            "shipment.id as shipment_id",
+            "event.occurred_at",
+        )
         .orderBy("event.occurred_at", "asc");
     let inserted = 0;
     for (const row of rows) {

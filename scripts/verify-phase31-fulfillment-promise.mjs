@@ -38,18 +38,39 @@ for (const table of [
 ]) {
     must(migration.includes(table), `Phase31 migration missing ${table}`);
 }
-must(migration.includes("inventory_item_id") && migration.includes('inTable("inventory_items")'), "Phase31 must reuse canonical inventory_items");
+must(
+    migration.includes("inventory_item_id") && migration.includes('inTable("inventory_items")'),
+    "Phase31 must reuse canonical inventory_items",
+);
 must(migration.includes('inTable("shipping_zone_methods")'), "Phase31 must reuse canonical shipping zone methods");
 must(migration.includes('inTable("order_shipments")'), "Phase31 outcomes must attach to canonical shipments");
-must(!/createTable\(["'](?:inventory_items|inventory_movements|order_fulfillments|order_shipments|shipping_zone_methods)/.test(migration), "Phase31 introduced a competing canonical truth table");
+must(
+    !/createTable\(["'](?:inventory_items|inventory_movements|order_fulfillments|order_shipments|shipping_zone_methods)/.test(
+        migration,
+    ),
+    "Phase31 introduced a competing canonical truth table",
+);
 must(migration.includes("inventory_stale_after_minutes"), "Inventory freshness budget missing");
-must(migration.includes("calibration_sample_count") && migration.includes("last_calibrated_at"), "Service calibration evidence missing");
+must(
+    migration.includes("calibration_sample_count") && migration.includes("last_calibrated_at"),
+    "Service calibration evidence missing",
+);
 must(migration.includes("capacity_units") && migration.includes("reserved_units"), "Capacity model missing");
 must(migration.includes("destination_fingerprint"), "Promise persistence must avoid raw destination data");
-must(migration.includes("ENABLE ROW LEVEL SECURITY") && migration.includes("FORCE ROW LEVEL SECURITY"), "Phase31 tenant RLS missing");
+must(
+    migration.includes("ENABLE ROW LEVEL SECURITY") && migration.includes("FORCE ROW LEVEL SECURITY"),
+    "Phase31 tenant RLS missing",
+);
 must(splitMigration.includes("strategy = 'single_location'"), "Split/single anchor constraint missing");
 
-for (const marker of ["fulfillment_capacity_holds", "promise_quote_id", "capacity_window_id", "idempotency_key", "expires_at", "FORCE ROW LEVEL SECURITY"]) {
+for (const marker of [
+    "fulfillment_capacity_holds",
+    "promise_quote_id",
+    "capacity_window_id",
+    "idempotency_key",
+    "expires_at",
+    "FORCE ROW LEVEL SECURITY",
+]) {
     must(holdMigration.includes(marker), `Phase31 capacity hold migration missing ${marker}`);
 }
 for (const marker of [
@@ -150,14 +171,25 @@ for (const boundary of [
 ]) {
     must(posture.includes(boundary), `Phase31 posture missing ${boundary}`);
 }
-for (const operationId of ["adminFulfillmentPromiseOverview", "adminFulfillmentPromiseNodes", "adminFulfillmentPromiseAccuracy", "adminFulfillmentPromiseAccessPreset"]) {
+for (const operationId of [
+    "adminFulfillmentPromiseOverview",
+    "adminFulfillmentPromiseNodes",
+    "adminFulfillmentPromiseAccuracy",
+    "adminFulfillmentPromiseAccessPreset",
+]) {
     must(adminOpenapi.includes(operationId), `Admin OpenAPI missing ${operationId}`);
 }
 for (const operationId of ["storefrontFulfillmentPromiseQuote", "storefrontFulfillmentPromiseSelect"]) {
     must(storefrontOpenapi.includes(operationId), `Storefront OpenAPI missing ${operationId}`);
 }
-must(docsPackage.includes('"build:json:admin-phase31"') && docsPackage.includes('"build:json:storefront-phase31"'), "Phase31 docs build scripts missing");
-must(mergeAdmin.includes("dist/admin.phase31.v1.json") && mergeAdmin.includes("Phase31FulfillmentPromiseOverlay"), "Admin OpenAPI merge missing Phase31");
+must(
+    docsPackage.includes('"build:json:admin-phase31"') && docsPackage.includes('"build:json:storefront-phase31"'),
+    "Phase31 docs build scripts missing",
+);
+must(
+    mergeAdmin.includes("dist/admin.phase31.v1.json") && mergeAdmin.includes("Phase31FulfillmentPromiseOverlay"),
+    "Admin OpenAPI merge missing Phase31",
+);
 must(mergeStorefront.includes("phase30, phase31, discovery"), "Storefront OpenAPI order must insert Phase31 before discovery");
 must(workflow.includes("contents: read"), "Phase31 CI must be read-only");
 must(!workflow.includes("git push"), "Phase31 CI must not mutate the PR branch");

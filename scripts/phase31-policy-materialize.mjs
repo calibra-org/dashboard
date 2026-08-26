@@ -1,6 +1,9 @@
 import fs from "node:fs";
 
-const source = fs.readFileSync(new URL("../apps/api/app/services/fulfillment_promise/promise_service.ts", import.meta.url), "utf8");
+const source = fs.readFileSync(
+    new URL("../apps/api/app/services/fulfillment_promise/promise_service.ts", import.meta.url),
+    "utf8",
+);
 const must = (condition, message) => {
     if (!condition) throw new Error(message);
 };
