@@ -36,6 +36,10 @@ The implementation is informed by public industry patterns rather than copied co
 
 These references are design inputs only. Calibra Phase 30 does **not** claim IAB certification, MRC accreditation, FTC legal approval, Amazon/Instacart compatibility, Shopify Collabs compatibility, or any other third-party conformance.
 
+## Release gate
+
+Phase 30 is merge-ready only when the exact PR head passes its dedicated integrity workflow with no materialization or generated-SDK drift, and the repository-wide checks that exercise shared routes, migrations, API contracts and builds have no Phase 30 regression.
+
 ## Explicit non-claims
 
 - No IAB/MRC certification or measurement accreditation is claimed.
