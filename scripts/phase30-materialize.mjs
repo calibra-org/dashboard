@@ -64,6 +64,31 @@ replaceIfMissing(
     '            { href: "/analytics/growth-portfolio", label: "سبد رشد خودکار", icon: TrendingUp },\n            { href: "/analytics/retail-media", label: "رسانه تجاری و سازندگان", icon: BadgePercent },',
 );
 
+replaceIfMissing(
+    "apps/api/app/services/retail_media/retail_media_service.ts",
+    "type EligibleRetailMediaCandidate = RetailMediaRankCandidate &",
+    `export type RetailMediaRankCandidate = {\n    campaign_public_id: string;\n    paid_bid_minor: number;\n    relevance_bps: number;\n    quality_bps: number;\n};`,
+    `export type RetailMediaRankCandidate = {\n    campaign_public_id: string;\n    paid_bid_minor: number;\n    relevance_bps: number;\n    quality_bps: number;\n};\n\ntype EligibleRetailMediaCandidate = RetailMediaRankCandidate &\n    JsonRecord & {\n        campaign_id: number | string;\n        campaign_name: string;\n        bid_model: "cpc" | "cpm";\n        currency: string;\n        product_id: number | string;\n        variation_id: number | string | null;\n        advertiser_public_id: string;\n        advertiser_name: string;\n        creative: unknown;\n        creative_source_ref: string | null;\n    };`,
+);
+replaceIfMissing(
+    "apps/api/app/services/retail_media/retail_media_service.ts",
+    'from.toUTC().toJSDate()',
+    'from.toUTC().toSQL()',
+    'from.toUTC().toJSDate()',
+);
+replaceIfMissing(
+    "apps/api/app/services/retail_media/retail_media_service.ts",
+    "const eligible: EligibleRetailMediaCandidate[] = [];",
+    "const eligible: Array<JsonRecord & { paid_bid_minor: number; relevance_bps: number; quality_bps: number }> = [];",
+    "const eligible: EligibleRetailMediaCandidate[] = [];",
+);
+replaceIfMissing(
+    "apps/api/app/services/retail_media/retail_media_service.ts",
+    "campaign_public_id: String(candidate.campaign_public_id),",
+    `        eligible.push({\n            ...candidate,\n            paid_bid_minor: Math.max(0, paidBid),\n            relevance_bps: asNumber(candidate.relevance_bps),\n            quality_bps: asNumber(candidate.quality_bps),\n        });`,
+    `        eligible.push({\n            ...candidate,\n            campaign_id: candidate.campaign_id,\n            campaign_public_id: String(candidate.campaign_public_id),\n            campaign_name: String(candidate.campaign_name),\n            bid_model: candidate.bid_model as "cpc" | "cpm",\n            currency: String(candidate.currency),\n            product_id: candidate.product_id,\n            variation_id: candidate.variation_id ?? null,\n            advertiser_public_id: String(candidate.advertiser_public_id),\n            advertiser_name: String(candidate.advertiser_name),\n            creative: candidate.creative,\n            creative_source_ref: candidate.creative_source_ref == null ? null : String(candidate.creative_source_ref),\n            paid_bid_minor: Math.max(0, paidBid),\n            relevance_bps: asNumber(candidate.relevance_bps),\n            quality_bps: asNumber(candidate.quality_bps),\n        });`,
+);
+
 const docsPackagePath = "docs/api/package.json";
 const docsPackage = JSON.parse(read(docsPackagePath));
 const scripts = docsPackage.scripts ?? {};
@@ -105,7 +130,7 @@ replaceIfMissing(
     "docs/api/scripts/merge-storefront-spec.js",
     "storefront.phase30.v1.json",
     'const phase29 = JSON.parse(readFileSync(resolve(root, "dist/storefront.phase29.v1.json"), "utf8"));',
-    'const phase29 = JSON.parse(readFileSync(resolve(root, "dist/storefront.phase29.v1.json"), "utf8"));\nconst phase30 = JSON.parse(readFileSync(resolve(root, "dist/storefront.phase30.v1.json"), "utf8"));',
+    'const phase29 = JSON.parse(readFileSync(resolve(root, "dist/storefront.phase29.v1.json"), "utf8"));\nconst phase30 = JSON.parse(readFileSync(resolve(root, "dist/storefront.phase29.v1.json"), "utf8"));',
 );
 replaceIfMissing(
     "docs/api/scripts/merge-storefront-spec.js",
