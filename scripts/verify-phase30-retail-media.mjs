@@ -117,7 +117,9 @@ must(
 const mutationCount = (adminRoutes.match(/\.(post|patch)\(/g) ?? []).length;
 const limiterCount = (adminRoutes.match(/\.use\(adminWriteLimiter\)/g) ?? []).length;
 must(mutationCount === limiterCount, "Every Phase 30 admin mutation must use adminWriteLimiter");
-must(storefrontRoutes.match(/contentPublicLimiter/g)?.length === 3, "Every Phase 30 public mutation must use the public limiter");
+const publicMutationCount = (storefrontRoutes.match(/\.post\(/g) ?? []).length;
+const publicLimiterCount = (storefrontRoutes.match(/\.use\(contentPublicLimiter\)/g) ?? []).length;
+must(publicMutationCount === publicLimiterCount, "Every Phase 30 public mutation must use the public limiter");
 must(storefrontController.includes("retailMediaServeValidator"), "Storefront serve request must be validated");
 must(routes.includes('await import("./routes/admin_retail_media.js")'), "Phase 30 admin routes are not registered");
 must(routes.includes('await import("./routes/retail_media_storefront.js")'), "Phase 30 storefront routes are not registered");
