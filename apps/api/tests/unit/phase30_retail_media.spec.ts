@@ -19,10 +19,7 @@ test.group("Phase 30 retail media trust and money boundaries", () => {
     });
 
     test("rejects direct identifiers and token-like keys at any nested depth", ({ assert }) => {
-        assert.throws(
-            () => assertPrivacySafeContext({ session: { customerEmail: "person@example.test" } }),
-            /restricted field/,
-        );
+        assert.throws(() => assertPrivacySafeContext({ session: { customerEmail: "person@example.test" } }), /restricted field/);
         assert.throws(() => assertPrivacySafeContext({ auth: { accessToken: "secret" } }), /restricted field/);
     });
 

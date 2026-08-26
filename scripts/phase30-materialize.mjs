@@ -72,9 +72,9 @@ replaceIfMissing(
 );
 replaceIfMissing(
     "apps/api/app/services/retail_media/retail_media_service.ts",
-    'from.toUTC().toJSDate()',
-    'from.toUTC().toSQL()',
-    'from.toUTC().toJSDate()',
+    "from.toUTC().toJSDate()",
+    "from.toUTC().toSQL()",
+    "from.toUTC().toJSDate()",
 );
 replaceIfMissing(
     "apps/api/app/services/retail_media/retail_media_service.ts",

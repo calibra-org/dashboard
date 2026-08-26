@@ -48,9 +48,21 @@ emitter.on("order:placed", async ({ order }) => {
 });
 emitter.on("order:completed", async ({ order }) => {
     await CacheInvalidation.customerChanged(order.tenantId, order.customerId as bigint | number | null | undefined);
+    try {
+        const { handleRetailMediaOrderCompleted } = await import("#services/retail_media/event_bridge");
+        await handleRetailMediaOrderCompleted(Number(order.id));
+    } catch (error) {
+        logger.error({ err: error, orderId: Number(order.id) }, "Failed to settle creator commissions after order completion");
+    }
 });
-emitter.on("order:refunded", async ({ tenantId, customerId }) => {
+emitter.on("order:refunded", async ({ tenantId, customerId, refundId }) => {
     await CacheInvalidation.customerChanged(tenantId, customerId);
+    try {
+        const { handleRetailMediaOrderRefunded } = await import("#services/retail_media/event_bridge");
+        await handleRetailMediaOrderRefunded(Number(refundId));
+    } catch (error) {
+        logger.error({ err: error, refundId: Number(refundId) }, "Failed to reconcile creator commission after refund");
+    }
 });
 
 /** Keep the factor ledger in sync with every successfully verified gateway attempt. */

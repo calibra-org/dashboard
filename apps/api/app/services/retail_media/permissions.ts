@@ -26,7 +26,12 @@ const ACCESS_PRESETS: Record<string, readonly RetailMediaPermission[]> = {
         "retail_media.creator.manage",
         "retail_media.measurement.view",
     ],
-    operator: ["retail_media.view", "retail_media.campaign.manage", "retail_media.placement.manage", "retail_media.creator.manage"],
+    operator: [
+        "retail_media.view",
+        "retail_media.campaign.manage",
+        "retail_media.placement.manage",
+        "retail_media.creator.manage",
+    ],
     finance: ["retail_media.view", "retail_media.budget.manage", "retail_media.payout.manage", "retail_media.measurement.view"],
     analyst: ["retail_media.view", "retail_media.measurement.view"],
     viewer: ["retail_media.view"],
@@ -62,7 +67,10 @@ export async function listRetailMediaAccess() {
     const trx = currentTrx();
     const [users, rows] = await Promise.all([
         trx.from("users").where({ tenant_id: tenant, role: "admin" }).whereNull("deleted_at").select("id", "email", "phone"),
-        trx.from("admin_permissions").where("tenant_id", tenant).whereIn("permission", [...RETAIL_MEDIA_PERMISSIONS]),
+        trx
+            .from("admin_permissions")
+            .where("tenant_id", tenant)
+            .whereIn("permission", [...RETAIL_MEDIA_PERMISSIONS]),
     ]);
     return users.map((user) => {
         const map = new Map(
@@ -73,7 +81,9 @@ export async function listRetailMediaAccess() {
         return {
             id: Number(user.id),
             identity: maskedIdentity({ id: Number(user.id), email: user.email, phone: user.phone }),
-            permissions: Object.fromEntries(RETAIL_MEDIA_PERMISSIONS.map((permission) => [permission, map.get(permission) ?? true])),
+            permissions: Object.fromEntries(
+                RETAIL_MEDIA_PERMISSIONS.map((permission) => [permission, map.get(permission) ?? true]),
+            ),
         };
     });
 }

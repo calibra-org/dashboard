@@ -2,9 +2,22 @@ import vine from "@vinejs/vine";
 
 const jsonRecord = vine.record(vine.any());
 const publicId = vine.string().trim().uuid();
-const currency = vine.string().trim().fixedLength(3).regex(/^[A-Za-z]{3}$/);
-const code = vine.string().trim().minLength(4).maxLength(96).regex(/^[A-Za-z0-9][A-Za-z0-9._~-]+$/);
-const subjectHash = vine.string().trim().fixedLength(64).regex(/^[a-fA-F0-9]{64}$/);
+const currency = vine
+    .string()
+    .trim()
+    .fixedLength(3)
+    .regex(/^[A-Za-z]{3}$/);
+const code = vine
+    .string()
+    .trim()
+    .minLength(4)
+    .maxLength(96)
+    .regex(/^[A-Za-z0-9][A-Za-z0-9._~-]+$/);
+const subjectHash = vine
+    .string()
+    .trim()
+    .fixedLength(64)
+    .regex(/^[a-fA-F0-9]{64}$/);
 const reason = vine.string().trim().minLength(3).maxLength(2000);
 const isoDate = vine.string().trim().minLength(10).maxLength(64);
 
@@ -71,7 +84,12 @@ export const retailMediaCampaignProductValidator = vine.compile(
 
 export const retailMediaPlacementCreateValidator = vine.compile(
     vine.object({
-        placement_key: vine.string().trim().minLength(3).maxLength(120).regex(/^[A-Za-z0-9][A-Za-z0-9._~-]+$/),
+        placement_key: vine
+            .string()
+            .trim()
+            .minLength(3)
+            .maxLength(120)
+            .regex(/^[A-Za-z0-9][A-Za-z0-9._~-]+$/),
         name: vine.string().trim().minLength(2).maxLength(190),
         surface: vine.enum(["search", "category", "product", "story", "video", "collection", "live", "email", "push"] as const),
         disclosure_text: vine.string().trim().minLength(2).maxLength(80),

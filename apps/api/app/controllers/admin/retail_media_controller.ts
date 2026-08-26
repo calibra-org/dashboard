@@ -48,7 +48,12 @@ export default class RetailMediaController {
             action: "retail_media.advertiser.create",
             entityKind: "retail_media_advertiser",
             entityId: data.id,
-            payload: { public_id: data.public_id, kind: payload.kind, supplier_id: payload.supplier_id ?? null, reason: payload.reason },
+            payload: {
+                public_id: data.public_id,
+                kind: payload.kind,
+                supplier_id: payload.supplier_id ?? null,
+                reason: payload.reason,
+            },
             strict: true,
         });
         return ctx.response.created({ data });
@@ -158,7 +163,12 @@ export default class RetailMediaController {
             action: "retail_media.placement.create",
             entityKind: "retail_media_placement",
             entityId: data.id,
-            payload: { public_id: data.public_id, surface: payload.surface, disclosure_text: payload.disclosure_text, reason: payload.reason },
+            payload: {
+                public_id: data.public_id,
+                surface: payload.surface,
+                disclosure_text: payload.disclosure_text,
+                reason: payload.reason,
+            },
             strict: true,
         });
         return ctx.response.created({ data });
@@ -192,7 +202,11 @@ export default class RetailMediaController {
             action: "retail_media.campaign.placement.upsert",
             entityKind: "retail_media_campaign_placement",
             entityId: data?.id ?? null,
-            payload: { campaign_public_id: ctx.params.publicId, placement_public_id: payload.placement_public_id, reason: payload.reason },
+            payload: {
+                campaign_public_id: ctx.params.publicId,
+                placement_public_id: payload.placement_public_id,
+                reason: payload.reason,
+            },
             strict: true,
         });
         return { data };

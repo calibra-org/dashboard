@@ -101,6 +101,20 @@ export type RetailMediaRankCandidate = {
     quality_bps: number;
 };
 
+type EligibleRetailMediaCandidate = RetailMediaRankCandidate &
+    JsonRecord & {
+        campaign_id: number | string;
+        campaign_name: string;
+        bid_model: "cpc" | "cpm";
+        currency: string;
+        product_id: number | string;
+        variation_id: number | string | null;
+        advertiser_public_id: string;
+        advertiser_name: string;
+        creative: unknown;
+        creative_source_ref: string | null;
+    };
+
 /**
  * Rank ONLY candidates that already passed schedule, safety, catalog, availability and budget gates.
  * Bid is deliberately capped to a 10% percentile signal so money cannot buy past relevance/quality.
@@ -155,7 +169,7 @@ async function campaignSpend(campaignId: number, from?: DateTime) {
         .from("retail_media_budget_ledger")
         .where({ tenant_id: tenantId(), campaign_id: campaignId })
         .whereIn("entry_kind", ["spend", "refund", "adjustment"]);
-    if (from) query = query.where("occurred_at", ">=", from.toUTC().toSQL());
+    if (from) query = query.where("occurred_at", ">=", from.toUTC().toJSDate());
     const row = await query.sum({ total: "amount_minor" }).first();
     return asNumber(row?.total);
 }
@@ -767,7 +781,7 @@ export async function servePlacement(
         )
         .limit(200);
 
-    const eligible: Array<JsonRecord & { paid_bid_minor: number; relevance_bps: number; quality_bps: number }> = [];
+    const eligible: EligibleRetailMediaCandidate[] = [];
     for (const candidate of candidates) {
         const available = await productAvailable(
             Number(candidate.product_id),
@@ -792,6 +806,17 @@ export async function servePlacement(
         const paidBid = Math.floor((baseBid * asNumber(candidate.bid_multiplier_bps)) / 10000);
         eligible.push({
             ...candidate,
+            campaign_id: candidate.campaign_id,
+            campaign_public_id: String(candidate.campaign_public_id),
+            campaign_name: String(candidate.campaign_name),
+            bid_model: candidate.bid_model as "cpc" | "cpm",
+            currency: String(candidate.currency),
+            product_id: candidate.product_id,
+            variation_id: candidate.variation_id ?? null,
+            advertiser_public_id: String(candidate.advertiser_public_id),
+            advertiser_name: String(candidate.advertiser_name),
+            creative: candidate.creative,
+            creative_source_ref: candidate.creative_source_ref == null ? null : String(candidate.creative_source_ref),
             paid_bid_minor: Math.max(0, paidBid),
             relevance_bps: asNumber(candidate.relevance_bps),
             quality_bps: asNumber(candidate.quality_bps),

@@ -40,14 +40,17 @@ for (const table of [
     "retail_media_affiliate_links",
     "retail_media_commission_ledger",
 ]) {
-    must(migration.includes(`createTable(\"${table}\"`), `Phase 30 table missing: ${table}`);
+    must(migration.includes(`createTable("${table}"`), `Phase 30 table missing: ${table}`);
 }
 for (const marker of ["ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY", "app.current_tenant"]) {
     must(migration.includes(marker), `Phase 30 tenant isolation missing: ${marker}`);
 }
 must(migration.includes("privacy_min_cohort >= 20"), "Privacy cohort must have a hard database floor of 20");
 must(migration.includes("entry_kind = 'refund' AND amount_minor < 0"), "Budget refund ledger entries must be negative");
-must(migration.includes("entry_kind IN ('refund_adjustment','payout') AND amount_minor < 0"), "Creator refund/payout ledger entries must be negative");
+must(
+    migration.includes("entry_kind IN ('refund_adjustment','payout') AND amount_minor < 0"),
+    "Creator refund/payout ledger entries must be negative",
+);
 must(migration.includes("retail_media_budget_idempotency_unique"), "Budget ledger requires idempotency uniqueness");
 must(migration.includes("retail_media_commission_idempotency_unique"), "Commission ledger requires idempotency uniqueness");
 must(!migration.includes('createTable("phase30_products"'), "Phase 30 must not create a parallel product master");
@@ -99,10 +102,18 @@ for (const permission of [
 }
 must(permissions.includes("Self lockout is forbidden"), "Phase 30 access changes must prevent self-lockout");
 must(controller.includes("strict: true"), "Every Phase 30 admin mutation requires strict audit logging");
-for (const action of ["retail_media.campaign.status", "retail_media.campaign.fund", "retail_media.creator.payout.record", "retail_media.access.preset.apply"]) {
+for (const action of [
+    "retail_media.campaign.status",
+    "retail_media.campaign.fund",
+    "retail_media.creator.payout.record",
+    "retail_media.access.preset.apply",
+]) {
     must(controller.includes(action), `Sensitive Phase 30 audit action missing: ${action}`);
 }
-must(controller.match(/requireRecentIdentityStepUp/g)?.length >= 4, "Sensitive money/access/state changes require recent identity step-up");
+must(
+    controller.match(/requireRecentIdentityStepUp/g)?.length >= 4,
+    "Sensitive money/access/state changes require recent identity step-up",
+);
 const mutationCount = (adminRoutes.match(/\.(post|patch)\(/g) ?? []).length;
 const limiterCount = (adminRoutes.match(/\.use\(adminWriteLimiter\)/g) ?? []).length;
 must(mutationCount === limiterCount, "Every Phase 30 admin mutation must use adminWriteLimiter");
@@ -112,16 +123,22 @@ must(routes.includes('await import("./routes/admin_retail_media.js")'), "Phase 3
 must(routes.includes('await import("./routes/retail_media_storefront.js")'), "Phase 30 storefront routes are not registered");
 must(events.includes("handleRetailMediaOrderCompleted"), "Creator settlement must hook canonical order completion");
 must(events.includes("handleRetailMediaOrderRefunded"), "Creator refund reconciliation must hook canonical refund event");
-must(orderFactory.includes("retail_media_attribution"), "Affiliate attribution must snapshot through canonical Cart -> Order attributes");
+must(
+    orderFactory.includes("retail_media_attribution"),
+    "Affiliate attribution must snapshot through canonical Cart -> Order attributes",
+);
 
 for (const label of ["نمای کلی", "کمپین‌ها", "جایگاه‌ها", "سازندگان", "اندازه‌گیری", "دسترسی"]) {
     must(workspace.includes(label), `Phase 30 workspace tab missing: ${label}`);
 }
-must(workspace.includes("ResponsiveContainer") && workspace.includes("BarChart"), "Phase 30 measurement requires real responsive charts");
+must(
+    workspace.includes("ResponsiveContainer") && workspace.includes("BarChart"),
+    "Phase 30 measurement requires real responsive charts",
+);
 must(workspace.includes("HelperTooltip"), "Phase 30 workspace must explain non-obvious controls");
 must(workspace.includes('dir="rtl"'), "Phase 30 workspace must preserve Persian RTL layout");
 must(!workspace.includes("Math.random"), "Phase 30 UI must not synthesize fake metrics");
-must(sidebar.includes('/analytics/retail-media'), "Phase 30 must have one discoverable analytics navigation entry");
+must(sidebar.includes("/analytics/retail-media"), "Phase 30 must have one discoverable analytics navigation entry");
 
 const adminOperations = [
     "adminRetailMediaOverview",
@@ -151,12 +168,22 @@ for (const operationId of adminOperations) {
     must(adminOpenapi.includes(`operationId: ${operationId}`), `Admin Phase 30 OpenAPI operation missing: ${operationId}`);
     must(generatedAdminSdk.includes(operationId), `Generated Admin SDK operation missing: ${operationId}`);
 }
-for (const operationId of ["storefrontRetailMediaServePlacement", "storefrontRetailMediaRecordClick", "storefrontRetailMediaAffiliateTouch"]) {
+for (const operationId of [
+    "storefrontRetailMediaServePlacement",
+    "storefrontRetailMediaRecordClick",
+    "storefrontRetailMediaAffiliateTouch",
+]) {
     must(storefrontOpenapi.includes(`operationId: ${operationId}`), `Storefront Phase 30 operation missing: ${operationId}`);
     must(generatedStorefrontSdk.includes(operationId), `Generated Storefront SDK operation missing: ${operationId}`);
 }
-must(storefrontOpenapi.includes("sponsored: { const: true }"), "Storefront contract must require explicit sponsored disclosure state");
-must(storefrontOpenapi.includes("subject_hash") && !storefrontOpenapi.includes("customer_email"), "Storefront measurement contract must remain pseudonymous");
+must(
+    storefrontOpenapi.includes("sponsored: { const: true }"),
+    "Storefront contract must require explicit sponsored disclosure state",
+);
+must(
+    storefrontOpenapi.includes("subject_hash") && !storefrontOpenapi.includes("customer_email"),
+    "Storefront measurement contract must remain pseudonymous",
+);
 must(docsPackage.includes('"build:json:admin-phase30"'), "Phase 30 admin OpenAPI build script is missing");
 must(docsPackage.includes('"build:json:storefront-phase30"'), "Phase 30 storefront OpenAPI build script is missing");
 must(
@@ -168,9 +195,20 @@ must(
     "Aggregate storefront OpenAPI build must include Phase 30 before merge",
 );
 must(!docsPackageJson.scripts?.["build:json:admin-parts"], "Phase 30 must not invent a non-canonical admin-parts aggregate");
-must(!docsPackageJson.scripts?.["build:json:storefront-parts"], "Phase 30 must not invent a non-canonical storefront-parts aggregate");
-must(mergeAdminSpec.includes("dist/admin.phase30.v1.json") && mergeAdminSpec.includes("Phase30RetailMediaOverlay"), "Admin OpenAPI merge is missing Phase 30");
-must(mergeStorefrontSpec.includes('const phase30 = JSON.parse(readFileSync(resolve(root, "dist/storefront.phase30.v1.json"), "utf8"));'), "Storefront Phase 30 merge must load the Phase 30 bundle, not another phase");
+must(
+    !docsPackageJson.scripts?.["build:json:storefront-parts"],
+    "Phase 30 must not invent a non-canonical storefront-parts aggregate",
+);
+must(
+    mergeAdminSpec.includes("dist/admin.phase30.v1.json") && mergeAdminSpec.includes("Phase30RetailMediaOverlay"),
+    "Admin OpenAPI merge is missing Phase 30",
+);
+must(
+    mergeStorefrontSpec.includes(
+        'const phase30 = JSON.parse(readFileSync(resolve(root, "dist/storefront.phase30.v1.json"), "utf8"));',
+    ),
+    "Storefront Phase 30 merge must load the Phase 30 bundle, not another phase",
+);
 must(mergeStorefrontSpec.includes("phase29, phase30, discovery"), "Storefront merge order must include Phase 30 exactly once");
 
 for (const statement of [

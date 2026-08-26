@@ -35,7 +35,13 @@ export default class extends BaseSchema {
             table.bigIncrements("id");
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
             table.uuid("public_id").notNullable().defaultTo(this.raw("gen_random_uuid()"));
-            table.bigInteger("advertiser_id").unsigned().notNullable().references("id").inTable("retail_media_advertisers").onDelete("RESTRICT");
+            table
+                .bigInteger("advertiser_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("retail_media_advertisers")
+                .onDelete("RESTRICT");
             table.string("name", 190).notNullable();
             table.string("objective", 48).notNullable().defaultTo("incremental_contribution");
             table.string("status", 16).notNullable().defaultTo("draft");
@@ -46,7 +52,13 @@ export default class extends BaseSchema {
             table.string("currency", 3).notNullable().defaultTo("IRR");
             table.integer("attribution_window_days").notNullable().defaultTo(7);
             table.bigInteger("experiment_id").unsigned().nullable().references("id").inTable("experiments").onDelete("SET NULL");
-            table.bigInteger("holdout_id").unsigned().nullable().references("id").inTable("experiment_holdouts").onDelete("SET NULL");
+            table
+                .bigInteger("holdout_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("experiment_holdouts")
+                .onDelete("SET NULL");
             table.timestamp("starts_at", { useTz: true }).nullable();
             table.timestamp("ends_at", { useTz: true }).nullable();
             table.integer("version").notNullable().defaultTo(1);
@@ -60,9 +72,21 @@ export default class extends BaseSchema {
         this.schema.createTable("retail_media_campaign_products", (table) => {
             table.bigIncrements("id");
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("campaign_id").unsigned().notNullable().references("id").inTable("retail_media_campaigns").onDelete("CASCADE");
+            table
+                .bigInteger("campaign_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("retail_media_campaigns")
+                .onDelete("CASCADE");
             table.bigInteger("product_id").unsigned().notNullable().references("id").inTable("products").onDelete("CASCADE");
-            table.bigInteger("variation_id").unsigned().nullable().references("id").inTable("product_variations").onDelete("CASCADE");
+            table
+                .bigInteger("variation_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("product_variations")
+                .onDelete("CASCADE");
             table.integer("relevance_bps").notNullable();
             table.integer("quality_bps").notNullable();
             table.string("safety_status", 16).notNullable().defaultTo("review");
@@ -96,8 +120,20 @@ export default class extends BaseSchema {
         this.schema.createTable("retail_media_campaign_placements", (table) => {
             table.bigIncrements("id");
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("campaign_id").unsigned().notNullable().references("id").inTable("retail_media_campaigns").onDelete("CASCADE");
-            table.bigInteger("placement_id").unsigned().notNullable().references("id").inTable("retail_media_placements").onDelete("CASCADE");
+            table
+                .bigInteger("campaign_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("retail_media_campaigns")
+                .onDelete("CASCADE");
+            table
+                .bigInteger("placement_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("retail_media_placements")
+                .onDelete("CASCADE");
             table.string("status", 16).notNullable().defaultTo("active");
             table.integer("bid_multiplier_bps").notNullable().defaultTo(10000);
             table.jsonb("creative").notNullable().defaultTo(this.raw("'{}'::jsonb"));
@@ -109,7 +145,13 @@ export default class extends BaseSchema {
         this.schema.createTable("retail_media_budget_ledger", (table) => {
             table.bigIncrements("id");
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("campaign_id").unsigned().notNullable().references("id").inTable("retail_media_campaigns").onDelete("CASCADE");
+            table
+                .bigInteger("campaign_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("retail_media_campaigns")
+                .onDelete("CASCADE");
             table.string("entry_kind", 24).notNullable();
             table.bigInteger("amount_minor").notNullable();
             table.string("currency", 3).notNullable();
@@ -129,10 +171,28 @@ export default class extends BaseSchema {
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
             table.uuid("event_id").notNullable();
             table.uuid("parent_event_id").nullable();
-            table.bigInteger("campaign_id").unsigned().notNullable().references("id").inTable("retail_media_campaigns").onDelete("CASCADE");
-            table.bigInteger("placement_id").unsigned().nullable().references("id").inTable("retail_media_placements").onDelete("SET NULL");
+            table
+                .bigInteger("campaign_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("retail_media_campaigns")
+                .onDelete("CASCADE");
+            table
+                .bigInteger("placement_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("retail_media_placements")
+                .onDelete("SET NULL");
             table.bigInteger("product_id").unsigned().nullable().references("id").inTable("products").onDelete("SET NULL");
-            table.bigInteger("variation_id").unsigned().nullable().references("id").inTable("product_variations").onDelete("SET NULL");
+            table
+                .bigInteger("variation_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("product_variations")
+                .onDelete("SET NULL");
             table.string("event_type", 20).notNullable();
             table.string("subject_hash", 64).nullable();
             table.string("consent_context", 32).nullable();
@@ -142,7 +202,9 @@ export default class extends BaseSchema {
             table.timestamp("occurred_at", { useTz: true }).notNullable();
             table.timestamp("received_at", { useTz: true }).notNullable().defaultTo(this.now());
             table.unique(["tenant_id", "event_id"], { indexName: "retail_media_delivery_event_unique" });
-            table.unique(["tenant_id", "parent_event_id", "event_type"], { indexName: "retail_media_delivery_parent_event_unique" });
+            table.unique(["tenant_id", "parent_event_id", "event_type"], {
+                indexName: "retail_media_delivery_parent_event_unique",
+            });
             table.index(["tenant_id", "campaign_id", "event_type", "occurred_at"], "retail_media_delivery_campaign_idx");
         });
 
@@ -167,10 +229,28 @@ export default class extends BaseSchema {
             table.bigIncrements("id");
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
             table.uuid("public_id").notNullable().defaultTo(this.raw("gen_random_uuid()"));
-            table.bigInteger("creator_id").unsigned().notNullable().references("id").inTable("retail_media_creators").onDelete("CASCADE");
-            table.bigInteger("campaign_id").unsigned().nullable().references("id").inTable("retail_media_campaigns").onDelete("SET NULL");
+            table
+                .bigInteger("creator_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("retail_media_creators")
+                .onDelete("CASCADE");
+            table
+                .bigInteger("campaign_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("retail_media_campaigns")
+                .onDelete("SET NULL");
             table.bigInteger("product_id").unsigned().nullable().references("id").inTable("products").onDelete("SET NULL");
-            table.bigInteger("variation_id").unsigned().nullable().references("id").inTable("product_variations").onDelete("SET NULL");
+            table
+                .bigInteger("variation_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("product_variations")
+                .onDelete("SET NULL");
             table.string("code", 96).notNullable();
             table.integer("commission_bps").notNullable().defaultTo(0);
             table.bigInteger("fixed_commission_minor").nullable();
@@ -186,10 +266,28 @@ export default class extends BaseSchema {
         this.schema.createTable("retail_media_commission_ledger", (table) => {
             table.bigIncrements("id");
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
-            table.bigInteger("creator_id").unsigned().notNullable().references("id").inTable("retail_media_creators").onDelete("RESTRICT");
-            table.bigInteger("affiliate_link_id").unsigned().nullable().references("id").inTable("retail_media_affiliate_links").onDelete("SET NULL");
+            table
+                .bigInteger("creator_id")
+                .unsigned()
+                .notNullable()
+                .references("id")
+                .inTable("retail_media_creators")
+                .onDelete("RESTRICT");
+            table
+                .bigInteger("affiliate_link_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("retail_media_affiliate_links")
+                .onDelete("SET NULL");
             table.bigInteger("order_id").unsigned().nullable().references("id").inTable("orders").onDelete("SET NULL");
-            table.bigInteger("order_line_item_id").unsigned().nullable().references("id").inTable("order_line_items").onDelete("SET NULL");
+            table
+                .bigInteger("order_line_item_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("order_line_items")
+                .onDelete("SET NULL");
             table.bigInteger("refund_id").unsigned().nullable().references("id").inTable("order_refunds").onDelete("SET NULL");
             table.string("entry_kind", 24).notNullable();
             table.bigInteger("amount_minor").notNullable();
@@ -234,7 +332,9 @@ export default class extends BaseSchema {
         for (const sql of checks) this.schema.raw(sql);
 
         for (const table of TABLES) {
-            this.schema.raw(`ALTER TABLE ${table} ALTER COLUMN tenant_id SET DEFAULT NULLIF(current_setting('app.current_tenant', true), '')::bigint`);
+            this.schema.raw(
+                `ALTER TABLE ${table} ALTER COLUMN tenant_id SET DEFAULT NULLIF(current_setting('app.current_tenant', true), '')::bigint`,
+            );
             this.schema.raw(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`);
             this.schema.raw(`ALTER TABLE ${table} FORCE ROW LEVEL SECURITY`);
             this.schema.raw(`CREATE POLICY ${table}_tenant_isolation ON ${table} USING (${TENANT}) WITH CHECK (${TENANT})`);

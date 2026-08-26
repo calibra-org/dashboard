@@ -98,6 +98,7 @@ const groups: NavGroup[] = [
             { href: "/analytics/scenario-war-room", label: "اتاق جنگ سناریو", icon: ChartNoAxesCombined },
             { href: "/analytics/pre-production-lab", label: "آزمایشگاه پیش‌انتشار", icon: Bug },
             { href: "/analytics/growth-portfolio", label: "سبد رشد خودکار", icon: TrendingUp },
+            { href: "/analytics/retail-media", label: "رسانه تجاری و سازندگان", icon: BadgePercent },
             { href: "/analytics/merchant-memory", label: "حافظه سازمانی", icon: Library },
             { href: "/experiments", label: "آزمایشگاه آزمایش‌ها", icon: Sparkles },
             { href: "/planning", label: "Planning OS", icon: CalendarClock },
