@@ -71,7 +71,14 @@ replaceIfMissing(
     'description="کنترل یکپارچه تبلیغات بومی، بودجه و pacing، جایگاه‌های Sponsored، همکاری سازندگان و سنجش incrementality با guardrailهای اعتماد."',
     'subtitle="کنترل یکپارچه تبلیغات بومی، بودجه و pacing، جایگاه‌های Sponsored، همکاری سازندگان و سنجش incrementality با guardrailهای اعتماد."',
 );
-for (const setter of ["setAdvertiserId", "setSelectedCampaign", "setPlacementId", "setSurface", "setCreatorId", "setCampaignId"]) {
+for (const setter of [
+    "setAdvertiserId",
+    "setSelectedCampaign",
+    "setPlacementId",
+    "setSurface",
+    "setCreatorId",
+    "setCampaignId",
+]) {
     replaceIfMissing(
         workspacePath,
         `onValueChange={(value) => ${setter}(String(value))}`,
@@ -79,12 +86,7 @@ for (const setter of ["setAdvertiserId", "setSelectedCampaign", "setPlacementId"
         `onValueChange={(value) => ${setter}(String(value))}`,
     );
 }
-replaceIfMissing(
-    workspacePath,
-    "[row.id]: String(value)",
-    "[row.id]: value",
-    "[row.id]: String(value)",
-);
+replaceIfMissing(workspacePath, "[row.id]: String(value)", "[row.id]: value", "[row.id]: String(value)");
 
 replaceIfMissing(
     "apps/api/app/services/retail_media/retail_media_service.ts",

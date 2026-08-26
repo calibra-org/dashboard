@@ -151,7 +151,7 @@ export function RetailMediaWorkspace() {
         <div className="space-y-6" dir="rtl">
             <PageHeader
                 title="رسانه تجاری و اقتصاد سازندگان"
-                description="کنترل یکپارچه تبلیغات بومی، بودجه و pacing، جایگاه‌های Sponsored، همکاری سازندگان و سنجش incrementality با guardrailهای اعتماد."
+                subtitle="کنترل یکپارچه تبلیغات بومی، بودجه و pacing، جایگاه‌های Sponsored، همکاری سازندگان و سنجش incrementality با guardrailهای اعتماد."
             />
 
             <Card className="relative overflow-hidden border-border/70 bg-gradient-to-br from-primary/10 via-background to-muted/30 p-6 shadow-sm">
@@ -371,7 +371,7 @@ function CampaignsTab({
                             </Button>
                         </div>
                         <Field label="تبلیغ‌دهنده">
-                            <Select value={advertiserId} onValueChange={setAdvertiserId}>
+                            <Select value={advertiserId} onValueChange={(value) => setAdvertiserId(String(value))}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="انتخاب" />
                                 </SelectTrigger>
@@ -424,7 +424,7 @@ function CampaignsTab({
                     </p>
                     <div className="mt-4 grid gap-4 sm:grid-cols-2">
                         <Field label="کمپین">
-                            <Select value={selectedCampaign} onValueChange={setSelectedCampaign}>
+                            <Select value={selectedCampaign} onValueChange={(value) => setSelectedCampaign(String(value))}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="انتخاب" />
                                 </SelectTrigger>
@@ -464,7 +464,7 @@ function CampaignsTab({
                             </Button>
                         </div>
                         <Field label="جایگاه">
-                            <Select value={placementId} onValueChange={setPlacementId}>
+                            <Select value={placementId} onValueChange={(value) => setPlacementId(String(value))}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="انتخاب" />
                                 </SelectTrigger>
@@ -629,7 +629,7 @@ function PlacementsTab({
                         <Input value={name} onChange={(e) => setName(e.target.value)} />
                     </Field>
                     <Field label="سطح">
-                        <Select value={surface} onValueChange={setSurface}>
+                        <Select value={surface} onValueChange={(value) => setSurface(String(value))}>
                             <SelectTrigger>
                                 <SelectValue />
                             </SelectTrigger>
@@ -753,7 +753,7 @@ function CreatorsTab({
                     <h3 className="font-semibold">لینک همکاری / پرداخت</h3>
                     <div className="mt-4 grid gap-4 sm:grid-cols-2">
                         <Field label="سازنده">
-                            <Select value={creatorId} onValueChange={setCreatorId}>
+                            <Select value={creatorId} onValueChange={(value) => setCreatorId(String(value))}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="انتخاب" />
                                 </SelectTrigger>
@@ -770,7 +770,7 @@ function CreatorsTab({
                             <Input value={code} onChange={(e) => setCode(e.target.value)} />
                         </Field>
                         <Field label="کمپین (اختیاری)">
-                            <Select value={campaignId} onValueChange={setCampaignId}>
+                            <Select value={campaignId} onValueChange={(value) => setCampaignId(String(value))}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="بدون کمپین" />
                                 </SelectTrigger>
@@ -995,7 +995,9 @@ function AccessTab({ rows, run }: { rows: RetailMediaAccessRow[]; run: (path: st
                             <div className="flex gap-2">
                                 <Select
                                     value={presetByUser[row.id] ?? "viewer"}
-                                    onValueChange={(value) => setPresetByUser((current) => ({ ...current, [row.id]: value }))}
+                                    onValueChange={(value) =>
+                                        setPresetByUser((current) => ({ ...current, [row.id]: String(value) }))
+                                    }
                                 >
                                     <SelectTrigger className="w-36">
                                         <SelectValue />
