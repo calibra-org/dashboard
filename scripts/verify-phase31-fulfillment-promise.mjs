@@ -24,6 +24,7 @@ const storefrontOpenapi = read("docs/api/reference/openapi/storefront.phase31.v1
 const docsPackage = read("docs/api/package.json");
 const mergeAdmin = read("docs/api/scripts/merge-admin-spec.js");
 const mergeStorefront = read("docs/api/scripts/merge-storefront-spec.js");
+const workflow = read(".github/workflows/phase31-fulfillment-promise-check.yml");
 
 for (const table of [
     "fulfillment_network_nodes",
@@ -51,20 +52,36 @@ must(splitMigration.includes("strategy = 'single_location'"), "Split/single anch
 for (const marker of ["fulfillment_capacity_holds", "promise_quote_id", "capacity_window_id", "idempotency_key", "expires_at", "FORCE ROW LEVEL SECURITY"]) {
     must(holdMigration.includes(marker), `Phase31 capacity hold migration missing ${marker}`);
 }
-for (const marker of ["forUpdate()", "capacity_units", "reserved_units", "holdPromiseCapacity", "releasePromiseCapacity", "commitPromiseCapacity", "releaseExpiredCapacityHolds", "E_PROMISE_CAPACITY_EXHAUSTED"]) {
+for (const marker of [
+    "forUpdate()",
+    "capacity_units",
+    "reserved_units",
+    "capacity_requirements",
+    "holdPromiseCapacity",
+    "releasePromiseCapacity",
+    "commitPromiseCapacity",
+    "releaseExpiredCapacityHolds",
+    "E_PROMISE_CAPACITY_EXHAUSTED",
+]) {
     must(capacity.includes(marker), `Phase31 capacity concurrency boundary missing ${marker}`);
 }
+must(capacity.includes("const locked:"), "Phase31 must validate all required capacity windows before mutating reservations");
 must(publicController.includes("releaseExpiredCapacityHolds"), "Expired capacity must be reclaimed before storefront quoting");
 
 for (const marker of [
     "enumerateShippingRates",
-    "inventory_items",
-    "inventory_stale_after_minutes",
+    "inventory_items as inventory",
+    "inventoryAlternativesForLine",
     "isInventoryFreshAt",
     "isCalibratedServiceProfile",
-    "fulfillment_capacity_windows",
+    "MAX_SPLIT_COMBINATIONS",
+    "split_shipment",
+    "transfer_then_fulfill",
+    "fulfillment_transfer_lanes",
+    "capacity_requirements",
+    "pickup",
     "destinationFingerprint",
-    "lineFingerprint",
+    "sourceFingerprint",
     "checkoutGuard",
     "commitOrderPromise",
     "order_shipment_events",
@@ -142,5 +159,8 @@ for (const operationId of ["storefrontFulfillmentPromiseQuote", "storefrontFulfi
 must(docsPackage.includes('"build:json:admin-phase31"') && docsPackage.includes('"build:json:storefront-phase31"'), "Phase31 docs build scripts missing");
 must(mergeAdmin.includes("dist/admin.phase31.v1.json") && mergeAdmin.includes("Phase31FulfillmentPromiseOverlay"), "Admin OpenAPI merge missing Phase31");
 must(mergeStorefront.includes("phase30, phase31, discovery"), "Storefront OpenAPI order must insert Phase31 before discovery");
+must(workflow.includes("contents: read"), "Phase31 CI must be read-only");
+must(!workflow.includes("git push"), "Phase31 CI must not mutate the PR branch");
+must(!workflow.includes("biome check --write"), "Phase31 CI must not rewrite source files");
 
 console.log("PASS Phase 31 Hyperlocal Promise & Fulfillment Network contract integrity gate");
