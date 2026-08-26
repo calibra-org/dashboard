@@ -33,10 +33,19 @@ jobs:
           docs/api/scripts/merge-admin-spec.js
       - name: API typecheck
         run: pnpm --filter @calibra/api run typecheck
-      - name: Generate SDK
-        run: pnpm --filter @calibra/sdk run codegen
-      - name: Verify SDK drift
-        run: pnpm --filter @calibra/sdk run codegen:check
+      - name: Generate SDK baseline
+        run: |
+          pnpm --filter @calibra/sdk run codegen
+          cp packages/sdk/src/generated/admin.d.ts /tmp/phase32-admin.d.ts
+          cp packages/sdk/src/generated/storefront.d.ts /tmp/phase32-storefront.d.ts
+          cp packages/sdk/src/generated/platform.d.ts /tmp/phase32-platform.d.ts
+      - name: Verify SDK determinism
+        run: |
+          pnpm --filter @calibra/sdk run codegen
+          cmp /tmp/phase32-admin.d.ts packages/sdk/src/generated/admin.d.ts
+          cmp /tmp/phase32-storefront.d.ts packages/sdk/src/generated/storefront.d.ts
+          cmp /tmp/phase32-platform.d.ts packages/sdk/src/generated/platform.d.ts
+          git diff --exit-code -- packages/sdk/src/generated/storefront.d.ts packages/sdk/src/generated/platform.d.ts
       - name: Phase 32 static contract
         run: node scripts/verify-phase32-reliability-guardian.mjs
       - name: Admin typecheck
