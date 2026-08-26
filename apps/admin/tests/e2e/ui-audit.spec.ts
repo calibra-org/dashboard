@@ -10,8 +10,8 @@ const VIEWPORTS = [
 
 const MAX_SCREENSHOTS = 20;
 
-async function login(page: Page) {
-    await page.goto("/login");
+async function login(page: Page, path = "/login") {
+    await page.goto(path);
     if (!page.url().includes("/login")) return;
 
     await page.getByLabel(/ایمیل|email/i).fill(LOGIN_EMAIL);
@@ -114,13 +114,10 @@ test("authenticated admin routes survive desktop and mobile UI audit", async ({ 
 
                     if (routeFindings.length > 0 && screenshotCount < MAX_SCREENSHOTS) {
                         screenshotCount += 1;
-                        await testInfo.attach(
-                            `${viewport.name}-${safeAttachmentName(path)}.png`,
-                            {
-                                body: await page.screenshot({ fullPage: true }),
-                                contentType: "image/png",
-                            },
-                        );
+                        await testInfo.attach(`${viewport.name}-${safeAttachmentName(path)}.png`, {
+                            body: await page.screenshot({ fullPage: true }),
+                            contentType: "image/png",
+                        });
                     }
                 } catch (error) {
                     routeFindings.push(`audit exception: ${error instanceof Error ? error.message : String(error)}`);
@@ -143,4 +140,29 @@ test("authenticated admin routes survive desktop and mobile UI audit", async ({ 
     });
 
     expect(findings, `UI audit found ${findings.length} issue(s):\n${findings.join("\n")}`).toEqual([]);
+});
+
+test("mobile shell exposes an operator navigation path", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await login(page);
+    await page.goto("/dashboard");
+
+    const visibleNavigationLinks = page.locator('nav a[href]:visible');
+    const menuTrigger = page.getByRole("button", { name: /menu|navigation|منو|ناوبری/i });
+    const hasVisibleNavigation = (await visibleNavigationLinks.count()) > 0 || (await menuTrigger.count()) > 0;
+
+    expect(
+        hasVisibleNavigation,
+        "At mobile width the authenticated shell must expose either visible navigation links or an accessible menu trigger",
+    ).toBe(true);
+});
+
+test("English admin shell preserves LTR locale semantics", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await login(page, "/en/login");
+    await page.goto("/en/dashboard");
+
+    await expect(page.locator("html")).toHaveAttribute("lang", "en");
+    await expect(page.locator("html")).toHaveAttribute("dir", "ltr");
+    await expect(page.locator("body")).not.toBeEmpty();
 });
