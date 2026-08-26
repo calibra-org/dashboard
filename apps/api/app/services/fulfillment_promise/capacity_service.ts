@@ -44,9 +44,7 @@ function mergeRequirements(requirements: Array<{ windowId: number; units: number
     for (const requirement of requirements) {
         merged.set(requirement.windowId, (merged.get(requirement.windowId) ?? 0) + requirement.units);
     }
-    return [...merged.entries()]
-        .map(([windowId, units]) => ({ windowId, units }))
-        .sort((a, b) => a.windowId - b.windowId);
+    return [...merged.entries()].map(([windowId, units]) => ({ windowId, units })).sort((a, b) => a.windowId - b.windowId);
 }
 
 async function requirementsForQuote(quote: JsonRow): Promise<Array<{ windowId: number; units: number }>> {
@@ -176,11 +174,7 @@ export async function holdPromiseCapacity(publicId: string | null): Promise<{ he
     const requirements = await requirementsForQuote(quote);
     const locked: Array<{ window: JsonRow; units: number }> = [];
     for (const requirement of requirements) {
-        const window = await trx
-            .from("fulfillment_capacity_windows")
-            .where("id", requirement.windowId)
-            .forUpdate()
-            .first();
+        const window = await trx.from("fulfillment_capacity_windows").where("id", requirement.windowId).forUpdate().first();
         if (!window || window.status !== "open") {
             throw new Exception("Promise capacity window is unavailable", {
                 status: 409,
@@ -200,7 +194,7 @@ export async function holdPromiseCapacity(publicId: string | null): Promise<{ he
     for (const item of locked) {
         await trx
             .from("fulfillment_capacity_windows")
-            .where("id", item.window.id)
+            .where("id", Number(item.window.id))
             .update({
                 reserved_units: Number(item.window.reserved_units) + item.units,
                 version: Number(item.window.version) + 1,
@@ -208,7 +202,7 @@ export async function holdPromiseCapacity(publicId: string | null): Promise<{ he
             });
         await trx.table("fulfillment_capacity_holds").insert({
             promise_quote_id: quote.id,
-            capacity_window_id: item.window.id,
+            capacity_window_id: Number(item.window.id),
             units: item.units,
             status: "held",
             idempotency_key: `${publicId}:${item.window.id}`,
@@ -251,10 +245,7 @@ export async function releasePromiseCapacity(publicId: string | null): Promise<{
     return { released };
 }
 
-export async function commitPromiseCapacity(
-    publicId: string | null,
-    orderId: number,
-): Promise<{ committed: number } | null> {
+export async function commitPromiseCapacity(publicId: string | null, orderId: number): Promise<{ committed: number } | null> {
     if (!publicId) return null;
     const trx = currentTrx();
     const quote = await trx.from("fulfillment_promise_quotes").where("public_id", publicId).first();

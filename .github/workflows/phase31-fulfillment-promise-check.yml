@@ -110,6 +110,8 @@ jobs:
           scripts/phase31-materialize.mjs
           scripts/phase31-policy-materialize.mjs
           scripts/verify-phase31-fulfillment-promise.mjs
+      - name: Phase 31 patch whitespace integrity
+        run: git diff --check "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}"
       - name: Build Phase 31 OpenAPI overlays
         run: |
           pnpm --filter @calibra/api-docs run build:json:admin-phase31
