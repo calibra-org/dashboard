@@ -68,15 +68,23 @@ const docsPackagePath = "docs/api/package.json";
 const docsPackage = JSON.parse(read(docsPackagePath));
 const scripts = docsPackage.scripts ?? {};
 scripts["build:json:admin-phase30"] =
-    "redocly bundle reference/openapi/admin.phase30.v1.yaml --output dist/admin.phase30.v1.json";
+    "redocly bundle reference/openapi/admin.phase30.v1.yaml -o dist/admin.phase30.v1.json --ext json";
 scripts["build:json:storefront-phase30"] =
-    "redocly bundle reference/openapi/storefront.phase30.v1.yaml --output dist/storefront.phase30.v1.json";
-const adminParts = String(scripts["build:json:admin-parts"] ?? "");
-if (!adminParts.includes("build:json:admin-phase30"))
-    scripts["build:json:admin-parts"] = `${adminParts} && pnpm build:json:admin-phase30`;
-const storefrontParts = String(scripts["build:json:storefront-parts"] ?? "");
-if (!storefrontParts.includes("build:json:storefront-phase30"))
-    scripts["build:json:storefront-parts"] = `${storefrontParts} && pnpm build:json:storefront-phase30`;
+    "redocly bundle reference/openapi/storefront.phase30.v1.yaml -o dist/storefront.phase30.v1.json --ext json";
+const adminBuild = String(scripts["build:json:admin"] ?? "");
+if (!adminBuild.includes("build:json:admin-phase30")) {
+    const anchor = " && pnpm build:json:admin-merge";
+    if (!adminBuild.includes(anchor)) throw new Error("Phase30 materializer: admin OpenAPI aggregate anchor missing");
+    scripts["build:json:admin"] = adminBuild.replace(anchor, ` && pnpm build:json:admin-phase30${anchor}`);
+}
+const storefrontBuild = String(scripts["build:json:storefront"] ?? "");
+if (!storefrontBuild.includes("build:json:storefront-phase30")) {
+    const anchor = " && pnpm build:json:storefront-merge";
+    if (!storefrontBuild.includes(anchor)) throw new Error("Phase30 materializer: storefront OpenAPI aggregate anchor missing");
+    scripts["build:json:storefront"] = storefrontBuild.replace(anchor, ` && pnpm build:json:storefront-phase30${anchor}`);
+}
+delete scripts["build:json:admin-parts"];
+delete scripts["build:json:storefront-parts"];
 docsPackage.scripts = scripts;
 write(docsPackagePath, `${JSON.stringify(docsPackage, null, 4)}\n`);
 
