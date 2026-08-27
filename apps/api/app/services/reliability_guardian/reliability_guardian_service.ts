@@ -187,7 +187,7 @@ async function updateIncident(invariant: Row, observation: Observation, passed: 
     let incident = await latestOpenIncident(numberValue(invariant.id));
     const latest = await trx
         .from("reliability_evaluations")
-        .where("invariant_id", invariant.id)
+        .where("invariant_id", numberValue(invariant.id))
         .orderBy("evaluated_at", "desc")
         .first();
     const previousPassed = latest ? Boolean(latest.passed) : null;
@@ -215,7 +215,7 @@ async function updateIncident(invariant: Row, observation: Observation, passed: 
     if (!incident) {
         const recentEvaluations = await trx
             .from("reliability_evaluations")
-            .where("invariant_id", invariant.id)
+            .where("invariant_id", numberValue(invariant.id))
             .orderBy("evaluated_at", "desc")
             .limit(Math.max(1, numberValue(invariant.min_consecutive_failures) - 1));
         let consecutive = 1;
@@ -269,7 +269,7 @@ async function assertExecutionBudget(policy: Row, now: DateTime) {
     const trx = currentTrx();
     const last = await trx
         .from("reliability_remediation_runs")
-        .where("policy_id", policy.id)
+        .where("policy_id", numberValue(policy.id))
         .whereIn("status", ["executing", "verifying", "succeeded"])
         .orderBy("created_at", "desc")
         .first();
@@ -284,7 +284,7 @@ async function assertExecutionBudget(policy: Row, now: DateTime) {
     }
     const hourly = await trx
         .from("reliability_remediation_runs")
-        .where("policy_id", policy.id)
+        .where("policy_id", numberValue(policy.id))
         .where("created_at", ">=", now.minus({ hours: 1 }).toJSDate())
         .whereNot("status", "approval_required")
         .count("id as count")
@@ -443,7 +443,7 @@ async function finalizeMonitoringRuns(invariant: Row, incident: Row | null, pass
     const trx = currentTrx();
     const runs = await trx
         .from("reliability_remediation_runs")
-        .where("incident_id", incident.id)
+        .where("incident_id", numberValue(incident.id))
         .where("status", "verifying")
         .orderBy("created_at", "asc")
         .forUpdate();

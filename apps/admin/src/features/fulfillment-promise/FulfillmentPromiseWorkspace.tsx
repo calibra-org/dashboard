@@ -334,7 +334,7 @@ function NodesTab({ rows, run }: { rows: FulfillmentNode[]; run: (path: string, 
                     </Field>
                     <div className="grid grid-cols-2 gap-3">
                         <Field label="نوع">
-                            <Select value={form.node_type} onValueChange={(v) => setForm({ ...form, node_type: v })}>
+                            <Select value={form.node_type} onValueChange={(v) => setForm({ ...form, node_type: String(v) })}>
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
@@ -447,7 +447,7 @@ function ServicesTab({
                 <h3 className="font-semibold">ثبت کالیبراسیون سرویس</h3>
                 <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     <Field label="گره">
-                        <Select value={node} onValueChange={setNode}>
+                        <Select value={node} onValueChange={(value) => setNode(String(value))}>
                             <SelectTrigger>
                                 <SelectValue placeholder="انتخاب گره" />
                             </SelectTrigger>

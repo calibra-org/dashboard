@@ -400,7 +400,7 @@ function CreateInvariantCard({
                 </div>
                 <div>
                     <Label>منبع</Label>
-                    <Select value={source} onValueChange={setSource}>
+                    <Select value={source} onValueChange={(value) => setSource(String(value))}>
                         <SelectTrigger className="mt-2">
                             <SelectValue />
                         </SelectTrigger>
