@@ -2,7 +2,7 @@
 
 import { Menu, X } from "lucide-react";
 import { useLocale } from "next-intl";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "./ui/button";
 import styles from "./MobileNavigationTrigger.module.css";
@@ -12,8 +12,14 @@ const NAVIGATION_ID = "admin-primary-navigation";
 export function MobileNavigationTrigger() {
     const locale = useLocale();
     const [open, setOpen] = useState(false);
+    const triggerRef = useRef<HTMLButtonElement>(null);
     const menuLabel = locale === "fa" ? "منوی ناوبری" : "Navigation menu";
     const closeLabel = locale === "fa" ? "بستن منوی ناوبری" : "Close navigation menu";
+
+    const closeNavigation = useCallback(() => {
+        setOpen(false);
+        requestAnimationFrame(() => triggerRef.current?.focus());
+    }, []);
 
     useEffect(() => {
         const sidebar = document.querySelector<HTMLElement>("aside.bg-sidebar");
@@ -21,17 +27,28 @@ export function MobileNavigationTrigger() {
     }, []);
 
     useEffect(() => {
+        const sidebar = document.querySelector<HTMLElement>(`#${NAVIGATION_ID}`);
         document.documentElement.dataset.adminMobileNav = open ? "open" : "closed";
         document.body.style.overflow = open ? "hidden" : "";
 
-        if (!open) return;
+        if (!open || !sidebar) {
+            sidebar?.removeAttribute("role");
+            sidebar?.removeAttribute("aria-modal");
+            sidebar?.removeAttribute("aria-label");
+            return;
+        }
+
+        sidebar.setAttribute("role", "dialog");
+        sidebar.setAttribute("aria-modal", "true");
+        sidebar.setAttribute("aria-label", menuLabel);
+        requestAnimationFrame(() => sidebar.querySelector<HTMLElement>("a[href], button")?.focus());
 
         const closeOnEscape = (event: KeyboardEvent) => {
-            if (event.key === "Escape") setOpen(false);
+            if (event.key === "Escape") closeNavigation();
         };
         const closeOnNavigation = (event: MouseEvent) => {
             const target = event.target;
-            if (target instanceof Element && target.closest("aside.bg-sidebar a[href]")) setOpen(false);
+            if (target instanceof Element && target.closest(`#${NAVIGATION_ID} a[href]`)) closeNavigation();
         };
 
         document.addEventListener("keydown", closeOnEscape);
@@ -39,8 +56,11 @@ export function MobileNavigationTrigger() {
         return () => {
             document.removeEventListener("keydown", closeOnEscape);
             document.removeEventListener("click", closeOnNavigation);
+            sidebar.removeAttribute("role");
+            sidebar.removeAttribute("aria-modal");
+            sidebar.removeAttribute("aria-label");
         };
-    }, [open]);
+    }, [closeNavigation, menuLabel, open]);
 
     useEffect(
         () => () => {
@@ -53,6 +73,7 @@ export function MobileNavigationTrigger() {
     return (
         <>
             <Button
+                ref={triggerRef}
                 type="button"
                 variant="outline"
                 size="icon"
@@ -60,12 +81,12 @@ export function MobileNavigationTrigger() {
                 aria-label={menuLabel}
                 aria-controls={NAVIGATION_ID}
                 aria-expanded={open}
-                onClick={() => setOpen((value) => !value)}
+                onClick={() => (open ? closeNavigation() : setOpen(true))}
             >
                 <Menu className="size-4" aria-hidden="true" />
             </Button>
             {open ? (
-                <button type="button" className={styles.backdrop} aria-label={closeLabel} onClick={() => setOpen(false)}>
+                <button type="button" className={styles.backdrop} aria-label={closeLabel} onClick={closeNavigation}>
                     <X className={styles.closeIcon} aria-hidden="true" />
                 </button>
             ) : null}
