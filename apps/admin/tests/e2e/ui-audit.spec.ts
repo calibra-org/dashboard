@@ -20,7 +20,7 @@ async function login(page: Page, path = "/login") {
     await page.getByLabel(/ایمیل|email/i).fill(requiredEnv("ADMIN_LOGIN_EMAIL"));
     await page.getByLabel(/رمز|password/i).fill(requiredEnv("ADMIN_LOGIN_PASSWORD"));
     await page.getByRole("button", { name: /ورود|sign in|login/i }).click();
-    await page.waitForURL(/\/dashboard\/?$/);
+    await page.waitForURL(/\/(?:[a-z]{2}\/)?dashboard\/?$/);
 }
 
 async function discoverAdminRoutes(page: Page): Promise<string[]> {
