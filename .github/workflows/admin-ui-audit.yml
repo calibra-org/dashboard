@@ -117,11 +117,15 @@ jobs:
             - name: Start API
               run: |
                   mkdir -p apps/admin/test-results
-                  pnpm dev:api > apps/admin/test-results/api.log 2>&1 &
+                  pnpm --filter @calibra/api run dev > apps/admin/test-results/api.log 2>&1 &
                   echo $! > /tmp/calibra-api.pid
                   for attempt in $(seq 1 60); do
                       if curl --fail --silent http://localhost:3333/health >/dev/null; then
                           exit 0
+                      fi
+                      if ! kill -0 "$(cat /tmp/calibra-api.pid)" 2>/dev/null; then
+                          cat apps/admin/test-results/api.log
+                          exit 1
                       fi
                       sleep 2
                   done
