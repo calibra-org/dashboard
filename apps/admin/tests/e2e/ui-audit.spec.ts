@@ -1,7 +1,10 @@
 import { expect, type Page, type Response, test } from "@playwright/test";
 
-const LOGIN_EMAIL = process.env.ADMIN_LOGIN_EMAIL ?? "admin@bulk.calibra.dev";
-const LOGIN_PASSWORD = process.env.ADMIN_LOGIN_PASSWORD ?? "Passw0rd1!";
+function requiredEnv(name: "ADMIN_LOGIN_EMAIL" | "ADMIN_LOGIN_PASSWORD"): string {
+    const value = process.env[name];
+    if (!value) throw new Error(`${name} is required for the authenticated Admin UI audit`);
+    return value;
+}
 
 const VIEWPORTS = [
     { name: "desktop", width: 1440, height: 1000 },
@@ -14,8 +17,8 @@ async function login(page: Page, path = "/login") {
     await page.goto(path);
     if (!page.url().includes("/login")) return;
 
-    await page.getByLabel(/ایمیل|email/i).fill(LOGIN_EMAIL);
-    await page.getByLabel(/رمز|password/i).fill(LOGIN_PASSWORD);
+    await page.getByLabel(/ایمیل|email/i).fill(requiredEnv("ADMIN_LOGIN_EMAIL"));
+    await page.getByLabel(/رمز|password/i).fill(requiredEnv("ADMIN_LOGIN_PASSWORD"));
     await page.getByRole("button", { name: /ورود|sign in|login/i }).click();
     await page.waitForURL(/\/dashboard\/?$/);
 }
@@ -88,7 +91,8 @@ test("authenticated admin routes survive desktop and mobile UI audit", async ({ 
                     if (!response) routeFindings.push("navigation returned no document response");
                     else if (response.status() >= 400) routeFindings.push(`document HTTP ${response.status()}`);
 
-                    await page.waitForLoadState("networkidle", { timeout: 8_000 }).catch(() => undefined);
+                    await page.waitForLoadState("load", { timeout: 5_000 }).catch(() => undefined);
+                    await expect(page.locator("main")).toBeVisible({ timeout: 5_000 });
 
                     if (page.url().includes("/login")) routeFindings.push("unexpected redirect to /login");
                     if ((await page.locator("body").innerText()).trim().length === 0) routeFindings.push("empty body");
