@@ -144,19 +144,24 @@ test("authenticated admin routes survive desktop and mobile UI audit", async ({ 
     expect(findings, `UI audit found ${findings.length} issue(s):\n${findings.join("\n")}`).toEqual([]);
 });
 
-test("mobile shell exposes an operator navigation path", async ({ page }) => {
+test("mobile shell exposes an operable navigation path", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await login(page);
     await page.goto("/dashboard");
 
-    const visibleNavigationLinks = page.locator("nav a[href]:visible");
     const menuTrigger = page.getByRole("button", { name: /menu|navigation|منو|ناوبری/i });
-    const hasVisibleNavigation = (await visibleNavigationLinks.count()) > 0 || (await menuTrigger.count()) > 0;
+    const sidebar = page.locator("#admin-primary-navigation");
 
-    expect(
-        hasVisibleNavigation,
-        "At mobile width the authenticated shell must expose either visible navigation links or an accessible menu trigger",
-    ).toBe(true);
+    await expect(menuTrigger).toBeVisible();
+    await expect(menuTrigger).toHaveAttribute("aria-expanded", "false");
+    await menuTrigger.click();
+    await expect(menuTrigger).toHaveAttribute("aria-expanded", "true");
+    await expect(sidebar).toBeVisible();
+    await expect(sidebar.locator("nav a[href]").first()).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(menuTrigger).toHaveAttribute("aria-expanded", "false");
+    await expect(sidebar).toBeHidden();
+    await expect(menuTrigger).toBeFocused();
 });
 
 test("English admin shell preserves LTR locale semantics", async ({ page }) => {
