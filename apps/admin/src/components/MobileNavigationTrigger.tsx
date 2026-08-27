@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, X } from "lucide-react";
+import { PanelLeft, X } from "#/icons";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -83,7 +83,7 @@ export function MobileNavigationTrigger() {
                 aria-expanded={open}
                 onClick={() => (open ? closeNavigation() : setOpen(true))}
             >
-                <Menu className="size-4" aria-hidden="true" />
+                <PanelLeft className="size-4" aria-hidden="true" />
             </Button>
             {open ? (
                 <button type="button" className={styles.backdrop} aria-label={closeLabel} onClick={closeNavigation}>

@@ -91,7 +91,6 @@ test("authenticated admin routes survive desktop and mobile UI audit", async ({ 
                     if (!response) routeFindings.push("navigation returned no document response");
                     else if (response.status() >= 400) routeFindings.push(`document HTTP ${response.status()}`);
 
-                    await page.waitForLoadState("load", { timeout: 5_000 }).catch(() => undefined);
                     await expect(page.locator("main")).toBeVisible({ timeout: 5_000 });
 
                     if (page.url().includes("/login")) routeFindings.push("unexpected redirect to /login");
@@ -149,7 +148,7 @@ test("mobile shell exposes an operable navigation path", async ({ page }) => {
     await login(page);
     await page.goto("/dashboard");
 
-    const menuTrigger = page.getByRole("button", { name: /menu|navigation|منو|ناوبری/i });
+    const menuTrigger = page.getByRole("button", { name: "منوی ناوبری", exact: true });
     const sidebar = page.locator("#admin-primary-navigation");
 
     await expect(menuTrigger).toBeVisible();

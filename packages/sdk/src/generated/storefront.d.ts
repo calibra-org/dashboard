@@ -496,9 +496,7 @@ export interface paths {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                slug: string;
-            };
+            path?: never;
             cookie?: never;
         };
         /**
@@ -515,9 +513,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header?: never;
-                path: {
-                    slug: string;
-                };
+                path?: never;
                 cookie?: never;
             };
             requestBody?: never;
@@ -576,9 +572,7 @@ export interface paths {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                id: number;
-            };
+            path?: never;
             cookie?: never;
         };
         /**
@@ -595,9 +589,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header?: never;
-                path: {
-                    id: number;
-                };
+                path?: never;
                 cookie?: never;
             };
             requestBody?: never;
@@ -1031,9 +1023,7 @@ export interface paths {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                id: number;
-            };
+            path?: never;
             cookie?: never;
         };
         /**
@@ -1050,9 +1040,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header?: never;
-                path: {
-                    id: number;
-                };
+                path?: never;
                 cookie?: never;
             };
             requestBody?: never;
@@ -1073,9 +1061,7 @@ export interface paths {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                id: number;
-            };
+            path?: never;
             cookie?: never;
         };
         /**
@@ -1094,9 +1080,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header?: never;
-                path: {
-                    id: number;
-                };
+                path?: never;
                 cookie?: never;
             };
             requestBody?: never;
@@ -1117,9 +1101,7 @@ export interface paths {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                id: number;
-            };
+            path?: never;
             cookie?: never;
         };
         /**
@@ -1138,9 +1120,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header?: never;
-                path: {
-                    id: number;
-                };
+                path?: never;
                 cookie?: never;
             };
             requestBody?: never;
@@ -1206,9 +1186,7 @@ export interface paths {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                id: number;
-            };
+            path?: never;
             cookie?: never;
         };
         /**
@@ -1229,9 +1207,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header?: never;
-                path: {
-                    id: number;
-                };
+                path?: never;
                 cookie?: never;
             };
             requestBody?: never;
@@ -1296,9 +1272,7 @@ export interface paths {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                id: number;
-            };
+            path?: never;
             cookie?: never;
         };
         /**
@@ -1315,9 +1289,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header?: never;
-                path: {
-                    id: number;
-                };
+                path?: never;
                 cookie?: never;
             };
             requestBody?: never;
@@ -1396,9 +1368,7 @@ export interface paths {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                gateway_code: string;
-            };
+            path?: never;
             cookie?: never;
         };
         /**
@@ -1419,9 +1389,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header?: never;
-                path: {
-                    gateway_code: string;
-                };
+                path?: never;
                 cookie?: never;
             };
             requestBody?: never;
@@ -1965,9 +1933,7 @@ export interface paths {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                id: number;
-            };
+            path?: never;
             cookie?: never;
         };
         get?: never;
@@ -2018,9 +1984,7 @@ export interface paths {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                id: number;
-            };
+            path?: never;
             cookie?: never;
         };
         get?: never;
