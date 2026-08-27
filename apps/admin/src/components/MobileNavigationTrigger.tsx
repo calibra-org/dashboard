@@ -29,16 +29,17 @@ export function MobileNavigationTrigger() {
 
     useEffect(() => {
         const sidebar = document.querySelector<HTMLElement>(`#${NAVIGATION_ID}`);
-        document.documentElement.dataset.adminMobileNav = open ? "open" : "closed";
         document.body.style.overflow = open ? "hidden" : "";
 
         if (!open || !sidebar) {
+            sidebar?.classList.remove(styles.openSidebar);
             sidebar?.removeAttribute("role");
             sidebar?.removeAttribute("aria-modal");
             sidebar?.removeAttribute("aria-label");
             return;
         }
 
+        sidebar.classList.add(styles.openSidebar);
         sidebar.setAttribute("role", "dialog");
         sidebar.setAttribute("aria-modal", "true");
         sidebar.setAttribute("aria-label", menuLabel);
@@ -57,6 +58,7 @@ export function MobileNavigationTrigger() {
         return () => {
             document.removeEventListener("keydown", closeOnEscape);
             document.removeEventListener("click", closeOnNavigation);
+            sidebar.classList.remove(styles.openSidebar);
             sidebar.removeAttribute("role");
             sidebar.removeAttribute("aria-modal");
             sidebar.removeAttribute("aria-label");
@@ -65,7 +67,6 @@ export function MobileNavigationTrigger() {
 
     useEffect(
         () => () => {
-            delete document.documentElement.dataset.adminMobileNav;
             document.body.style.overflow = "";
         },
         [],
