@@ -211,7 +211,17 @@ must(
     ),
     "Storefront Phase 30 merge must load the Phase 30 bundle, not another phase",
 );
-must(mergeStorefrontSpec.includes("phase29, phase30, discovery"), "Storefront merge order must include Phase 30 exactly once");
+const storefrontOverlayList = mergeStorefrontSpec.match(/for \(const overlay of \[([^\]]+)\]\)/)?.[1] ?? "";
+const storefrontOverlays = storefrontOverlayList
+    .split(",")
+    .map((overlay) => overlay.trim())
+    .filter(Boolean);
+const phase29Index = storefrontOverlays.indexOf("phase29");
+const phase30Index = storefrontOverlays.indexOf("phase30");
+must(
+    storefrontOverlays.filter((overlay) => overlay === "phase30").length === 1 && phase30Index === phase29Index + 1,
+    "Storefront merge order must include Phase 30 exactly once immediately after Phase 29",
+);
 
 for (const statement of [
     "does not create a parallel commerce master",
