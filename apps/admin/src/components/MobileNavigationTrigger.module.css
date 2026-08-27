@@ -1,0 +1,40 @@
+.trigger {
+    display: inline-flex;
+}
+
+.backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    border: 0;
+    background: rgb(0 0 0 / 0.55);
+    backdrop-filter: blur(3px);
+}
+
+.closeIcon {
+    position: fixed;
+    inset-block-start: 1rem;
+    inset-inline-end: 1rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    color: white;
+}
+
+@media (min-width: 768px) {
+    .trigger {
+        display: none;
+    }
+}
+
+@media (max-width: 767px) {
+    :global(html[data-admin-mobile-nav="open"] aside.bg-sidebar) {
+        display: flex !important;
+        position: fixed;
+        inset-block: 0;
+        inset-inline-start: 0;
+        z-index: 60;
+        width: min(calc(100vw - 3.5rem), 20rem);
+        max-width: 20rem;
+        box-shadow: 0 24px 64px rgb(0 0 0 / 0.28);
+    }
+}
