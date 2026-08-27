@@ -1,8 +1,9 @@
 "use client";
 
-import { PanelLeft, X } from "#/icons";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
+
+import { PanelLeft, X } from "#/icons";
 
 import { Button } from "./ui/button";
 import styles from "./MobileNavigationTrigger.module.css";
