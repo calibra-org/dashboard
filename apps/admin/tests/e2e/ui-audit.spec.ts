@@ -43,10 +43,10 @@ async function discoverAdminRoutes(page: Page): Promise<string[]> {
     return [...new Set(hrefs)].sort();
 }
 
-function isRelevantApiFailure(response: Response): boolean {
+function isRelevantTransportFailure(response: Response): boolean {
     if (response.status() < 400) return false;
     const url = new URL(response.url());
-    return url.pathname.startsWith("/api/admin/");
+    return url.pathname.startsWith("/api/admin/") || url.pathname.startsWith("/__transmit/");
 }
 
 function safeAttachmentName(value: string): string {
@@ -70,15 +70,15 @@ test("authenticated admin routes survive desktop and mobile UI audit", async ({ 
                 const routeFindings: string[] = [];
                 const consoleErrors: string[] = [];
                 const pageErrors: string[] = [];
-                const apiFailures: string[] = [];
+                const transportFailures: string[] = [];
 
                 const onConsole = (message: { type(): string; text(): string }) => {
                     if (message.type() === "error") consoleErrors.push(message.text());
                 };
                 const onPageError = (error: Error) => pageErrors.push(error.message);
                 const onResponse = (response: Response) => {
-                    if (isRelevantApiFailure(response)) {
-                        apiFailures.push(`${response.status()} ${new URL(response.url()).pathname}`);
+                    if (isRelevantTransportFailure(response)) {
+                        transportFailures.push(`${response.status()} ${new URL(response.url()).pathname}`);
                     }
                 };
 
@@ -111,7 +111,9 @@ test("authenticated admin routes survive desktop and mobile UI audit", async ({ 
 
                     if (pageErrors.length > 0) routeFindings.push(`page errors: ${pageErrors.join(" | ")}`);
                     if (consoleErrors.length > 0) routeFindings.push(`console errors: ${consoleErrors.join(" | ")}`);
-                    if (apiFailures.length > 0) routeFindings.push(`admin API failures: ${apiFailures.join(" | ")}`);
+                    if (transportFailures.length > 0) {
+                        routeFindings.push(`admin transport failures: ${transportFailures.join(" | ")}`);
+                    }
 
                     if (routeFindings.length > 0 && screenshotCount < MAX_SCREENSHOTS) {
                         screenshotCount += 1;
