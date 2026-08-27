@@ -103,9 +103,7 @@ test("authenticated admin routes survive desktop and mobile UI audit", async ({ 
                         viewportWidth: document.documentElement.clientWidth,
                     }));
                     if (overflow.documentWidth > overflow.viewportWidth + 2) {
-                        routeFindings.push(
-                            `horizontal overflow ${overflow.documentWidth}px > ${overflow.viewportWidth}px`,
-                        );
+                        routeFindings.push(`horizontal overflow ${overflow.documentWidth}px > ${overflow.viewportWidth}px`);
                     }
 
                     if (pageErrors.length > 0) routeFindings.push(`page errors: ${pageErrors.join(" | ")}`);
@@ -147,7 +145,7 @@ test("mobile shell exposes an operator navigation path", async ({ page }) => {
     await login(page);
     await page.goto("/dashboard");
 
-    const visibleNavigationLinks = page.locator('nav a[href]:visible');
+    const visibleNavigationLinks = page.locator("nav a[href]:visible");
     const menuTrigger = page.getByRole("button", { name: /menu|navigation|منو|ناوبری/i });
     const hasVisibleNavigation = (await visibleNavigationLinks.count()) > 0 || (await menuTrigger.count()) > 0;
 
