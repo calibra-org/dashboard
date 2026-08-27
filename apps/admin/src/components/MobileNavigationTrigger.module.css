@@ -27,7 +27,7 @@
 }
 
 @media (max-width: 767px) {
-    :global(html[data-admin-mobile-nav="open"] aside.bg-sidebar) {
+    aside.openSidebar {
         display: flex;
         position: fixed;
         inset-block: 0;
