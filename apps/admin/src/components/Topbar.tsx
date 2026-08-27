@@ -2,6 +2,7 @@ import { Bell, Search } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { LocaleSwitch } from "./LocaleSwitch";
+import { MobileNavigationTrigger } from "./MobileNavigationTrigger";
 import { ThemeToggle } from "./ThemeToggle";
 import { UserMenu } from "./UserMenu";
 import { Button } from "./ui/button";
@@ -15,8 +16,8 @@ export function Topbar({ user }: TopbarProps) {
     const t = useTranslations("Topbar");
 
     return (
-        <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-4 border-border border-b bg-card/95 px-6 backdrop-blur">
-            <div className="relative max-w-md flex-1">
+        <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-4 border-border border-b bg-card/95 px-4 backdrop-blur sm:px-6">
+            <div className="relative min-w-0 max-w-md flex-1">
                 <Search
                     className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
                     aria-hidden="true"
@@ -24,7 +25,8 @@ export function Topbar({ user }: TopbarProps) {
                 <Input type="search" placeholder={t("search")} className="ps-9" aria-label={t("search")} />
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+                <MobileNavigationTrigger />
                 <LocaleSwitch />
                 <ThemeToggle />
                 <Button variant="outline" size="icon" aria-label={t("notifications")} className="relative">
