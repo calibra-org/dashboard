@@ -1,10 +1,10 @@
 "use client";
 
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider, removeOldestQuery } from "@tanstack/react-query-persist-client";
 import { createStore, del, get, set } from "idb-keyval";
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useState } from "react";
 
 const ReactQueryDevtools =
     process.env.NODE_ENV === "development"
@@ -33,11 +33,8 @@ const STORE_KEY = "react-query-cache";
  * Per-origin IDB database name. Different spins / staging / production all hit different
  * origins (`admin.<slug>.spin.localhost:<caddyHttps>`, `admin.staging.example.com`, …); giving
  * each its own IDB database prevents one environment's cache from rehydrating into another.
- * Falls back to a stable name on the server (the persister is window-only anyway, but the
- * function gets evaluated during static analysis too).
  */
 function storeName(): string {
-    if (typeof window === "undefined") return "calibra-admin-query-cache";
     return `calibra-admin-query-cache:${window.location.host}`;
 }
 
@@ -45,22 +42,17 @@ function storeName(): string {
  * Builds a QueryClient with admin-panel defaults:
  *
  * - `staleTime: 5 min` so dashboard widgets dedupe across components that mount together.
- * - `gcTime: 30 min` so a hot back-nav has the data ready for the optimistic first paint.
- * - `retry: 1` (keeps the UI snappy when the API is down without spinning on every render).
- * - `refetchOnWindowFocus: true` (operators bouncing between admin and another tab want fresh
- *   numbers, not a stale snapshot).
- * - `refetchOnMount: "always"` — even when persisted data rehydrates as `success` within
- *   `staleTime`, every page mount also fires a fresh network request in the background. The
- *   cache is purely an optimistic paint layer; the network is authoritative. Without this, a
- *   stale persisted snapshot (e.g. empty arrays cached from a previous build, a deleted
- *   environment, or a logged-out session) could trap the operator on skeletons forever.
+ * - `gcTime: 24h` matches the persistence budget so valid persisted data is not collected first.
+ * - `retry: 1` keeps the UI snappy when the API is down without spinning on every render.
+ * - `refetchOnWindowFocus: true` refreshes operator data when returning to the admin tab.
+ * - `refetchOnMount: "always"` keeps the network authoritative even after optimistic cache paint.
  */
 function buildClient(): QueryClient {
     return new QueryClient({
         defaultOptions: {
             queries: {
                 staleTime: 5 * 60 * 1000,
-                gcTime: 30 * 60 * 1000,
+                gcTime: CACHE_MAX_AGE_MS,
                 retry: 1,
                 refetchOnWindowFocus: true,
                 refetchOnMount: "always",
@@ -70,22 +62,36 @@ function buildClient(): QueryClient {
 }
 
 /**
- * idb-keyval storage adapter shaped like the Web Storage API the async-storage persister expects.
- * Lives in a per-origin IDB database (see {@link storeName}) so it doesn't collide with other
- * idb-keyval consumers AND so different environments don't pollute each other's cache. The DB
- * can be wiped wholesale via the browser's site-data UI when needed.
+ * Creates a universal async persister whose IndexedDB access is lazy and browser-only. The same
+ * `PersistQueryClientProvider` therefore renders during SSR and the browser's first hydration
+ * pass. TanStack keeps queries in an idle fetch state while restoration is in progress, so query
+ * state cannot diverge between the server markup and the initial client render.
  */
 function buildPersister() {
-    if (typeof window === "undefined") return undefined;
-    const idbStore = createStore(storeName(), "kv");
+    let idbStore: ReturnType<typeof createStore> | null = null;
+
+    const browserStore = () => {
+        if (typeof window === "undefined") return null;
+        idbStore ??= createStore(storeName(), "kv");
+        return idbStore;
+    };
+
     return createAsyncStoragePersister({
         storage: {
             getItem: async (key) => {
-                const value = await get(key, idbStore);
+                const store = browserStore();
+                if (store === null) return null;
+                const value = await get(key, store);
                 return typeof value === "string" ? value : null;
             },
-            setItem: (key, value) => set(key, value, idbStore),
-            removeItem: (key) => del(key, idbStore),
+            setItem: async (key, value) => {
+                const store = browserStore();
+                if (store !== null) await set(key, value, store);
+            },
+            removeItem: async (key) => {
+                const store = browserStore();
+                if (store !== null) await del(key, store);
+            },
         },
         key: STORE_KEY,
         throttleTime: 1000,
@@ -101,29 +107,15 @@ function buildPersister() {
 const PERSIST_ROOTS = new Set(["dashboard"]);
 
 /**
- * Holds the QueryClient for the authenticated admin tree. Created lazily inside `useState` so each
- * browser session gets exactly one client (React Strict Mode + Fast Refresh both call the render
- * twice but `useState`'s initializer only runs once per mount); SSR renders construct their own
- * one-shot client that is discarded immediately after streaming finishes.
- *
- * The server and the browser's first hydration pass intentionally use the same plain
- * `QueryClientProvider`. `PersistQueryClientProvider` puts queries into `fetchStatus: "idle"`
- * while IndexedDB restores, whereas the server-side provider starts those same queries in
- * `fetchStatus: "fetching"`. Switching provider types before hydration therefore makes
- * `isLoading` disagree across SSR/client and causes widespread hydration mismatches. Persistence
- * is attached immediately after hydration, preserving the existing QueryClient and cache while
- * keeping the initial render deterministic.
- *
- * @see {@link https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr}
+ * Holds one QueryClient and one provider shape for the entire authenticated admin tree. Keeping
+ * the provider type stable is load-bearing: swapping from QueryClientProvider to
+ * PersistQueryClientProvider after mount remounts the subtree, resets local UI state, and can make
+ * the first SSR/client query states disagree. The persister itself lazily touches IndexedDB only
+ * in the browser, so this provider is safe to render on both sides.
  */
 export function QueryProvider({ children }: { children: React.ReactNode }) {
     const [client] = useState(buildClient);
     const [persister] = useState(buildPersister);
-    const [hydrated, setHydrated] = useState(false);
-
-    useEffect(() => {
-        setHydrated(true);
-    }, []);
 
     const devtools =
         ReactQueryDevtools !== null ? (
@@ -131,15 +123,6 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
                 <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-left" />
             </Suspense>
         ) : null;
-
-    if (!hydrated || persister === undefined) {
-        return (
-            <QueryClientProvider client={client}>
-                {children}
-                {devtools}
-            </QueryClientProvider>
-        );
-    }
 
     return (
         <PersistQueryClientProvider

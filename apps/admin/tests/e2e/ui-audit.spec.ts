@@ -11,6 +11,7 @@ const VIEWPORTS = [
     { name: "mobile", width: 390, height: 844 },
 ] as const;
 
+const AUDIT_CONCURRENCY = 3;
 const MAX_SCREENSHOTS = 20;
 
 async function login(page: Page, path = "/login") {
@@ -53,6 +54,65 @@ function safeAttachmentName(value: string): string {
     return value.replace(/^\/+/, "").replace(/[^a-zA-Z0-9._-]+/g, "-") || "root";
 }
 
+async function auditRoute(page: Page, path: string) {
+    const routeFindings: string[] = [];
+    const consoleErrors: string[] = [];
+    const pageErrors: string[] = [];
+    const transportFailures: string[] = [];
+
+    const onConsole = (message: { type(): string; text(): string }) => {
+        if (message.type() === "error") consoleErrors.push(message.text());
+    };
+    const onPageError = (error: Error) => pageErrors.push(error.message);
+    const onResponse = (response: Response) => {
+        if (isRelevantTransportFailure(response)) {
+            transportFailures.push(`${response.status()} ${new URL(response.url()).pathname}`);
+        }
+    };
+
+    page.on("console", onConsole);
+    page.on("pageerror", onPageError);
+    page.on("response", onResponse);
+
+    try {
+        const response = await page.goto(path, { waitUntil: "domcontentloaded" });
+        if (!response) routeFindings.push("navigation returned no document response");
+        else if (response.status() >= 400) routeFindings.push(`document HTTP ${response.status()}`);
+
+        await expect(page.locator("main")).toBeVisible({ timeout: 5_000 });
+
+        if (page.url().includes("/login")) routeFindings.push("unexpected redirect to /login");
+        if ((await page.locator("body").innerText()).trim().length === 0) routeFindings.push("empty body");
+
+        const lang = await page.locator("html").getAttribute("lang");
+        const dir = await page.locator("html").getAttribute("dir");
+        if (lang !== "fa") routeFindings.push(`html lang=${lang ?? "missing"}; expected fa`);
+        if (dir !== "rtl") routeFindings.push(`html dir=${dir ?? "missing"}; expected rtl`);
+
+        const overflow = await page.evaluate(() => ({
+            documentWidth: document.documentElement.scrollWidth,
+            viewportWidth: document.documentElement.clientWidth,
+        }));
+        if (overflow.documentWidth > overflow.viewportWidth + 2) {
+            routeFindings.push(`horizontal overflow ${overflow.documentWidth}px > ${overflow.viewportWidth}px`);
+        }
+
+        if (pageErrors.length > 0) routeFindings.push(`page errors: ${pageErrors.join(" | ")}`);
+        if (consoleErrors.length > 0) routeFindings.push(`console errors: ${consoleErrors.join(" | ")}`);
+        if (transportFailures.length > 0) {
+            routeFindings.push(`admin transport failures: ${transportFailures.join(" | ")}`);
+        }
+    } catch (error) {
+        routeFindings.push(`audit exception: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+        page.off("console", onConsole);
+        page.off("pageerror", onPageError);
+        page.off("response", onResponse);
+    }
+
+    return routeFindings;
+}
+
 test("authenticated admin routes survive desktop and mobile UI audit", async ({ page }, testInfo) => {
     test.setTimeout(20 * 60_000);
 
@@ -60,89 +120,53 @@ test("authenticated admin routes survive desktop and mobile UI audit", async ({ 
     expect(routes.length, "Sidebar route discovery should find the admin navigation").toBeGreaterThan(20);
 
     const findings: string[] = [];
+    const screenshots: Array<{ name: string; body: Buffer }> = [];
     let screenshotCount = 0;
 
     for (const viewport of VIEWPORTS) {
-        await page.setViewportSize({ width: viewport.width, height: viewport.height });
+        let nextRouteIndex = 0;
+        const workerCount = Math.min(AUDIT_CONCURRENCY, routes.length);
 
-        for (const path of routes) {
-            await test.step(`${viewport.name} ${path}`, async () => {
-                const routeFindings: string[] = [];
-                const consoleErrors: string[] = [];
-                const pageErrors: string[] = [];
-                const transportFailures: string[] = [];
-
-                const onConsole = (message: { type(): string; text(): string }) => {
-                    if (message.type() === "error") consoleErrors.push(message.text());
-                };
-                const onPageError = (error: Error) => pageErrors.push(error.message);
-                const onResponse = (response: Response) => {
-                    if (isRelevantTransportFailure(response)) {
-                        transportFailures.push(`${response.status()} ${new URL(response.url()).pathname}`);
-                    }
-                };
-
-                page.on("console", onConsole);
-                page.on("pageerror", onPageError);
-                page.on("response", onResponse);
+        await Promise.all(
+            Array.from({ length: workerCount }, async () => {
+                const workerPage = await page.context().newPage();
+                await workerPage.setViewportSize({ width: viewport.width, height: viewport.height });
 
                 try {
-                    const response = await page.goto(path, { waitUntil: "domcontentloaded" });
-                    if (!response) routeFindings.push("navigation returned no document response");
-                    else if (response.status() >= 400) routeFindings.push(`document HTTP ${response.status()}`);
+                    while (nextRouteIndex < routes.length) {
+                        const routeIndex = nextRouteIndex;
+                        nextRouteIndex += 1;
+                        const path = routes[routeIndex];
+                        const routeFindings = await auditRoute(workerPage, path);
 
-                    await expect(page.locator("main")).toBeVisible({ timeout: 5_000 });
+                        if (routeFindings.length > 0 && screenshotCount < MAX_SCREENSHOTS) {
+                            screenshotCount += 1;
+                            screenshots.push({
+                                name: `${viewport.name}-${safeAttachmentName(path)}.png`,
+                                body: await workerPage.screenshot({ fullPage: true }),
+                            });
+                        }
 
-                    if (page.url().includes("/login")) routeFindings.push("unexpected redirect to /login");
-                    if ((await page.locator("body").innerText()).trim().length === 0) routeFindings.push("empty body");
-
-                    const lang = await page.locator("html").getAttribute("lang");
-                    const dir = await page.locator("html").getAttribute("dir");
-                    if (lang !== "fa") routeFindings.push(`html lang=${lang ?? "missing"}; expected fa`);
-                    if (dir !== "rtl") routeFindings.push(`html dir=${dir ?? "missing"}; expected rtl`);
-
-                    const overflow = await page.evaluate(() => ({
-                        documentWidth: document.documentElement.scrollWidth,
-                        viewportWidth: document.documentElement.clientWidth,
-                    }));
-                    if (overflow.documentWidth > overflow.viewportWidth + 2) {
-                        routeFindings.push(`horizontal overflow ${overflow.documentWidth}px > ${overflow.viewportWidth}px`);
+                        for (const finding of routeFindings) {
+                            findings.push(`[${viewport.name}] ${path}: ${finding}`);
+                        }
                     }
-
-                    if (pageErrors.length > 0) routeFindings.push(`page errors: ${pageErrors.join(" | ")}`);
-                    if (consoleErrors.length > 0) routeFindings.push(`console errors: ${consoleErrors.join(" | ")}`);
-                    if (transportFailures.length > 0) {
-                        routeFindings.push(`admin transport failures: ${transportFailures.join(" | ")}`);
-                    }
-
-                    if (routeFindings.length > 0 && screenshotCount < MAX_SCREENSHOTS) {
-                        screenshotCount += 1;
-                        await testInfo.attach(`${viewport.name}-${safeAttachmentName(path)}.png`, {
-                            body: await page.screenshot({ fullPage: true }),
-                            contentType: "image/png",
-                        });
-                    }
-                } catch (error) {
-                    routeFindings.push(`audit exception: ${error instanceof Error ? error.message : String(error)}`);
                 } finally {
-                    page.off("console", onConsole);
-                    page.off("pageerror", onPageError);
-                    page.off("response", onResponse);
+                    await workerPage.close();
                 }
-
-                for (const finding of routeFindings) {
-                    findings.push(`[${viewport.name}] ${path}: ${finding}`);
-                }
-            });
-        }
+            }),
+        );
     }
 
+    for (const screenshot of screenshots) {
+        await testInfo.attach(screenshot.name, { body: screenshot.body, contentType: "image/png" });
+    }
     await testInfo.attach("ui-audit-findings.txt", {
-        body: Buffer.from(findings.length > 0 ? findings.join("\n") : "No findings\n", "utf8"),
+        body: Buffer.from(findings.length > 0 ? findings.sort().join("\n") : "No findings\n", "utf8"),
         contentType: "text/plain",
     });
 
-    expect(findings, `UI audit found ${findings.length} issue(s):\n${findings.join("\n")}`).toEqual([]);
+    expect(findings, `UI audit found ${findings.length} issue(s):\n${findings.sort().join("\n")}`).toEqual([]);
 });
 
 test("mobile shell exposes an operable navigation path", async ({ page }) => {
