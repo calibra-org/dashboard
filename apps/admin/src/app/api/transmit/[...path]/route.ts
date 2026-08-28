@@ -12,6 +12,7 @@ interface RouteContext {
 }
 
 const MUTATION_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+const CHANNEL_MUTATIONS = new Set(["subscribe", "unsubscribe"]);
 
 /**
  * Same-origin proxy for `@adonisjs/transmit`'s SSE handshake routes. Transmit registers
@@ -69,10 +70,12 @@ async function proxy(request: NextRequest, context: RouteContext): Promise<Respo
     };
 
     if (MUTATION_METHODS.has(method)) {
-        const body = await request.arrayBuffer();
-        if (body.byteLength > 0) {
-            init.body = body;
+        const mutationBody = await normalizeMutationBody(request, path);
+        if (mutationBody instanceof Response) return mutationBody;
+        if (mutationBody !== null) {
+            init.body = mutationBody;
             init.duplex = "half";
+            (init.headers as Record<string, string>)["content-type"] = "application/json";
         }
     }
 
@@ -94,6 +97,39 @@ async function proxy(request: NextRequest, context: RouteContext): Promise<Respo
         if (value !== null) responseHeaders.set(key, value);
     }
     return new Response(upstream.body, { status: upstream.status, headers: responseHeaders });
+}
+
+async function normalizeMutationBody(request: NextRequest, path: string[]): Promise<string | null | Response> {
+    const text = await request.text();
+    if (text.length === 0) {
+        return CHANNEL_MUTATIONS.has(path.at(-1) ?? "")
+            ? Response.json({ error: "transmit_payload_invalid" }, { status: 400 })
+            : null;
+    }
+
+    let payload: unknown;
+    try {
+        payload = JSON.parse(text);
+    } catch {
+        return Response.json({ error: "transmit_payload_invalid" }, { status: 400 });
+    }
+
+    if (CHANNEL_MUTATIONS.has(path.at(-1) ?? "")) {
+        if (
+            typeof payload !== "object" ||
+            payload === null ||
+            !("channel" in payload) ||
+            typeof payload.channel !== "string" ||
+            payload.channel.trim().length === 0 ||
+            !("uid" in payload) ||
+            typeof payload.uid !== "string" ||
+            payload.uid.trim().length === 0
+        ) {
+            return Response.json({ error: "transmit_payload_invalid" }, { status: 400 });
+        }
+    }
+
+    return JSON.stringify(payload);
 }
 
 function buildUpstreamHeaders(
