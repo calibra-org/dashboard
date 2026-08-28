@@ -119,24 +119,24 @@ jobs:
 
             - name: Start API
               run: |
-                  mkdir -p apps/admin/test-results
-                  pnpm --filter @calibra/api run dev > apps/admin/test-results/api.log 2>&1 &
+                  mkdir -p apps/admin/ui-audit-diagnostics
+                  pnpm --filter @calibra/api run dev > apps/admin/ui-audit-diagnostics/api.log 2>&1 &
                   echo $! > /tmp/calibra-api.pid
                   for attempt in $(seq 1 60); do
                       if curl --fail --silent http://localhost:3333/health >/dev/null; then
                           exit 0
                       fi
                       if ! kill -0 "$(cat /tmp/calibra-api.pid)" 2>/dev/null; then
-                          cat apps/admin/test-results/api.log
+                          cat apps/admin/ui-audit-diagnostics/api.log
                           exit 1
                       fi
                       sleep 2
                   done
-                  cat apps/admin/test-results/api.log
+                  cat apps/admin/ui-audit-diagnostics/api.log
                   exit 1
 
             - name: Run authenticated admin browser audit
-              run: pnpm --filter @calibra/admin run test:e2e ui-audit --reporter=html
+              run: pnpm --filter @calibra/admin run test:e2e ui-audit --reporter=html --retries=0
 
             - name: Upload Playwright report and diagnostics
               if: always()
@@ -148,3 +148,4 @@ jobs:
                   path: |
                       apps/admin/playwright-report/
                       apps/admin/test-results/
+                      apps/admin/ui-audit-diagnostics/

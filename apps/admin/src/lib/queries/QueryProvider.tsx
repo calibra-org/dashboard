@@ -4,7 +4,7 @@ import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persi
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PersistQueryClientProvider, removeOldestQuery } from "@tanstack/react-query-persist-client";
 import { createStore, del, get, set } from "idb-keyval";
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 
 const ReactQueryDevtools =
     process.env.NODE_ENV === "development"
@@ -106,14 +106,24 @@ const PERSIST_ROOTS = new Set(["dashboard"]);
  * twice but `useState`'s initializer only runs once per mount); SSR renders construct their own
  * one-shot client that is discarded immediately after streaming finishes.
  *
- * On the client, the cache is mirrored to IndexedDB so a full reload still paints the previous
- * dashboard snapshot before the network arrives — `staleTime` then drives the background refetch.
+ * The server and the browser's first hydration pass intentionally use the same plain
+ * `QueryClientProvider`. `PersistQueryClientProvider` puts queries into `fetchStatus: "idle"`
+ * while IndexedDB restores, whereas the server-side provider starts those same queries in
+ * `fetchStatus: "fetching"`. Switching provider types before hydration therefore makes
+ * `isLoading` disagree across SSR/client and causes widespread hydration mismatches. Persistence
+ * is attached immediately after hydration, preserving the existing QueryClient and cache while
+ * keeping the initial render deterministic.
  *
  * @see {@link https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr}
  */
 export function QueryProvider({ children }: { children: React.ReactNode }) {
     const [client] = useState(buildClient);
     const [persister] = useState(buildPersister);
+    const [hydrated, setHydrated] = useState(false);
+
+    useEffect(() => {
+        setHydrated(true);
+    }, []);
 
     const devtools =
         ReactQueryDevtools !== null ? (
@@ -122,7 +132,7 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
             </Suspense>
         ) : null;
 
-    if (persister === undefined) {
+    if (!hydrated || persister === undefined) {
         return (
             <QueryClientProvider client={client}>
                 {children}
