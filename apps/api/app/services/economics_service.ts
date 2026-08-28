@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import type { TransactionClientContract } from "@adonisjs/lucid/types/database";
 import { DateTime } from "luxon";
 
+import { resolveCurrencyConfig } from "#services/currency_config_service";
 import { currentTenantId, currentTrx } from "#services/tenant_context";
 
 export type EconomicQuality = "estimated" | "realized" | "forecast" | "incomplete";
@@ -149,7 +150,7 @@ async function layerConsumed(trx: TransactionClientContract, layerId: number): P
         .joinRaw("CROSS JOIN jsonb_array_elements(s.layer_breakdown) AS elem")
         .whereRaw("(elem->>'layer_id')::bigint = ?", [layerId])
         .whereNot("s.quality", "incomplete")
-        .sum(trx.raw("COALESCE((elem->>'quantity')::int, 0) AS consumed"))
+        .select(trx.raw("COALESCE(SUM((elem->>'quantity')::int), 0)::int AS consumed"))
         .first();
     return Number(row?.consumed ?? 0);
 }
@@ -582,17 +583,23 @@ export async function profitabilityOverview(input: { from?: string; to?: string;
     if (input.to) query.where("effective_at", "<=", DateTime.fromISO(input.to).toUTC().endOf("day").toSQL()!);
     if (input.currency) query.where("currency", normalizedCurrency(input.currency));
     const rows = await query
-        .select("currency")
-        .sum(trx.raw("CASE WHEN amount_minor IS NOT NULL THEN amount_minor ELSE 0 END AS contribution_minor"))
-        .sum(trx.raw("CASE WHEN entry_kind='revenue' THEN COALESCE(amount_minor,0) ELSE 0 END AS revenue_minor"))
-        .sum(
+        .select(
+            "currency",
             trx.raw(
-                "CASE WHEN entry_kind IN ('cogs','cogs_reversal','refund_cogs_recovery') THEN COALESCE(amount_minor,0) ELSE 0 END AS cogs_minor",
+                "SUM(CASE WHEN amount_minor IS NOT NULL THEN amount_minor ELSE 0 END) AS contribution_minor",
             ),
+            trx.raw(
+                "SUM(CASE WHEN entry_kind='revenue' THEN COALESCE(amount_minor,0) ELSE 0 END) AS revenue_minor",
+            ),
+            trx.raw(
+                "SUM(CASE WHEN entry_kind IN ('cogs','cogs_reversal','refund_cogs_recovery') THEN COALESCE(amount_minor,0) ELSE 0 END) AS cogs_minor",
+            ),
+            trx.raw(
+                "SUM(CASE WHEN entry_kind LIKE 'refund_%' THEN COALESCE(amount_minor,0) ELSE 0 END) AS refunds_minor",
+            ),
+            trx.raw("COUNT(DISTINCT order_id)::int AS orders"),
+            trx.raw("SUM(CASE WHEN quality='incomplete' THEN 1 ELSE 0 END)::int AS incomplete_entries"),
         )
-        .sum(trx.raw("CASE WHEN entry_kind LIKE 'refund_%' THEN COALESCE(amount_minor,0) ELSE 0 END AS refunds_minor"))
-        .count(trx.raw("DISTINCT order_id AS orders"))
-        .sum(trx.raw("CASE WHEN quality='incomplete' THEN 1 ELSE 0 END AS incomplete_entries"))
         .groupBy("currency");
     const settlements = await trx
         .from("economic_settlements")
@@ -613,17 +620,25 @@ export async function profitabilityCube(input: { dimension?: "product" | "order"
     if (input.currency) q.where("e.currency", normalizedCurrency(input.currency));
     if (dimension === "order") {
         return q
-            .select("e.order_id as id", "o.order_number as label", "e.currency")
-            .sum("e.amount_minor as contribution_minor")
-            .sum(trx.raw("CASE WHEN e.quality='incomplete' THEN 1 ELSE 0 END AS incomplete_entries"))
+            .select(
+                "e.order_id as id",
+                "o.order_number as label",
+                "e.currency",
+                trx.raw("SUM(e.amount_minor) AS contribution_minor"),
+                trx.raw("SUM(CASE WHEN e.quality='incomplete' THEN 1 ELSE 0 END)::int AS incomplete_entries"),
+            )
             .groupBy("e.order_id", "o.order_number", "e.currency")
             .orderBy("contribution_minor", "desc")
             .limit(limit);
     }
     return q
-        .select("e.product_id as id", "p.name as label", "e.currency")
-        .sum("e.amount_minor as contribution_minor")
-        .sum(trx.raw("CASE WHEN e.quality='incomplete' THEN 1 ELSE 0 END AS incomplete_entries"))
+        .select(
+            "e.product_id as id",
+            "p.name as label",
+            "e.currency",
+            trx.raw("SUM(e.amount_minor) AS contribution_minor"),
+            trx.raw("SUM(CASE WHEN e.quality='incomplete' THEN 1 ELSE 0 END)::int AS incomplete_entries"),
+        )
         .whereNotNull("e.product_id")
         .groupBy("e.product_id", "p.name", "e.currency")
         .orderBy("contribution_minor", "desc")
@@ -666,8 +681,8 @@ export async function productEconomics(productId: number) {
 
 export async function workingCapital() {
     const trx = currentTrx();
-    const tenant = await trx.from("tenants").select("default_currency").first();
-    const currency = normalizedCurrency(tenant?.default_currency ?? "IRR");
+    const { baseCode } = await resolveCurrencyConfig();
+    const currency = normalizedCurrency(baseCode);
     const layers = await trx.from("economic_cost_layers").where("currency", currency).orderBy("effective_at", "asc");
     let inventoryCapitalMinor = 0;
     let unvaluedUnits = 0;
