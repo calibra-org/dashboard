@@ -585,18 +585,12 @@ export async function profitabilityOverview(input: { from?: string; to?: string;
     const rows = await query
         .select(
             "currency",
-            trx.raw(
-                "SUM(CASE WHEN amount_minor IS NOT NULL THEN amount_minor ELSE 0 END) AS contribution_minor",
-            ),
-            trx.raw(
-                "SUM(CASE WHEN entry_kind='revenue' THEN COALESCE(amount_minor,0) ELSE 0 END) AS revenue_minor",
-            ),
+            trx.raw("SUM(CASE WHEN amount_minor IS NOT NULL THEN amount_minor ELSE 0 END) AS contribution_minor"),
+            trx.raw("SUM(CASE WHEN entry_kind='revenue' THEN COALESCE(amount_minor,0) ELSE 0 END) AS revenue_minor"),
             trx.raw(
                 "SUM(CASE WHEN entry_kind IN ('cogs','cogs_reversal','refund_cogs_recovery') THEN COALESCE(amount_minor,0) ELSE 0 END) AS cogs_minor",
             ),
-            trx.raw(
-                "SUM(CASE WHEN entry_kind LIKE 'refund_%' THEN COALESCE(amount_minor,0) ELSE 0 END) AS refunds_minor",
-            ),
+            trx.raw("SUM(CASE WHEN entry_kind LIKE 'refund_%' THEN COALESCE(amount_minor,0) ELSE 0 END) AS refunds_minor"),
             trx.raw("COUNT(DISTINCT order_id)::int AS orders"),
             trx.raw("SUM(CASE WHEN quality='incomplete' THEN 1 ELSE 0 END)::int AS incomplete_entries"),
         )
