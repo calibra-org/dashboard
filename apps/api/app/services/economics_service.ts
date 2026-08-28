@@ -628,13 +628,13 @@ export async function profitabilityCube(input: { dimension?: "product" | "order"
     return q
         .select(
             "e.product_id as id",
-            "p.name as label",
+            "p.sku as label",
             "e.currency",
             trx.raw("SUM(e.amount_minor) AS contribution_minor"),
             trx.raw("SUM(CASE WHEN e.quality='incomplete' THEN 1 ELSE 0 END)::int AS incomplete_entries"),
         )
         .whereNotNull("e.product_id")
-        .groupBy("e.product_id", "p.name", "e.currency")
+        .groupBy("e.product_id", "p.sku", "e.currency")
         .orderBy("contribution_minor", "desc")
         .limit(limit);
 }
