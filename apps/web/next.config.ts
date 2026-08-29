@@ -3,6 +3,35 @@ import createNextIntlPlugin from "next-intl/plugin";
 
 const withNextIntl = createNextIntlPlugin("./src/lib/i18n/request.ts");
 
+const contentSecurityPolicyReportOnly = [
+    "default-src 'self'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+    "object-src 'none'",
+    "img-src 'self' data: blob: https: http:",
+    "font-src 'self' data: https:",
+    "style-src 'self' 'unsafe-inline'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+    "connect-src 'self' https: http: ws: wss:",
+].join("; ");
+
+const securityHeaders = [
+    { key: "X-Content-Type-Options", value: "nosniff" },
+    { key: "X-Frame-Options", value: "DENY" },
+    { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+    { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+    { key: "Content-Security-Policy-Report-Only", value: contentSecurityPolicyReportOnly },
+    ...(process.env.NODE_ENV === "production"
+        ? [
+              {
+                  key: "Strict-Transport-Security",
+                  value: "max-age=63072000; includeSubDomains; preload",
+              },
+          ]
+        : []),
+];
+
 const nextConfig: NextConfig = {
     /**
      * `standalone` produces a self-contained server bundle in `.next/standalone/` — required for
@@ -35,6 +64,9 @@ const nextConfig: NextConfig = {
             .map((s) => s.trim())
             .filter(Boolean) ?? []),
     ],
+    async headers() {
+        return [{ source: "/:path*", headers: securityHeaders }];
+    },
     images: {
         /**
          * Allow product/branding images served from the AdonisJS API host (per-tenant `/uploads/*`)
