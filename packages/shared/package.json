@@ -29,10 +29,6 @@
         "./import-fields": {
             "types": "./src/import-fields.ts",
             "import": "./src/import-fields.ts"
-        },
-        "./security-headers": {
-            "types": "./src/security-headers.ts",
-            "import": "./src/security-headers.ts"
         }
     },
     "scripts": {
