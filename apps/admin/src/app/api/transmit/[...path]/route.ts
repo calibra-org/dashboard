@@ -4,12 +4,15 @@ import { hasLocale } from "next-intl";
 
 import { CSRF_COOKIE, getSession, SESSION_COOKIE } from "#/lib/auth";
 import { routing } from "#/lib/i18n/routing";
+import { TENANT_HEADER } from "#/lib/tenant/constants";
+import { resolveHost, tenantRefFor } from "#/lib/tenant/resolve-host";
 
 interface RouteContext {
     params: Promise<{ path: string[] }>;
 }
 
 const MUTATION_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+const CHANNEL_MUTATIONS = new Set(["subscribe", "unsubscribe"]);
 
 /**
  * Same-origin proxy for `@adonisjs/transmit`'s SSE handshake routes. Transmit registers
@@ -53,23 +56,36 @@ async function proxy(request: NextRequest, context: RouteContext): Promise<Respo
     const search = request.nextUrl.search;
     const upstreamUrl = `${upstreamBase.replace(/\/+$/, "")}/__transmit/${path.join("/")}${search}`;
     const locale = resolveLocale(request.headers.get("accept-language"));
+    /**
+     * `/api` is outside the locale/tenant middleware matcher, so mirror the canonical Admin BFF:
+     * resolve the shop from the browser-facing Host and forward it explicitly. The API's tenant
+     * context wraps Transmit too; without this header the access-token lookup runs fail-closed under
+     * RLS and a perfectly valid operator session is rejected as 401.
+     */
+    const tenant = tenantRefFor(resolveHost(request.headers.get("host")));
 
     const init: RequestInit & { duplex?: "half" } = {
         method,
-        headers: buildUpstreamHeaders(session.token, locale, request.headers.get("content-type"), method),
+        headers: buildUpstreamHeaders(session.token, locale, tenant, request.headers.get("content-type"), method),
     };
 
     if (MUTATION_METHODS.has(method)) {
-        const body = await request.arrayBuffer();
-        if (body.byteLength > 0) {
-            init.body = body;
+        const mutationBody = await normalizeMutationBody(request, path);
+        if (mutationBody instanceof Response) return mutationBody;
+        if (mutationBody !== null) {
+            init.body = mutationBody;
             init.duplex = "half";
+            (init.headers as Record<string, string>)["content-type"] = "application/json";
         }
     }
 
     const upstream = await fetch(upstreamUrl, init);
 
-    if (upstream.status === 401 || upstream.status === 403) {
+    /**
+     * Only an upstream 401 means the bearer itself is no longer accepted. A 403 can be a normal
+     * per-channel authorization denial and must not tear down the operator's entire Admin session.
+     */
+    if (upstream.status === 401) {
         const store = await cookies();
         store.delete(SESSION_COOKIE);
         store.delete(CSRF_COOKIE);
@@ -83,13 +99,55 @@ async function proxy(request: NextRequest, context: RouteContext): Promise<Respo
     return new Response(upstream.body, { status: upstream.status, headers: responseHeaders });
 }
 
-function buildUpstreamHeaders(token: string, locale: string, contentType: string | null, method: string): Record<string, string> {
+async function normalizeMutationBody(request: NextRequest, path: string[]): Promise<string | null | Response> {
+    const text = await request.text();
+    if (text.length === 0) {
+        return CHANNEL_MUTATIONS.has(path.at(-1) ?? "")
+            ? Response.json({ error: "transmit_payload_invalid" }, { status: 400 })
+            : null;
+    }
+
+    let payload: unknown;
+    try {
+        payload = JSON.parse(text);
+    } catch {
+        return Response.json({ error: "transmit_payload_invalid" }, { status: 400 });
+    }
+
+    if (CHANNEL_MUTATIONS.has(path.at(-1) ?? "")) {
+        if (
+            typeof payload !== "object" ||
+            payload === null ||
+            !("channel" in payload) ||
+            typeof payload.channel !== "string" ||
+            payload.channel.trim().length === 0 ||
+            !("uid" in payload) ||
+            typeof payload.uid !== "string" ||
+            payload.uid.trim().length === 0
+        ) {
+            return Response.json({ error: "transmit_payload_invalid" }, { status: 400 });
+        }
+    }
+
+    return JSON.stringify(payload);
+}
+
+function buildUpstreamHeaders(
+    token: string,
+    locale: string,
+    tenant: string | null,
+    contentType: string | null,
+    method: string,
+): Record<string, string> {
     const headers: Record<string, string> = {
         authorization: `Bearer ${token}`,
         "accept-language": locale,
         /** SSE handshake uses `accept: text/event-stream`; subscribe uses JSON. Default safely. */
         accept: "text/event-stream, application/json",
     };
+    if (tenant !== null) {
+        headers[TENANT_HEADER] = tenant;
+    }
     if (MUTATION_METHODS.has(method) && typeof contentType === "string" && contentType.length > 0) {
         headers["content-type"] = contentType;
     }

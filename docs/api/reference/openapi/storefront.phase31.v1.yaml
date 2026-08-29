@@ -24,4 +24,5 @@ paths:
                 promise_public_id: { type: string, format: uuid }
       responses:
         '200': { description: Promise selected for the current canonical cart }
-        '409': { description: Promise expired, inventory stale, cart changed, or source changed }
+        # Conflict covers expiry as well as stale inventory, cart drift, or source drift.
+        '409': { description: Promise expired }
