@@ -4,34 +4,15 @@ import createNextIntlPlugin from "next-intl/plugin";
 
 const withNextIntl = createNextIntlPlugin("./src/lib/i18n/request.ts");
 
-const contentSecurityPolicyReportOnly = [
-    "default-src 'self'",
-    "base-uri 'self'",
-    "form-action 'self'",
-    "frame-ancestors 'none'",
-    "object-src 'none'",
-    "img-src 'self' data: blob: https: http:",
-    "font-src 'self' data: https:",
-    "style-src 'self' 'unsafe-inline'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-    "connect-src 'self' https: http: ws: wss:",
-].join("; ");
-
 const securityHeaders = [
+    { key: "Content-Security-Policy", value: "base-uri 'self'; object-src 'none'; frame-ancestors 'none'" },
     { key: "X-Content-Type-Options", value: "nosniff" },
     { key: "X-Frame-Options", value: "DENY" },
     { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
     { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
-    { key: "Content-Security-Policy-Report-Only", value: contentSecurityPolicyReportOnly },
-    ...(process.env.NODE_ENV === "production"
-        ? [
-              {
-                  key: "Strict-Transport-Security",
-                  value: "max-age=63072000; includeSubDomains; preload",
-              },
-          ]
-        : []),
-];
+    { key: "X-DNS-Prefetch-Control", value: "off" },
+    ...(process.env.NODE_ENV === "production" ? [{ key: "Strict-Transport-Security", value: "max-age=31536000" }] : []),
+] as const;
 
 const nextConfig: NextConfig = {
     /** Self-contained server bundle for the Dockerfile; do not change without rewriting it. */
@@ -73,6 +54,9 @@ const nextConfig: NextConfig = {
             .map((s) => s.trim())
             .filter(Boolean) ?? []),
     ],
+    async headers() {
+        return [{ source: "/:path*", headers: [...securityHeaders] }];
+    },
     /**
      * Pin Turbopack's workspace root to the monorepo this `apps/admin` lives in. Without
      * this, when the dir tree contains another `pnpm-workspace.yaml` higher up (e.g. when
@@ -82,9 +66,6 @@ const nextConfig: NextConfig = {
      */
     turbopack: {
         root: path.resolve(import.meta.dirname, "../.."),
-    },
-    async headers() {
-        return [{ source: "/:path*", headers: securityHeaders }];
     },
     /**
      * The `@adonisjs/transmit-client` hard-codes `${baseUrl}/__transmit/events` for the SSE
