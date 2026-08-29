@@ -19,12 +19,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
+      actions: read
       security-events: write
       packages: read
       contents: read
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
