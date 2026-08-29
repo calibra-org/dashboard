@@ -1,6 +1,45 @@
+"use client";
+
+import { Select as PanelSelect } from "@calibra/panel-kit/select";
+import type { ComponentProps } from "react";
+
+export {
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@calibra/panel-kit/select";
+
+type PanelSelectProps = ComponentProps<typeof PanelSelect>;
+type PanelSelectChange = NonNullable<PanelSelectProps["onValueChange"]>;
+type PanelSelectChangeDetails = Parameters<PanelSelectChange>[1];
+
+export interface SelectProps extends Omit<PanelSelectProps, "defaultValue" | "multiple" | "onValueChange" | "value"> {
+    value?: string | null;
+    defaultValue?: string | null;
+    onValueChange?: (value: string, eventDetails: PanelSelectChangeDetails) => void;
+}
+
 /**
- * Re-export shim → `@calibra/panel-kit`. The primitive moved into the shared operator-panel
- * package (one set of token-driven base primitives for both `apps/admin` and `apps/platform`).
- * Existing `#/components/ui/<name>` imports keep resolving through this file unchanged.
+ * Admin selects are single-value string controls. Base UI's generic Root loses its value type when
+ * it crosses the panel-kit re-export boundary, which otherwise widens callbacks to `unknown`.
+ * Keep the admin-facing contract explicit while leaving the shared primitive generic for other
+ * operator panels.
  */
-export * from "@calibra/panel-kit/select";
+export function Select({ onValueChange, ...props }: SelectProps) {
+    return (
+        <PanelSelect
+            {...props}
+            multiple={false}
+            onValueChange={
+                onValueChange
+                    ? (value, eventDetails) => {
+                          if (typeof value === "string") onValueChange(value, eventDetails);
+                      }
+                    : undefined
+            }
+        />
+    );
+}
+
+Select.displayName = "Select";

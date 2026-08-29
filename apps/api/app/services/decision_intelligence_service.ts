@@ -487,7 +487,7 @@ export async function refreshDecisionIntelligence(): Promise<void> {
             score_mode: scored.mode,
             ranking_policy_version: RANKING_POLICY_VERSION,
             score_components: scored.components,
-            missing_components: scored.missing,
+            missing_components: JSON.stringify(scored.missing),
             freshness_at: signal.freshnessAt,
             last_seen_at: sqlNow(),
             cleared_at: null,

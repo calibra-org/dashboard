@@ -158,7 +158,7 @@ replaceIfMissing(
 );
 replaceIfMissing(
     "docs/api/scripts/merge-storefront-spec.js",
-    "phase29, phase30, discovery",
+    "phase29, phase30",
     "for (const overlay of [completion, identity, phase9, phase17, phase29, discovery]) {",
     "for (const overlay of [completion, identity, phase9, phase17, phase29, phase30, discovery]) {",
 );
