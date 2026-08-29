@@ -57,13 +57,13 @@ jobs:
           --health-retries 10
     steps:
       - name: Checkout integrated candidate
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           persist-credentials: false
       - name: Capture checked-out candidate
         run: echo "START_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "24.14.0"
       - run: npm install --global pnpm@10.32.1
