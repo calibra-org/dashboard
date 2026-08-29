@@ -24,7 +24,7 @@ jobs:
         timeout-minutes: 6
         steps:
             - uses: actions/checkout@v7
-            - uses: actions/setup-node@v4
+            - uses: actions/setup-node@v7
               with:
                   node-version: ${{ env.NODE_VERSION }}
             - run: npm install --global pnpm@${PNPM_VERSION}
@@ -42,7 +42,7 @@ jobs:
         timeout-minutes: 6
         steps:
             - uses: actions/checkout@v7
-            - uses: actions/setup-node@v4
+            - uses: actions/setup-node@v7
               with:
                   node-version: ${{ env.NODE_VERSION }}
             - run: npm install --global pnpm@${PNPM_VERSION}
@@ -54,7 +54,7 @@ jobs:
         timeout-minutes: 6
         steps:
             - uses: actions/checkout@v7
-            - uses: actions/setup-node@v4
+            - uses: actions/setup-node@v7
               with:
                   node-version: ${{ env.NODE_VERSION }}
             - run: npm install --global pnpm@${PNPM_VERSION}
@@ -67,7 +67,7 @@ jobs:
         timeout-minutes: 4
         steps:
             - uses: actions/checkout@v7
-            - uses: actions/setup-node@v4
+            - uses: actions/setup-node@v7
               with:
                   node-version: ${{ env.NODE_VERSION }}
             - run: npm install --global pnpm@${PNPM_VERSION}
@@ -106,7 +106,7 @@ jobs:
                     --health-retries 10
         steps:
             - uses: actions/checkout@v7
-            - uses: actions/setup-node@v4
+            - uses: actions/setup-node@v7
               with:
                   node-version: ${{ env.NODE_VERSION }}
             - run: npm install --global pnpm@${PNPM_VERSION}
@@ -149,7 +149,7 @@ jobs:
         timeout-minutes: 6
         steps:
             - uses: actions/checkout@v7
-            - uses: actions/setup-node@v4
+            - uses: actions/setup-node@v7
               with:
                   node-version: ${{ env.NODE_VERSION }}
             - run: npm install --global pnpm@${PNPM_VERSION}
@@ -168,7 +168,7 @@ jobs:
         timeout-minutes: 6
         steps:
             - uses: actions/checkout@v7
-            - uses: actions/setup-node@v4
+            - uses: actions/setup-node@v7
               with:
                   node-version: ${{ env.NODE_VERSION }}
             - run: npm install --global pnpm@${PNPM_VERSION}
@@ -206,7 +206,7 @@ jobs:
         timeout-minutes: 6
         steps:
             - uses: actions/checkout@v7
-            - uses: actions/setup-node@v4
+            - uses: actions/setup-node@v7
               with:
                   node-version: ${{ env.NODE_VERSION }}
             - run: npm install --global pnpm@${PNPM_VERSION}
