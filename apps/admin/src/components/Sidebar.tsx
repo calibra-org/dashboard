@@ -100,6 +100,7 @@ const groups: NavGroup[] = [
             { href: "/analytics/growth-portfolio", label: "سبد رشد خودکار", icon: TrendingUp },
             { href: "/analytics/retail-media", label: "رسانه تجاری و سازندگان", icon: BadgePercent },
             { href: "/analytics/fulfillment-promise", label: "وعده تحویل و شبکه محلی", icon: Boxes },
+            { href: "/analytics/reliability-guardian", label: "پایداری و Self-Healing", icon: ShieldCheck },
             { href: "/analytics/merchant-memory", label: "حافظه سازمانی", icon: Library },
             { href: "/experiments", label: "آزمایشگاه آزمایش‌ها", icon: Sparkles },
             { href: "/planning", label: "Planning OS", icon: CalendarClock },

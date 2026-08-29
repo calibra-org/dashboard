@@ -75,6 +75,7 @@ await import("./routes/admin_objective_autonomy.js");
 await import("./routes/admin_product_passports.js");
 await import("./routes/admin_retail_media.js");
 await import("./routes/admin_fulfillment_promise.js");
+await import("./routes/admin_reliability_guardian.js");
 await import("./routes/admin_procurement.js");
 await import("./routes/admin_quality.js");
 await import("./routes/admin_experiments.js");
