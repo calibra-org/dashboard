@@ -1,0 +1,50 @@
+name: Adonis Compatibility Lockfile
+
+on:
+    push:
+        branches: ["chore/adonis-codegen-compat"]
+        paths:
+            - ".github/workflows/adonis-codegen-compat-lockfile.yml"
+
+permissions:
+    contents: write
+
+env:
+    NODE_VERSION: "24.14.0"
+    PNPM_VERSION: "10.32.1"
+
+jobs:
+    align-lockfile:
+        if: github.event.head_commit.message == 'chore: add one-shot Adonis lockfile generator'
+        runs-on: ubuntu-latest
+        timeout-minutes: 8
+        steps:
+            - uses: actions/checkout@v7
+              with:
+                  ref: chore/adonis-codegen-compat
+            - uses: pnpm/action-setup@v6
+              with:
+                  version: ${{ env.PNPM_VERSION }}
+            - uses: actions/setup-node@v7
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: pnpm
+            - name: Align compatible Adonis resolutions only
+              run: pnpm --filter ./apps/api update @adonisjs/core @adonisjs/bouncer --lockfile-only
+            - name: Assert manifest scope is unchanged
+              run: git diff --exit-code -- package.json apps/api/package.json pnpm-workspace.yaml
+            - name: Assert expected compatible versions
+              run: |
+                  grep -q "@adonisjs/core@7.5.0" pnpm-lock.yaml
+                  grep -q "@adonisjs/bouncer@4.0.1" pnpm-lock.yaml
+            - name: Commit lockfile only
+              run: |
+                  if git diff --quiet -- pnpm-lock.yaml; then
+                    echo "Expected pnpm-lock.yaml to change" >&2
+                    exit 1
+                  fi
+                  git config user.name "github-actions[bot]"
+                  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+                  git add pnpm-lock.yaml
+                  git commit -m "chore(deps): align Adonis codegen compatibility"
+                  git push origin HEAD:${GITHUB_REF_NAME}
