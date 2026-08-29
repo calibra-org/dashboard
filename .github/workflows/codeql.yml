@@ -17,6 +17,7 @@ jobs:
   analyze:
     name: analyze-javascript-typescript
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       security-events: write
       packages: read
@@ -30,6 +31,7 @@ jobs:
         with:
           languages: javascript-typescript
           build-mode: none
+          queries: security-extended
 
       - name: Analyze
         uses: github/codeql-action/analyze@v4
