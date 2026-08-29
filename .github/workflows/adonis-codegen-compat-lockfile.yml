@@ -28,22 +28,45 @@ jobs:
               with:
                   node-version: ${{ env.NODE_VERSION }}
                   cache: pnpm
-            - name: Align compatible Adonis resolutions only
-              run: pnpm --filter ./apps/api update @adonisjs/core @adonisjs/bouncer --lockfile-only
-            - name: Assert manifest scope is unchanged
-              run: git diff --exit-code -- package.json apps/api/package.json pnpm-workspace.yaml
-            - name: Assert expected compatible versions
+            - name: Align compatible Adonis versions only
+              run: pnpm --filter ./apps/api update @adonisjs/core@7.5.0 @adonisjs/bouncer@4.0.1 --lockfile-only
+            - name: Assert changed-file scope
+              shell: bash
+              run: |
+                  actual=$(git diff --name-only | sort)
+                  expected=$(printf '%s\n' 'apps/api/package.json' 'pnpm-lock.yaml')
+                  if [ "$actual" != "$expected" ]; then
+                    echo "Unexpected changed files:" >&2
+                    printf '%s\n' "$actual" >&2
+                    exit 1
+                  fi
+            - name: Assert manifest changes are exactly Core and Bouncer
+              run: |
+                  node <<'NODE'
+                  const assert = require('node:assert/strict')
+                  const fs = require('node:fs')
+                  const { execFileSync } = require('node:child_process')
+
+                  const before = JSON.parse(execFileSync('git', ['show', 'HEAD:apps/api/package.json'], { encoding: 'utf8' }))
+                  const after = JSON.parse(fs.readFileSync('apps/api/package.json', 'utf8'))
+
+                  assert.equal(before.dependencies['@adonisjs/core'], '^7.3.2')
+                  assert.equal(before.dependencies['@adonisjs/bouncer'], '^4.0.0')
+                  assert.equal(after.dependencies['@adonisjs/core'], '^7.5.0')
+                  assert.equal(after.dependencies['@adonisjs/bouncer'], '^4.0.1')
+
+                  after.dependencies['@adonisjs/core'] = before.dependencies['@adonisjs/core']
+                  after.dependencies['@adonisjs/bouncer'] = before.dependencies['@adonisjs/bouncer']
+                  assert.deepEqual(after, before)
+                  NODE
+            - name: Assert expected lockfile resolutions
               run: |
                   grep -q "@adonisjs/core@7.5.0" pnpm-lock.yaml
                   grep -q "@adonisjs/bouncer@4.0.1" pnpm-lock.yaml
-            - name: Commit lockfile only
+            - name: Commit compatibility alignment
               run: |
-                  if git diff --quiet -- pnpm-lock.yaml; then
-                    echo "Expected pnpm-lock.yaml to change" >&2
-                    exit 1
-                  fi
                   git config user.name "github-actions[bot]"
                   git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-                  git add pnpm-lock.yaml
-                  git commit -m "chore(deps): align Adonis codegen compatibility"
+                  git add apps/api/package.json pnpm-lock.yaml
+                  git commit -m "fix(deps): align Adonis CodeGen compatibility"
                   git push origin HEAD:${GITHUB_REF_NAME}
