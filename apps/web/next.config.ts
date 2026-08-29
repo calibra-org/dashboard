@@ -6,7 +6,7 @@ const withNextIntl = createNextIntlPlugin("./src/lib/i18n/request.ts");
 const securityHeaders = [
     {
         key: "Content-Security-Policy",
-        value: "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'",
+        value: "base-uri 'self'; object-src 'none'; frame-ancestors 'none'",
     },
     { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
     { key: "X-Content-Type-Options", value: "nosniff" },
