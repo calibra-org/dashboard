@@ -1,33 +1,25 @@
 version: 2
 updates:
-  - package-ecosystem: "npm"
-    directory: "/"
+  - package-ecosystem: npm
+    directory: /
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "06:00"
-      timezone: "UTC"
+      interval: weekly
+      day: monday
+      time: "04:00"
+      timezone: Europe/Zurich
     open-pull-requests-limit: 10
     versioning-strategy: increase-if-necessary
     groups:
-      development-tooling:
-        dependency-type: "development"
+      development-dependencies:
+        dependency-type: development
       production-dependencies:
-        dependency-type: "production"
-    labels:
-      - "dependencies"
+        dependency-type: production
 
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: github-actions
+    directory: /
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "06:30"
-      timezone: "UTC"
-    open-pull-requests-limit: 5
-    groups:
-      github-actions:
-        patterns:
-          - "*"
-    labels:
-      - "dependencies"
+      interval: weekly
+      day: monday
+      time: "04:30"
+      timezone: Europe/Zurich
+    open-pull-requests-limit: 10
