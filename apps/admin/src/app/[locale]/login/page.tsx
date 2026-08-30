@@ -1,4 +1,3 @@
-import { Box, Globe2, ShieldCheck, Sparkles } from "lucide-react";
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
@@ -6,6 +5,7 @@ import { LocaleSwitch } from "#/components/LocaleSwitch";
 import { LoginForm } from "#/components/LoginForm";
 import { ThemeToggle } from "#/components/ThemeToggle";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "#/components/ui/card";
+import { Box, Globe2, ShieldCheck, Sparkles } from "#/icons";
 
 interface PageProps {
     params: Promise<{ locale: string }>;
