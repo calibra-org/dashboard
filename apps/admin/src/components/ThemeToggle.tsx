@@ -1,11 +1,11 @@
 "use client";
 
 import { Menu } from "@base-ui/react/menu";
-import { Monitor, Moon, Sun } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { Button } from "#/components/ui/button";
+import { Monitor, Moon, Sun } from "#/icons";
 import { cn } from "#/lib/utils";
 
 type Theme = "light" | "dark" | "system";
