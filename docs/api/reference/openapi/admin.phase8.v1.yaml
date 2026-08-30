@@ -1,0 +1,299 @@
+openapi: 3.1.0
+info:
+  title: Calibra Admin Phase 8 Social Commerce OS Overlay
+  version: 1.0.0
+  description: Tenant-aware administration for social content, community, moderation, media governance, live shopping and attribution.
+tags:
+  - name: Social Commerce OS
+    description: Phase 8 social content, community, moderation, live shopping and first-party attribution contracts.
+paths:
+  /api/v1/admin/social/summary:
+    get:
+      tags: [Social Commerce OS]
+      operationId: adminSocialSummary
+      security: [{ BearerAuth: [] }]
+      responses: { '200': { $ref: '#/components/responses/SocialOk' } }
+  /api/v1/admin/social/contract:
+    get:
+      tags: [Social Commerce OS]
+      operationId: adminSocialContract
+      security: [{ BearerAuth: [] }]
+      responses: { '200': { $ref: '#/components/responses/SocialOk' } }
+  /api/v1/admin/social/contents:
+    get:
+      tags: [Social Commerce OS]
+      operationId: adminSocialContents
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { in: query, name: page, schema: { type: integer, minimum: 1 } }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 100 } }
+        - { in: query, name: kind, schema: { $ref: '#/components/schemas/SocialContentKind' } }
+        - { in: query, name: status, schema: { type: string } }
+        - { in: query, name: q, schema: { type: string, maxLength: 160 } }
+      responses: { '200': { $ref: '#/components/responses/SocialOk' } }
+    post:
+      tags: [Social Commerce OS]
+      operationId: adminSocialContentCreate
+      security: [{ BearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/SocialContentCreateInput' } } } }
+      responses: { '201': { $ref: '#/components/responses/SocialOk' }, '422': { $ref: '#/components/responses/SocialValidationError' } }
+  /api/v1/admin/social/contents/{id}:
+    parameters: [{ $ref: '#/components/parameters/SocialId' }]
+    get:
+      tags: [Social Commerce OS]
+      operationId: adminSocialContentShow
+      security: [{ BearerAuth: [] }]
+      responses: { '200': { $ref: '#/components/responses/SocialOk' }, '404': { description: Social content not found } }
+    patch:
+      tags: [Social Commerce OS]
+      operationId: adminSocialContentUpdate
+      security: [{ BearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/SocialContentUpdateInput' } } } }
+      responses: { '200': { $ref: '#/components/responses/SocialOk' }, '409': { description: Optimistic version conflict }, '422': { $ref: '#/components/responses/SocialValidationError' } }
+  /api/v1/admin/social/contents/{id}/transition:
+    parameters: [{ $ref: '#/components/parameters/SocialId' }]
+    post:
+      tags: [Social Commerce OS]
+      operationId: adminSocialContentTransition
+      security: [{ BearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/SocialTransitionInput' } } } }
+      responses: { '200': { $ref: '#/components/responses/SocialOk' }, '409': { description: Invalid transition or version conflict }, '422': { description: Publication gate failed } }
+  /api/v1/admin/social/contents/{contentId}/frames:
+    parameters: [{ $ref: '#/components/parameters/SocialContentId' }]
+    post:
+      tags: [Social Commerce OS]
+      operationId: adminSocialFrameCreate
+      security: [{ BearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/SocialStoryFrameInput' } } } }
+      responses: { '201': { $ref: '#/components/responses/SocialOk' } }
+  /api/v1/admin/social/contents/{contentId}/markers:
+    parameters: [{ $ref: '#/components/parameters/SocialContentId' }]
+    post:
+      tags: [Social Commerce OS]
+      operationId: adminSocialMarkerCreate
+      security: [{ BearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [product_id], properties: { product_id: { type: integer, minimum: 1 }, timestamp_ms: { type: integer, minimum: 0 }, label: { type: [string, 'null'], maxLength: 160 }, metadata: { type: object, additionalProperties: true } } } } } }
+      responses: { '201': { $ref: '#/components/responses/SocialOk' } }
+  /api/v1/admin/social/channels:
+    post:
+      tags: [Social Commerce OS]
+      operationId: adminSocialChannelCreate
+      security: [{ BearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [slug, title], properties: { slug: { type: string }, title: { type: string }, visibility: { type: string, enum: [public, members, private] } } } } } }
+      responses: { '201': { $ref: '#/components/responses/SocialOk' } }
+  /api/v1/admin/social/channels/{channelId}/membership:
+    parameters: [{ $ref: '#/components/parameters/SocialChannelId' }]
+    post:
+      tags: [Social Commerce OS]
+      operationId: adminSocialChannelMembership
+      security: [{ BearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [customer_id, role, present], properties: { customer_id: { type: integer, minimum: 1 }, role: { type: string }, present: { type: boolean } } } } } }
+      responses: { '200': { $ref: '#/components/responses/SocialOk' } }
+  /api/v1/admin/social/threads:
+    get:
+      tags: [Social Commerce OS]
+      operationId: adminSocialThreads
+      security: [{ BearerAuth: [] }]
+      responses: { '200': { $ref: '#/components/responses/SocialOk' } }
+  /api/v1/admin/social/threads/{threadId}/messages:
+    parameters: [{ $ref: '#/components/parameters/SocialThreadId' }]
+    post:
+      tags: [Social Commerce OS]
+      operationId: adminSocialThreadMessage
+      security: [{ BearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [body], properties: { body: { type: string, maxLength: 20000 } } } } } }
+      responses: { '201': { $ref: '#/components/responses/SocialOk' } }
+  /api/v1/admin/social/threads/{threadId}/convert-to-ticket:
+    parameters: [{ $ref: '#/components/parameters/SocialThreadId' }]
+    post:
+      tags: [Social Commerce OS]
+      operationId: adminSocialThreadConvertToTicket
+      security: [{ BearerAuth: [] }]
+      responses: { '200': { $ref: '#/components/responses/SocialOk' } }
+  /api/v1/admin/social/moderation:
+    get:
+      tags: [Social Commerce OS]
+      operationId: adminSocialModeration
+      security: [{ BearerAuth: [] }]
+      responses: { '200': { $ref: '#/components/responses/SocialOk' } }
+  /api/v1/admin/social/moderation/{id}/actions:
+    parameters: [{ $ref: '#/components/parameters/SocialId' }]
+    post:
+      tags: [Social Commerce OS]
+      operationId: adminSocialModerationAction
+      security: [{ BearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [expected_version, action], properties: { expected_version: { type: integer, minimum: 1 }, action: { type: string, enum: [limit, remove, restore, finalize, escalate, note] }, reason: { type: [string, 'null'], maxLength: 4000 }, evidence: { type: object, additionalProperties: true } } } } } }
+      responses: { '200': { $ref: '#/components/responses/SocialOk' } }
+  /api/v1/admin/social/contents/{contentId}/live:
+    parameters: [{ $ref: '#/components/parameters/SocialContentId' }]
+    post:
+      tags: [Social Commerce OS]
+      operationId: adminSocialLiveCreate
+      security: [{ BearerAuth: [] }]
+      responses: { '201': { $ref: '#/components/responses/SocialOk' } }
+    patch:
+      tags: [Social Commerce OS]
+      operationId: adminSocialLiveUpdate
+      security: [{ BearerAuth: [] }]
+      responses: { '200': { $ref: '#/components/responses/SocialOk' } }
+  /api/v1/admin/social/contents/{contentId}/live/emergency-stop:
+    parameters: [{ $ref: '#/components/parameters/SocialContentId' }]
+    post:
+      tags: [Social Commerce OS]
+      operationId: adminSocialLiveEmergencyStop
+      security: [{ BearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/SocialLiveEmergencyStopInput' } } } }
+      responses: { '200': { $ref: '#/components/responses/SocialOk' } }
+  /api/v1/admin/social/contents/{contentId}/live/chat-freeze:
+    parameters: [{ $ref: '#/components/parameters/SocialContentId' }]
+    post:
+      tags: [Social Commerce OS]
+      operationId: adminSocialLiveChatFreeze
+      security: [{ BearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/SocialLiveChatFreezeInput' } } } }
+      responses: { '200': { $ref: '#/components/responses/SocialOk' } }
+  /api/v1/admin/social/contents/{contentId}/live/participants/control:
+    parameters: [{ $ref: '#/components/parameters/SocialContentId' }]
+    post:
+      tags: [Social Commerce OS]
+      operationId: adminSocialLiveParticipantControl
+      security: [{ BearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/SocialLiveParticipantControlInput' } } } }
+      responses: { '200': { $ref: '#/components/responses/SocialOk' } }
+  /api/v1/admin/social/contents/{contentId}/live/replay:
+    parameters: [{ $ref: '#/components/parameters/SocialContentId' }]
+    post:
+      tags: [Social Commerce OS]
+      operationId: adminSocialLiveReplay
+      security: [{ BearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/SocialLiveReplayInput' } } } }
+      responses: { '200': { $ref: '#/components/responses/SocialOk' } }
+  /api/v1/admin/social/media/upload-intents:
+    post:
+      tags: [Social Commerce OS]
+      operationId: adminSocialMediaUploadIntent
+      security: [{ BearerAuth: [] }]
+      responses: { '201': { $ref: '#/components/responses/SocialOk' } }
+  /api/v1/admin/social/media/{mediaId}:
+    parameters: [{ $ref: '#/components/parameters/SocialMediaId' }]
+    get:
+      tags: [Social Commerce OS]
+      operationId: adminSocialMediaShow
+      security: [{ BearerAuth: [] }]
+      responses: { '200': { $ref: '#/components/responses/SocialOk' } }
+  /api/v1/admin/social/media/{mediaId}/acknowledge:
+    parameters: [{ $ref: '#/components/parameters/SocialMediaId' }]
+    post: { tags: [Social Commerce OS], operationId: adminSocialMediaAcknowledge, security: [{ BearerAuth: [] }], responses: { '200': { $ref: '#/components/responses/SocialOk' } } }
+  /api/v1/admin/social/media/{mediaId}/tracks:
+    parameters: [{ $ref: '#/components/parameters/SocialMediaId' }]
+    post: { tags: [Social Commerce OS], operationId: adminSocialMediaTrackCreate, security: [{ BearerAuth: [] }], responses: { '201': { $ref: '#/components/responses/SocialOk' } } }
+  /api/v1/admin/social/media/tracks/{trackId}/review:
+    parameters: [{ in: path, name: trackId, required: true, schema: { type: integer, minimum: 1 } }]
+    post: { tags: [Social Commerce OS], operationId: adminSocialMediaTrackReview, security: [{ BearerAuth: [] }], responses: { '200': { $ref: '#/components/responses/SocialOk' } } }
+  /api/v1/admin/social/media/{mediaId}/rights:
+    parameters: [{ $ref: '#/components/parameters/SocialMediaId' }]
+    post: { tags: [Social Commerce OS], operationId: adminSocialMediaRightsCreate, security: [{ BearerAuth: [] }], responses: { '201': { $ref: '#/components/responses/SocialOk' } } }
+  /api/v1/admin/social/media/{mediaId}/security-scan:
+    parameters: [{ $ref: '#/components/parameters/SocialMediaId' }]
+    post: { tags: [Social Commerce OS], operationId: adminSocialMediaSecurityScan, security: [{ BearerAuth: [] }], responses: { '200': { $ref: '#/components/responses/SocialOk' } } }
+  /api/v1/admin/social/media/{mediaId}/retry:
+    parameters: [{ $ref: '#/components/parameters/SocialMediaId' }]
+    post: { tags: [Social Commerce OS], operationId: adminSocialMediaRetry, security: [{ BearerAuth: [] }], responses: { '200': { $ref: '#/components/responses/SocialOk' }, '409': { description: Media is not retryable }, '429': { description: Retry budget exhausted } } }
+  /api/v1/admin/social/media/{mediaId}/publishable:
+    parameters: [{ $ref: '#/components/parameters/SocialMediaId' }]
+    post: { tags: [Social Commerce OS], operationId: adminSocialMediaPublishable, security: [{ BearerAuth: [] }], responses: { '200': { $ref: '#/components/responses/SocialOk' }, '422': { description: Security/rights gate is incomplete } } }
+  /api/v1/admin/social/reviews/{reviewId}:
+    parameters: [{ in: path, name: reviewId, required: true, schema: { type: integer, minimum: 1 } }]
+    get: { tags: [Social Commerce OS], operationId: adminSocialReviewShow, security: [{ BearerAuth: [] }], responses: { '200': { $ref: '#/components/responses/SocialOk' } } }
+  /api/v1/admin/social/reviews/{reviewId}/responses:
+    parameters: [{ in: path, name: reviewId, required: true, schema: { type: integer, minimum: 1 } }]
+    post: { tags: [Social Commerce OS], operationId: adminSocialReviewResponse, security: [{ BearerAuth: [] }], responses: { '201': { $ref: '#/components/responses/SocialOk' } } }
+  /api/v1/admin/social/search:
+    get: { tags: [Social Commerce OS], operationId: adminSocialSearch, security: [{ BearerAuth: [] }], responses: { '200': { $ref: '#/components/responses/SocialOk' } } }
+  /api/v1/admin/social/analytics:
+    get: { tags: [Social Commerce OS], operationId: adminSocialAnalytics, security: [{ BearerAuth: [] }], responses: { '200': { $ref: '#/components/responses/SocialOk' } } }
+  /api/v1/admin/social/attributions:
+    post: { tags: [Social Commerce OS], operationId: adminSocialAttributionCreate, security: [{ BearerAuth: [] }], responses: { '201': { $ref: '#/components/responses/SocialOk' } } }
+components:
+  securitySchemes:
+    BearerAuth: { type: http, scheme: bearer }
+  parameters:
+    SocialId: { in: path, name: id, required: true, schema: { type: integer, minimum: 1 } }
+    SocialContentId: { in: path, name: contentId, required: true, schema: { type: integer, minimum: 1 } }
+    SocialChannelId: { in: path, name: channelId, required: true, schema: { type: integer, minimum: 1 } }
+    SocialThreadId: { in: path, name: threadId, required: true, schema: { type: integer, minimum: 1 } }
+    SocialMediaId: { in: path, name: mediaId, required: true, schema: { type: integer, minimum: 1 } }
+  responses:
+    SocialOk:
+      description: Social Commerce response
+      content: { application/json: { schema: { type: object, additionalProperties: true } } }
+    SocialValidationError: { description: Validation or canonical Media/Catalog reference failure }
+  schemas:
+    SocialContentKind: { type: string, enum: [story, video, live, post, question] }
+    SocialContentCreateInput:
+      type: object
+      required: [kind, title]
+      properties:
+        kind: { $ref: '#/components/schemas/SocialContentKind' }
+        title: { type: string, minLength: 1, maxLength: 240 }
+        description: { type: [string, 'null'], maxLength: 10000 }
+        locale: { type: string }
+        cover_media_id: { type: [integer, 'null'], minimum: 1 }
+        primary_media_id: { type: [integer, 'null'], minimum: 1 }
+        duration_seconds: { type: [integer, 'null'], minimum: 1, maximum: 14400 }
+    SocialContentUpdateInput:
+      type: object
+      required: [expected_version]
+      properties:
+        expected_version: { type: integer, minimum: 1 }
+        title: { type: string, maxLength: 240 }
+        description: { type: [string, 'null'], maxLength: 10000 }
+        cover_media_id: { type: [integer, 'null'], minimum: 1 }
+        primary_media_id: { type: [integer, 'null'], minimum: 1 }
+    SocialTransitionInput:
+      type: object
+      required: [expected_version, status]
+      properties:
+        expected_version: { type: integer, minimum: 1 }
+        status: { type: string }
+    SocialStoryFrameInput:
+      type: object
+      required: [sequence, frame_type]
+      properties:
+        sequence: { type: integer, minimum: 0, maximum: 500 }
+        frame_type: { type: string }
+        media_id: { type: [integer, 'null'], minimum: 1 }
+        product_id: { type: [integer, 'null'], minimum: 1 }
+        duration_ms: { type: integer, minimum: 1000, maximum: 60000 }
+        cta_label: { type: [string, 'null'], maxLength: 120 }
+        cta_url: { type: [string, 'null'], maxLength: 1024, pattern: '^(?:https?://|/(?!/))' }
+        payload: { type: object, additionalProperties: true }
+    SocialLiveEmergencyStopInput:
+      type: object
+      required: [expected_version, reason]
+      properties:
+        expected_version: { type: integer, minimum: 1 }
+        reason: { type: string, minLength: 3, maxLength: 2000 }
+    SocialLiveChatFreezeInput:
+      type: object
+      required: [expected_version, frozen]
+      properties:
+        expected_version: { type: integer, minimum: 1 }
+        frozen: { type: boolean }
+        reason: { type: [string, 'null'], maxLength: 2000 }
+    SocialLiveParticipantControlInput:
+      type: object
+      required: [control, active]
+      properties:
+        customer_id: { type: [integer, 'null'], minimum: 1 }
+        anonymous_id: { type: [string, 'null'], maxLength: 96 }
+        control: { type: string, enum: [mute, ban] }
+        active: { type: boolean }
+        reason: { type: [string, 'null'], maxLength: 2000 }
+        expires_at: { type: [string, 'null'], format: date-time }
+    SocialLiveReplayInput:
+      type: object
+      required: [media_id, expected_version]
+      properties:
+        media_id: { type: integer, minimum: 1 }
+        expected_version: { type: integer, minimum: 1 }
