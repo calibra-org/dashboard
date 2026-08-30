@@ -1,7 +1,7 @@
-import { TrendingDown, TrendingUp } from "lucide-react";
 import type { ComponentType, SVGProps } from "react";
 
 import { CardContent, CardRoot } from "#/components/ui/card";
+import { TrendingDown, TrendingUp } from "#/icons";
 import { cn } from "#/lib/utils";
 
 /**
