@@ -67,12 +67,12 @@
         "@sentry/node": "^10.53.1",
         "@vinejs/vine": "^4.4.0",
         "luxon": "^3.5.0",
-        "meilisearch": "^0.58.0",
+        "meilisearch": "^0.60.0",
         "papaparse": "^5.5.3",
         "pg": "^8.13.1",
         "reflect-metadata": "^0.2.2",
         "sanitize-html": "^2.17.4",
-        "sharp": "0.34.5",
+        "sharp": "0.35.4",
         "xlsx": "^0.18.5"
     },
     "devDependencies": {
