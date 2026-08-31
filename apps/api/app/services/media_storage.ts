@@ -268,9 +268,7 @@ async function generateRenditions(
     const meta = await sharp(originalAbs).metadata();
     const out: Record<string, SavedVariant> = {};
     for (const v of variants) {
-        const fit: ResizeOptions = v.crop
-            ? { fit: "cover", position: "centre" }
-            : { fit: "inside", withoutEnlargement: true };
+        const fit: ResizeOptions = v.crop ? { fit: "cover", position: "centre" } : { fit: "inside", withoutEnlargement: true };
         const info = await sharp(originalAbs).resize(v.width, v.height, fit).toFile(`${base}-${v.name}${ext}`);
         out[v.name] = { url: variantUrlFor(v.name), width: info.width, height: info.height };
     }
