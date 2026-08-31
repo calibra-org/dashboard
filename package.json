@@ -41,7 +41,7 @@
         "tsdown": "catalog:",
         "turbo": "catalog:",
         "typescript": "catalog:",
-        "vitest": "catalog:"
+        "vitest": "4.1.11"
     },
     "pnpm": {
         "onlyBuiltDependencies": [
