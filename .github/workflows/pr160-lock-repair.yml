@@ -1,0 +1,51 @@
+name: PR160 Lock Repair
+
+on:
+  push:
+    branches:
+      - chore/deps-safe-cohort-vitest-compat
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v7
+        with:
+          ref: chore/deps-safe-cohort-vitest-compat
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.14.0
+
+      - name: Install pnpm
+        run: npm install --global pnpm@10.32.1
+
+      - name: Regenerate canonical lockfile
+        run: pnpm install --lockfile-only --ignore-scripts
+
+      - name: Verify frozen install
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Verify format and lint
+        run: |
+          pnpm run format
+          pnpm run lint
+
+      - name: Commit repair and remove repair workflow
+        run: |
+          rm .github/workflows/pr160-lock-repair.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json pnpm-lock.yaml .github/workflows/pr160-lock-repair.yml
+          if git diff --cached --quiet; then
+            echo "No repair changes to commit"
+            exit 0
+          fi
+          git commit -m "fix(ci): sync Vitest catalog lock importer"
+          git push origin HEAD:chore/deps-safe-cohort-vitest-compat
