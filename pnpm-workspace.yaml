@@ -63,7 +63,7 @@ catalogs:
         "@tiptap/extension-link": ^2.13.0
         "@tiptap/extension-placeholder": ^2.13.0
         "isomorphic-dompurify": ^2.30.0
-        shiki: ^1.29.0
+        shiki: ^4.4.3
         zod: ^4.4.3
         "start-server-and-test": ^2.0.13
         tailwind-merge: 3.6.0
