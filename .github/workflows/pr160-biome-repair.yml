@@ -1,0 +1,70 @@
+name: PR160 Biome Repair
+
+on:
+    push:
+        branches:
+            - chore/deps-safe-cohort-vitest-compat
+
+permissions:
+    contents: write
+
+env:
+    NODE_VERSION: "24.14.0"
+    PNPM_VERSION: "10.32.1"
+
+jobs:
+    repair:
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        steps:
+            - name: Checkout branch
+              uses: actions/checkout@v7
+              with:
+                  ref: chore/deps-safe-cohort-vitest-compat
+                  fetch-depth: 0
+
+            - name: Setup Node
+              uses: actions/setup-node@v7
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+
+            - name: Install pnpm
+              run: npm install --global pnpm@${PNPM_VERSION}
+
+            - name: Keep Biome on the proven repository version
+              run: |
+                  node - <<'NODE'
+                  const fs = require("node:fs");
+                  const path = "pnpm-workspace.yaml";
+                  const text = fs.readFileSync(path, "utf8");
+                  const next = text.replace('"@biomejs/biome": 2.5.11', '"@biomejs/biome": 2.4.10');
+                  if (next === text) {
+                      throw new Error("Expected Biome 2.5.11 catalog entry was not found");
+                  }
+                  fs.writeFileSync(path, next);
+                  NODE
+
+            - name: Regenerate canonical lockfile
+              run: pnpm install --lockfile-only --ignore-scripts
+
+            - name: Verify frozen install
+              run: pnpm install --frozen-lockfile --ignore-scripts
+
+            - name: Verify format and lint with retained Biome
+              run: |
+                  pnpm run format
+                  pnpm run lint
+
+            - name: Restore canonical Check workflow and remove repair workflow
+              run: |
+                  git checkout 08b07233dc733e3d4e39efe11b75cd7e32cf6ea9 -- .github/workflows/check.yml
+                  rm .github/workflows/pr160-biome-repair.yml
+
+            - name: Commit repaired dependency cohort
+              run: |
+                  git config user.name "github-actions[bot]"
+                  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+                  git add pnpm-workspace.yaml pnpm-lock.yaml .github/workflows/check.yml .github/workflows/pr160-biome-repair.yml
+                  git diff --cached --check
+                  git commit -m "fix(ci): keep Biome on compatible release"
+                  git push origin HEAD:chore/deps-safe-cohort-vitest-compat
