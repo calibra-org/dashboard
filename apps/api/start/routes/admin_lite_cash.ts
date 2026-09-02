@@ -45,10 +45,7 @@ router
             .post("/import/apply", [LiteCashController, "applyImport"])
             .as("admin.lite_cash.import.apply")
             .use(adminWriteLimiter);
-        router
-            .post("/purge/plan", [LiteCashController, "planPurge"])
-            .as("admin.lite_cash.purge.plan")
-            .use(adminWriteLimiter);
+        router.post("/purge/plan", [LiteCashController, "planPurge"]).as("admin.lite_cash.purge.plan").use(adminWriteLimiter);
         router
             .post("/purge/execute", [LiteCashController, "executePurge"])
             .as("admin.lite_cash.purge.execute")

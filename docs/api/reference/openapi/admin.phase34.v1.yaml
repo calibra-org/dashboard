@@ -308,9 +308,24 @@ components:
         conditions: { type: object, additionalProperties: true }
         reason: { type: string }
     LiteCashPolicyUpdate:
-      allOf:
-        - { $ref: '#/components/schemas/LiteCashPolicyCreate' }
+      type: object
       required: [reason]
+      properties:
+        name: { type: string }
+        description: { type: string }
+        kind: { type: string, enum: [api, page, asset, query] }
+        route_pattern: { type: string }
+        status: { type: string, enum: [enabled, disabled, archived] }
+        risk_tier: { type: string, enum: [low, medium, high, critical] }
+        ttl_seconds: { type: integer, minimum: 1, maximum: 604800 }
+        grace_seconds: { type: integer, minimum: 0, maximum: 604800 }
+        stale_if_error_seconds: { type: integer, minimum: 0, maximum: 604800 }
+        soft_timeout_ms: { type: integer, minimum: 10, maximum: 60000 }
+        hard_timeout_ms: { type: integer, minimum: 10, maximum: 120000 }
+        tags: { type: array, items: { type: string } }
+        vary: { type: array, items: { type: string } }
+        conditions: { type: object, additionalProperties: true }
+        reason: { type: string, minLength: 3, maxLength: 2000 }
     LiteCashPurgeRequest:
       type: object
       required: [scope, idempotency_key, reason]
@@ -359,9 +374,19 @@ components:
         edge: { type: object, additionalProperties: true }
         reason: { type: string }
     LiteCashProfileUpdate:
-      allOf:
-        - { $ref: '#/components/schemas/LiteCashProfileCreate' }
+      type: object
       required: [reason]
+      properties:
+        name: { type: string }
+        mode: { type: string, enum: [safe, balanced, aggressive, custom] }
+        status: { type: string, enum: [draft, active, archived] }
+        css: { type: object, additionalProperties: true }
+        javascript: { type: object, additionalProperties: true }
+        images: { type: object, additionalProperties: true }
+        fonts: { type: object, additionalProperties: true }
+        navigation: { type: object, additionalProperties: true }
+        edge: { type: object, additionalProperties: true }
+        reason: { type: string, minLength: 3, maxLength: 2000 }
     LiteCashObservationCreate:
       type: object
       required: [source, metric_key, unit, labels]

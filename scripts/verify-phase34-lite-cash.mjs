@@ -7,6 +7,7 @@ const must = (condition, message) => {
 
 const migration = read("apps/api/database/migrations/1805000000000_create_lite_cash_os.ts");
 const idempotencyMigration = read("apps/api/database/migrations/1805000000100_add_lite_cash_warm_job_idempotency.ts");
+const activeProfileMigration = read("apps/api/database/migrations/1805000000200_enforce_lite_cash_profile_activation.ts");
 const policy = read("apps/api/app/services/lite_cash/policy.ts");
 const service = read("apps/api/app/services/lite_cash/lite_cash_service.ts");
 const permissions = read("apps/api/app/services/lite_cash/permissions.ts");
@@ -43,8 +44,12 @@ must(migration.includes("FORCE ROW LEVEL SECURITY"), "Phase34 must force tenant 
 must(migration.includes("lite_cash_warm_jobs_checksum_check"), "Phase34 warm plan SHA-256 constraint is missing");
 must(migration.includes("lite_cash_profiles_checksum_check"), "Phase34 profile fingerprint constraint is missing");
 must(idempotencyMigration.includes("lite_cash_warm_jobs_idempotency_unique"), "Phase34 warm idempotency DB guard is missing");
+must(activeProfileMigration.includes("lite_cash_profiles_single_active"), "Phase34 single-active-profile DB guard is missing");
 for (const forbidden of ["password", "api_token", "access_token", "redis_host", "redis_port", "dsn", "secret_key"]) {
-    must(!migration.toLowerCase().includes(`table.string("${forbidden}"`), `Phase34 migration must not persist secret field ${forbidden}`);
+    must(
+        !migration.toLowerCase().includes(`table.string("${forbidden}"`),
+        `Phase34 migration must not persist secret field ${forbidden}`,
+    );
 }
 
 for (const marker of [
@@ -54,16 +59,15 @@ for (const marker of [
     "validateLiteCashImport",
     "computeObservationSummary",
     "stableFingerprint",
-    'CacheTags.catalogProducts(tenantId)',
-    'CacheTags.catalogProduct(tenantId, id)',
-    'CacheTags.adminCustomer(tenantId, id)',
+    "CacheTags.catalogProducts(tenantId)",
+    "CacheTags.catalogProduct(tenantId, id)",
+    "CacheTags.adminCustomer(tenantId, id)",
 ]) {
     must(policy.includes(marker), `Phase34 policy boundary missing ${marker}`);
 }
-must(policy.includes('must') === false || true, "Phase34 policy module loaded");
-must(policy.includes('route.correctness_sensitive'), "Phase34 unsafe route policy rejection is missing");
-must(policy.includes('vary.tenant_required'), "Phase34 tenant vary invariant is missing");
-must(policy.includes('vary.locale_required'), "Phase34 locale vary invariant is missing");
+must(policy.includes("route.correctness_sensitive"), "Phase34 unsafe route policy rejection is missing");
+must(policy.includes("vary.tenant_required"), "Phase34 tenant vary invariant is missing");
+must(policy.includes("vary.locale_required"), "Phase34 locale vary invariant is missing");
 must(!policy.includes("CacheTags.tenants"), "Phase34 full-tenant purge must never include the global tenant registry tag");
 
 for (const marker of [
@@ -81,12 +85,27 @@ for (const marker of [
 ]) {
     must(service.includes(marker), `Phase34 service boundary missing ${marker}`);
 }
-for (const forbidden of ["flushall", "flushdb", "child_process", "node:vm", "execSync(", "spawnSync(", "redis.call(", "keys(\"*\"")]) {
-    must(!service.toLowerCase().includes(forbidden.toLowerCase()), `Phase34 service contains forbidden runtime primitive ${forbidden}`);
+for (const forbidden of [
+    "flushall",
+    "flushdb",
+    "child_process",
+    "node:vm",
+    "execSync(",
+    "spawnSync(",
+    "redis.call(",
+    'keys("*"',
+]) {
+    must(
+        !service.toLowerCase().includes(forbidden.toLowerCase()),
+        `Phase34 service contains forbidden runtime primitive ${forbidden}`,
+    );
 }
 must(!service.includes("CacheTags.tenants"), "Phase34 service must not invalidate the global tenant registry tag");
 must(service.includes("secrets_exposed: false"), "Phase34 topology must explicitly preserve secret redaction");
-must(service.includes("return {\n        samples: rows.length") || service.includes("computeObservationSummary"), "Phase34 overview must rely on observation evidence");
+must(
+    service.includes("return {\n        samples: rows.length") || service.includes("computeObservationSummary"),
+    "Phase34 overview must rely on observation evidence",
+);
 
 for (const permission of [
     "lite_cash.view",
@@ -127,16 +146,34 @@ must(routeRegistry.includes('await import("./routes/admin_lite_cash.js")'), "Pha
 
 must(workspace.includes('dir="rtl"'), "Phase34 workspace must be RTL");
 must(workspace.includes('title="lite cash"'), "Phase34 visible workspace title must be exactly lite cash");
-for (const label of ["نمای کلی", "سیاست‌های کش", "مرکز پاکسازی", "Warm / Preload", "بهینه‌سازی", "Edge و Object Cache", "عیب‌یابی", "تنظیمات"]) {
+for (const label of [
+    "نمای کلی",
+    "سیاست‌های کش",
+    "مرکز پاکسازی",
+    "Warm / Preload",
+    "بهینه‌سازی",
+    "Edge و Object Cache",
+    "عیب‌یابی",
+    "تنظیمات",
+]) {
     must(workspace.includes(label), `Phase34 workspace missing tab ${label}`);
 }
 must(workspace.includes("Purge plan"), "Phase34 workspace must use purge planning before broad actions");
 must(workspace.includes("No secrets"), "Phase34 workspace must surface secret boundary");
-must(!/LiteSpeed Cache|WP Rocket|FlyingPress|QUIC\.cloud/.test(workspace), "Phase34 product UI must not ship third-party product brands");
+must(
+    !/LiteSpeed Cache|WP Rocket|FlyingPress|QUIC\.cloud/.test(workspace),
+    "Phase34 product UI must not ship third-party product brands",
+);
 must(!/#[0-9a-fA-F]{3,8}/.test(workspace), "Raw hex color found in Phase34 workspace");
-must(!/\b(?:bg|text|border)-(?:red|green|blue|yellow|purple|slate|gray)-\d/.test(workspace), "Raw Tailwind palette found in Phase34 workspace");
+must(
+    !/\b(?:bg|text|border)-(?:red|green|blue|yellow|purple|slate|gray)-\d/.test(workspace),
+    "Raw Tailwind palette found in Phase34 workspace",
+);
 must(page.includes("<LiteCashWorkspace />"), "Phase34 page route is not wired");
-must(sidebar.includes('href: "/lite-cash"') && sidebar.includes('label: "lite cash"'), "Phase34 main navigation is missing exact lite cash label");
+must(
+    sidebar.includes('href: "/lite-cash"') && sidebar.includes('label: "lite cash"'),
+    "Phase34 main navigation is missing exact lite cash label",
+);
 must((sidebar.match(/label: "lite cash"/g) ?? []).length === 1, "Phase34 lite cash must appear exactly once in the main nav");
 must(query.includes('const base = "lite-cash"'), "Phase34 admin query boundary missing");
 must(query.includes("apiMutate"), "Phase34 mutations must use the same-origin proxy helper");
@@ -178,8 +215,14 @@ for (const operationId of [
 }
 must(adminSdk.includes('"/api/v1/admin/lite-cash/overview"'), "Phase34 committed SDK missing lite cash overview path");
 must(docsPackage.includes('"build:json:admin-phase34"'), "Phase34 docs build script is missing");
-must(docsPackage.includes("pnpm build:json:admin-phase34 && pnpm build:json:admin-merge"), "Phase34 overlay is not in canonical admin build order");
-must(mergeAdmin.includes("dist/admin.phase34.v1.json") && mergeAdmin.includes("Phase34LiteCashOverlay"), "Phase34 overlay is not merged into canonical admin OpenAPI");
+must(
+    docsPackage.includes("pnpm build:json:admin-phase34 && pnpm build:json:admin-merge"),
+    "Phase34 overlay is not in canonical admin build order",
+);
+must(
+    mergeAdmin.includes("dist/admin.phase34.v1.json") && mergeAdmin.includes("Phase34LiteCashOverlay"),
+    "Phase34 overlay is not merged into canonical admin OpenAPI",
+);
 must(packageJson.includes('"verify:phase34"'), "Phase34 root verifier script is missing");
 
 must(prompt.includes("visible product name is exactly **lite cash**"), "Phase34 master prompt must lock product naming");

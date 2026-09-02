@@ -48,7 +48,7 @@ export default class extends BaseSchema {
             table.integer("soft_timeout_ms").notNullable().defaultTo(200);
             table.integer("hard_timeout_ms").notNullable().defaultTo(2000);
             table.jsonb("tags").notNullable().defaultTo(this.raw("'[]'::jsonb"));
-            table.jsonb("vary").notNullable().defaultTo(this.raw("'[\"tenant\",\"locale\"]'::jsonb"));
+            table.jsonb("vary").notNullable().defaultTo(this.raw('\'["tenant","locale"]\'::jsonb'));
             table.jsonb("conditions").notNullable().defaultTo(this.raw("'{}'::jsonb"));
             table.integer("version").notNullable().defaultTo(1);
             table.jsonb("validation").notNullable().defaultTo(this.raw("'{}'::jsonb"));

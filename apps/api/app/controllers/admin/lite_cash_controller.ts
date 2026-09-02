@@ -2,8 +2,8 @@ import type { HttpContext } from "@adonisjs/core/http";
 
 import { recordAudit } from "#services/admin_audit_log_service";
 import { requireRecentIdentityStepUp } from "#services/identity/step_up";
-import { requireLiteCashPermission } from "#services/lite_cash/permissions";
 import * as liteCash from "#services/lite_cash/lite_cash_service";
+import { requireLiteCashPermission } from "#services/lite_cash/permissions";
 import {
     liteCashActionValidator,
     liteCashImportValidator,
@@ -23,12 +23,6 @@ function entityId(value: unknown): number | null {
     if (!value || typeof value !== "object") return null;
     const id = Number((value as Record<string, unknown>).id);
     return Number.isFinite(id) && id > 0 ? id : null;
-}
-
-function changedPayload(value: unknown): { data: unknown; changed: boolean } {
-    if (!value || typeof value !== "object") return { data: value, changed: true };
-    const record = value as Record<string, unknown>;
-    return { data: record.data ?? value, changed: record.changed !== false };
 }
 
 export default class LiteCashController {

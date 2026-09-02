@@ -61,7 +61,13 @@ test.group("lite cash policy validation", () => {
     });
 
     test("rejects correctness-sensitive routes", ({ assert }) => {
-        for (const route_pattern of ["/cart", "/checkout/payment", "/api/v1/orders", "/account/history", "/inventory/stock-status"]) {
+        for (const route_pattern of [
+            "/cart",
+            "/checkout/payment",
+            "/api/v1/orders",
+            "/account/history",
+            "/inventory/stock-status",
+        ]) {
             const result = validateLiteCashPolicy({ ...safePolicy, route_pattern }, settings);
             assert.include(
                 result.errors.map((finding) => finding.code),

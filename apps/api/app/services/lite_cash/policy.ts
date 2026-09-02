@@ -73,7 +73,16 @@ export const REGISTERED_PURGE_SCOPES: readonly LiteCashPurgeScope[] = [
 ] as const;
 
 const REGISTERED_POLICY_TAGS = new Set<string>(REGISTERED_PURGE_SCOPES.filter((scope) => scope !== "full_tenant"));
-const PRIVATE_VARY_DIMENSIONS = new Set(["user", "user_id", "session", "session_id", "auth", "authorization", "cookie", "customer"]);
+const PRIVATE_VARY_DIMENSIONS = new Set([
+    "user",
+    "user_id",
+    "session",
+    "session_id",
+    "auth",
+    "authorization",
+    "cookie",
+    "customer",
+]);
 const ALLOWED_VARY_DIMENSIONS = new Set(["tenant", "locale", "device", "country", "currency", "channel", "accept_encoding"]);
 const ALLOWED_SETTINGS_GROUPS = new Set([
     "general",
@@ -151,7 +160,11 @@ export function validateLiteCashPolicy(input: LiteCashPolicyInput, settings: Lit
     if (normalized.grace_seconds < 0 || normalized.stale_if_error_seconds < 0) {
         errors.push({ code: "stale.negative", message: "Grace and stale-if-error windows cannot be negative." });
     }
-    if (normalized.soft_timeout_ms < 0 || normalized.hard_timeout_ms < 0 || normalized.hard_timeout_ms < normalized.soft_timeout_ms) {
+    if (
+        normalized.soft_timeout_ms < 0 ||
+        normalized.hard_timeout_ms < 0 ||
+        normalized.hard_timeout_ms < normalized.soft_timeout_ms
+    ) {
         errors.push({ code: "timeout.invalid", message: "Hard timeout must be greater than or equal to soft timeout." });
     }
 
@@ -181,10 +194,16 @@ export function validateLiteCashPolicy(input: LiteCashPolicyInput, settings: Lit
     }
 
     if (normalized.grace_seconds > normalized.ttl_seconds * 12) {
-        warnings.push({ code: "grace.large", message: "Grace is much larger than the fresh TTL; confirm the stale-data tolerance." });
+        warnings.push({
+            code: "grace.large",
+            message: "Grace is much larger than the fresh TTL; confirm the stale-data tolerance.",
+        });
     }
     if (normalized.ttl_seconds > 3600 && /product|catalog|category|search/i.test(normalized.route_pattern)) {
-        warnings.push({ code: "ttl.catalog_long", message: "Long catalog TTLs increase stale-listing risk and should rely on proven invalidation." });
+        warnings.push({
+            code: "ttl.catalog_long",
+            message: "Long catalog TTLs increase stale-listing risk and should rely on proven invalidation.",
+        });
     }
     if (normalized.vary.length > 5) {
         warnings.push({ code: "vary.cardinality", message: "Many vary dimensions can collapse cache hit rate." });
@@ -305,7 +324,8 @@ export function validateLiteCashImport(document: Record<string, unknown>, settin
         const policy = raw as Record<string, unknown>;
         const key = String(policy.policy_key ?? "");
         if (!key) errors.push({ code: `policy.${index}.key`, message: "Imported policy key is required." });
-        else if (policyKeys.has(key)) errors.push({ code: `policy.${index}.duplicate`, message: `Duplicate policy key: ${key}.` });
+        else if (policyKeys.has(key))
+            errors.push({ code: `policy.${index}.duplicate`, message: `Duplicate policy key: ${key}.` });
         else policyKeys.add(key);
         const validation = validateLiteCashPolicy(
             {
@@ -322,7 +342,10 @@ export function validateLiteCashImport(document: Record<string, unknown>, settin
                 hard_timeout_ms: Number(policy.hard_timeout_ms ?? 0),
                 tags: Array.isArray(policy.tags) ? policy.tags.map(String) : [],
                 vary: Array.isArray(policy.vary) ? policy.vary.map(String) : [],
-                conditions: policy.conditions && typeof policy.conditions === "object" && !Array.isArray(policy.conditions) ? (policy.conditions as Record<string, unknown>) : {},
+                conditions:
+                    policy.conditions && typeof policy.conditions === "object" && !Array.isArray(policy.conditions)
+                        ? (policy.conditions as Record<string, unknown>)
+                        : {},
             },
             settings,
         );
@@ -340,11 +363,13 @@ export function validateLiteCashImport(document: Record<string, unknown>, settin
         const profile = raw as Record<string, unknown>;
         const key = String(profile.profile_key ?? "");
         if (!key) errors.push({ code: `profile.${index}.key`, message: "Imported profile key is required." });
-        else if (profileKeys.has(key)) errors.push({ code: `profile.${index}.duplicate`, message: `Duplicate profile key: ${key}.` });
+        else if (profileKeys.has(key))
+            errors.push({ code: `profile.${index}.duplicate`, message: `Duplicate profile key: ${key}.` });
         else profileKeys.add(key);
         if (profile.status === "active") activeProfiles += 1;
     }
-    if (activeProfiles > 1) errors.push({ code: "profiles.multiple_active", message: "Only one optimization profile may be active." });
+    if (activeProfiles > 1)
+        errors.push({ code: "profiles.multiple_active", message: "Only one optimization profile may be active." });
 
     return { valid: errors.length === 0, errors, warnings, fingerprint: stableFingerprint(document) };
 }

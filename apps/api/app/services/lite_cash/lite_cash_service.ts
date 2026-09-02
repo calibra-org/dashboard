@@ -1,20 +1,19 @@
 import cache from "@adonisjs/cache/services/main";
 import { Exception } from "@adonisjs/core/exceptions";
 
-import { recordCacheInvalidate } from "#services/metrics/domain_metrics";
-import { currentTenantId, currentTrx } from "#services/tenant_context";
-import env from "#start/env";
-
 import {
     computeObservationSummary,
+    type LiteCashPolicyInput,
+    type LiteCashPurgeScope,
     REGISTERED_PURGE_SCOPES,
     resolvePurgeScope,
     stableFingerprint,
     validateLiteCashImport,
     validateLiteCashPolicy,
-    type LiteCashPolicyInput,
-    type LiteCashPurgeScope,
-} from "./policy.js";
+} from "#services/lite_cash/policy";
+import { recordCacheInvalidate } from "#services/metrics/domain_metrics";
+import { currentTenantId, currentTrx } from "#services/tenant_context";
+import env from "#start/env";
 
 type JsonRecord = Record<string, unknown>;
 type WarmStatus = "queued" | "running" | "succeeded" | "partial" | "failed" | "cancelled";
@@ -129,8 +128,13 @@ async function settingsRow() {
     const [created] = await currentTrx()
         .table("lite_cash_settings")
         .insert({ tenant_id: tenantId() })
+        .onConflict(["tenant_id"])
+        .ignore()
         .returning("*");
-    return created;
+    if (created) return created;
+    const raced = await currentTrx().from("lite_cash_settings").where("tenant_id", tenantId()).first();
+    if (!raced) throw new Error("Failed to initialize lite cash settings");
+    return raced;
 }
 
 async function policyByPublicId(publicId: string) {
@@ -199,7 +203,13 @@ export async function topology() {
 export async function listPolicies(limit = 250, q = "") {
     let query = currentTrx().from("lite_cash_policies").orderBy("updated_at", "desc").limit(clampLimit(limit));
     const needle = q.trim();
-    if (needle) query = query.where((builder) => builder.whereILike("name", `%${needle}%`).orWhereILike("policy_key", `%${needle}%`).orWhereILike("route_pattern", `%${needle}%`));
+    if (needle)
+        query = query.where((builder) =>
+            builder
+                .whereILike("name", `%${needle}%`)
+                .orWhereILike("policy_key", `%${needle}%`)
+                .orWhereILike("route_pattern", `%${needle}%`),
+        );
     return query;
 }
 
@@ -241,7 +251,11 @@ export async function updatePolicy(publicId: string, input: PolicyUpdateInput, u
     const settings = await settingsRow();
     const validation = validateLiteCashPolicy(candidate, { max_policy_ttl_seconds: Number(settings.max_policy_ttl_seconds) });
     if (!validation.valid) {
-        throw new Exception("lite cash policy validation failed", { status: 422, code: "E_LITE_CASH_POLICY_INVALID", cause: validation.errors });
+        throw new Exception("lite cash policy validation failed", {
+            status: 422,
+            code: "E_LITE_CASH_POLICY_INVALID",
+            cause: validation.errors,
+        });
     }
     if (comparable(currentInput) === comparable(validation.normalized)) return { data: current, changed: false, validation };
     const [row] = await currentTrx()
@@ -348,14 +362,22 @@ export async function executePurge(input: PurgeInput, userId: number) {
         const [completed] = await currentTrx()
             .from("lite_cash_purge_events")
             .where("id", planned.id)
-            .update({ status: "succeeded", completed_at: new Date(), evidence: { tag_count: preview.tags.length, completed: true } })
+            .update({
+                status: "succeeded",
+                completed_at: new Date(),
+                evidence: { tag_count: preview.tags.length, completed: true },
+            })
             .returning("*");
         return completed;
     } catch {
         const [failed] = await currentTrx()
             .from("lite_cash_purge_events")
             .where("id", planned.id)
-            .update({ status: "failed", completed_at: new Date(), evidence: { tag_count: preview.tags.length, completed: false } })
+            .update({
+                status: "failed",
+                completed_at: new Date(),
+                evidence: { tag_count: preview.tags.length, completed: false },
+            })
             .returning("*");
         return failed;
     }
@@ -409,7 +431,8 @@ export async function getWarmJob(publicId: string) {
 
 export async function cancelWarmJob(publicId: string) {
     const current = await warmJobByPublicId(publicId);
-    if (["succeeded", "partial", "failed", "cancelled"].includes(String(current.status))) return { data: current, changed: false };
+    if (["succeeded", "partial", "failed", "cancelled"].includes(String(current.status)))
+        return { data: current, changed: false };
     const [row] = await currentTrx()
         .from("lite_cash_warm_jobs")
         .where("id", current.id)
@@ -446,16 +469,18 @@ export async function observeWarmJob(publicId: string, input: WarmObservationInp
             updated_at: new Date(),
         })
         .returning("*");
-    await currentTrx().table("lite_cash_observations").insert({
-        tenant_id: tenantId(),
-        source: "worker",
-        metric_key: "warm_job_progress",
-        value: input.processed_count,
-        unit: "count",
-        outcome: input.status,
-        labels: { warm_job_public_id: publicId, evidence: input.evidence },
-        observed_at: new Date(),
-    });
+    await currentTrx()
+        .table("lite_cash_observations")
+        .insert({
+            tenant_id: tenantId(),
+            source: "worker",
+            metric_key: "warm_job_progress",
+            value: input.processed_count,
+            unit: "count",
+            outcome: input.status,
+            labels: { warm_job_public_id: publicId, evidence: input.evidence },
+            observed_at: new Date(),
+        });
     return row;
 }
 
@@ -546,7 +571,13 @@ export async function updateProfile(publicId: string, input: ProfileUpdateInput,
     const [row] = await currentTrx()
         .from("lite_cash_optimization_profiles")
         .where("id", current.id)
-        .update({ ...next, fingerprint_sha256: fingerprint, version: Number(current.version) + 1, updated_by_user_id: userId, updated_at: new Date() })
+        .update({
+            ...next,
+            fingerprint_sha256: fingerprint,
+            version: Number(current.version) + 1,
+            updated_by_user_id: userId,
+            updated_at: new Date(),
+        })
         .returning("*");
     return { data: row, changed: true };
 }
@@ -554,7 +585,11 @@ export async function updateProfile(publicId: string, input: ProfileUpdateInput,
 export async function activateProfile(publicId: string, userId: number, reason: string) {
     const current = await profileByPublicId(publicId);
     if (current.status === "active") return { data: current, changed: false };
-    await currentTrx().from("lite_cash_optimization_profiles").where("status", "active").whereNot("id", current.id).update({ status: "draft", updated_at: new Date() });
+    await currentTrx()
+        .from("lite_cash_optimization_profiles")
+        .where("status", "active")
+        .whereNot("id", current.id)
+        .update({ status: "draft", updated_at: new Date() });
     const [row] = await currentTrx()
         .from("lite_cash_optimization_profiles")
         .where("id", current.id)
@@ -619,7 +654,10 @@ export async function updateSettings(input: SettingsInput, userId: number, reaso
                   : new Date(Date.now() + input.debug_minutes * 60_000).toISOString(),
     };
     if (Number(next.default_ttl_seconds) > Number(next.max_policy_ttl_seconds)) {
-        throw new Exception("Default TTL cannot exceed the maximum policy TTL", { status: 422, code: "E_LITE_CASH_SETTINGS_TTL" });
+        throw new Exception("Default TTL cannot exceed the maximum policy TTL", {
+            status: 422,
+            code: "E_LITE_CASH_SETTINGS_TTL",
+        });
     }
     if (comparable(currentValues) === comparable(next)) return { data: current, changed: false };
     const [row] = await currentTrx()
@@ -668,7 +706,11 @@ export async function exportConfiguration() {
     };
 }
 
-export async function createSnapshot(kind: "manual" | "profile_activation" | "settings_change" | "import", reason: string, userId: number) {
+export async function createSnapshot(
+    kind: "manual" | "profile_activation" | "settings_change" | "import",
+    reason: string,
+    userId: number,
+) {
     const document = await exportConfiguration();
     const [row] = await currentTrx()
         .table("lite_cash_snapshots")
@@ -711,13 +753,25 @@ export async function validateImport(document: JsonRecord) {
     const current = await settingsRow();
     const settings = importedSettings(document, current);
     const errors: Array<{ code: string; message: string }> = [];
-    if (!Number.isInteger(settings.default_ttl_seconds) || settings.default_ttl_seconds < 1 || settings.default_ttl_seconds > 86400) {
+    if (
+        !Number.isInteger(settings.default_ttl_seconds) ||
+        settings.default_ttl_seconds < 1 ||
+        settings.default_ttl_seconds > 86400
+    ) {
         errors.push({ code: "settings.default_ttl", message: "Imported default TTL is invalid." });
     }
-    if (!Number.isInteger(settings.max_policy_ttl_seconds) || settings.max_policy_ttl_seconds < settings.default_ttl_seconds || settings.max_policy_ttl_seconds > 604800) {
+    if (
+        !Number.isInteger(settings.max_policy_ttl_seconds) ||
+        settings.max_policy_ttl_seconds < settings.default_ttl_seconds ||
+        settings.max_policy_ttl_seconds > 604800
+    ) {
         errors.push({ code: "settings.max_ttl", message: "Imported max policy TTL is invalid." });
     }
-    if (!Number.isInteger(settings.max_warm_concurrency) || settings.max_warm_concurrency < 1 || settings.max_warm_concurrency > 32) {
+    if (
+        !Number.isInteger(settings.max_warm_concurrency) ||
+        settings.max_warm_concurrency < 1 ||
+        settings.max_warm_concurrency > 32
+    ) {
         errors.push({ code: "settings.concurrency", message: "Imported warm concurrency is invalid." });
     }
     if (!["safe", "balanced", "aggressive", "custom"].includes(settings.default_profile)) {
@@ -739,11 +793,18 @@ export async function validateImport(document: JsonRecord) {
 export async function applyImport(document: JsonRecord, reason: string, userId: number) {
     const validation = await validateImport(document);
     if (!validation.valid) {
-        throw new Exception("lite cash import validation failed", { status: 422, code: "E_LITE_CASH_IMPORT_INVALID", cause: validation.errors });
+        throw new Exception("lite cash import validation failed", {
+            status: 422,
+            code: "E_LITE_CASH_IMPORT_INVALID",
+            cause: validation.errors,
+        });
     }
     await createSnapshot("import", `Before import: ${reason}`, userId);
     const currentSettings = await settingsRow();
-    await currentTrx().from("lite_cash_settings").where("id", currentSettings.id).update({ ...validation.normalized_settings, updated_by_user_id: userId, updated_at: new Date() });
+    await currentTrx()
+        .from("lite_cash_settings")
+        .where("id", currentSettings.id)
+        .update({ ...validation.normalized_settings, updated_by_user_id: userId, updated_at: new Date() });
 
     for (const raw of arrayValue(document.policies)) {
         const policy = raw as JsonRecord;
@@ -812,7 +873,11 @@ export async function overview() {
         currentTrx().from("lite_cash_purge_events").orderBy("created_at", "desc").limit(8),
         currentTrx().from("lite_cash_warm_jobs").orderBy("created_at", "desc").limit(8),
         currentTrx().from("lite_cash_optimization_profiles").orderBy("updated_at", "desc"),
-        currentTrx().from("lite_cash_observations").select("metric_key", "value", "observed_at").orderBy("observed_at", "desc").limit(2000),
+        currentTrx()
+            .from("lite_cash_observations")
+            .select("metric_key", "value", "observed_at")
+            .orderBy("observed_at", "desc")
+            .limit(2000),
     ]);
 
     const counts = {
