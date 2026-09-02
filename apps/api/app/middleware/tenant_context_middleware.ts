@@ -6,37 +6,6 @@ import { resolveTenantConnection } from "#config/database";
 import { runWithTenant } from "#services/tenant_context";
 import { type ResolvedTenant, resolveTenantByHost, resolveTenantByRef } from "#services/tenant_resolver";
 
-type KnexQuery = (...args: unknown[]) => Promise<unknown>;
-
-type KnexTransactionWithClient = {
-    client?: {
-        query?: KnexQuery;
-    };
-};
-
-/**
- * PostgreSQL executes one statement at a time on a transaction connection. Older `pg` versions
- * silently queued overlapping `client.query()` calls, but that implicit queue is deprecated and is
- * removed in pg 9. Keep request-level RLS and atomicity on the same transaction while making the
- * required flow control explicit at the single place where the dedicated transaction is created.
- */
-function serializeTransactionQueries(knexTransaction: unknown) {
-    const client = (knexTransaction as KnexTransactionWithClient).client;
-    if (!client?.query) return;
-
-    const query = client.query.bind(client);
-    let tail: Promise<void> = Promise.resolve();
-
-    client.query = (...args: unknown[]) => {
-        const result = tail.then(() => query(...args));
-        tail = result.then(
-            () => undefined,
-            () => undefined,
-        );
-        return result;
-    };
-}
-
 /**
  * Establishes per-request tenant context — the load-bearing seam for the whole platform. Mounted at
  * the server level (after locale detection, before metrics) so it wraps every matched + unmatched
@@ -93,7 +62,6 @@ export default class TenantContextMiddleware {
         const trx = await db.connection(resolveTenantConnection(tenant)).transaction();
         try {
             await trx.rawQuery("SELECT set_config('app.current_tenant', ?, true)", [String(tenant.id)]);
-            serializeTransactionQueries(trx.knexClient);
             await runWithTenant(BigInt(tenant.id), trx, () => next());
         } catch (error) {
             /**
