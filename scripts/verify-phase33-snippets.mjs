@@ -57,6 +57,14 @@ must(!service.includes("node:vm"), "Phase33 service must not import node:vm");
 must(!service.includes("node:fs"), "Phase33 service must not import filesystem execution helpers");
 must(!service.includes("execFile("), "Phase33 service must not execute child processes");
 must(!service.includes("source_executed: true"), "Phase33 simulation must never claim source execution");
+const rollbackBody = service.slice(
+    service.indexOf("export async function rollbackSnippet"),
+    service.indexOf("export async function observeExecution"),
+);
+must(!rollbackBody.includes("assertPublishable("), "Phase33 rollback must not depend on the current draft being publishable");
+must(!rollbackBody.includes("Safe Mode blocks"), "Phase33 rollback must remain available as a Safe Mode recovery path");
+must(rollbackBody.includes("max_rollout_percent"), "Phase33 rollback must still enforce rollout ceiling");
+must(rollbackBody.includes("Target revision is not publishable"), "Phase33 rollback must validate the target immutable revision");
 
 for (const permission of [
     "snippets.view",

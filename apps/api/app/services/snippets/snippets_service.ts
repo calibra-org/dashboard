@@ -680,7 +680,13 @@ export async function resumeSnippet(publicId: string, userId: number, reason: st
 
 export async function rollbackSnippet(publicId: string, input: RollbackInput, userId: number) {
     const snippet = await snippetByPublicId(publicId);
-    await assertPublishable(snippet, input.environment, input.rollout_percent);
+    const settings = await getSettings();
+    if (input.rollout_percent > numberValue(settings.max_rollout_percent)) {
+        throw new Exception("Rollout exceeds tenant ceiling", { status: 422, code: "E_SNIPPETS_ROLLOUT_LIMIT" });
+    }
+    if (snippet.status === "archived") {
+        throw new Exception("Archived snippets cannot be rolled back", { status: 409, code: "E_SNIPPET_ARCHIVED" });
+    }
     const trx = currentTrx();
     const existing = await trx.from("snippet_deployments").where("idempotency_key", input.idempotency_key).first();
     if (existing) return existing;
