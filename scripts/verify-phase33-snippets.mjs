@@ -146,10 +146,9 @@ for (const operationId of [
 must(adminSdk.includes('"/api/v1/admin/snippets/overview"'), "Phase33 committed admin SDK is missing the Snippets overview path");
 must(adminSdk.includes('"/api/v1/admin/snippets/{publicId}/rollback"'), "Phase33 committed admin SDK is missing rollback path");
 must(docsPackage.includes('"build:json:admin-phase33"'), "Phase33 docs build script is missing");
-must(
-    docsPackage.includes("pnpm build:json:admin-phase33 && pnpm build:json:admin-merge"),
-    "Phase33 overlay is not in canonical admin build order",
-);
+const phase33BuildIndex = docsPackage.indexOf("pnpm build:json:admin-phase33");
+const adminMergeIndex = docsPackage.indexOf("pnpm build:json:admin-merge");
+must(phase33BuildIndex >= 0 && adminMergeIndex > phase33BuildIndex, "Phase33 overlay is not in canonical admin build order");
 must(
     mergeAdmin.includes("dist/admin.phase33.v1.json") && mergeAdmin.includes("Phase33SnippetsOverlay"),
     "Phase33 overlay is not merged into canonical admin OpenAPI",

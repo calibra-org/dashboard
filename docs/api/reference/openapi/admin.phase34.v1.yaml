@@ -1,0 +1,428 @@
+openapi: 3.1.0
+info:
+  title: Calibra Admin Phase 34 lite cash API
+  version: 1.0.0
+tags:
+  - name: lite cash
+    description: Tenant-safe cache, purge, warm, optimization and evidence control plane.
+paths:
+  /api/v1/admin/lite-cash/overview:
+    get:
+      tags: [lite cash]
+      operationId: adminLiteCashOverview
+      responses:
+        '200': { description: lite cash overview }
+  /api/v1/admin/lite-cash/topology:
+    get:
+      tags: [lite cash]
+      operationId: adminLiteCashTopology
+      responses:
+        '200': { description: Safe cache runtime topology without secrets }
+  /api/v1/admin/lite-cash/registry/purge-scopes:
+    get:
+      tags: [lite cash]
+      operationId: adminLiteCashPurgeScopes
+      responses:
+        '200': { description: Registered tenant-safe purge scopes }
+  /api/v1/admin/lite-cash/policies:
+    get:
+      tags: [lite cash]
+      operationId: adminLiteCashPolicies
+      parameters:
+        - { in: query, name: q, schema: { type: string } }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 500 } }
+      responses:
+        '200': { description: Cache policy inventory }
+    post:
+      tags: [lite cash]
+      operationId: adminLiteCashPolicyCreate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LiteCashPolicyCreate' }
+      responses:
+        '201': { description: Cache policy created }
+  /api/v1/admin/lite-cash/policies/{publicId}:
+    parameters:
+      - { in: path, name: publicId, required: true, schema: { type: string, format: uuid } }
+    get:
+      tags: [lite cash]
+      operationId: adminLiteCashPolicyShow
+      responses:
+        '200': { description: Cache policy detail }
+    patch:
+      tags: [lite cash]
+      operationId: adminLiteCashPolicyUpdate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LiteCashPolicyUpdate' }
+      responses:
+        '200': { description: Cache policy updated or same-value no-op }
+  /api/v1/admin/lite-cash/policies/{publicId}/validate:
+    post:
+      tags: [lite cash]
+      operationId: adminLiteCashPolicyValidate
+      parameters:
+        - { in: path, name: publicId, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Deterministic policy validation evidence }
+  /api/v1/admin/lite-cash/purges:
+    get:
+      tags: [lite cash]
+      operationId: adminLiteCashPurges
+      parameters:
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 500 } }
+      responses:
+        '200': { description: Immutable purge history }
+  /api/v1/admin/lite-cash/purge/plan:
+    post:
+      tags: [lite cash]
+      operationId: adminLiteCashPurgePlan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LiteCashPurgeRequest' }
+      responses:
+        '200': { description: Dry-run purge plan with resolved tags and blast radius }
+  /api/v1/admin/lite-cash/purge/execute:
+    post:
+      tags: [lite cash]
+      operationId: adminLiteCashPurgeExecute
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LiteCashPurgeRequest' }
+      responses:
+        '200': { description: Tenant-scoped purge evidence }
+  /api/v1/admin/lite-cash/warm-jobs:
+    get:
+      tags: [lite cash]
+      operationId: adminLiteCashWarmJobs
+      parameters:
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 500 } }
+      responses:
+        '200': { description: Warm job queue and history }
+    post:
+      tags: [lite cash]
+      operationId: adminLiteCashWarmJobCreate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LiteCashWarmJobCreate' }
+      responses:
+        '201': { description: Idempotent warm job created }
+  /api/v1/admin/lite-cash/warm-jobs/{publicId}:
+    get:
+      tags: [lite cash]
+      operationId: adminLiteCashWarmJobShow
+      parameters:
+        - { in: path, name: publicId, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Warm job detail }
+  /api/v1/admin/lite-cash/warm-jobs/{publicId}/cancel:
+    post:
+      tags: [lite cash]
+      operationId: adminLiteCashWarmJobCancel
+      parameters:
+        - { in: path, name: publicId, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LiteCashReason' }
+      responses:
+        '200': { description: Warm job cancelled or terminal no-op }
+  /api/v1/admin/lite-cash/warm-jobs/{publicId}/observe:
+    post:
+      tags: [lite cash]
+      operationId: adminLiteCashWarmJobObserve
+      parameters:
+        - { in: path, name: publicId, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LiteCashWarmObservation' }
+      responses:
+        '200': { description: Trusted warm progress observation recorded }
+  /api/v1/admin/lite-cash/profiles:
+    get:
+      tags: [lite cash]
+      operationId: adminLiteCashProfiles
+      parameters:
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 250 } }
+      responses:
+        '200': { description: Optimization profiles }
+    post:
+      tags: [lite cash]
+      operationId: adminLiteCashProfileCreate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LiteCashProfileCreate' }
+      responses:
+        '201': { description: Draft optimization profile created }
+  /api/v1/admin/lite-cash/profiles/{publicId}:
+    parameters:
+      - { in: path, name: publicId, required: true, schema: { type: string, format: uuid } }
+    get:
+      tags: [lite cash]
+      operationId: adminLiteCashProfileShow
+      responses:
+        '200': { description: Optimization profile detail }
+    patch:
+      tags: [lite cash]
+      operationId: adminLiteCashProfileUpdate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LiteCashProfileUpdate' }
+      responses:
+        '200': { description: Optimization profile updated or no-op }
+  /api/v1/admin/lite-cash/profiles/{publicId}/activate:
+    post:
+      tags: [lite cash]
+      operationId: adminLiteCashProfileActivate
+      parameters:
+        - { in: path, name: publicId, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LiteCashReason' }
+      responses:
+        '200': { description: Profile activated after identity step-up }
+  /api/v1/admin/lite-cash/observations:
+    get:
+      tags: [lite cash]
+      operationId: adminLiteCashObservations
+      parameters:
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 1000 } }
+      responses:
+        '200': { description: Trusted cache and performance observations }
+    post:
+      tags: [lite cash]
+      operationId: adminLiteCashObservationCreate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LiteCashObservationCreate' }
+      responses:
+        '201': { description: Trusted observation stored }
+  /api/v1/admin/lite-cash/settings:
+    get:
+      tags: [lite cash]
+      operationId: adminLiteCashSettings
+      responses:
+        '200': { description: Tenant lite cash settings }
+    patch:
+      tags: [lite cash]
+      operationId: adminLiteCashSettingsUpdate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LiteCashSettingsUpdate' }
+      responses:
+        '200': { description: Settings updated or same-value no-op }
+  /api/v1/admin/lite-cash/snapshots:
+    get:
+      tags: [lite cash]
+      operationId: adminLiteCashSnapshots
+      parameters:
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 250 } }
+      responses:
+        '200': { description: Immutable configuration snapshots }
+    post:
+      tags: [lite cash]
+      operationId: adminLiteCashSnapshotCreate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LiteCashSnapshotCreate' }
+      responses:
+        '201': { description: Configuration snapshot created }
+  /api/v1/admin/lite-cash/export:
+    get:
+      tags: [lite cash]
+      operationId: adminLiteCashExport
+      responses:
+        '200': { description: Secret-free Phase 34 configuration export }
+  /api/v1/admin/lite-cash/import/validate:
+    post:
+      tags: [lite cash]
+      operationId: adminLiteCashImportValidate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LiteCashImportRequest' }
+      responses:
+        '200': { description: Import validation without mutation }
+  /api/v1/admin/lite-cash/import/apply:
+    post:
+      tags: [lite cash]
+      operationId: adminLiteCashImportApply
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LiteCashImportRequest' }
+      responses:
+        '200': { description: Atomic import applied after validation and identity step-up }
+components:
+  schemas:
+    LiteCashReason:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 3, maxLength: 2000 }
+    LiteCashPolicyCreate:
+      type: object
+      required: [policy_key, name, kind, route_pattern, status, risk_tier, ttl_seconds, grace_seconds, stale_if_error_seconds, soft_timeout_ms, hard_timeout_ms, tags, vary, conditions, reason]
+      properties:
+        policy_key: { type: string }
+        name: { type: string }
+        description: { type: string }
+        kind: { type: string, enum: [api, page, asset, query] }
+        route_pattern: { type: string }
+        status: { type: string, enum: [enabled, disabled, archived] }
+        risk_tier: { type: string, enum: [low, medium, high, critical] }
+        ttl_seconds: { type: integer, minimum: 1, maximum: 604800 }
+        grace_seconds: { type: integer, minimum: 0, maximum: 604800 }
+        stale_if_error_seconds: { type: integer, minimum: 0, maximum: 604800 }
+        soft_timeout_ms: { type: integer, minimum: 10, maximum: 60000 }
+        hard_timeout_ms: { type: integer, minimum: 10, maximum: 120000 }
+        tags: { type: array, items: { type: string } }
+        vary: { type: array, items: { type: string } }
+        conditions: { type: object, additionalProperties: true }
+        reason: { type: string }
+    LiteCashPolicyUpdate:
+      type: object
+      required: [reason]
+      properties:
+        name: { type: string }
+        description: { type: string }
+        kind: { type: string, enum: [api, page, asset, query] }
+        route_pattern: { type: string }
+        status: { type: string, enum: [enabled, disabled, archived] }
+        risk_tier: { type: string, enum: [low, medium, high, critical] }
+        ttl_seconds: { type: integer, minimum: 1, maximum: 604800 }
+        grace_seconds: { type: integer, minimum: 0, maximum: 604800 }
+        stale_if_error_seconds: { type: integer, minimum: 0, maximum: 604800 }
+        soft_timeout_ms: { type: integer, minimum: 10, maximum: 60000 }
+        hard_timeout_ms: { type: integer, minimum: 10, maximum: 120000 }
+        tags: { type: array, items: { type: string } }
+        vary: { type: array, items: { type: string } }
+        conditions: { type: object, additionalProperties: true }
+        reason: { type: string, minLength: 3, maxLength: 2000 }
+    LiteCashPurgeRequest:
+      type: object
+      required: [scope, idempotency_key, reason]
+      properties:
+        scope:
+          type: string
+          enum: [catalog_products, product, catalog_categories, catalog_taxonomy, shipping_zones, settings_group, currency, storefront_tenant, admin_reports, admin_customers, customer, regional_provinces, full_tenant]
+        target: { type: string }
+        idempotency_key: { type: string, minLength: 8 }
+        reason: { type: string, minLength: 3 }
+    LiteCashWarmJobCreate:
+      type: object
+      required: [scope, target_key, strategy, priority, concurrency, plan, idempotency_key, reason]
+      properties:
+        scope: { type: string, enum: [catalog, taxonomy, storefront, reports, custom_registered] }
+        target_key: { type: string }
+        strategy: { type: string, enum: [cold_fill, refresh, verify] }
+        priority: { type: string, enum: [low, normal, high] }
+        concurrency: { type: integer, minimum: 1, maximum: 32 }
+        plan: { type: object, additionalProperties: true }
+        idempotency_key: { type: string, minLength: 8 }
+        reason: { type: string }
+    LiteCashWarmObservation:
+      type: object
+      required: [status, discovered_count, processed_count, success_count, failure_count, evidence]
+      properties:
+        status: { type: string, enum: [running, succeeded, partial, failed, cancelled] }
+        discovered_count: { type: integer, minimum: 0 }
+        processed_count: { type: integer, minimum: 0 }
+        success_count: { type: integer, minimum: 0 }
+        failure_count: { type: integer, minimum: 0 }
+        evidence: { type: object, additionalProperties: true }
+    LiteCashProfileCreate:
+      type: object
+      required: [profile_key, name, mode, status, css, javascript, images, fonts, navigation, edge, reason]
+      properties:
+        profile_key: { type: string }
+        name: { type: string }
+        mode: { type: string, enum: [safe, balanced, aggressive, custom] }
+        status: { type: string, enum: [draft, active, archived] }
+        css: { type: object, additionalProperties: true }
+        javascript: { type: object, additionalProperties: true }
+        images: { type: object, additionalProperties: true }
+        fonts: { type: object, additionalProperties: true }
+        navigation: { type: object, additionalProperties: true }
+        edge: { type: object, additionalProperties: true }
+        reason: { type: string }
+    LiteCashProfileUpdate:
+      type: object
+      required: [reason]
+      properties:
+        name: { type: string }
+        mode: { type: string, enum: [safe, balanced, aggressive, custom] }
+        status: { type: string, enum: [draft, active, archived] }
+        css: { type: object, additionalProperties: true }
+        javascript: { type: object, additionalProperties: true }
+        images: { type: object, additionalProperties: true }
+        fonts: { type: object, additionalProperties: true }
+        navigation: { type: object, additionalProperties: true }
+        edge: { type: object, additionalProperties: true }
+        reason: { type: string, minLength: 3, maxLength: 2000 }
+    LiteCashObservationCreate:
+      type: object
+      required: [source, metric_key, unit, labels]
+      properties:
+        source: { type: string, enum: [api, redis, edge, storefront, synthetic, worker] }
+        metric_key: { type: string }
+        value: { type: number }
+        unit: { type: string }
+        outcome: { type: string }
+        labels: { type: object, additionalProperties: true }
+        request_id: { type: string }
+        observed_at: { type: string, format: date-time }
+    LiteCashSettingsUpdate:
+      type: object
+      required: [reason]
+      properties:
+        enabled: { type: boolean }
+        default_ttl_seconds: { type: integer, minimum: 1, maximum: 86400 }
+        default_grace_seconds: { type: integer, minimum: 0, maximum: 604800 }
+        default_stale_if_error_seconds: { type: integer, minimum: 0, maximum: 604800 }
+        max_policy_ttl_seconds: { type: integer, minimum: 1, maximum: 604800 }
+        max_warm_concurrency: { type: integer, minimum: 1, maximum: 32 }
+        broad_purge_requires_step_up: { type: boolean }
+        debug_minutes: { type: integer, minimum: 0, maximum: 1440 }
+        default_profile: { type: string, enum: [safe, balanced, aggressive, custom] }
+        edge_provider: { type: string, enum: [none, cloudflare, quic, custom] }
+        reason: { type: string }
+    LiteCashSnapshotCreate:
+      type: object
+      required: [snapshot_kind, reason]
+      properties:
+        snapshot_kind: { type: string, enum: [manual, profile_activation, settings_change, import] }
+        reason: { type: string }
+    LiteCashImportRequest:
+      type: object
+      required: [document, reason]
+      properties:
+        document: { type: object, additionalProperties: true }
+        reason: { type: string }

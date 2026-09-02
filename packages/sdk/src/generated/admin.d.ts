@@ -13051,6 +13051,362 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/lite-cash/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminLiteCashOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/lite-cash/topology": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminLiteCashTopology"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/lite-cash/registry/purge-scopes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminLiteCashPurgeScopes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/lite-cash/policies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminLiteCashPolicies"];
+        put?: never;
+        post: operations["adminLiteCashPolicyCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/lite-cash/policies/{publicId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: string;
+            };
+            cookie?: never;
+        };
+        get: operations["adminLiteCashPolicyShow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["adminLiteCashPolicyUpdate"];
+        trace?: never;
+    };
+    "/api/v1/admin/lite-cash/policies/{publicId}/validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminLiteCashPolicyValidate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/lite-cash/purges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminLiteCashPurges"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/lite-cash/purge/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminLiteCashPurgePlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/lite-cash/purge/execute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminLiteCashPurgeExecute"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/lite-cash/warm-jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminLiteCashWarmJobs"];
+        put?: never;
+        post: operations["adminLiteCashWarmJobCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/lite-cash/warm-jobs/{publicId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminLiteCashWarmJobShow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/lite-cash/warm-jobs/{publicId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminLiteCashWarmJobCancel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/lite-cash/warm-jobs/{publicId}/observe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminLiteCashWarmJobObserve"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/lite-cash/profiles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminLiteCashProfiles"];
+        put?: never;
+        post: operations["adminLiteCashProfileCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/lite-cash/profiles/{publicId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: string;
+            };
+            cookie?: never;
+        };
+        get: operations["adminLiteCashProfileShow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["adminLiteCashProfileUpdate"];
+        trace?: never;
+    };
+    "/api/v1/admin/lite-cash/profiles/{publicId}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminLiteCashProfileActivate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/lite-cash/observations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminLiteCashObservations"];
+        put?: never;
+        post: operations["adminLiteCashObservationCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/lite-cash/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminLiteCashSettings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["adminLiteCashSettingsUpdate"];
+        trace?: never;
+    };
+    "/api/v1/admin/lite-cash/snapshots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminLiteCashSnapshots"];
+        put?: never;
+        post: operations["adminLiteCashSnapshotCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/lite-cash/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminLiteCashExport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/lite-cash/import/validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminLiteCashImportValidate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/lite-cash/import/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminLiteCashImportApply"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -17473,6 +17829,180 @@ export interface components {
             /** @enum {string} */
             preset: "owner" | "growth" | "operator" | "finance" | "analyst" | "viewer";
             reason: components["schemas"]["RetailMediaReason"];
+        };
+        LiteCashReason: {
+            reason: string;
+        };
+        LiteCashPolicyCreate: {
+            policy_key: string;
+            name: string;
+            description?: string;
+            /** @enum {string} */
+            kind: "api" | "page" | "asset" | "query";
+            route_pattern: string;
+            /** @enum {string} */
+            status: "enabled" | "disabled" | "archived";
+            /** @enum {string} */
+            risk_tier: "low" | "medium" | "high" | "critical";
+            ttl_seconds: number;
+            grace_seconds: number;
+            stale_if_error_seconds: number;
+            soft_timeout_ms: number;
+            hard_timeout_ms: number;
+            tags: string[];
+            vary: string[];
+            conditions: {
+                [key: string]: unknown;
+            };
+            reason: string;
+        };
+        LiteCashPolicyUpdate: {
+            name?: string;
+            description?: string;
+            /** @enum {string} */
+            kind?: "api" | "page" | "asset" | "query";
+            route_pattern?: string;
+            /** @enum {string} */
+            status?: "enabled" | "disabled" | "archived";
+            /** @enum {string} */
+            risk_tier?: "low" | "medium" | "high" | "critical";
+            ttl_seconds?: number;
+            grace_seconds?: number;
+            stale_if_error_seconds?: number;
+            soft_timeout_ms?: number;
+            hard_timeout_ms?: number;
+            tags?: string[];
+            vary?: string[];
+            conditions?: {
+                [key: string]: unknown;
+            };
+            reason: string;
+        };
+        LiteCashPurgeRequest: {
+            /** @enum {string} */
+            scope: "catalog_products" | "product" | "catalog_categories" | "catalog_taxonomy" | "shipping_zones" | "settings_group" | "currency" | "storefront_tenant" | "admin_reports" | "admin_customers" | "customer" | "regional_provinces" | "full_tenant";
+            target?: string;
+            idempotency_key: string;
+            reason: string;
+        };
+        LiteCashWarmJobCreate: {
+            /** @enum {string} */
+            scope: "catalog" | "taxonomy" | "storefront" | "reports" | "custom_registered";
+            target_key: string;
+            /** @enum {string} */
+            strategy: "cold_fill" | "refresh" | "verify";
+            /** @enum {string} */
+            priority: "low" | "normal" | "high";
+            concurrency: number;
+            plan: {
+                [key: string]: unknown;
+            };
+            idempotency_key: string;
+            reason: string;
+        };
+        LiteCashWarmObservation: {
+            /** @enum {string} */
+            status: "running" | "succeeded" | "partial" | "failed" | "cancelled";
+            discovered_count: number;
+            processed_count: number;
+            success_count: number;
+            failure_count: number;
+            evidence: {
+                [key: string]: unknown;
+            };
+        };
+        LiteCashProfileCreate: {
+            profile_key: string;
+            name: string;
+            /** @enum {string} */
+            mode: "safe" | "balanced" | "aggressive" | "custom";
+            /** @enum {string} */
+            status: "draft" | "active" | "archived";
+            css: {
+                [key: string]: unknown;
+            };
+            javascript: {
+                [key: string]: unknown;
+            };
+            images: {
+                [key: string]: unknown;
+            };
+            fonts: {
+                [key: string]: unknown;
+            };
+            navigation: {
+                [key: string]: unknown;
+            };
+            edge: {
+                [key: string]: unknown;
+            };
+            reason: string;
+        };
+        LiteCashProfileUpdate: {
+            name?: string;
+            /** @enum {string} */
+            mode?: "safe" | "balanced" | "aggressive" | "custom";
+            /** @enum {string} */
+            status?: "draft" | "active" | "archived";
+            css?: {
+                [key: string]: unknown;
+            };
+            javascript?: {
+                [key: string]: unknown;
+            };
+            images?: {
+                [key: string]: unknown;
+            };
+            fonts?: {
+                [key: string]: unknown;
+            };
+            navigation?: {
+                [key: string]: unknown;
+            };
+            edge?: {
+                [key: string]: unknown;
+            };
+            reason: string;
+        };
+        LiteCashObservationCreate: {
+            /** @enum {string} */
+            source: "api" | "redis" | "edge" | "storefront" | "synthetic" | "worker";
+            metric_key: string;
+            value?: number;
+            unit: string;
+            outcome?: string;
+            labels: {
+                [key: string]: unknown;
+            };
+            request_id?: string;
+            /** Format: date-time */
+            observed_at?: string;
+        };
+        LiteCashSettingsUpdate: {
+            enabled?: boolean;
+            default_ttl_seconds?: number;
+            default_grace_seconds?: number;
+            default_stale_if_error_seconds?: number;
+            max_policy_ttl_seconds?: number;
+            max_warm_concurrency?: number;
+            broad_purge_requires_step_up?: boolean;
+            debug_minutes?: number;
+            /** @enum {string} */
+            default_profile?: "safe" | "balanced" | "aggressive" | "custom";
+            /** @enum {string} */
+            edge_provider?: "none" | "cloudflare" | "quic" | "custom";
+            reason: string;
+        };
+        LiteCashSnapshotCreate: {
+            /** @enum {string} */
+            snapshot_kind: "manual" | "profile_activation" | "settings_change" | "import";
+            reason: string;
+        };
+        LiteCashImportRequest: {
+            document: {
+                [key: string]: unknown;
+            };
+            reason: string;
         };
     };
     responses: {
@@ -38229,6 +38759,637 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Vetted Snippets starter templates */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminLiteCashOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description lite cash overview */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminLiteCashTopology: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Safe cache runtime topology without secrets */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminLiteCashPurgeScopes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Registered tenant-safe purge scopes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminLiteCashPolicies: {
+        parameters: {
+            query?: {
+                q?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Cache policy inventory */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminLiteCashPolicyCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LiteCashPolicyCreate"];
+            };
+        };
+        responses: {
+            /** @description Cache policy created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminLiteCashPolicyShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Cache policy detail */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminLiteCashPolicyUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LiteCashPolicyUpdate"];
+            };
+        };
+        responses: {
+            /** @description Cache policy updated or same-value no-op */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminLiteCashPolicyValidate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deterministic policy validation evidence */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminLiteCashPurges: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Immutable purge history */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminLiteCashPurgePlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LiteCashPurgeRequest"];
+            };
+        };
+        responses: {
+            /** @description Dry-run purge plan with resolved tags and blast radius */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminLiteCashPurgeExecute: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LiteCashPurgeRequest"];
+            };
+        };
+        responses: {
+            /** @description Tenant-scoped purge evidence */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminLiteCashWarmJobs: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Warm job queue and history */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminLiteCashWarmJobCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LiteCashWarmJobCreate"];
+            };
+        };
+        responses: {
+            /** @description Idempotent warm job created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminLiteCashWarmJobShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Warm job detail */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminLiteCashWarmJobCancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LiteCashReason"];
+            };
+        };
+        responses: {
+            /** @description Warm job cancelled or terminal no-op */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminLiteCashWarmJobObserve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LiteCashWarmObservation"];
+            };
+        };
+        responses: {
+            /** @description Trusted warm progress observation recorded */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminLiteCashProfiles: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Optimization profiles */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminLiteCashProfileCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LiteCashProfileCreate"];
+            };
+        };
+        responses: {
+            /** @description Draft optimization profile created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminLiteCashProfileShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Optimization profile detail */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminLiteCashProfileUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LiteCashProfileUpdate"];
+            };
+        };
+        responses: {
+            /** @description Optimization profile updated or no-op */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminLiteCashProfileActivate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LiteCashReason"];
+            };
+        };
+        responses: {
+            /** @description Profile activated after identity step-up */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminLiteCashObservations: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Trusted cache and performance observations */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminLiteCashObservationCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LiteCashObservationCreate"];
+            };
+        };
+        responses: {
+            /** @description Trusted observation stored */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminLiteCashSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tenant lite cash settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminLiteCashSettingsUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LiteCashSettingsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Settings updated or same-value no-op */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminLiteCashSnapshots: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Immutable configuration snapshots */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminLiteCashSnapshotCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LiteCashSnapshotCreate"];
+            };
+        };
+        responses: {
+            /** @description Configuration snapshot created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminLiteCashExport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Secret-free Phase 34 configuration export */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminLiteCashImportValidate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LiteCashImportRequest"];
+            };
+        };
+        responses: {
+            /** @description Import validation without mutation */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminLiteCashImportApply: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LiteCashImportRequest"];
+            };
+        };
+        responses: {
+            /** @description Atomic import applied after validation and identity step-up */
             200: {
                 headers: {
                     [name: string]: unknown;
