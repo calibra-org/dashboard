@@ -17,6 +17,7 @@ const page = read("apps/admin/src/app/[locale]/(authenticated)/snippets/page.tsx
 const sidebar = read("apps/admin/src/components/Sidebar.tsx");
 const query = read("apps/admin/src/lib/queries/snippets.ts");
 const openapi = read("docs/api/reference/openapi/admin.phase33.v1.yaml");
+const adminSdk = read("packages/sdk/src/generated/admin.d.ts");
 const docsPackage = read("docs/api/package.json");
 const mergeAdmin = read("docs/api/scripts/merge-admin-spec.js");
 const prompt = read("docs/calibra/phase33-snippets-master-prompt.md");
@@ -140,7 +141,10 @@ for (const operationId of [
     "adminSnippetsLibrary",
 ]) {
     must(openapi.includes(operationId), `Phase33 OpenAPI missing ${operationId}`);
+    must(adminSdk.includes(operationId), `Phase33 committed admin SDK missing ${operationId}`);
 }
+must(adminSdk.includes('"/api/v1/admin/snippets/overview"'), "Phase33 committed admin SDK is missing the Snippets overview path");
+must(adminSdk.includes('"/api/v1/admin/snippets/{publicId}/rollback"'), "Phase33 committed admin SDK is missing rollback path");
 must(docsPackage.includes('"build:json:admin-phase33"'), "Phase33 docs build script is missing");
 must(
     docsPackage.includes("pnpm build:json:admin-phase33 && pnpm build:json:admin-merge"),
