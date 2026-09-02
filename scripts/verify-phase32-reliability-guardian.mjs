@@ -108,10 +108,7 @@ for (const operationId of [
 must(docsPackage.includes('"build:json:admin-phase32"'), "Phase32 docs build script is missing");
 const phase32BuildIndex = docsPackage.indexOf("pnpm build:json:admin-phase32");
 const adminMergeIndex = docsPackage.indexOf("pnpm build:json:admin-merge");
-must(
-    phase32BuildIndex >= 0 && adminMergeIndex > phase32BuildIndex,
-    "Phase32 overlay is not in canonical admin build order",
-);
+must(phase32BuildIndex >= 0 && adminMergeIndex > phase32BuildIndex, "Phase32 overlay is not in canonical admin build order");
 must(
     mergeAdmin.includes("dist/admin.phase32.v1.json") && mergeAdmin.includes("Phase32ReliabilityGuardianOverlay"),
     "Phase32 overlay is not merged into canonical admin OpenAPI",
