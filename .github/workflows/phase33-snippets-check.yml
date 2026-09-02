@@ -1,0 +1,104 @@
+name: Phase 33 Snippets Integrity
+
+on:
+  pull_request:
+    paths:
+      - "apps/api/database/migrations/1804000000000_create_snippets_os.ts"
+      - "apps/api/app/services/snippets/**"
+      - "apps/api/app/controllers/admin/snippets_controller.ts"
+      - "apps/api/app/validators/snippets/**"
+      - "apps/api/start/routes/admin_snippets.ts"
+      - "apps/api/start/routes.ts"
+      - "apps/admin/src/features/snippets/**"
+      - "apps/admin/src/lib/queries/snippets.ts"
+      - "apps/admin/src/app/**/snippets/**"
+      - "apps/admin/src/components/Sidebar.tsx"
+      - "docs/api/reference/openapi/admin.phase33.v1.yaml"
+      - "docs/api/package.json"
+      - "docs/api/scripts/merge-admin-spec.js"
+      - "docs/calibra/phase33-snippets-master-prompt.md"
+      - "docs/calibra/phase33-snippets-conformance-posture.md"
+      - "scripts/verify-phase33-snippets.mjs"
+      - ".github/workflows/phase33-snippets-check.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phase33-snippets-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: calibra
+          POSTGRES_PASSWORD: calibra
+          POSTGRES_DB: calibra
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U calibra -d calibra"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.14.0
+      - run: npm install --global pnpm@10.32.1
+      - run: pnpm install --frozen-lockfile
+      - name: Phase 33 static contract
+        run: node scripts/verify-phase33-snippets.mjs
+      - name: Phase 33 formatting
+        run: >-
+          pnpm exec biome check
+          apps/api/database/migrations/1804000000000_create_snippets_os.ts
+          apps/api/app/services/snippets
+          apps/api/app/controllers/admin/snippets_controller.ts
+          apps/api/app/validators/snippets
+          apps/api/start/routes/admin_snippets.ts
+          apps/api/start/routes.ts
+          apps/admin/src/features/snippets/SnippetsWorkspace.tsx
+          apps/admin/src/lib/queries/snippets.ts
+          "apps/admin/src/app/[locale]/(authenticated)/snippets/page.tsx"
+          apps/admin/src/components/Sidebar.tsx
+          docs/api/package.json
+          docs/api/scripts/merge-admin-spec.js
+          scripts/verify-phase33-snippets.mjs
+      - name: Build Phase 33 OpenAPI overlay
+        run: pnpm --filter @calibra/api-docs run build:json:admin-phase33
+      - name: API typecheck
+        run: pnpm --filter @calibra/api run typecheck
+      - name: OpenAPI and SDK drift check
+        run: pnpm --filter @calibra/sdk run codegen:check
+      - name: Build SDK dependency
+        run: pnpm --filter @calibra/sdk run build
+      - name: Admin typecheck
+        run: pnpm --filter @calibra/admin run typecheck
+      - name: Admin production build
+        run: pnpm --filter @calibra/admin run build
+      - name: Storefront typecheck regression
+        run: pnpm --filter @calibra/web run typecheck
+      - name: Storefront production build regression
+        run: pnpm --filter @calibra/web run build
+      - name: Clean-tree drift check
+        run: git diff --exit-code

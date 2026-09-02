@@ -1,0 +1,125 @@
+openapi: 3.1.0
+info:
+  title: Calibra Admin Phase 33 Snippets API
+  version: 1.0.0
+paths:
+  /api/v1/admin/snippets/overview:
+    get:
+      operationId: adminSnippetsOverview
+      responses:
+        '200': { description: Snippets overview }
+  /api/v1/admin/snippets:
+    get:
+      operationId: adminSnippetsList
+      parameters:
+        - { in: query, name: q, schema: { type: string } }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 500 } }
+      responses:
+        '200': { description: Snippet inventory }
+    post:
+      operationId: adminSnippetsCreate
+      responses:
+        '201': { description: Snippet draft created }
+  /api/v1/admin/snippets/{publicId}:
+    parameters:
+      - { in: path, name: publicId, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: adminSnippetsShow
+      responses:
+        '200': { description: Snippet detail }
+    patch:
+      operationId: adminSnippetsUpdate
+      responses:
+        '200': { description: Snippet revision saved }
+  /api/v1/admin/snippets/{publicId}/validate:
+    post:
+      operationId: adminSnippetsValidate
+      parameters:
+        - { in: path, name: publicId, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Snippet validation evidence }
+  /api/v1/admin/snippets/{publicId}/simulate:
+    post:
+      operationId: adminSnippetsSimulate
+      parameters:
+        - { in: path, name: publicId, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Declarative targeting simulation result; source is not executed }
+  /api/v1/admin/snippets/{publicId}/publish:
+    post:
+      operationId: adminSnippetsPublish
+      parameters:
+        - { in: path, name: publicId, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Snippet revision deployment recorded }
+  /api/v1/admin/snippets/{publicId}/pause:
+    post:
+      operationId: adminSnippetsPause
+      parameters:
+        - { in: path, name: publicId, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Snippet paused }
+  /api/v1/admin/snippets/{publicId}/resume:
+    post:
+      operationId: adminSnippetsResume
+      parameters:
+        - { in: path, name: publicId, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Snippet resumed }
+  /api/v1/admin/snippets/{publicId}/rollback:
+    post:
+      operationId: adminSnippetsRollback
+      parameters:
+        - { in: path, name: publicId, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Immutable revision rollback deployment recorded }
+  /api/v1/admin/snippets/{publicId}/revisions:
+    get:
+      operationId: adminSnippetsRevisions
+      parameters:
+        - { in: path, name: publicId, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Immutable snippet revision history }
+  /api/v1/admin/snippets/{publicId}/deployments:
+    get:
+      operationId: adminSnippetsDeployments
+      parameters:
+        - { in: path, name: publicId, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Snippet deployment history }
+  /api/v1/admin/snippets/executions:
+    get:
+      operationId: adminSnippetsExecutions
+      parameters:
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 1000 } }
+      responses:
+        '200': { description: Trusted-consumer execution observations }
+  /api/v1/admin/snippets/executions/observe:
+    post:
+      operationId: adminSnippetsExecutionObserve
+      responses:
+        '201': { description: Trusted-consumer execution observation recorded }
+  /api/v1/admin/snippets/settings:
+    get:
+      operationId: adminSnippetsSettings
+      responses:
+        '200': { description: Tenant Snippets settings }
+    patch:
+      operationId: adminSnippetsSettingsUpdate
+      responses:
+        '200': { description: Tenant Snippets settings updated }
+  /api/v1/admin/snippets/safe-mode/enable:
+    post:
+      operationId: adminSnippetsSafeModeEnable
+      responses:
+        '200': { description: Tenant Snippets Safe Mode enabled }
+  /api/v1/admin/snippets/safe-mode/disable:
+    post:
+      operationId: adminSnippetsSafeModeDisable
+      responses:
+        '200': { description: Tenant Snippets Safe Mode disabled }
+  /api/v1/admin/snippets/library:
+    get:
+      operationId: adminSnippetsLibrary
+      responses:
+        '200': { description: Vetted Snippets starter templates }
