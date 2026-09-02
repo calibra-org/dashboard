@@ -1,0 +1,161 @@
+name: Phase 34 Bootstrap
+
+on:
+  push:
+    branches:
+      - "feat/phase34-lite-cash"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: phase34-bootstrap-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: calibra
+          POSTGRES_PASSWORD: calibra
+          POSTGRES_DB: calibra
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U calibra -d calibra"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: feat/phase34-lite-cash
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.14.0
+      - run: npm install --global pnpm@10.32.1
+      - run: pnpm install --frozen-lockfile
+      - name: Wire Phase 34 into canonical surfaces
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs");
+          function replaceOnce(path, from, to) {
+            const source = fs.readFileSync(path, "utf8");
+            const count = source.split(from).length - 1;
+            if (count !== 1) throw new Error(`${path}: expected exactly one replacement target, found ${count}`);
+            fs.writeFileSync(path, source.replace(from, to), "utf8");
+          }
+
+          replaceOnce(
+            "apps/admin/src/components/Sidebar.tsx",
+            '            { href: "/snippets", label: "Snippets", icon: FileText },',
+            '            { href: "/snippets", label: "Snippets", icon: FileText },\n            { href: "/lite-cash", label: "lite cash", icon: SlidersHorizontal },',
+          );
+
+          replaceOnce(
+            "apps/api/app/services/lite_cash/lite_cash_service.ts",
+            'from "./policy.js";',
+            'from "#services/lite_cash/policy";',
+          );
+
+          replaceOnce(
+            "docs/api/package.json",
+            "pnpm build:json:admin-phase32 && pnpm build:json:admin-phase33 && pnpm build:json:admin-merge",
+            "pnpm build:json:admin-phase32 && pnpm build:json:admin-phase33 && pnpm build:json:admin-phase34 && pnpm build:json:admin-merge",
+          );
+          replaceOnce(
+            "docs/api/package.json",
+            '        "build:json:admin-phase33": "redocly bundle reference/openapi/admin.phase33.v1.yaml -o dist/admin.phase33.v1.json --ext json"\n',
+            '        "build:json:admin-phase33": "redocly bundle reference/openapi/admin.phase33.v1.yaml -o dist/admin.phase33.v1.json --ext json",\n        "build:json:admin-phase34": "redocly bundle reference/openapi/admin.phase34.v1.yaml -o dist/admin.phase34.v1.json --ext json"\n',
+          );
+
+          replaceOnce(
+            "docs/api/scripts/merge-admin-spec.js",
+            'const phase33 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase33.v1.json"), "utf8"));',
+            'const phase33 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase33.v1.json"), "utf8"));\nconst phase34 = JSON.parse(readFileSync(resolve(root, "dist/admin.phase34.v1.json"), "utf8"));',
+          );
+          replaceOnce(
+            "docs/api/scripts/merge-admin-spec.js",
+            '    [phase33, "Phase33SnippetsOverlay"],',
+            '    [phase33, "Phase33SnippetsOverlay"],\n    [phase34, "Phase34LiteCashOverlay"],',
+          );
+
+          replaceOnce(
+            "package.json",
+            '        "verify:phase33": "node scripts/verify-phase33-snippets.mjs"\n',
+            '        "verify:phase33": "node scripts/verify-phase33-snippets.mjs",\n        "verify:phase34": "node scripts/verify-phase34-lite-cash.mjs"\n',
+          );
+
+          const verifierPath = "scripts/verify-phase34-lite-cash.mjs";
+          let verifier = fs.readFileSync(verifierPath, "utf8");
+          verifier = verifier.replace('must(policy.includes(\'must\') === false || true, "Phase34 policy module loaded");\n', "");
+          const broken = 'for (const forbidden of ["flushall", "flushdb", "child_process", "node:vm", "execSync(", "spawnSync(", "redis.call(", "keys(\\\"*\\\"")]) {';
+          const fixed = 'for (const forbidden of ["flushall", "flushdb", "child_process", "node:vm", "execSync(", "spawnSync(", "redis.call(", \'keys("*"\']) {';
+          if (!verifier.includes(broken)) throw new Error("Phase34 verifier forbidden-array target not found");
+          verifier = verifier.replace(broken, fixed);
+          fs.writeFileSync(verifierPath, verifier, "utf8");
+          NODE
+      - name: Format Phase 34 wiring
+        run: pnpm run format:fix
+      - name: Build canonical admin OpenAPI
+        run: pnpm --filter @calibra/api-docs run build:json:admin
+      - name: Generate canonical admin SDK
+        run: pnpm --filter @calibra/sdk run codegen:admin
+      - name: Phase 34 static contract
+        run: node scripts/verify-phase34-lite-cash.mjs
+      - name: Phase 34 unit tests
+        working-directory: apps/api
+        run: pnpm test --files=tests/unit/lite_cash_policy.spec.ts
+      - name: API typecheck
+        run: pnpm --filter @calibra/api run typecheck
+      - name: SDK build
+        run: pnpm --filter @calibra/sdk run build
+      - name: Admin typecheck
+        run: pnpm --filter @calibra/admin run typecheck
+      - name: Admin build
+        run: pnpm --filter @calibra/admin run build
+      - name: Phase 34 focused lint
+        run: >-
+          pnpm exec biome check
+          apps/api/database/migrations/1805000000000_create_lite_cash_os.ts
+          apps/api/database/migrations/1805000000100_add_lite_cash_warm_job_idempotency.ts
+          apps/api/app/services/lite_cash
+          apps/api/app/controllers/admin/lite_cash_controller.ts
+          apps/api/app/validators/lite_cash
+          apps/api/tests/unit/lite_cash_policy.spec.ts
+          apps/api/start/routes/admin_lite_cash.ts
+          apps/api/start/routes.ts
+          apps/admin/src/features/lite-cash/LiteCashWorkspace.tsx
+          apps/admin/src/lib/queries/lite-cash.ts
+          "apps/admin/src/app/[locale]/(authenticated)/lite-cash/page.tsx"
+          apps/admin/src/components/Sidebar.tsx
+          docs/api/package.json
+          docs/api/scripts/merge-admin-spec.js
+          package.json
+          scripts/verify-phase34-lite-cash.mjs
+      - name: Commit canonical output and remove bootstrap
+        run: |
+          git config user.name "calibra-dev"
+          git config user.email "keshavarz20.com@gmail.com"
+          git rm .github/workflows/phase34-bootstrap.yml
+          git add -A
+          git diff --cached --check
+          if ! git diff --cached --quiet; then
+            git commit -m "feat(admin): finalize Phase 34 lite cash"
+            git push origin HEAD:feat/phase34-lite-cash
+          fi
