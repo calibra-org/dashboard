@@ -5,6 +5,7 @@ on:
     paths:
       - "apps/api/database/migrations/1805000000000_create_lite_cash_os.ts"
       - "apps/api/database/migrations/1805000000100_add_lite_cash_warm_job_idempotency.ts"
+      - "apps/api/database/migrations/1805000000200_enforce_lite_cash_profile_activation.ts"
       - "apps/api/app/services/lite_cash/**"
       - "apps/api/app/controllers/admin/lite_cash_controller.ts"
       - "apps/api/app/validators/lite_cash/**"
@@ -70,6 +71,10 @@ jobs:
           node-version: 24.14.0
       - run: npm install --global pnpm@10.32.1
       - run: pnpm install --frozen-lockfile
+      - name: Create test database
+        env:
+          PGPASSWORD: calibra
+        run: psql -h localhost -U calibra -d calibra -c "CREATE DATABASE calibra_test OWNER calibra;"
       - name: Phase 34 static contract
         run: node scripts/verify-phase34-lite-cash.mjs
       - name: Phase 34 formatting
@@ -77,6 +82,7 @@ jobs:
           pnpm exec biome check
           apps/api/database/migrations/1805000000000_create_lite_cash_os.ts
           apps/api/database/migrations/1805000000100_add_lite_cash_warm_job_idempotency.ts
+          apps/api/database/migrations/1805000000200_enforce_lite_cash_profile_activation.ts
           apps/api/app/services/lite_cash
           apps/api/app/controllers/admin/lite_cash_controller.ts
           apps/api/app/validators/lite_cash
