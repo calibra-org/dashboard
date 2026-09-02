@@ -32,7 +32,8 @@
         "verify:phase12": "node scripts/verify-phase12-economics-integration.mjs",
         "verify:phase9": "node scripts/verify-phase9.mjs",
         "verify:phase16": "node scripts/verify-phase16-discovery-integration.mjs",
-        "verify:phase22": "node scripts/verify-phase22-agent-orchestrator.mjs"
+        "verify:phase22": "node scripts/verify-phase22-agent-orchestrator.mjs",
+        "verify:phase33": "node scripts/verify-phase33-snippets.mjs"
     },
     "devDependencies": {
         "@biomejs/biome": "catalog:",

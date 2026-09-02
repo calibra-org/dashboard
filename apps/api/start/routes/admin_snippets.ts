@@ -31,27 +31,12 @@ router
         router.post("/", [SnippetsController, "create"]).as("admin.snippets.create").use(adminWriteLimiter);
         router.get("/:publicId", [SnippetsController, "show"]).as("admin.snippets.show");
         router.patch("/:publicId", [SnippetsController, "update"]).as("admin.snippets.update").use(adminWriteLimiter);
-        router
-            .post("/:publicId/validate", [SnippetsController, "validate"])
-            .as("admin.snippets.validate")
-            .use(adminWriteLimiter);
-        router
-            .post("/:publicId/simulate", [SnippetsController, "simulate"])
-            .as("admin.snippets.simulate")
-            .use(adminWriteLimiter);
-        router
-            .post("/:publicId/publish", [SnippetsController, "publish"])
-            .as("admin.snippets.publish")
-            .use(adminWriteLimiter);
+        router.post("/:publicId/validate", [SnippetsController, "validate"]).as("admin.snippets.validate").use(adminWriteLimiter);
+        router.post("/:publicId/simulate", [SnippetsController, "simulate"]).as("admin.snippets.simulate").use(adminWriteLimiter);
+        router.post("/:publicId/publish", [SnippetsController, "publish"]).as("admin.snippets.publish").use(adminWriteLimiter);
         router.post("/:publicId/pause", [SnippetsController, "pause"]).as("admin.snippets.pause").use(adminWriteLimiter);
-        router
-            .post("/:publicId/resume", [SnippetsController, "resume"])
-            .as("admin.snippets.resume")
-            .use(adminWriteLimiter);
-        router
-            .post("/:publicId/rollback", [SnippetsController, "rollback"])
-            .as("admin.snippets.rollback")
-            .use(adminWriteLimiter);
+        router.post("/:publicId/resume", [SnippetsController, "resume"]).as("admin.snippets.resume").use(adminWriteLimiter);
+        router.post("/:publicId/rollback", [SnippetsController, "rollback"]).as("admin.snippets.rollback").use(adminWriteLimiter);
         router.get("/:publicId/revisions", [SnippetsController, "revisions"]).as("admin.snippets.revisions");
         router.get("/:publicId/deployments", [SnippetsController, "deployments"]).as("admin.snippets.deployments");
     })

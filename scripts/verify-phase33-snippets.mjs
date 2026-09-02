@@ -52,7 +52,7 @@ for (const marker of [
 ]) {
     must(service.includes(marker), `Phase33 service boundary missing ${marker}`);
 }
-must(!service.includes("child_process\""), "Phase33 service must not import child_process");
+must(!service.includes('child_process"'), "Phase33 service must not import child_process");
 must(!service.includes("node:vm"), "Phase33 service must not import node:vm");
 must(!service.includes("node:fs"), "Phase33 service must not import filesystem execution helpers");
 must(!service.includes("execFile("), "Phase33 service must not execute child processes");
@@ -72,7 +72,13 @@ for (const permission of [
     must(permissions.includes(permission), `Phase33 permission missing ${permission}`);
 }
 
-for (const marker of ["snippetCreateValidator", "snippetUpdateValidator", "snippetPublishValidator", "snippetRollbackValidator", "snippetSettingsValidator"]) {
+for (const marker of [
+    "snippetCreateValidator",
+    "snippetUpdateValidator",
+    "snippetPublishValidator",
+    "snippetRollbackValidator",
+    "snippetSettingsValidator",
+]) {
     must(validators.includes(marker), `Phase33 validator missing ${marker}`);
 }
 must(controller.includes("recordAudit"), "Phase33 mutations must be strictly audited");
@@ -96,7 +102,10 @@ must(
     "Raw Tailwind palette found in Phase33 workspace",
 );
 must(page.includes("<SnippetsWorkspace />"), "Phase33 page route is not wired to the workspace");
-must(sidebar.includes('href: "/snippets"') && sidebar.includes('label: "Snippets"'), "Phase33 main navigation is missing exact Snippets label");
+must(
+    sidebar.includes('href: "/snippets"') && sidebar.includes('label: "Snippets"'),
+    "Phase33 main navigation is missing exact Snippets label",
+);
 must(query.includes('const base = "snippets"'), "Phase33 admin query boundary missing");
 must(query.includes("apiMutate"), "Phase33 client mutations must use the same-origin admin proxy helper");
 
@@ -133,10 +142,16 @@ must(
     mergeAdmin.includes("dist/admin.phase33.v1.json") && mergeAdmin.includes("Phase33SnippetsOverlay"),
     "Phase33 overlay is not merged into canonical admin OpenAPI",
 );
-must(prompt.includes("Visible product name") || prompt.includes("visible product name"), "Phase33 master prompt must lock product naming");
+must(
+    prompt.includes("Visible product name") || prompt.includes("visible product name"),
+    "Phase33 master prompt must lock product naming",
+);
 must(prompt.includes("Definition of done"), "Phase33 master prompt must contain a definition of done");
 must(prompt.includes("Never use `eval`"), "Phase33 master prompt must forbid arbitrary evaluation");
-must(posture.includes("Missing observations produce **no execution evidence**"), "Phase33 posture must forbid invented health evidence");
+must(
+    posture.includes("Missing observations produce **no execution evidence**"),
+    "Phase33 posture must forbid invented health evidence",
+);
 must(posture.includes("forced tenant RLS"), "Phase33 posture must state tenant isolation");
 must(workflow.includes("contents: read"), "Phase33 integrity workflow must be read-only");
 must(!workflow.includes("git push"), "Phase33 integrity workflow must not mutate the PR branch");

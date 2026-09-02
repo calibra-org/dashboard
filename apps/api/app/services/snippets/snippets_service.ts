@@ -161,7 +161,8 @@ function compareRule(rule: ConditionRule, context: JsonRecord): boolean {
     if (rule.op === "eq") return stableJson(actual) === stableJson(rule.value);
     if (rule.op === "neq") return stableJson(actual) !== stableJson(rule.value);
     if (rule.op === "in") return Array.isArray(rule.value) && rule.value.some((item) => stableJson(item) === stableJson(actual));
-    if (rule.op === "not_in") return Array.isArray(rule.value) && !rule.value.some((item) => stableJson(item) === stableJson(actual));
+    if (rule.op === "not_in")
+        return Array.isArray(rule.value) && !rule.value.some((item) => stableJson(item) === stableJson(actual));
     if (rule.op === "contains") {
         if (Array.isArray(actual)) return actual.some((item) => stableJson(item) === stableJson(rule.value));
         return String(actual ?? "").includes(String(rule.value ?? ""));
@@ -225,14 +226,21 @@ export function validateSource(input: {
     if (input.runtime !== "build" && (input.language === "typescript" || input.language === "javascript")) {
         warnings.push({
             code: "source.management_plane_only",
-            message: "Publishing approves the artifact; the API never evals arbitrary source. A trusted consumer must interpret it.",
+            message:
+                "Publishing approves the artifact; the API never evals arbitrary source. A trusted consumer must interpret it.",
         });
     }
     if (/\bfetch\s*\(/.test(source)) {
-        warnings.push({ code: "source.network_call", message: "Network calls should be owned by a registered capability adapter." });
+        warnings.push({
+            code: "source.network_call",
+            message: "Network calls should be owned by a registered capability adapter.",
+        });
     }
     if (source.length > 100_000) {
-        warnings.push({ code: "source.large", message: "Source is unusually large for a snippet; prefer a normal application module." });
+        warnings.push({
+            code: "source.large",
+            message: "Source is unusually large for a snippet; prefer a normal application module.",
+        });
     }
 
     return {
@@ -263,15 +271,11 @@ async function revisionByNumber(snippetId: number, revision: number) {
 }
 
 function serializeSnippet(row: JsonRecord) {
-    const validation = objectValue(row.last_validation);
-    const currentChecksum = checksum(String(row.source ?? ""));
     return {
         ...row,
         conditions: objectValue(row.conditions),
         capabilities: stringArray(row.capabilities),
-        last_validation: validation,
-        has_unpublished_changes:
-            row.active_revision_id !== null && row.active_revision_id !== undefined && String(validation.checksum ?? "") !== currentChecksum,
+        last_validation: objectValue(row.last_validation),
     };
 }
 
@@ -321,6 +325,7 @@ export async function overview() {
         .select(
             "execution.id",
             "execution.consumer_key",
+            "execution.outcome",
             "execution.duration_ms",
             "execution.evidence",
             "execution.observed_at",
@@ -363,7 +368,10 @@ export async function overview() {
 }
 
 export async function listSnippets(limit = 150, query = "") {
-    const builder = currentTrx().from("snippets").orderBy("updated_at", "desc").limit(Math.min(Math.max(limit, 1), 500));
+    const builder = currentTrx()
+        .from("snippets")
+        .orderBy("updated_at", "desc")
+        .limit(Math.min(Math.max(limit, 1), 500));
     if (query.trim()) {
         builder.where((scope) => {
             scope.whereILike("name", `%${query.trim()}%`).orWhereILike("snippet_key", `%${query.trim()}%`);
@@ -384,7 +392,12 @@ export async function listRevisions(publicId: string) {
         .where("snippet_id", snippet.id)
         .orderBy("revision", "desc")
         .limit(200);
-    return rows.map((row) => ({ ...row, conditions: objectValue(row.conditions), capabilities: stringArray(row.capabilities), validation: objectValue(row.validation) }));
+    return rows.map((row) => ({
+        ...row,
+        conditions: objectValue(row.conditions),
+        capabilities: stringArray(row.capabilities),
+        validation: objectValue(row.validation),
+    }));
 }
 
 export async function listDeployments(publicId: string) {
@@ -410,26 +423,6 @@ export async function listExecutions(limit = 200) {
         .orderBy("execution.observed_at", "desc")
         .limit(Math.min(Math.max(limit, 1), 1000));
     return rows.map((row) => ({ ...row, evidence: objectValue(row.evidence) }));
-}
-
-async function insertRevision(snippet: JsonRecord, input: { source: string; conditions: JsonRecord; capabilities: string[]; validation: SnippetValidation; reason: string; userId: number }) {
-    const revision = numberValue(snippet.version) + (numberValue(snippet.version) === 0 ? 1 : 0);
-    const [row] = await currentTrx()
-        .table("snippet_revisions")
-        .insert({
-            tenant_id: tenantId(),
-            snippet_id: snippet.id,
-            revision,
-            source: input.source,
-            conditions: input.conditions,
-            capabilities: input.capabilities,
-            source_sha256: input.validation.checksum,
-            validation: input.validation,
-            reason: input.reason,
-            created_by_user_id: input.userId,
-        })
-        .returning("*");
-    return row;
 }
 
 export async function createSnippet(input: SnippetCreateInput, userId: number) {
@@ -560,7 +553,7 @@ function validationFromSnippet(snippet: JsonRecord): SnippetValidation {
 
 async function assertPublishable(snippet: JsonRecord, environment: Environment, rolloutPercent: number) {
     const settings = await getSettings();
-    if (Boolean(settings.safe_mode)) {
+    if (settings.safe_mode) {
         throw new Exception("Safe Mode blocks publishing", { status: 409, code: "E_SNIPPETS_SAFE_MODE" });
     }
     if (rolloutPercent > numberValue(settings.max_rollout_percent)) {
@@ -622,14 +615,22 @@ export async function publishSnippet(publicId: string, input: PublishInput, user
             activated_at: new Date(),
         })
         .returning("*");
-    await trx
-        .from("snippets")
-        .where("id", snippet.id)
-        .update({ active_revision_id: revision.id, status: "published", consecutive_failures: 0, updated_by_user_id: userId, updated_at: new Date() });
+    await trx.from("snippets").where("id", snippet.id).update({
+        active_revision_id: revision.id,
+        status: "published",
+        consecutive_failures: 0,
+        updated_by_user_id: userId,
+        updated_at: new Date(),
+    });
     return deployment;
 }
 
-async function recordLifecycleDeployment(snippet: JsonRecord, action: "pause" | "resume" | "quarantine", userId: number, reason: string) {
+async function recordLifecycleDeployment(
+    snippet: JsonRecord,
+    action: "pause" | "resume" | "quarantine",
+    userId: number,
+    reason: string,
+) {
     const activeRevisionId = snippet.active_revision_id ? numberValue(snippet.active_revision_id) : null;
     const idempotency = `${action}:${snippet.id}:${Date.now()}:${userId}`;
     const [row] = await currentTrx()
@@ -654,7 +655,10 @@ async function recordLifecycleDeployment(snippet: JsonRecord, action: "pause" | 
 export async function pauseSnippet(publicId: string, userId: number, reason: string) {
     const snippet = await snippetByPublicId(publicId);
     if (snippet.status === "paused") return { changed: false, data: serializeSnippet(snippet) };
-    await currentTrx().from("snippets").where("id", snippet.id).update({ status: "paused", updated_by_user_id: userId, updated_at: new Date() });
+    await currentTrx()
+        .from("snippets")
+        .where("id", snippet.id)
+        .update({ status: "paused", updated_by_user_id: userId, updated_at: new Date() });
     await recordLifecycleDeployment(snippet, "pause", userId, reason);
     return { changed: true, data: serializeSnippet({ ...snippet, status: "paused" }) };
 }
@@ -662,10 +666,14 @@ export async function pauseSnippet(publicId: string, userId: number, reason: str
 export async function resumeSnippet(publicId: string, userId: number, reason: string) {
     const snippet = await snippetByPublicId(publicId);
     const settings = await getSettings();
-    if (Boolean(settings.safe_mode)) throw new Exception("Safe Mode blocks resume", { status: 409, code: "E_SNIPPETS_SAFE_MODE" });
-    if (!snippet.active_revision_id) throw new Exception("Snippet has no published revision", { status: 409, code: "E_SNIPPET_NO_ACTIVE_REVISION" });
+    if (settings.safe_mode) throw new Exception("Safe Mode blocks resume", { status: 409, code: "E_SNIPPETS_SAFE_MODE" });
+    if (!snippet.active_revision_id)
+        throw new Exception("Snippet has no published revision", { status: 409, code: "E_SNIPPET_NO_ACTIVE_REVISION" });
     if (snippet.status === "published") return { changed: false, data: serializeSnippet(snippet) };
-    await currentTrx().from("snippets").where("id", snippet.id).update({ status: "published", consecutive_failures: 0, updated_by_user_id: userId, updated_at: new Date() });
+    await currentTrx()
+        .from("snippets")
+        .where("id", snippet.id)
+        .update({ status: "published", consecutive_failures: 0, updated_by_user_id: userId, updated_at: new Date() });
     await recordLifecycleDeployment(snippet, "resume", userId, reason);
     return { changed: true, data: serializeSnippet({ ...snippet, status: "published", consecutive_failures: 0 }) };
 }
@@ -703,20 +711,17 @@ export async function rollbackSnippet(publicId: string, input: RollbackInput, us
             activated_at: new Date(),
         })
         .returning("*");
-    await trx
-        .from("snippets")
-        .where("id", snippet.id)
-        .update({
-            active_revision_id: revision.id,
-            source: revision.source,
-            conditions: revision.conditions,
-            capabilities: revision.capabilities,
-            last_validation: revision.validation,
-            status: "published",
-            consecutive_failures: 0,
-            updated_by_user_id: userId,
-            updated_at: new Date(),
-        });
+    await trx.from("snippets").where("id", snippet.id).update({
+        active_revision_id: revision.id,
+        source: revision.source,
+        conditions: revision.conditions,
+        capabilities: revision.capabilities,
+        last_validation: revision.validation,
+        status: "published",
+        consecutive_failures: 0,
+        updated_by_user_id: userId,
+        updated_at: new Date(),
+    });
     return deployment;
 }
 

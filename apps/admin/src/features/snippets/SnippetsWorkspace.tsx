@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 
 import { PageHeader } from "#/components/PageHeader";
 import { Button } from "#/components/ui/button";
@@ -16,8 +16,8 @@ import {
     type SnippetExecution,
     type SnippetRevision,
     type SnippetSettings,
-    type SnippetTemplate,
     type SnippetsOverview,
+    type SnippetTemplate,
     useSnippetsMutation,
     useSnippetsResource,
 } from "#/lib/queries/snippets";
@@ -109,8 +109,9 @@ export function SnippetsWorkspace() {
                         </div>
                         <h2 className="mt-4 font-semibold text-2xl">کد کوچک؛ کنترل production در سطح سیستم بزرگ</h2>
                         <p className="mt-3 max-w-3xl text-muted-foreground text-sm leading-7">
-                            source در Snippets به‌عنوان artifact نسخه‌دار مدیریت می‌شود. API هیچ JavaScript/TypeScript دلخواهی را در request path
-                            اجرا نمی‌کند؛ انتشار فقط revision تأییدشده را برای consumerهای مورداعتماد در دسترس قرار می‌دهد.
+                            source در Snippets به‌عنوان artifact نسخه‌دار مدیریت می‌شود. API هیچ JavaScript/TypeScript دلخواهی را در
+                            request path اجرا نمی‌کند؛ انتشار فقط revision تأییدشده را برای consumerهای مورداعتماد در دسترس قرار
+                            می‌دهد.
                         </p>
                     </div>
                     <div className="grid grid-cols-2 gap-3 text-sm">
@@ -181,9 +182,9 @@ export function SnippetsWorkspace() {
                 <LibraryPanel
                     templates={library.data ?? []}
                     onUse={(template) => {
+                        sessionStorage.setItem("snippets.template", JSON.stringify(template));
                         setSelectedId(null);
                         setTab("editor");
-                        sessionStorage.setItem("snippets.template", JSON.stringify(template));
                     }}
                 />
             ) : null}
@@ -206,12 +207,20 @@ function OverviewPanel({ value, loading }: { value?: SnippetsOverview; loading: 
                 <Metric label="Quarantine" value={fa(counts?.quarantined)} hint="به‌دلیل failure evidence متوقف" />
                 <Metric
                     label="Success rate"
-                    value={value?.health.success_rate === null || value?.health.success_rate === undefined ? "—" : `${fa(value.health.success_rate)}٪`}
+                    value={
+                        value?.health.success_rate === null || value?.health.success_rate === undefined
+                            ? "—"
+                            : `${fa(value.health.success_rate)}٪`
+                    }
                     hint={`${fa(value?.health.samples_30d)} observation واقعی در ۳۰ روز`}
                 />
                 <Metric
                     label="p95"
-                    value={value?.health.p95_duration_ms === null || value?.health.p95_duration_ms === undefined ? "—" : `${fa(value.health.p95_duration_ms)} ms`}
+                    value={
+                        value?.health.p95_duration_ms === null || value?.health.p95_duration_ms === undefined
+                            ? "—"
+                            : `${fa(value.health.p95_duration_ms)} ms`
+                    }
                     hint="از execution observationهای ثبت‌شده"
                 />
             </div>
@@ -234,7 +243,10 @@ function OverviewPanel({ value, loading }: { value?: SnippetsOverview; loading: 
                     <div className="border-b p-4 font-semibold">آخرین انتشارها</div>
                     <div className="divide-y">
                         {(value?.recent_deployments ?? []).map((item) => (
-                            <div key={item.public_id} className="grid gap-2 p-4 md:grid-cols-[1fr_auto_auto_auto] md:items-center">
+                            <div
+                                key={item.public_id}
+                                className="grid gap-2 p-4 md:grid-cols-[1fr_auto_auto_auto] md:items-center"
+                            >
                                 <div>
                                     <div className="font-medium text-sm">{item.snippet_name ?? item.snippet_public_id}</div>
                                     <div className="mt-1 text-muted-foreground text-xs">{dateTime(item.created_at)}</div>
@@ -309,7 +321,9 @@ function InventoryPanel({
                         <div className="text-muted-foreground text-xs">v{fa(item.version)}</div>
                     </button>
                 ))}
-                {snippets.length === 0 ? <div className="p-8 text-center text-muted-foreground text-sm">Snippet پیدا نشد.</div> : null}
+                {snippets.length === 0 ? (
+                    <div className="p-8 text-center text-muted-foreground text-sm">Snippet پیدا نشد.</div>
+                ) : null}
             </div>
         </Card>
     );
@@ -446,7 +460,15 @@ function EditorPanel({ snippet, onCreated }: { snippet: Snippet | null; onCreate
                             {snippet ? `revision head v${fa(snippet.version)}` : "Draft از صفر یا template کتابخانه"}
                         </div>
                     </div>
-                    {snippet ? <Pill tone={snippet.status === "published" ? "good" : snippet.status === "quarantined" ? "danger" : "neutral"}>{snippet.status}</Pill> : null}
+                    {snippet ? (
+                        <Pill
+                            tone={
+                                snippet.status === "published" ? "good" : snippet.status === "quarantined" ? "danger" : "neutral"
+                            }
+                        >
+                            {snippet.status}
+                        </Pill>
+                    ) : null}
                 </div>
                 <div className="mt-5 grid gap-4 md:grid-cols-2">
                     <Field label="Key">
@@ -459,38 +481,82 @@ function EditorPanel({ snippet, onCreated }: { snippet: Snippet | null; onCreate
                         />
                     </Field>
                     <Field label="نام">
-                        <Input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
+                        <Input
+                            value={form.name}
+                            onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+                        />
                     </Field>
                     <Field label="Language">
-                        <Select value={form.language} onValueChange={(value) => setForm((current) => ({ ...current, language: value as Snippet["language"] }))}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
+                        <Select
+                            value={form.language}
+                            onValueChange={(value) =>
+                                setForm((current) => ({ ...current, language: value as Snippet["language"] }))
+                            }
+                        >
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
                             <SelectContent>
-                                {(["typescript", "javascript", "css", "html", "json"] as const).map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}
+                                {(["typescript", "javascript", "css", "html", "json"] as const).map((item) => (
+                                    <SelectItem key={item} value={item}>
+                                        {item}
+                                    </SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </Field>
                     <Field label="Runtime">
-                        <Select value={form.runtime} onValueChange={(value) => setForm((current) => ({ ...current, runtime: value as Snippet["runtime"] }))}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
+                        <Select
+                            value={form.runtime}
+                            onValueChange={(value) =>
+                                setForm((current) => ({ ...current, runtime: value as Snippet["runtime"] }))
+                            }
+                        >
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
                             <SelectContent>
-                                {(["build", "storefront", "admin", "server", "worker"] as const).map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}
+                                {(["build", "storefront", "admin", "server", "worker"] as const).map((item) => (
+                                    <SelectItem key={item} value={item}>
+                                        {item}
+                                    </SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </Field>
                     <Field label="Placement">
-                        <Input dir="ltr" value={form.placement} onChange={(event) => setForm((current) => ({ ...current, placement: event.target.value }))} />
+                        <Input
+                            dir="ltr"
+                            value={form.placement}
+                            onChange={(event) => setForm((current) => ({ ...current, placement: event.target.value }))}
+                        />
                     </Field>
                     <Field label="Risk">
-                        <Select value={form.risk_level} onValueChange={(value) => setForm((current) => ({ ...current, risk_level: value as Snippet["risk_level"] }))}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
+                        <Select
+                            value={form.risk_level}
+                            onValueChange={(value) =>
+                                setForm((current) => ({ ...current, risk_level: value as Snippet["risk_level"] }))
+                            }
+                        >
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
                             <SelectContent>
-                                {(["low", "medium", "high", "critical"] as const).map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}
+                                {(["low", "medium", "high", "critical"] as const).map((item) => (
+                                    <SelectItem key={item} value={item}>
+                                        {item}
+                                    </SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </Field>
                 </div>
                 <Field label="توضیحات" className="mt-4">
-                    <Textarea value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} rows={3} />
+                    <Textarea
+                        value={form.description}
+                        onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
+                        rows={3}
+                    />
                 </Field>
                 <Field label="Source" className="mt-4">
                     <Textarea
@@ -521,46 +587,97 @@ function EditorPanel({ snippet, onCreated }: { snippet: Snippet | null; onCreate
                             />
                         </Field>
                         <Field label="Reason">
-                            <Textarea value={form.reason} onChange={(event) => setForm((current) => ({ ...current, reason: event.target.value }))} rows={4} />
+                            <Textarea
+                                value={form.reason}
+                                onChange={(event) => setForm((current) => ({ ...current, reason: event.target.value }))}
+                                rows={4}
+                            />
                         </Field>
                     </div>
                 </div>
-                {message ? <div className="mt-4"><SuccessBox message={message} /></div> : null}
-                {error ? <div className="mt-4"><ErrorBox message={error} /></div> : null}
+                {message ? (
+                    <div className="mt-4">
+                        <SuccessBox message={message} />
+                    </div>
+                ) : null}
+                {error ? (
+                    <div className="mt-4">
+                        <ErrorBox message={error} />
+                    </div>
+                ) : null}
                 <div className="mt-5 flex flex-wrap gap-2">
-                    <Button type="button" disabled={pending} onClick={save}>{snippet ? "ذخیره Revision" : "ایجاد Draft"}</Button>
+                    <Button type="button" disabled={pending} onClick={save}>
+                        {snippet ? "ذخیره Revision" : "ایجاد Draft"}
+                    </Button>
                     {snippet ? (
                         <>
-                            <Button type="button" variant="outline" disabled={pending} onClick={() => runAction(`${snippet.public_id}/validate`, {}, "اعتبارسنجی تکمیل شد.")}>Validate</Button>
                             <Button
                                 type="button"
                                 variant="outline"
                                 disabled={pending}
-                                onClick={() => runAction(`${snippet.public_id}/publish`, {
-                                    environment: "staging",
-                                    rollout_percent: 100,
-                                    idempotency_key: operationKey(),
-                                    reason: form.reason,
-                                }, "Revision روی staging منتشر شد.")}
+                                onClick={() => runAction(`${snippet.public_id}/validate`, {}, "اعتبارسنجی تکمیل شد.")}
+                            >
+                                Validate
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                disabled={pending}
+                                onClick={() =>
+                                    runAction(
+                                        `${snippet.public_id}/publish`,
+                                        {
+                                            environment: "staging",
+                                            rollout_percent: 100,
+                                            idempotency_key: operationKey(),
+                                            reason: form.reason,
+                                        },
+                                        "Revision روی staging منتشر شد.",
+                                    )
+                                }
                             >
                                 Publish staging
                             </Button>
                             <Button
                                 type="button"
                                 disabled={pending}
-                                onClick={() => runAction(`${snippet.public_id}/publish`, {
-                                    environment: "production",
-                                    rollout_percent: 100,
-                                    idempotency_key: operationKey(),
-                                    reason: form.reason,
-                                }, "Revision برای production ثبت شد.")}
+                                onClick={() =>
+                                    runAction(
+                                        `${snippet.public_id}/publish`,
+                                        {
+                                            environment: "production",
+                                            rollout_percent: 100,
+                                            idempotency_key: operationKey(),
+                                            reason: form.reason,
+                                        },
+                                        "Revision برای production ثبت شد.",
+                                    )
+                                }
                             >
                                 Publish production
                             </Button>
                             {snippet.status === "paused" || snippet.status === "quarantined" ? (
-                                <Button type="button" variant="outline" disabled={pending} onClick={() => runAction(`${snippet.public_id}/resume`, { reason: form.reason }, "Snippet resume شد.")}>Resume</Button>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    disabled={pending}
+                                    onClick={() =>
+                                        runAction(`${snippet.public_id}/resume`, { reason: form.reason }, "Snippet resume شد.")
+                                    }
+                                >
+                                    Resume
+                                </Button>
                             ) : (
-                                <Button type="button" variant="outline" disabled={pending} onClick={() => runAction(`${snippet.public_id}/pause`, { reason: form.reason }, "Snippet pause شد.")}>Pause</Button>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    disabled={pending}
+                                    onClick={() =>
+                                        runAction(`${snippet.public_id}/pause`, { reason: form.reason }, "Snippet pause شد.")
+                                    }
+                                >
+                                    Pause
+                                </Button>
                             )}
                         </>
                     ) : null}
@@ -573,14 +690,20 @@ function EditorPanel({ snippet, onCreated }: { snippet: Snippet | null; onCreate
                     {validation ? (
                         <div className="mt-4 space-y-3">
                             <div className="flex flex-wrap gap-2">
-                                <Pill tone={validation.publishable ? "good" : "danger"}>{validation.publishable ? "publishable" : "blocked"}</Pill>
+                                <Pill tone={validation.publishable ? "good" : "danger"}>
+                                    {validation.publishable ? "publishable" : "blocked"}
+                                </Pill>
                                 <Pill>{validation.boundary}</Pill>
                             </div>
                             <div className="rounded-xl border bg-muted/20 p-3">
                                 <div className="text-muted-foreground text-xs">SHA-256</div>
-                                <div className="mt-1 break-all font-mono text-xs" dir="ltr">{validation.checksum}</div>
+                                <div className="mt-1 break-all font-mono text-xs" dir="ltr">
+                                    {validation.checksum}
+                                </div>
                             </div>
-                            {validation.errors.map((item) => <ErrorBox key={item.code} message={`${item.code}: ${item.message}`} />)}
+                            {validation.errors.map((item) => (
+                                <ErrorBox key={item.code} message={`${item.code}: ${item.message}`} />
+                            ))}
                             {validation.warnings.map((item) => (
                                 <div key={item.code} className="rounded-xl border bg-muted/20 p-3 text-sm">
                                     <div className="font-medium">{item.code}</div>
@@ -589,7 +712,9 @@ function EditorPanel({ snippet, onCreated }: { snippet: Snippet | null; onCreate
                             ))}
                         </div>
                     ) : (
-                        <div className="mt-4 text-muted-foreground text-sm">بعد از ایجاد یا ذخیره، validation evidence اینجا نمایش داده می‌شود.</div>
+                        <div className="mt-4 text-muted-foreground text-sm">
+                            بعد از ایجاد یا ذخیره، validation evidence اینجا نمایش داده می‌شود.
+                        </div>
                     )}
                 </Card>
                 <Card className="p-5">
@@ -641,11 +766,21 @@ function LibraryPanel({ templates, onUse }: { templates: SnippetTemplate[]; onUs
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {templates.map((template) => (
                 <Card key={template.key} className="flex flex-col p-5">
-                    <div className="flex flex-wrap gap-2"><Pill>{template.language}</Pill><Pill>{template.runtime}</Pill><Pill>{template.risk_level}</Pill></div>
+                    <div className="flex flex-wrap gap-2">
+                        <Pill>{template.language}</Pill>
+                        <Pill>{template.runtime}</Pill>
+                        <Pill>{template.risk_level}</Pill>
+                    </div>
                     <h3 className="mt-4 font-semibold">{template.title}</h3>
-                    <div className="mt-1 font-mono text-muted-foreground text-xs" dir="ltr">{template.key}</div>
-                    <pre className="mt-4 max-h-40 overflow-auto rounded-xl border bg-muted/20 p-3 text-start text-xs" dir="ltr">{template.source}</pre>
-                    <Button type="button" className="mt-4" variant="outline" onClick={() => onUse(template)}>ساخت Draft از این Template</Button>
+                    <div className="mt-1 font-mono text-muted-foreground text-xs" dir="ltr">
+                        {template.key}
+                    </div>
+                    <pre className="mt-4 max-h-40 overflow-auto rounded-xl border bg-muted/20 p-3 text-start text-xs" dir="ltr">
+                        {template.source}
+                    </pre>
+                    <Button type="button" className="mt-4" variant="outline" onClick={() => onUse(template)}>
+                        ساخت Draft از این Template
+                    </Button>
                 </Card>
             ))}
         </div>
@@ -671,7 +806,10 @@ function RevisionContent({ snippet }: { snippet: Snippet }) {
                     {(revisions.data ?? []).map((revision) => (
                         <div key={revision.id} className="p-4">
                             <div className="flex flex-wrap items-center justify-between gap-3">
-                                <div><span className="font-semibold">v{fa(revision.revision)}</span><span className="me-2 text-muted-foreground text-xs">{dateTime(revision.created_at)}</span></div>
+                                <div>
+                                    <span className="font-semibold">v{fa(revision.revision)}</span>
+                                    <span className="me-2 text-muted-foreground text-xs">{dateTime(revision.created_at)}</span>
+                                </div>
                                 <Button
                                     type="button"
                                     size="sm"
@@ -691,14 +829,19 @@ function RevisionContent({ snippet }: { snippet: Snippet }) {
                                                     reason: `rollback to revision ${revision.revision}`,
                                                 },
                                             },
-                                            { onSuccess: () => setMessage(`Rollback به v${revision.revision} ثبت شد.`), onError: (e) => setError(e.message) },
+                                            {
+                                                onSuccess: () => setMessage(`Rollback به v${revision.revision} ثبت شد.`),
+                                                onError: (e) => setError(e.message),
+                                            },
                                         );
                                     }}
                                 >
                                     Rollback
                                 </Button>
                             </div>
-                            <div className="mt-2 break-all font-mono text-muted-foreground text-xs" dir="ltr">{revision.source_sha256}</div>
+                            <div className="mt-2 break-all font-mono text-muted-foreground text-xs" dir="ltr">
+                                {revision.source_sha256}
+                            </div>
                             <div className="mt-2 text-muted-foreground text-xs">{revision.reason}</div>
                         </div>
                     ))}
@@ -706,12 +849,23 @@ function RevisionContent({ snippet }: { snippet: Snippet }) {
             </Card>
             <Card className="overflow-hidden">
                 <div className="border-b p-4 font-semibold">Deployment history</div>
-                {message ? <div className="p-4"><SuccessBox message={message} /></div> : null}
-                {error ? <div className="p-4"><ErrorBox message={error} /></div> : null}
+                {message ? (
+                    <div className="p-4">
+                        <SuccessBox message={message} />
+                    </div>
+                ) : null}
+                {error ? (
+                    <div className="p-4">
+                        <ErrorBox message={error} />
+                    </div>
+                ) : null}
                 <div className="divide-y">
                     {(deployments.data ?? []).map((deployment) => (
                         <div key={deployment.id} className="grid gap-2 p-4 sm:grid-cols-[1fr_auto_auto] sm:items-center">
-                            <div><div className="font-medium text-sm">{deployment.action}</div><div className="mt-1 text-muted-foreground text-xs">{dateTime(deployment.created_at)}</div></div>
+                            <div>
+                                <div className="font-medium text-sm">{deployment.action}</div>
+                                <div className="mt-1 text-muted-foreground text-xs">{dateTime(deployment.created_at)}</div>
+                            </div>
                             <Pill>{deployment.environment}</Pill>
                             <Pill>{deployment.status}</Pill>
                         </div>
@@ -726,23 +880,48 @@ function HealthPanel({ overview, executions }: { overview?: SnippetsOverview; ex
     return (
         <div className="space-y-5">
             <div className="grid gap-4 sm:grid-cols-3">
-                <Metric label="Observation ۳۰ روز" value={fa(overview?.health.samples_30d)} hint="فقط داده ثبت‌شده توسط trusted consumer" />
-                <Metric label="Success rate" value={overview?.health.success_rate == null ? "—" : `${fa(overview.health.success_rate)}٪`} hint="در نبود sample مقدار ساختگی نشان داده نمی‌شود" />
-                <Metric label="p95 latency" value={overview?.health.p95_duration_ms == null ? "—" : `${fa(overview.health.p95_duration_ms)} ms`} hint="از duration observationها" />
+                <Metric
+                    label="Observation ۳۰ روز"
+                    value={fa(overview?.health.samples_30d)}
+                    hint="فقط داده ثبت‌شده توسط trusted consumer"
+                />
+                <Metric
+                    label="Success rate"
+                    value={overview?.health.success_rate == null ? "—" : `${fa(overview.health.success_rate)}٪`}
+                    hint="در نبود sample مقدار ساختگی نشان داده نمی‌شود"
+                />
+                <Metric
+                    label="p95 latency"
+                    value={overview?.health.p95_duration_ms == null ? "—" : `${fa(overview.health.p95_duration_ms)} ms`}
+                    hint="از duration observationها"
+                />
             </div>
             <Card className="overflow-hidden">
                 <div className="border-b p-4 font-semibold">Execution observations</div>
                 <div className="divide-y">
                     {executions.map((item) => (
                         <div key={item.id} className="grid gap-3 p-4 lg:grid-cols-[1.2fr_.7fr_.45fr_.45fr_.7fr] lg:items-center">
-                            <div><div className="font-medium text-sm">{item.snippet_name}</div><div className="mt-1 text-muted-foreground text-xs">{dateTime(item.observed_at)}</div></div>
-                            <div className="font-mono text-xs" dir="ltr">{item.consumer_key}</div>
-                            <Pill tone={item.outcome === "success" ? "good" : item.outcome === "failure" ? "danger" : "neutral"}>{item.outcome}</Pill>
-                            <div className="text-muted-foreground text-xs">{item.duration_ms == null ? "—" : `${fa(item.duration_ms)} ms`}</div>
-                            <div className="truncate font-mono text-muted-foreground text-xs" dir="ltr">{item.request_id ?? "—"}</div>
+                            <div>
+                                <div className="font-medium text-sm">{item.snippet_name}</div>
+                                <div className="mt-1 text-muted-foreground text-xs">{dateTime(item.observed_at)}</div>
+                            </div>
+                            <div className="font-mono text-xs" dir="ltr">
+                                {item.consumer_key}
+                            </div>
+                            <Pill tone={item.outcome === "success" ? "good" : item.outcome === "failure" ? "danger" : "neutral"}>
+                                {item.outcome}
+                            </Pill>
+                            <div className="text-muted-foreground text-xs">
+                                {item.duration_ms == null ? "—" : `${fa(item.duration_ms)} ms`}
+                            </div>
+                            <div className="truncate font-mono text-muted-foreground text-xs" dir="ltr">
+                                {item.request_id ?? "—"}
+                            </div>
                         </div>
                     ))}
-                    {executions.length === 0 ? <div className="p-8 text-center text-muted-foreground text-sm">هنوز execution evidence ثبت نشده است.</div> : null}
+                    {executions.length === 0 ? (
+                        <div className="p-8 text-center text-muted-foreground text-sm">هنوز execution evidence ثبت نشده است.</div>
+                    ) : null}
                 </div>
             </Card>
         </div>
@@ -785,8 +964,14 @@ function SettingsPanel({ settings }: { settings?: SnippetSettings }) {
         setError("");
         const next = !settings.safe_mode;
         safeMode.mutate(
-            { path: `safe-mode/${next ? "enable" : "disable"}`, body: { reason: next ? "operator emergency safe mode" : "operator safe mode recovery complete" } },
-            { onSuccess: () => setMessage(next ? "Safe Mode فعال شد." : "Safe Mode غیرفعال شد."), onError: (e) => setError(e.message) },
+            {
+                path: `safe-mode/${next ? "enable" : "disable"}`,
+                body: { reason: next ? "operator emergency safe mode" : "operator safe mode recovery complete" },
+            },
+            {
+                onSuccess: () => setMessage(next ? "Safe Mode فعال شد." : "Safe Mode غیرفعال شد."),
+                onError: (e) => setError(e.message),
+            },
         );
     };
 
@@ -794,32 +979,105 @@ function SettingsPanel({ settings }: { settings?: SnippetSettings }) {
         <div className="grid gap-5 xl:grid-cols-[.8fr_1.2fr]">
             <Card className={cn("p-5", settings?.safe_mode && "border-destructive/30 bg-destructive/5")}>
                 <div className="flex items-center justify-between gap-4">
-                    <div><h3 className="font-semibold">Safe Mode</h3><p className="mt-2 text-muted-foreground text-sm leading-6">Kill switch tenant-local؛ فعال‌سازی یا خروج از آن نیازمند identity step-up است.</p></div>
-                    <Switch checked={Boolean(settings?.safe_mode)} onCheckedChange={toggleSafeMode} disabled={!settings || safeMode.isPending} />
+                    <div>
+                        <h3 className="font-semibold">Safe Mode</h3>
+                        <p className="mt-2 text-muted-foreground text-sm leading-6">
+                            Kill switch tenant-local؛ فعال‌سازی یا خروج از آن نیازمند identity step-up است.
+                        </p>
+                    </div>
+                    <Switch
+                        checked={Boolean(settings?.safe_mode)}
+                        onCheckedChange={toggleSafeMode}
+                        disabled={!settings || safeMode.isPending}
+                    />
                 </div>
-                <div className="mt-4 rounded-xl border bg-background/70 p-3 text-muted-foreground text-xs leading-6">در Safe Mode هیچ artifact فعالی resolve نمی‌شود، اما draft، revision و validation قابل مدیریت باقی می‌مانند.</div>
+                <div className="mt-4 rounded-xl border bg-background/70 p-3 text-muted-foreground text-xs leading-6">
+                    در Safe Mode هیچ artifact فعالی resolve نمی‌شود، اما draft، revision و validation قابل مدیریت باقی می‌مانند.
+                </div>
             </Card>
             <Card className="p-5">
                 <h3 className="font-semibold">Policy تنظیمات</h3>
                 <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                    <div className="flex items-center justify-between rounded-xl border p-3 sm:col-span-2"><div><div className="font-medium text-sm">Step-up برای Production</div><div className="mt-1 text-muted-foreground text-xs">انتشار production نیازمند احراز هویت اخیر باشد.</div></div><Switch checked={form.production_publish_requires_step_up} onCheckedChange={(value) => setForm((current) => ({ ...current, production_publish_requires_step_up: value }))} /></div>
-                    <Field label="Auto quarantine threshold"><Input type="number" min={1} max={20} value={form.auto_quarantine_threshold} onChange={(event) => setForm((current) => ({ ...current, auto_quarantine_threshold: Number(event.target.value) }))} /></Field>
-                    <Field label="Rollout ceiling"><Input type="number" min={1} max={100} value={form.max_rollout_percent} onChange={(event) => setForm((current) => ({ ...current, max_rollout_percent: Number(event.target.value) }))} /></Field>
+                    <div className="flex items-center justify-between rounded-xl border p-3 sm:col-span-2">
+                        <div>
+                            <div className="font-medium text-sm">Step-up برای Production</div>
+                            <div className="mt-1 text-muted-foreground text-xs">
+                                انتشار production نیازمند احراز هویت اخیر باشد.
+                            </div>
+                        </div>
+                        <Switch
+                            checked={form.production_publish_requires_step_up}
+                            onCheckedChange={(value) =>
+                                setForm((current) => ({ ...current, production_publish_requires_step_up: value }))
+                            }
+                        />
+                    </div>
+                    <Field label="Auto quarantine threshold">
+                        <Input
+                            type="number"
+                            min={1}
+                            max={20}
+                            value={form.auto_quarantine_threshold}
+                            onChange={(event) =>
+                                setForm((current) => ({ ...current, auto_quarantine_threshold: Number(event.target.value) }))
+                            }
+                        />
+                    </Field>
+                    <Field label="Rollout ceiling">
+                        <Input
+                            type="number"
+                            min={1}
+                            max={100}
+                            value={form.max_rollout_percent}
+                            onChange={(event) =>
+                                setForm((current) => ({ ...current, max_rollout_percent: Number(event.target.value) }))
+                            }
+                        />
+                    </Field>
                     <Field label="Default environment">
-                        <Select value={form.default_environment} onValueChange={(value) => setForm((current) => ({ ...current, default_environment: value as SnippetSettings["default_environment"] }))}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent><SelectItem value="preview">preview</SelectItem><SelectItem value="staging">staging</SelectItem><SelectItem value="production">production</SelectItem></SelectContent>
+                        <Select
+                            value={form.default_environment}
+                            onValueChange={(value) =>
+                                setForm((current) => ({
+                                    ...current,
+                                    default_environment: value as SnippetSettings["default_environment"],
+                                }))
+                            }
+                        >
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="preview">preview</SelectItem>
+                                <SelectItem value="staging">staging</SelectItem>
+                                <SelectItem value="production">production</SelectItem>
+                            </SelectContent>
                         </Select>
                     </Field>
                 </div>
-                {message ? <div className="mt-4"><SuccessBox message={message} /></div> : null}
-                {error ? <div className="mt-4"><ErrorBox message={error} /></div> : null}
-                <Button type="button" className="mt-5" disabled={update.isPending} onClick={save}>ذخیره تنظیمات</Button>
+                {message ? (
+                    <div className="mt-4">
+                        <SuccessBox message={message} />
+                    </div>
+                ) : null}
+                {error ? (
+                    <div className="mt-4">
+                        <ErrorBox message={error} />
+                    </div>
+                ) : null}
+                <Button type="button" className="mt-5" disabled={update.isPending} onClick={save}>
+                    ذخیره تنظیمات
+                </Button>
             </Card>
         </div>
     );
 }
 
 function Field({ label, children, className }: { label: string; children: ReactNode; className?: string }) {
-    return <div className={className}><Label className="mb-2 block text-xs text-muted-foreground">{label}</Label>{children}</div>;
+    return (
+        <div className={className}>
+            <Label className="mb-2 block text-muted-foreground text-xs">{label}</Label>
+            {children}
+        </div>
+    );
 }

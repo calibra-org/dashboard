@@ -36,7 +36,6 @@ export type Snippet = {
     version: number;
     last_validation: SnippetValidation | Record<string, never>;
     consecutive_failures: number;
-    has_unpublished_changes: boolean;
     created_at: string;
     updated_at: string;
 };

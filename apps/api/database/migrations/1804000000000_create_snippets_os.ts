@@ -18,7 +18,7 @@ export default class extends BaseSchema {
             table.string("status", 20).notNullable().defaultTo("draft");
             table.string("risk_level", 16).notNullable().defaultTo("medium");
             table.text("source").notNullable().defaultTo("");
-            table.jsonb("conditions").notNullable().defaultTo(this.raw("'{\"operator\":\"and\",\"rules\":[]}'::jsonb"));
+            table.jsonb("conditions").notNullable().defaultTo(this.raw('\'{"operator":"and","rules":[]}\'::jsonb'));
             table.jsonb("capabilities").notNullable().defaultTo(this.raw("'[]'::jsonb"));
             table.bigInteger("active_revision_id").unsigned().nullable();
             table.integer("version").notNullable().defaultTo(1);
@@ -38,7 +38,7 @@ export default class extends BaseSchema {
             table.bigInteger("snippet_id").unsigned().notNullable().references("id").inTable("snippets").onDelete("CASCADE");
             table.integer("revision").notNullable();
             table.text("source").notNullable();
-            table.jsonb("conditions").notNullable().defaultTo(this.raw("'{\"operator\":\"and\",\"rules\":[]}'::jsonb"));
+            table.jsonb("conditions").notNullable().defaultTo(this.raw('\'{"operator":"and","rules":[]}\'::jsonb'));
             table.jsonb("capabilities").notNullable().defaultTo(this.raw("'[]'::jsonb"));
             table.string("source_sha256", 64).notNullable();
             table.jsonb("validation").notNullable().defaultTo(this.raw("'{}'::jsonb"));
@@ -59,7 +59,13 @@ export default class extends BaseSchema {
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
             table.uuid("public_id").notNullable().defaultTo(this.raw("gen_random_uuid()"));
             table.bigInteger("snippet_id").unsigned().notNullable().references("id").inTable("snippets").onDelete("CASCADE");
-            table.bigInteger("revision_id").unsigned().nullable().references("id").inTable("snippet_revisions").onDelete("SET NULL");
+            table
+                .bigInteger("revision_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("snippet_revisions")
+                .onDelete("SET NULL");
             table.string("environment", 20).notNullable().defaultTo("staging");
             table.string("action", 20).notNullable();
             table.string("status", 20).notNullable().defaultTo("active");
@@ -79,7 +85,13 @@ export default class extends BaseSchema {
             table.bigIncrements("id");
             table.bigInteger("tenant_id").unsigned().notNullable().references("id").inTable("tenants").onDelete("CASCADE");
             table.bigInteger("snippet_id").unsigned().notNullable().references("id").inTable("snippets").onDelete("CASCADE");
-            table.bigInteger("revision_id").unsigned().nullable().references("id").inTable("snippet_revisions").onDelete("SET NULL");
+            table
+                .bigInteger("revision_id")
+                .unsigned()
+                .nullable()
+                .references("id")
+                .inTable("snippet_revisions")
+                .onDelete("SET NULL");
             table.string("consumer_key", 120).notNullable();
             table.string("outcome", 16).notNullable();
             table.integer("duration_ms").nullable();
