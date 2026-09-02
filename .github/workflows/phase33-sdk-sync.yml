@@ -1,0 +1,56 @@
+name: Phase 33 SDK Sync
+
+on:
+  push:
+    branches:
+      - feat/phase33-snippets
+
+permissions:
+  contents: write
+
+concurrency:
+  group: phase33-sdk-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: feat/phase33-snippets
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.14.0
+      - run: npm install --global pnpm@10.32.1
+      - run: pnpm install --frozen-lockfile
+      - name: Build canonical admin OpenAPI
+        run: pnpm --dir docs/api run build:json:admin
+      - name: Generate canonical admin SDK types
+        run: pnpm --filter @calibra/sdk run codegen:admin
+      - name: Verify Phase 33 SDK surface exists
+        run: |
+          grep -q '"/api/v1/admin/snippets/overview"' packages/sdk/src/generated/admin.d.ts
+          grep -q 'adminSnippetsOverview' packages/sdk/src/generated/admin.d.ts
+          grep -q 'adminSnippetsRollback' packages/sdk/src/generated/admin.d.ts
+      - name: Assert generated drift is scoped
+        run: |
+          changed=$(git diff --name-only)
+          unexpected=$(printf '%s\n' "$changed" | grep -v '^packages/sdk/src/generated/admin.d.ts$' || true)
+          if [ -n "$unexpected" ]; then
+            echo "Unexpected generated drift:"
+            printf '%s\n' "$unexpected"
+            exit 1
+          fi
+      - name: Remove temporary workflow and commit generated SDK
+        run: |
+          git rm .github/workflows/phase33-sdk-sync.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add packages/sdk/src/generated/admin.d.ts
+          git diff --cached --quiet && exit 1
+          git commit -m "chore(sdk): sync Phase 33 Snippets admin types"
+          git push origin HEAD:feat/phase33-snippets
