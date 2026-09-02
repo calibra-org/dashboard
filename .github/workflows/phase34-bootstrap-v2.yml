@@ -86,6 +86,18 @@ jobs:
             "",
           );
 
+          const workspacePath = "apps/admin/src/features/lite-cash/LiteCashWorkspace.tsx";
+          replaceOnce(
+            workspacePath,
+            '<HistoryTable title="Purge history" rows={history.data ?? []} columns={["Scope", "Blast", "Mode", "Status", "زمان"]} render={(item: LiteCashPurgeEvent) => [item.scope, item.blast_radius, item.mode, item.status, dateTime(item.created_at)]} />',
+            '<HistoryTable title="Purge history" rows={history.data ?? []} columns={["Scope", "Blast", "Mode", "Status", "زمان"]} rowKey={(item: LiteCashPurgeEvent) => item.public_id} render={(item: LiteCashPurgeEvent) => [item.scope, item.blast_radius, item.mode, item.status, dateTime(item.created_at)]} />',
+          );
+          replaceOnce(
+            workspacePath,
+            'function HistoryTable<T>({ title, rows, columns, render }: { title: string; rows: T[]; columns: string[]; render: (item: T) => ReactNode[] }) {\n    return <Card className="overflow-hidden"><div className="border-b p-4 font-semibold">{title}</div><div className="max-h-[680px] overflow-auto"><table className="w-full text-sm"><thead className="sticky top-0 bg-background"><tr className="border-b text-muted-foreground">{columns.map((column) => <th key={column} className="p-3 text-start font-medium">{column}</th>)}</tr></thead><tbody>{rows.map((row, index) => <tr key={index} className="border-b last:border-0">{render(row).map((cell, cellIndex) => <td key={cellIndex} className="p-3">{cell}</td>)}</tr>)}</tbody></table>{rows.length === 0 ? <div className="p-5"><Empty>داده‌ای ثبت نشده است.</Empty></div> : null}</div></Card>;\n}',
+            'function HistoryTable<T>({ title, rows, columns, render, rowKey }: { title: string; rows: T[]; columns: string[]; render: (item: T) => ReactNode[]; rowKey: (item: T) => string | number }) {\n    return <Card className="overflow-hidden"><div className="border-b p-4 font-semibold">{title}</div><div className="max-h-[680px] overflow-auto"><table className="w-full text-sm"><thead className="sticky top-0 bg-background"><tr className="border-b text-muted-foreground">{columns.map((column) => <th key={column} className="p-3 text-start font-medium">{column}</th>)}</tr></thead><tbody>{rows.map((row) => { const cells = render(row); return <tr key={rowKey(row)} className="border-b last:border-0">{columns.map((column, cellIndex) => <td key={column} className="p-3">{cells[cellIndex]}</td>)}</tr>; })}</tbody></table>{rows.length === 0 ? <div className="p-5"><Empty>داده‌ای ثبت نشده است.</Empty></div> : null}</div></Card>;\n}',
+          );
+
           replaceOnce(
             "docs/api/reference/openapi/admin.phase34.v1.yaml",
             "    LiteCashPolicyUpdate:\n      allOf:\n        - { $ref: '#/components/schemas/LiteCashPolicyCreate' }\n      required: [reason]",
@@ -142,6 +154,27 @@ jobs:
           NODE
       - name: Format Phase 34 wiring
         run: pnpm run format:fix
+      - name: Apply safe focused Biome fixes
+        run: >-
+          pnpm exec biome check --write
+          apps/api/database/migrations/1805000000000_create_lite_cash_os.ts
+          apps/api/database/migrations/1805000000100_add_lite_cash_warm_job_idempotency.ts
+          apps/api/database/migrations/1805000000200_enforce_lite_cash_profile_activation.ts
+          apps/api/app/services/lite_cash
+          apps/api/app/controllers/admin/lite_cash_controller.ts
+          apps/api/app/validators/lite_cash
+          apps/api/tests/unit/lite_cash_policy.spec.ts
+          apps/api/start/routes/admin_lite_cash.ts
+          apps/api/start/routes.ts
+          apps/admin/src/features/lite-cash/LiteCashWorkspace.tsx
+          apps/admin/src/lib/queries/lite-cash.ts
+          "apps/admin/src/app/[locale]/(authenticated)/lite-cash/page.tsx"
+          apps/admin/src/components/Sidebar.tsx
+          docs/api/package.json
+          docs/api/scripts/merge-admin-spec.js
+          docs/api/reference/openapi/admin.phase34.v1.yaml
+          package.json
+          scripts/verify-phase34-lite-cash.mjs
       - name: Build canonical admin OpenAPI
         run: pnpm --filter @calibra/api-docs run build:json:admin
       - name: Generate canonical admin SDK
@@ -184,7 +217,7 @@ jobs:
         run: |
           git config user.name "calibra-dev"
           git config user.email "keshavarz20.com@gmail.com"
-          git rm .github/workflows/phase34-bootstrap.yml .github/workflows/phase34-bootstrap-v2.yml
+          git rm .github/workflows/phase34-bootstrap.yml .github/workflows/phase34-bootstrap-v2.yml .github/workflows/phase34-biome-diagnostic.yml
           git add -A
           git diff --cached --check
           if ! git diff --cached --quiet; then
