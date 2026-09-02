@@ -60,7 +60,7 @@ catalogs:
         "@tiptap/react": ^2.13.0
         "@tiptap/pm": ^2.13.0
         "@tiptap/starter-kit": ^2.13.0
-        "@tiptap/extension-link": ^2.13.0
+        "@tiptap/extension-link": ^3.30.5
         "@tiptap/extension-placeholder": ^2.13.0
         "isomorphic-dompurify": ^2.30.0
         shiki: ^1.29.0
