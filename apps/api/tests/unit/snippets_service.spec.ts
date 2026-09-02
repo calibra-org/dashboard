@@ -32,12 +32,18 @@ test.group("Snippets managed-artifact safety boundary", () => {
             runtime: "storefront",
             source: "const secret = process.env.SECRET_TOKEN",
         });
-        assert.include(validation.errors.map((finding) => finding.code), "source.browser_secret_access");
+        assert.include(
+            validation.errors.map((finding) => finding.code),
+            "source.browser_secret_access",
+        );
     });
 
     test("requires trusted registry for dynamic server TypeScript artifacts", ({ assert }) => {
         const blocked = validateSource({ ...base, runtime: "server", source: "export const value = 1" });
-        assert.include(blocked.errors.map((finding) => finding.code), "source.registry_required");
+        assert.include(
+            blocked.errors.map((finding) => finding.code),
+            "source.registry_required",
+        );
 
         const trusted = validateSource({
             ...base,
@@ -45,7 +51,10 @@ test.group("Snippets managed-artifact safety boundary", () => {
             source: "export const value = 1",
             capabilities: ["trusted_registry"],
         });
-        assert.notInclude(trusted.errors.map((finding) => finding.code), "source.registry_required");
+        assert.notInclude(
+            trusted.errors.map((finding) => finding.code),
+            "source.registry_required",
+        );
         assert.isTrue(trusted.publishable);
     });
 
@@ -55,7 +64,10 @@ test.group("Snippets managed-artifact safety boundary", () => {
             language: "json",
             source: '{"enabled":',
         });
-        assert.include(invalid.errors.map((finding) => finding.code), "source.invalid_json");
+        assert.include(
+            invalid.errors.map((finding) => finding.code),
+            "source.invalid_json",
+        );
 
         const valid = validateSource({
             ...base,
