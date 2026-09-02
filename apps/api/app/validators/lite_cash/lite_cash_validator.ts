@@ -3,6 +3,7 @@ import vine from "@vinejs/vine";
 const reason = vine.string().trim().minLength(3).maxLength(2000);
 const jsonRecord = vine.record(vine.any());
 const stringList = vine.array(vine.string().trim().minLength(1).maxLength(190));
+const idempotencyKey = vine.string().trim().minLength(8).maxLength(190);
 const policyKind = vine.enum(["api", "page", "asset", "query"] as const);
 const policyStatus = vine.enum(["enabled", "disabled", "archived"] as const);
 const riskTier = vine.enum(["low", "medium", "high", "critical"] as const);
@@ -84,7 +85,7 @@ export const liteCashPurgeValidator = vine.compile(
     vine.object({
         scope: purgeScope,
         target: vine.string().trim().maxLength(190).optional(),
-        idempotency_key: vine.string().trim().minLength(8).maxLength(190),
+        idempotency_key: idempotencyKey,
         reason,
     }),
 );
@@ -97,6 +98,7 @@ export const liteCashWarmJobCreateValidator = vine.compile(
         priority: warmPriority,
         concurrency: vine.number().min(1).max(32).withoutDecimals(),
         plan: jsonRecord,
+        idempotency_key: idempotencyKey,
         reason,
     }),
 );
