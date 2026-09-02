@@ -232,8 +232,9 @@ interface CountRow {
 
 /**
  * Tab counts + summary aggregates for the list page. Four counts come from one customers-only
- * query; three need to join orders and run as separate queries (parallelized). The big_spenders
- * threshold is the 90th percentile of per-customer spend across the whole base.
+ * query; three need to join orders and therefore run as separate statements on the request
+ * transaction. PostgreSQL executes one statement at a time per transaction client, so these reads
+ * are intentionally sequenced instead of relying on pg's removed implicit client queue.
  *
  * Cached 2m with a 1h grace under `admin:customers:counts`; invalidated through `admin:customers`
  * on any customer write or order transition.
@@ -252,74 +253,72 @@ async function computeCounts(): Promise<CustomerCounts> {
     const countedPlaceholders = ORDER_COUNTED_STATUSES.map(() => "?").join(",");
     const paidPlaceholders = ORDER_PAID_STATUSES.map(() => "?").join(",");
 
-    const [tabResult, summaryResult, thresholdResult, inactiveResult, noAddressResult] = await Promise.all([
-        currentTrx().rawQuery<{ rows: TabRow[] }>(
-            `SELECT
-                 COUNT(*) FILTER (WHERE deleted_at IS NULL) AS all_count,
-                 COUNT(*) FILTER (WHERE deleted_at IS NULL AND user_id IS NOT NULL) AS account_holders,
-                 COUNT(*) FILTER (WHERE deleted_at IS NULL AND user_id IS NULL) AS guest_count,
-                 COUNT(*) FILTER (WHERE deleted_at IS NULL AND created_at >= now() - interval '30 days') AS new_30d,
-                 COUNT(*) FILTER (WHERE deleted_at IS NOT NULL) AS trashed_count
-             FROM customers`,
-        ),
-        currentTrx().rawQuery<{ rows: SummaryRow[] }>(
-            `WITH stats AS (
-                 SELECT c.id,
-                        c.user_id,
-                        COALESCE(o.order_count, 0) AS order_count,
-                        COALESCE(o.spend_minor, 0) AS spend_minor
-                 FROM customers c
-                 LEFT JOIN (
-                     SELECT customer_id,
-                            COUNT(*) FILTER (WHERE status IN (${countedPlaceholders})) AS order_count,
-                            COALESCE(SUM(grand_total) FILTER (WHERE status IN (${paidPlaceholders})), 0) AS spend_minor
-                     FROM orders
-                     GROUP BY customer_id
-                 ) o ON o.customer_id = c.id
-                 WHERE c.deleted_at IS NULL
-             )
-             SELECT
-                 COALESCE(AVG(order_count), 0)::numeric AS avg_order_count,
-                 COALESCE(AVG(spend_minor), 0)::numeric AS avg_lifetime_spend_minor,
-                 CASE WHEN SUM(order_count) > 0
-                      THEN SUM(spend_minor)::numeric / SUM(order_count)
-                      ELSE 0 END AS avg_aov_minor,
-                 CASE WHEN COUNT(*) > 0
-                      THEN (COUNT(*) FILTER (WHERE user_id IS NOT NULL))::numeric / COUNT(*)
-                      ELSE 0 END AS pct_with_account
-             FROM stats`,
-            [...ORDER_COUNTED_STATUSES, ...ORDER_PAID_STATUSES],
-        ),
-        currentTrx().rawQuery<{ rows: ThresholdRow[] }>(
-            `SELECT COALESCE(percentile_cont(0.9) WITHIN GROUP (ORDER BY spend), 0) AS threshold_minor
-             FROM (
-                 SELECT COALESCE(SUM(grand_total), 0) AS spend
-                 FROM orders
-                 WHERE status IN (${paidPlaceholders})
-                 GROUP BY customer_id
-             ) spend_per_customer`,
-            [...ORDER_PAID_STATUSES],
-        ),
-        currentTrx().rawQuery<{ rows: CountRow[] }>(
-            `SELECT COUNT(*) AS count
+    const tabResult = await currentTrx().rawQuery<{ rows: TabRow[] }>(
+        `SELECT
+             COUNT(*) FILTER (WHERE deleted_at IS NULL) AS all_count,
+             COUNT(*) FILTER (WHERE deleted_at IS NULL AND user_id IS NOT NULL) AS account_holders,
+             COUNT(*) FILTER (WHERE deleted_at IS NULL AND user_id IS NULL) AS guest_count,
+             COUNT(*) FILTER (WHERE deleted_at IS NULL AND created_at >= now() - interval '30 days') AS new_30d,
+             COUNT(*) FILTER (WHERE deleted_at IS NOT NULL) AS trashed_count
+         FROM customers`,
+    );
+    const summaryResult = await currentTrx().rawQuery<{ rows: SummaryRow[] }>(
+        `WITH stats AS (
+             SELECT c.id,
+                    c.user_id,
+                    COALESCE(o.order_count, 0) AS order_count,
+                    COALESCE(o.spend_minor, 0) AS spend_minor
              FROM customers c
              LEFT JOIN (
-                 SELECT customer_id, MAX(created_at) AS last_order_at
+                 SELECT customer_id,
+                        COUNT(*) FILTER (WHERE status IN (${countedPlaceholders})) AS order_count,
+                        COALESCE(SUM(grand_total) FILTER (WHERE status IN (${paidPlaceholders})), 0) AS spend_minor
                  FROM orders
-                 WHERE status IN (${countedPlaceholders})
                  GROUP BY customer_id
              ) o ON o.customer_id = c.id
              WHERE c.deleted_at IS NULL
-               AND (o.last_order_at IS NULL OR o.last_order_at < now() - interval '180 days')`,
-            [...ORDER_COUNTED_STATUSES],
-        ),
-        currentTrx().rawQuery<{ rows: CountRow[] }>(
-            `SELECT COUNT(*) AS count
-             FROM customers c
-             LEFT JOIN customer_addresses a ON a.customer_id = c.id
-             WHERE c.deleted_at IS NULL AND a.id IS NULL`,
-        ),
-    ]);
+         )
+         SELECT
+             COALESCE(AVG(order_count), 0)::numeric AS avg_order_count,
+             COALESCE(AVG(spend_minor), 0)::numeric AS avg_lifetime_spend_minor,
+             CASE WHEN SUM(order_count) > 0
+                  THEN SUM(spend_minor)::numeric / SUM(order_count)
+                  ELSE 0 END AS avg_aov_minor,
+             CASE WHEN COUNT(*) > 0
+                  THEN (COUNT(*) FILTER (WHERE user_id IS NOT NULL))::numeric / COUNT(*)
+                  ELSE 0 END AS pct_with_account
+         FROM stats`,
+        [...ORDER_COUNTED_STATUSES, ...ORDER_PAID_STATUSES],
+    );
+    const thresholdResult = await currentTrx().rawQuery<{ rows: ThresholdRow[] }>(
+        `SELECT COALESCE(percentile_cont(0.9) WITHIN GROUP (ORDER BY spend), 0) AS threshold_minor
+         FROM (
+             SELECT COALESCE(SUM(grand_total), 0) AS spend
+             FROM orders
+             WHERE status IN (${paidPlaceholders})
+             GROUP BY customer_id
+         ) spend_per_customer`,
+        [...ORDER_PAID_STATUSES],
+    );
+    const inactiveResult = await currentTrx().rawQuery<{ rows: CountRow[] }>(
+        `SELECT COUNT(*) AS count
+         FROM customers c
+         LEFT JOIN (
+             SELECT customer_id, MAX(created_at) AS last_order_at
+             FROM orders
+             WHERE status IN (${countedPlaceholders})
+             GROUP BY customer_id
+         ) o ON o.customer_id = c.id
+         WHERE c.deleted_at IS NULL
+           AND (o.last_order_at IS NULL OR o.last_order_at < now() - interval '180 days')`,
+        [...ORDER_COUNTED_STATUSES],
+    );
+    const noAddressResult = await currentTrx().rawQuery<{ rows: CountRow[] }>(
+        `SELECT COUNT(*) AS count
+         FROM customers c
+         LEFT JOIN customer_addresses a ON a.customer_id = c.id
+         WHERE c.deleted_at IS NULL AND a.id IS NULL`,
+    );
 
     const threshold = Number(thresholdResult.rows[0]?.threshold_minor ?? 0);
     const bigSpendersResult =
@@ -409,78 +408,76 @@ async function computeCustomerInsights(): Promise<CustomerInsights> {
     const countedPlaceholders = ORDER_COUNTED_STATUSES.map(() => "?").join(",");
     const paidPlaceholders = ORDER_PAID_STATUSES.map(() => "?").join(",");
 
-    const [now, prior, totalSeries, spendSeries] = await Promise.all([
-        currentTrx().rawQuery<{ rows: SummaryRow[] & { total: string | number }[] }>(
-            `WITH stats AS (
-                 SELECT c.id, c.user_id,
-                        COALESCE(o.order_count, 0) AS order_count,
-                        COALESCE(o.spend_minor, 0) AS spend_minor
-                 FROM customers c
-                 LEFT JOIN (
-                     SELECT customer_id,
-                            COUNT(*) FILTER (WHERE status IN (${countedPlaceholders})) AS order_count,
-                            COALESCE(SUM(grand_total) FILTER (WHERE status IN (${paidPlaceholders})), 0) AS spend_minor
-                     FROM orders
-                     GROUP BY customer_id
-                 ) o ON o.customer_id = c.id
-                 WHERE c.deleted_at IS NULL
-             )
-             SELECT COUNT(*)::numeric AS total,
-                    COALESCE(AVG(order_count), 0)::numeric AS avg_order_count,
-                    COALESCE(AVG(spend_minor), 0)::numeric AS avg_lifetime_spend_minor,
-                    CASE WHEN SUM(order_count) > 0
-                         THEN SUM(spend_minor)::numeric / SUM(order_count)
-                         ELSE 0 END AS avg_aov_minor,
-                    CASE WHEN COUNT(*) > 0
-                         THEN (COUNT(*) FILTER (WHERE user_id IS NOT NULL))::numeric / COUNT(*)
-                         ELSE 0 END AS pct_with_account
-             FROM stats`,
-            [...ORDER_COUNTED_STATUSES, ...ORDER_PAID_STATUSES],
-        ),
-        currentTrx().rawQuery<{ rows: SummaryRow[] & { total: string | number }[] }>(
-            `WITH stats AS (
-                 SELECT c.id,
-                        COALESCE(o.order_count, 0) AS order_count,
-                        COALESCE(o.spend_minor, 0) AS spend_minor
-                 FROM customers c
-                 LEFT JOIN (
-                     SELECT customer_id,
-                            COUNT(*) FILTER (WHERE status IN (${countedPlaceholders}) AND created_at < now() - interval '30 days') AS order_count,
-                            COALESCE(SUM(grand_total) FILTER (WHERE status IN (${paidPlaceholders}) AND created_at < now() - interval '30 days'), 0) AS spend_minor
-                     FROM orders
-                     GROUP BY customer_id
-                 ) o ON o.customer_id = c.id
-                 WHERE c.deleted_at IS NULL AND c.created_at < now() - interval '30 days'
-             )
-             SELECT COUNT(*)::numeric AS total,
-                    COALESCE(AVG(order_count), 0)::numeric AS avg_order_count,
-                    COALESCE(AVG(spend_minor), 0)::numeric AS avg_lifetime_spend_minor,
-                    CASE WHEN SUM(order_count) > 0
-                         THEN SUM(spend_minor)::numeric / SUM(order_count)
-                         ELSE 0 END AS avg_aov_minor
-             FROM stats`,
-            [...ORDER_COUNTED_STATUSES, ...ORDER_PAID_STATUSES],
-        ),
-        currentTrx().rawQuery<{ rows: CountByDayRow[] }>(
-            `SELECT day::date AS bucket,
-                    COUNT(c.id) AS value
-             FROM generate_series(now() - interval '29 days', now(), interval '1 day') day
-             LEFT JOIN customers c ON c.deleted_at IS NULL
-                                   AND date_trunc('day', c.created_at) = date_trunc('day', day)
-             GROUP BY day
-             ORDER BY day`,
-        ),
-        currentTrx().rawQuery<{ rows: CountByDayRow[] }>(
-            `SELECT day::date AS bucket,
-                    COALESCE(SUM(o.grand_total), 0) AS value
-             FROM generate_series(now() - interval '29 days', now(), interval '1 day') day
-             LEFT JOIN orders o ON o.status IN (${paidPlaceholders})
-                                AND date_trunc('day', o.created_at) = date_trunc('day', day)
-             GROUP BY day
-             ORDER BY day`,
-            [...ORDER_PAID_STATUSES],
-        ),
-    ]);
+    const now = await currentTrx().rawQuery<{ rows: Array<SummaryRow & { total: string | number }> }>(
+        `WITH stats AS (
+             SELECT c.id, c.user_id,
+                    COALESCE(o.order_count, 0) AS order_count,
+                    COALESCE(o.spend_minor, 0) AS spend_minor
+             FROM customers c
+             LEFT JOIN (
+                 SELECT customer_id,
+                        COUNT(*) FILTER (WHERE status IN (${countedPlaceholders})) AS order_count,
+                        COALESCE(SUM(grand_total) FILTER (WHERE status IN (${paidPlaceholders})), 0) AS spend_minor
+                 FROM orders
+                 GROUP BY customer_id
+             ) o ON o.customer_id = c.id
+             WHERE c.deleted_at IS NULL
+         )
+         SELECT COUNT(*)::numeric AS total,
+                COALESCE(AVG(order_count), 0)::numeric AS avg_order_count,
+                COALESCE(AVG(spend_minor), 0)::numeric AS avg_lifetime_spend_minor,
+                CASE WHEN SUM(order_count) > 0
+                     THEN SUM(spend_minor)::numeric / SUM(order_count)
+                     ELSE 0 END AS avg_aov_minor,
+                CASE WHEN COUNT(*) > 0
+                     THEN (COUNT(*) FILTER (WHERE user_id IS NOT NULL))::numeric / COUNT(*)
+                     ELSE 0 END AS pct_with_account
+         FROM stats`,
+        [...ORDER_COUNTED_STATUSES, ...ORDER_PAID_STATUSES],
+    );
+    const prior = await currentTrx().rawQuery<{ rows: Array<SummaryRow & { total: string | number }> }>(
+        `WITH stats AS (
+             SELECT c.id,
+                    COALESCE(o.order_count, 0) AS order_count,
+                    COALESCE(o.spend_minor, 0) AS spend_minor
+             FROM customers c
+             LEFT JOIN (
+                 SELECT customer_id,
+                        COUNT(*) FILTER (WHERE status IN (${countedPlaceholders}) AND created_at < now() - interval '30 days') AS order_count,
+                        COALESCE(SUM(grand_total) FILTER (WHERE status IN (${paidPlaceholders}) AND created_at < now() - interval '30 days'), 0) AS spend_minor
+                 FROM orders
+                 GROUP BY customer_id
+             ) o ON o.customer_id = c.id
+             WHERE c.deleted_at IS NULL AND c.created_at < now() - interval '30 days'
+         )
+         SELECT COUNT(*)::numeric AS total,
+                COALESCE(AVG(order_count), 0)::numeric AS avg_order_count,
+                COALESCE(AVG(spend_minor), 0)::numeric AS avg_lifetime_spend_minor,
+                CASE WHEN SUM(order_count) > 0
+                     THEN SUM(spend_minor)::numeric / SUM(order_count)
+                     ELSE 0 END AS avg_aov_minor
+         FROM stats`,
+        [...ORDER_COUNTED_STATUSES, ...ORDER_PAID_STATUSES],
+    );
+    const totalSeries = await currentTrx().rawQuery<{ rows: CountByDayRow[] }>(
+        `SELECT day::date AS bucket,
+                COUNT(c.id) AS value
+         FROM generate_series(now() - interval '29 days', now(), interval '1 day') day
+         LEFT JOIN customers c ON c.deleted_at IS NULL
+                               AND date_trunc('day', c.created_at) = date_trunc('day', day)
+         GROUP BY day
+         ORDER BY day`,
+    );
+    const spendSeries = await currentTrx().rawQuery<{ rows: CountByDayRow[] }>(
+        `SELECT day::date AS bucket,
+                COALESCE(SUM(o.grand_total), 0) AS value
+         FROM generate_series(now() - interval '29 days', now(), interval '1 day') day
+         LEFT JOIN orders o ON o.status IN (${paidPlaceholders})
+                            AND date_trunc('day', o.created_at) = date_trunc('day', day)
+         GROUP BY day
+         ORDER BY day`,
+        [...ORDER_PAID_STATUSES],
+    );
 
     const nowRow = now.rows[0];
     const priorRow = prior.rows[0];
