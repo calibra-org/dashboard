@@ -81,6 +81,23 @@ jobs:
             'async function settingsRow() {\n    const existing = await currentTrx().from("lite_cash_settings").where("tenant_id", tenantId()).first();\n    if (existing) return existing;\n    const [created] = await currentTrx()\n        .table("lite_cash_settings")\n        .insert({ tenant_id: tenantId() })\n        .onConflict(["tenant_id"])\n        .ignore()\n        .returning("*");\n    if (created) return created;\n    const raced = await currentTrx().from("lite_cash_settings").where("tenant_id", tenantId()).first();\n    if (!raced) throw new Error("Failed to initialize lite cash settings");\n    return raced;\n}',
           );
           replaceOnce(
+            "apps/api/app/controllers/admin/lite_cash_controller.ts",
+            'function changedPayload(value: unknown): { data: unknown; changed: boolean } {\n    if (!value || typeof value !== "object") return { data: value, changed: true };\n    const record = value as Record<string, unknown>;\n    return { data: record.data ?? value, changed: record.changed !== false };\n}\n\n',
+            "",
+          );
+
+          replaceOnce(
+            "docs/api/reference/openapi/admin.phase34.v1.yaml",
+            "    LiteCashPolicyUpdate:\n      allOf:\n        - { $ref: '#/components/schemas/LiteCashPolicyCreate' }\n      required: [reason]",
+            "    LiteCashPolicyUpdate:\n      type: object\n      required: [reason]\n      properties:\n        name: { type: string }\n        description: { type: string }\n        kind: { type: string, enum: [api, page, asset, query] }\n        route_pattern: { type: string }\n        status: { type: string, enum: [enabled, disabled, archived] }\n        risk_tier: { type: string, enum: [low, medium, high, critical] }\n        ttl_seconds: { type: integer, minimum: 1, maximum: 604800 }\n        grace_seconds: { type: integer, minimum: 0, maximum: 604800 }\n        stale_if_error_seconds: { type: integer, minimum: 0, maximum: 604800 }\n        soft_timeout_ms: { type: integer, minimum: 10, maximum: 60000 }\n        hard_timeout_ms: { type: integer, minimum: 10, maximum: 120000 }\n        tags: { type: array, items: { type: string } }\n        vary: { type: array, items: { type: string } }\n        conditions: { type: object, additionalProperties: true }\n        reason: { type: string, minLength: 3, maxLength: 2000 }",
+          );
+          replaceOnce(
+            "docs/api/reference/openapi/admin.phase34.v1.yaml",
+            "    LiteCashProfileUpdate:\n      allOf:\n        - { $ref: '#/components/schemas/LiteCashProfileCreate' }\n      required: [reason]",
+            "    LiteCashProfileUpdate:\n      type: object\n      required: [reason]\n      properties:\n        name: { type: string }\n        mode: { type: string, enum: [safe, balanced, aggressive, custom] }\n        status: { type: string, enum: [draft, active, archived] }\n        css: { type: object, additionalProperties: true }\n        javascript: { type: object, additionalProperties: true }\n        images: { type: object, additionalProperties: true }\n        fonts: { type: object, additionalProperties: true }\n        navigation: { type: object, additionalProperties: true }\n        edge: { type: object, additionalProperties: true }\n        reason: { type: string, minLength: 3, maxLength: 2000 }",
+          );
+
+          replaceOnce(
             "docs/api/package.json",
             "pnpm build:json:admin-phase32 && pnpm build:json:admin-phase33 && pnpm build:json:admin-merge",
             "pnpm build:json:admin-phase32 && pnpm build:json:admin-phase33 && pnpm build:json:admin-phase34 && pnpm build:json:admin-merge",
@@ -113,6 +130,14 @@ jobs:
           const fixed = 'for (const forbidden of ["flushall", "flushdb", "child_process", "node:vm", "execSync(", "spawnSync(", "redis.call(", \'keys("*"\']) {';
           if (!verifier.includes(broken)) throw new Error("Phase34 verifier forbidden-array target not found");
           verifier = verifier.replace(broken, fixed);
+          verifier = verifier.replace(
+            'const idempotencyMigration = read("apps/api/database/migrations/1805000000100_add_lite_cash_warm_job_idempotency.ts");',
+            'const idempotencyMigration = read("apps/api/database/migrations/1805000000100_add_lite_cash_warm_job_idempotency.ts");\nconst activeProfileMigration = read("apps/api/database/migrations/1805000000200_enforce_lite_cash_profile_activation.ts");',
+          );
+          verifier = verifier.replace(
+            'must(idempotencyMigration.includes("lite_cash_warm_jobs_idempotency_unique"), "Phase34 warm idempotency DB guard is missing");',
+            'must(idempotencyMigration.includes("lite_cash_warm_jobs_idempotency_unique"), "Phase34 warm idempotency DB guard is missing");\nmust(activeProfileMigration.includes("lite_cash_profiles_single_active"), "Phase34 single-active-profile DB guard is missing");',
+          );
           fs.writeFileSync(verifierPath, verifier, "utf8");
           NODE
       - name: Format Phase 34 wiring
@@ -152,6 +177,7 @@ jobs:
           apps/admin/src/components/Sidebar.tsx
           docs/api/package.json
           docs/api/scripts/merge-admin-spec.js
+          docs/api/reference/openapi/admin.phase34.v1.yaml
           package.json
           scripts/verify-phase34-lite-cash.mjs
       - name: Commit canonical output and remove bootstrap workflows
