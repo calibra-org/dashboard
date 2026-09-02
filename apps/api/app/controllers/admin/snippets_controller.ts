@@ -16,6 +16,16 @@ import {
     snippetUpdateValidator,
 } from "#validators/snippets/snippets_validator";
 
+type SnippetAuditRecord = Record<string, unknown> & {
+    id: number;
+    public_id: string;
+    version: number;
+};
+
+function snippetAuditRecord(value: unknown): SnippetAuditRecord {
+    return value as SnippetAuditRecord;
+}
+
 export default class SnippetsController {
     async overview(ctx: HttpContext) {
         const user = ctx.auth.getUserOrFail();
@@ -36,14 +46,15 @@ export default class SnippetsController {
         await requireSnippetsPermission(user, "snippets.create");
         const payload = await ctx.request.validateUsing(snippetCreateValidator);
         const data = await snippets.createSnippet(payload, Number(user.id));
+        const record = snippetAuditRecord(data);
         await recordAudit({
             ctx,
             actorUserId: Number(user.id),
             action: "snippets.create",
             entityKind: "snippet",
-            entityId: Number(data.id),
+            entityId: Number(record.id),
             payload: {
-                public_id: data.public_id,
+                public_id: record.public_id,
                 snippet_key: payload.snippet_key,
                 language: payload.language,
                 runtime: payload.runtime,
@@ -67,13 +78,14 @@ export default class SnippetsController {
         const payload = await ctx.request.validateUsing(snippetUpdateValidator);
         const result = await snippets.updateSnippet(ctx.params.publicId, payload, Number(user.id));
         if (result.changed) {
+            const record = snippetAuditRecord(result.data);
             await recordAudit({
                 ctx,
                 actorUserId: Number(user.id),
                 action: "snippets.update",
                 entityKind: "snippet",
-                entityId: Number(result.data.id),
-                payload: { public_id: ctx.params.publicId, version: result.data.version, reason: payload.reason },
+                entityId: Number(record.id),
+                payload: { public_id: ctx.params.publicId, version: record.version, reason: payload.reason },
                 strict: true,
             });
         }
@@ -134,12 +146,13 @@ export default class SnippetsController {
         const payload = await ctx.request.validateUsing(snippetActionValidator);
         const result = await snippets.pauseSnippet(ctx.params.publicId, Number(user.id), payload.reason);
         if (result.changed) {
+            const record = snippetAuditRecord(result.data);
             await recordAudit({
                 ctx,
                 actorUserId: Number(user.id),
                 action: "snippets.pause",
                 entityKind: "snippet",
-                entityId: Number(result.data.id),
+                entityId: Number(record.id),
                 payload: { public_id: ctx.params.publicId, reason: payload.reason },
                 strict: true,
             });
@@ -153,12 +166,13 @@ export default class SnippetsController {
         const payload = await ctx.request.validateUsing(snippetActionValidator);
         const result = await snippets.resumeSnippet(ctx.params.publicId, Number(user.id), payload.reason);
         if (result.changed) {
+            const record = snippetAuditRecord(result.data);
             await recordAudit({
                 ctx,
                 actorUserId: Number(user.id),
                 action: "snippets.resume",
                 entityKind: "snippet",
-                entityId: Number(result.data.id),
+                entityId: Number(record.id),
                 payload: { public_id: ctx.params.publicId, reason: payload.reason },
                 strict: true,
             });
