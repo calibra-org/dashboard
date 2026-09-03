@@ -118,6 +118,8 @@ jobs:
               run: pnpm exec node ace db:seed --connection=postgres_admin
 
             - name: Start API
+              env:
+                  NODE_OPTIONS: --trace-deprecation
               run: |
                   mkdir -p apps/admin/ui-audit-diagnostics
                   pnpm --filter @calibra/api run dev > apps/admin/ui-audit-diagnostics/api.log 2>&1 &
@@ -137,6 +139,15 @@ jobs:
 
             - name: Run authenticated admin browser audit
               run: pnpm --filter @calibra/admin run test:e2e ui-audit --reporter=html --retries=0
+
+            - name: Reject concurrent pg client queries
+              if: always()
+              run: |
+                  if grep -Fq "Calling client.query() when the client is already executing a query" apps/admin/ui-audit-diagnostics/api.log; then
+                      echo "Concurrent queries were issued on a single PostgreSQL transaction client."
+                      cat apps/admin/ui-audit-diagnostics/api.log
+                      exit 1
+                  fi
 
             - name: Upload Playwright report and diagnostics
               if: always()

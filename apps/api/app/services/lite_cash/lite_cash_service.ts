@@ -696,7 +696,9 @@ function sanitizedProfile(row: Record<string, unknown>) {
 }
 
 export async function exportConfiguration() {
-    const [settings, policies, profiles] = await Promise.all([settingsRow(), listPolicies(500), listProfiles(250)]);
+    const settings = await settingsRow();
+    const policies = await listPolicies(500);
+    const profiles = await listProfiles(250);
     return {
         schema: "calibra.lite-cash.v1",
         exported_at: nowIso(),
@@ -867,18 +869,17 @@ export async function applyImport(document: JsonRecord, reason: string, userId: 
 }
 
 export async function overview() {
-    const [settings, policyRows, purgeRows, warmRows, profileRows, observations] = await Promise.all([
-        settingsRow(),
-        currentTrx().from("lite_cash_policies").select("kind", "status", "risk_tier"),
-        currentTrx().from("lite_cash_purge_events").orderBy("created_at", "desc").limit(8),
-        currentTrx().from("lite_cash_warm_jobs").orderBy("created_at", "desc").limit(8),
-        currentTrx().from("lite_cash_optimization_profiles").orderBy("updated_at", "desc"),
-        currentTrx()
-            .from("lite_cash_observations")
-            .select("metric_key", "value", "observed_at")
-            .orderBy("observed_at", "desc")
-            .limit(2000),
-    ]);
+    const trx = currentTrx();
+    const settings = await settingsRow();
+    const policyRows = await trx.from("lite_cash_policies").select("kind", "status", "risk_tier");
+    const purgeRows = await trx.from("lite_cash_purge_events").orderBy("created_at", "desc").limit(8);
+    const warmRows = await trx.from("lite_cash_warm_jobs").orderBy("created_at", "desc").limit(8);
+    const profileRows = await trx.from("lite_cash_optimization_profiles").orderBy("updated_at", "desc");
+    const observations = await trx
+        .from("lite_cash_observations")
+        .select("metric_key", "value", "observed_at")
+        .orderBy("observed_at", "desc")
+        .limit(2000);
 
     const counts = {
         policies: policyRows.length,

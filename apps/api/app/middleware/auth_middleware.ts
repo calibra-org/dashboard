@@ -3,6 +3,7 @@ import type { HttpContext } from "@adonisjs/core/http";
 import type { NextFn } from "@adonisjs/core/types/http";
 
 import { recordAuthEvent } from "#services/metrics/domain_metrics";
+import { maybeTenantContext, serializeTenantTransactionQueries } from "#services/tenant_context";
 
 /**
  * Authenticates the request through one of the configured guards (`api` by default — the access
@@ -18,6 +19,18 @@ export default class AuthMiddleware {
             recordAuthEvent("token_invalid");
             throw err;
         }
+
+        /**
+         * Keep authentication itself on the framework's unmodified transaction client. Once the
+         * token/user lookup has completed, opt the remaining tenant-scoped request into explicit
+         * query serialization so business-layer Promise.all fan-out cannot issue overlapping
+         * `pg` client queries (deprecated in pg@8.23 and removed in pg@9).
+         */
+        const tenantContext = maybeTenantContext();
+        if (tenantContext) {
+            serializeTenantTransactionQueries(tenantContext.trx);
+        }
+
         return next();
     }
 }

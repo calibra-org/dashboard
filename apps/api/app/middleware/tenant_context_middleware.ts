@@ -3,7 +3,7 @@ import type { NextFn } from "@adonisjs/core/types/http";
 import db from "@adonisjs/lucid/services/db";
 
 import { resolveTenantConnection } from "#config/database";
-import { runWithTenant } from "#services/tenant_context";
+import { restoreTenantTransactionQueries, runWithTenant } from "#services/tenant_context";
 import { type ResolvedTenant, resolveTenantByHost, resolveTenantByRef } from "#services/tenant_resolver";
 
 /**
@@ -18,7 +18,9 @@ import { type ResolvedTenant, resolveTenantByHost, resolveTenantByRef } from "#s
  * When a tenant resolves, the middleware opens a transaction on the tenant's connection, sets the
  * `app.current_tenant` GUC transaction-locally (`set_config(..., true)` ≡ `SET LOCAL`, safe under
  * PgBouncer transaction pooling), and runs the rest of the request inside `runWithTenant`. Commit on
- * success, rollback on error.
+ * success, rollback on error. Authenticated routes opt into explicit query serialization only after
+ * the access-token lookup succeeds; keeping auth itself on the native transaction client preserves
+ * the framework's authentication semantics while still protecting business-layer fan-out.
  *
  * Resolution outcomes:
  *  - tenant indicated (header) but not found → **404** (no silent fallthrough to another tenant).
@@ -65,10 +67,10 @@ export default class TenantContextMiddleware {
             await runWithTenant(BigInt(tenant.id), trx, () => next());
         } catch (error) {
             /**
-             * Defensive: AdonisJS catches handler errors at the server level and renders them, so
-             * `next()` usually resolves even on failure (the response status is the real signal —
-             * see below). This catch only fires for errors thrown by the middleware itself.
+             * Always restore Knex's native transaction query method before finalization. The queue
+             * may have been activated by auth middleware and must never wrap ROLLBACK itself.
              */
+            await restoreTenantTransactionQueries(trx);
             if (!trx.isCompleted) {
                 await trx.rollback();
             }
@@ -76,11 +78,11 @@ export default class TenantContextMiddleware {
         }
 
         /**
-         * Commit only on success. Because the framework swallows handler exceptions into a rendered
-         * error response, a thrown handler leaves `next()` resolved — so the response status is the
-         * authoritative commit/rollback signal. Any 4xx/5xx rolls back the per-request transaction,
-         * guaranteeing a failed request never persists a partial write.
+         * Drain business-layer fan-out and restore the original Knex query method before checking
+         * out of this request transaction. COMMIT/ROLLBACK must be issued natively so the pooled
+         * connection cannot escape while a deferred finalization statement is still pending.
          */
+        await restoreTenantTransactionQueries(trx);
         if (trx.isCompleted) {
             return;
         }

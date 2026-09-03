@@ -20,6 +20,79 @@ export interface TenantContext {
 
 const storage = new AsyncLocalStorage<TenantContext>();
 
+type KnexQuery = (...args: unknown[]) => Promise<unknown>;
+
+type KnexTransactionWithClient = {
+    client?: {
+        query?: KnexQuery;
+    };
+};
+
+type SerializedTransactionState = {
+    originalQuery: KnexQuery;
+    runQuery: KnexQuery;
+    tail: Promise<void>;
+};
+
+const serializedTransactionClients = new WeakMap<object, SerializedTransactionState>();
+
+function transactionClient(trx: TransactionClientContract) {
+    return (trx.knexClient as unknown as KnexTransactionWithClient).client;
+}
+
+/**
+ * Opts the active tenant transaction into external async flow control.
+ *
+ * PostgreSQL executes one statement at a time per client. Tenant requests intentionally keep a
+ * single transaction/client so `SET LOCAL app.current_tenant`, forced RLS, and the request atomic
+ * boundary stay coupled. Higher-level read models may still fan independent queries out with
+ * `Promise.all`; pg@8 used to queue those implicitly but deprecates doing so ahead of pg@9.
+ *
+ * Authentication deliberately runs before this is enabled. The access-token provider must be able
+ * to complete its own framework-managed lookup unchanged; `auth_middleware` activates this queue
+ * only after authentication succeeds, before admin/business middleware and handlers execute.
+ */
+export function serializeTenantTransactionQueries(trx: TransactionClientContract): void {
+    const client = transactionClient(trx);
+    if (!client?.query || serializedTransactionClients.has(client)) return;
+
+    const originalQuery = client.query;
+    const runQuery = originalQuery.bind(client);
+    const state: SerializedTransactionState = {
+        originalQuery,
+        runQuery,
+        tail: Promise.resolve(),
+    };
+
+    client.query = (...args: unknown[]) => {
+        const result = state.tail.then(() => state.runQuery(...args));
+        state.tail = result.then(
+            () => undefined,
+            () => undefined,
+        );
+        return result;
+    };
+    serializedTransactionClients.set(client, state);
+}
+
+/**
+ * Drains every business-layer query queued for this transaction, then restores Knex's native query
+ * method. Commit and rollback must run on the original transaction client: keeping the flow-control
+ * wrapper installed during transaction finalization can defer Knex's own COMMIT/ROLLBACK statement
+ * and let a pooled connection escape while it is still inside the previous transaction.
+ */
+export async function restoreTenantTransactionQueries(trx: TransactionClientContract): Promise<void> {
+    const client = transactionClient(trx);
+    if (!client) return;
+
+    const state = serializedTransactionClients.get(client);
+    if (!state) return;
+
+    await state.tail;
+    client.query = state.originalQuery;
+    serializedTransactionClients.delete(client);
+}
+
 /**
  * Runs `fn` with the given tenant context active. Everything awaited inside sees the same
  * `tenantId` + `trx` via {@link currentTenantId} / {@link currentTrx}.
