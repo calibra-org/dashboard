@@ -621,7 +621,9 @@ export async function intelligenceSummary() {
         .where("tenant_id", tenantId)
         .select(
             trx.raw("COUNT(*) FILTER (WHERE signal_state = 'open')::int AS open_count"),
-            trx.raw("COUNT(*) FILTER (WHERE signal_state = 'open' AND severity IN ('high','critical'))::int AS high_critical_count"),
+            trx.raw(
+                "COUNT(*) FILTER (WHERE signal_state = 'open' AND severity IN ('high','critical'))::int AS high_critical_count",
+            ),
             trx.raw("COUNT(*) FILTER (WHERE signal_state = 'open' AND score_mode = 'provisional')::int AS provisional_count"),
             trx.raw("COUNT(*) FILTER (WHERE lifecycle_stage IN ('measured','learned'))::int AS measured_count"),
         )
