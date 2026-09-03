@@ -28,7 +28,17 @@ type KnexTransactionWithClient = {
     };
 };
 
-const serializedTransactionClients = new WeakSet<object>();
+type SerializedTransactionState = {
+    originalQuery: KnexQuery;
+    runQuery: KnexQuery;
+    tail: Promise<void>;
+};
+
+const serializedTransactionClients = new WeakMap<object, SerializedTransactionState>();
+
+function transactionClient(trx: TransactionClientContract) {
+    return (trx.knexClient as unknown as KnexTransactionWithClient).client;
+}
 
 /**
  * Opts the active tenant transaction into external async flow control.
@@ -41,24 +51,46 @@ const serializedTransactionClients = new WeakSet<object>();
  * Authentication deliberately runs before this is enabled. The access-token provider must be able
  * to complete its own framework-managed lookup unchanged; `auth_middleware` activates this queue
  * only after authentication succeeds, before admin/business middleware and handlers execute.
- * Repeated activation is harmless and leaves the same transaction client wrapped exactly once.
  */
 export function serializeTenantTransactionQueries(trx: TransactionClientContract): void {
-    const client = (trx.knexClient as unknown as KnexTransactionWithClient).client;
+    const client = transactionClient(trx);
     if (!client?.query || serializedTransactionClients.has(client)) return;
 
-    const query = client.query.bind(client);
-    let tail: Promise<void> = Promise.resolve();
+    const originalQuery = client.query;
+    const runQuery = originalQuery.bind(client);
+    const state: SerializedTransactionState = {
+        originalQuery,
+        runQuery,
+        tail: Promise.resolve(),
+    };
 
     client.query = (...args: unknown[]) => {
-        const result = tail.then(() => query(...args));
-        tail = result.then(
+        const result = state.tail.then(() => state.runQuery(...args));
+        state.tail = result.then(
             () => undefined,
             () => undefined,
         );
         return result;
     };
-    serializedTransactionClients.add(client);
+    serializedTransactionClients.set(client, state);
+}
+
+/**
+ * Drains every business-layer query queued for this transaction, then restores Knex's native query
+ * method. Commit and rollback must run on the original transaction client: keeping the flow-control
+ * wrapper installed during transaction finalization can defer Knex's own COMMIT/ROLLBACK statement
+ * and let a pooled connection escape while it is still inside the previous transaction.
+ */
+export async function restoreTenantTransactionQueries(trx: TransactionClientContract): Promise<void> {
+    const client = transactionClient(trx);
+    if (!client) return;
+
+    const state = serializedTransactionClients.get(client);
+    if (!state) return;
+
+    await state.tail;
+    client.query = state.originalQuery;
+    serializedTransactionClients.delete(client);
 }
 
 /**
