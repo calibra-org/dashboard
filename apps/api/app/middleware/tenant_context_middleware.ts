@@ -1,5 +1,4 @@
 import type { HttpContext } from "@adonisjs/core/http";
-import logger from "@adonisjs/core/services/logger";
 import type { NextFn } from "@adonisjs/core/types/http";
 import db from "@adonisjs/lucid/services/db";
 
@@ -16,50 +15,30 @@ type KnexTransactionWithClient = {
 };
 
 /**
- * Audit-only diagnostic for pg@8.23's concurrent-query deprecation. This wrapper deliberately does
- * NOT queue, delay, or replace query results: it calls Knex's transaction client immediately and
- * returns the exact same promise. When a second query starts before the first settles, the Admin UI
- * audit log gets the request method/path and synchronous callsite so the offending caller can be
- * fixed without changing the transaction/RLS boundary.
+ * PostgreSQL executes one statement at a time per client. Every tenant request intentionally keeps
+ * one transaction/client for the complete request so `SET LOCAL app.current_tenant`, forced RLS,
+ * and the request atomic boundary all stay coupled. Some higher-level read models fan independent
+ * queries out with `Promise.all`, which pg@8 used to queue implicitly and now deprecates ahead of
+ * pg@9.
+ *
+ * Keep that architecture intact and provide the required external async flow control at the shared
+ * transaction seam: callers can still compose promises normally, while the physical statements are
+ * dispatched to this transaction client strictly one at a time. A failed statement does not poison
+ * the JavaScript queue itself; PostgreSQL remains authoritative for the aborted transaction state and
+ * the middleware rolls the request back as before.
  */
-function traceConcurrentTransactionQueries(knexTransaction: unknown, ctx: HttpContext): void {
-    const nodeOptions = process.env.NODE_OPTIONS ?? "";
-    if (!nodeOptions.includes("--trace-deprecation") && !process.execArgv.includes("--trace-deprecation")) return;
-
+function serializeTransactionQueries(knexTransaction: unknown): void {
     const client = (knexTransaction as KnexTransactionWithClient).client;
     if (!client?.query) return;
 
     const query = client.query.bind(client);
-    let active = 0;
+    let tail: Promise<void> = Promise.resolve();
 
     client.query = (...args: unknown[]) => {
-        if (active > 0) {
-            logger.warn(
-                {
-                    method: ctx.request.method(),
-                    url: ctx.request.url(),
-                    activeQueries: active,
-                    callsite: new Error("Concurrent tenant transaction query").stack,
-                },
-                "pg tenant transaction query overlap",
-            );
-        }
-
-        active += 1;
-        let result: Promise<unknown>;
-        try {
-            result = query(...args);
-        } catch (error) {
-            active -= 1;
-            throw error;
-        }
-        void result.then(
-            () => {
-                active -= 1;
-            },
-            () => {
-                active -= 1;
-            },
+        const result = tail.then(() => query(...args));
+        tail = result.then(
+            () => undefined,
+            () => undefined,
         );
         return result;
     };
@@ -121,7 +100,7 @@ export default class TenantContextMiddleware {
         const trx = await db.connection(resolveTenantConnection(tenant)).transaction();
         try {
             await trx.rawQuery("SELECT set_config('app.current_tenant', ?, true)", [String(tenant.id)]);
-            traceConcurrentTransactionQueries(trx.knexClient, ctx);
+            serializeTransactionQueries(trx.knexClient);
             await runWithTenant(BigInt(tenant.id), trx, () => next());
         } catch (error) {
             /**
