@@ -7,6 +7,9 @@ import { routing } from "#/lib/i18n/routing";
 import { TENANT_HEADER } from "#/lib/tenant/constants";
 import { resolveHost, tenantRefFor } from "#/lib/tenant/resolve-host";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 interface RouteContext {
     params: Promise<{ path: string[] }>;
 }
@@ -67,6 +70,8 @@ async function proxy(request: NextRequest, context: RouteContext): Promise<Respo
     const init: RequestInit & { duplex?: "half" } = {
         method,
         headers: buildUpstreamHeaders(session.token, locale, tenant, request.headers.get("content-type"), method),
+        /** Close the upstream SSE connection when the browser navigates away or EventSource reconnects. */
+        signal: request.signal,
     };
 
     if (MUTATION_METHODS.has(method)) {
@@ -92,7 +97,8 @@ async function proxy(request: NextRequest, context: RouteContext): Promise<Respo
     }
 
     const responseHeaders = new Headers();
-    for (const key of ["content-type", "cache-control", "connection", "x-accel-buffering"]) {
+    /** `connection` is hop-by-hop and must never be forwarded through the Next.js SSE proxy. */
+    for (const key of ["content-type", "cache-control", "x-accel-buffering"]) {
         const value = upstream.headers.get(key);
         if (value !== null) responseHeaders.set(key, value);
     }

@@ -1,10 +1,69 @@
 import type { HttpContext } from "@adonisjs/core/http";
+import logger from "@adonisjs/core/services/logger";
 import type { NextFn } from "@adonisjs/core/types/http";
 import db from "@adonisjs/lucid/services/db";
 
 import { resolveTenantConnection } from "#config/database";
 import { runWithTenant } from "#services/tenant_context";
 import { type ResolvedTenant, resolveTenantByHost, resolveTenantByRef } from "#services/tenant_resolver";
+
+type KnexQuery = (...args: unknown[]) => Promise<unknown>;
+
+type KnexTransactionWithClient = {
+    client?: {
+        query?: KnexQuery;
+    };
+};
+
+/**
+ * Audit-only diagnostic for pg@8.23's concurrent-query deprecation. This wrapper deliberately does
+ * NOT queue, delay, or replace query results: it calls Knex's transaction client immediately and
+ * returns the exact same promise. When a second query starts before the first settles, the Admin UI
+ * audit log gets the request method/path and synchronous callsite so the offending caller can be
+ * fixed without changing the transaction/RLS boundary.
+ */
+function traceConcurrentTransactionQueries(knexTransaction: unknown, ctx: HttpContext): void {
+    const nodeOptions = process.env.NODE_OPTIONS ?? "";
+    if (!nodeOptions.includes("--trace-deprecation") && !process.execArgv.includes("--trace-deprecation")) return;
+
+    const client = (knexTransaction as KnexTransactionWithClient).client;
+    if (!client?.query) return;
+
+    const query = client.query.bind(client);
+    let active = 0;
+
+    client.query = (...args: unknown[]) => {
+        if (active > 0) {
+            logger.warn(
+                {
+                    method: ctx.request.method(),
+                    url: ctx.request.url(),
+                    activeQueries: active,
+                    callsite: new Error("Concurrent tenant transaction query").stack,
+                },
+                "pg tenant transaction query overlap",
+            );
+        }
+
+        active += 1;
+        let result: Promise<unknown>;
+        try {
+            result = query(...args);
+        } catch (error) {
+            active -= 1;
+            throw error;
+        }
+        void result.then(
+            () => {
+                active -= 1;
+            },
+            () => {
+                active -= 1;
+            },
+        );
+        return result;
+    };
+}
 
 /**
  * Establishes per-request tenant context — the load-bearing seam for the whole platform. Mounted at
@@ -62,6 +121,7 @@ export default class TenantContextMiddleware {
         const trx = await db.connection(resolveTenantConnection(tenant)).transaction();
         try {
             await trx.rawQuery("SELECT set_config('app.current_tenant', ?, true)", [String(tenant.id)]);
+            traceConcurrentTransactionQueries(trx.knexClient, ctx);
             await runWithTenant(BigInt(tenant.id), trx, () => next());
         } catch (error) {
             /**
