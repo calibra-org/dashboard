@@ -1,0 +1,308 @@
+name: Live Review Preview
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/live-review-preview.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: live-review-preview-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 345
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: calibra
+          POSTGRES_PASSWORD: calibra
+          POSTGRES_DB: calibra
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U calibra -d calibra"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+
+    env:
+      NODE_VERSION: "24.14.0"
+      PNPM_VERSION: "10.32.1"
+      TZ: UTC
+      NODE_ENV: development
+      PORT: "3333"
+      HOST: 0.0.0.0
+      APP_NAME: calibra-api
+      LOG_LEVEL: info
+      APP_KEY: previewonlycalibraappkey12345678
+
+      DB_HOST: localhost
+      DB_PORT: "5432"
+      DB_USER: calibra_app
+      DB_PASSWORD: calibra_app
+      DB_DATABASE: calibra
+      DB_ADMIN_USER: calibra_admin
+      DB_ADMIN_PASSWORD: calibra_admin
+      DB_SUPERUSER_USER: calibra
+      DB_SUPERUSER_PASSWORD: calibra
+
+      REDIS_HOST: localhost
+      REDIS_PORT: "6379"
+      TRANSMIT_TRANSPORT: redis
+      QUEUE_DRIVER: database
+      LIMITER_STORE: redis
+      CACHE_DRIVER: redis
+
+      SMS_DRIVER: log
+      MAIL_FROM_ADDRESS: preview@calibra.dev
+      MAIL_FROM_NAME: Calibra Preview
+      MAIL_NOTIFICATIONS_ENABLED: "false"
+      SMTP_HOST: localhost
+      SMTP_PORT: "2525"
+      ALLOWED_ORIGINS: "*"
+
+      NEXT_PUBLIC_API_BASE_URL: http://127.0.0.1:3333
+      NEXT_PUBLIC_SITE_URL: http://localhost:3001
+      NEXT_PUBLIC_DEFAULT_LOCALE: fa
+      NEXT_PUBLIC_DEV_TENANT: aurora
+      NEXT_DEV_ALLOWED_ORIGINS: "*.trycloudflare.com"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install pnpm
+        run: npm install --global pnpm@${PNPM_VERSION}
+
+      - name: Install workspace
+        run: pnpm install --frozen-lockfile
+
+      - name: Build SDK
+        run: pnpm --filter @calibra/sdk build
+
+      - name: Write runtime env
+        shell: bash
+        run: |
+          cat > apps/api/.env <<'EOF'
+          TZ=UTC
+          NODE_ENV=development
+          PORT=3333
+          HOST=0.0.0.0
+          APP_NAME=calibra-api
+          LOG_LEVEL=info
+          APP_KEY=previewonlycalibraappkey12345678
+          DB_HOST=localhost
+          DB_PORT=5432
+          DB_USER=calibra_app
+          DB_PASSWORD=calibra_app
+          DB_DATABASE=calibra
+          DB_ADMIN_USER=calibra_admin
+          DB_ADMIN_PASSWORD=calibra_admin
+          DB_SUPERUSER_USER=calibra
+          DB_SUPERUSER_PASSWORD=calibra
+          REDIS_HOST=localhost
+          REDIS_PORT=6379
+          TRANSMIT_TRANSPORT=redis
+          QUEUE_DRIVER=database
+          LIMITER_STORE=redis
+          CACHE_DRIVER=redis
+          SMS_DRIVER=log
+          MAIL_FROM_ADDRESS=preview@calibra.dev
+          MAIL_FROM_NAME=Calibra Preview
+          MAIL_NOTIFICATIONS_ENABLED=false
+          SMTP_HOST=localhost
+          SMTP_PORT=2525
+          ALLOWED_ORIGINS=*
+          EOF
+
+          cat > apps/admin/.env.local <<'EOF'
+          NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:3333
+          NEXT_PUBLIC_SITE_URL=http://localhost:3001
+          NEXT_PUBLIC_DEFAULT_LOCALE=fa
+          NEXT_PUBLIC_DEV_TENANT=aurora
+          NEXT_DEV_ALLOWED_ORIGINS=*.trycloudflare.com
+          EOF
+
+      - name: Bootstrap database roles
+        run: pnpm --filter @calibra/api exec node ace db:bootstrap-roles
+
+      - name: Run migrations
+        run: pnpm --filter @calibra/api exec node ace migration:run --connection=postgres_admin
+
+      - name: Seed demo data
+        run: pnpm --filter @calibra/api exec node ace db:seed --connection=postgres_admin
+
+      - name: Start API, queue worker, and Admin
+        shell: bash
+        run: |
+          nohup pnpm --filter @calibra/api dev > /tmp/calibra-api.log 2>&1 &
+          echo $! > /tmp/calibra-api.pid
+
+          nohup pnpm --filter @calibra/api exec node ace queue:work --queue=imports,exports > /tmp/calibra-queue.log 2>&1 &
+          echo $! > /tmp/calibra-queue.pid
+
+          nohup pnpm --filter @calibra/admin dev > /tmp/calibra-admin.log 2>&1 &
+          echo $! > /tmp/calibra-admin.pid
+
+          ready=0
+          for i in $(seq 1 120); do
+            if curl -fsS http://127.0.0.1:3333/health >/dev/null && curl -fsSL --max-redirs 10 http://127.0.0.1:3001 >/dev/null; then
+              ready=1
+              break
+            fi
+            sleep 2
+          done
+
+          if [ "$ready" -ne 1 ]; then
+            echo "API/Admin did not become ready"
+            echo "--- API log ---"
+            tail -n 150 /tmp/calibra-api.log || true
+            echo "--- Admin log ---"
+            tail -n 150 /tmp/calibra-admin.log || true
+            echo "--- Queue log ---"
+            tail -n 150 /tmp/calibra-queue.log || true
+            exit 1
+          fi
+
+          if ! kill -0 "$(cat /tmp/calibra-queue.pid)" 2>/dev/null; then
+            echo "Queue worker exited during startup"
+            tail -n 150 /tmp/calibra-queue.log || true
+            exit 1
+          fi
+
+          curl -fsS http://127.0.0.1:3333/health
+          curl -fsSL --max-redirs 10 http://127.0.0.1:3001 >/dev/null
+
+      - name: Install Cloudflare Tunnel
+        shell: bash
+        run: |
+          curl -fsSL -o /tmp/cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+          sudo dpkg -i /tmp/cloudflared.deb
+          cloudflared --version
+
+      - name: Open public HTTPS preview
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          nohup cloudflared tunnel --no-autoupdate --http-host-header localhost:3001 --url http://127.0.0.1:3001 > /tmp/cloudflared.log 2>&1 &
+          echo $! > /tmp/cloudflared.pid
+
+          URL=""
+          for i in $(seq 1 90); do
+            URL=$(grep -Eo 'https://[-a-z0-9]+\.trycloudflare\.com' /tmp/cloudflared.log | head -n 1 || true)
+            if [ -n "$URL" ]; then
+              break
+            fi
+            sleep 2
+          done
+
+          if [ -z "$URL" ]; then
+            echo "Cloudflare quick tunnel did not publish a URL"
+            cat /tmp/cloudflared.log
+            exit 1
+          fi
+
+          public_ready=0
+          for i in $(seq 1 60); do
+            if curl -fsSL --max-time 20 "$URL" >/dev/null; then
+              public_ready=1
+              break
+            fi
+            sleep 2
+          done
+
+          if [ "$public_ready" -ne 1 ]; then
+            echo "Tunnel URL exists but public Admin is not reachable"
+            echo "URL: $URL"
+            echo "--- cloudflared log ---"
+            tail -n 150 /tmp/cloudflared.log || true
+            echo "--- Admin log ---"
+            tail -n 150 /tmp/calibra-admin.log || true
+            exit 1
+          fi
+
+          echo "PREVIEW_URL=$URL" >> "$GITHUB_ENV"
+
+          cat > /tmp/live-preview-comment.md <<EOF
+          ## Calibra live review is ready
+
+          **Admin:** $URL
+
+          **Tenant:** \`aurora\`  
+          **Email:** \`admin@bulk.calibra.dev\`  
+          **Password:** \`Passw0rd1!\`
+
+          This temporary preview stays online while the workflow job is running.
+          EOF
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            gh pr comment "${{ github.event.pull_request.number }}" --body-file /tmp/live-preview-comment.md
+          fi
+
+          echo "## Calibra live review" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Admin: $URL" >> "$GITHUB_STEP_SUMMARY"
+          echo "Tenant: aurora" >> "$GITHUB_STEP_SUMMARY"
+          echo "Email: admin@bulk.calibra.dev" >> "$GITHUB_STEP_SUMMARY"
+          echo "Password: Passw0rd1!" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "The preview remains available while this workflow job is running." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Keep preview alive
+        shell: bash
+        run: |
+          echo "Live preview: $PREVIEW_URL"
+          for i in $(seq 1 300); do
+            if ! curl -fsS http://127.0.0.1:3333/health >/dev/null; then
+              echo "API health failed"
+              tail -n 150 /tmp/calibra-api.log || true
+              exit 1
+            fi
+
+            if ! curl -fsSL --max-redirs 10 http://127.0.0.1:3001 >/dev/null; then
+              echo "Admin health failed"
+              tail -n 150 /tmp/calibra-admin.log || true
+              exit 1
+            fi
+
+            if ! kill -0 "$(cat /tmp/cloudflared.pid)" 2>/dev/null; then
+              echo "Cloudflare tunnel process exited"
+              tail -n 150 /tmp/cloudflared.log || true
+              exit 1
+            fi
+
+            if ! kill -0 "$(cat /tmp/calibra-queue.pid)" 2>/dev/null; then
+              echo "Queue worker exited"
+              tail -n 150 /tmp/calibra-queue.log || true
+              exit 1
+            fi
+
+            sleep 60
+          done
