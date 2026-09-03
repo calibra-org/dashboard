@@ -410,14 +410,12 @@ async function seoSignals(now: string): Promise<NormalizedSignal[]> {
 
 async function detectSignals(): Promise<NormalizedSignal[]> {
     const now = DateTime.utc().toISO();
-    const groups = await Promise.all([
-        paymentSignals(now),
-        fulfillmentSignals(now),
-        supportSignals(now),
-        inventorySignals(now),
-        seoSignals(now),
-    ]);
-    return groups.flat();
+    const payments = await paymentSignals(now);
+    const fulfillment = await fulfillmentSignals(now);
+    const support = await supportSignals(now);
+    const inventory = await inventorySignals(now);
+    const seo = await seoSignals(now);
+    return [...payments, ...fulfillment, ...support, ...inventory, ...seo];
 }
 
 function materialFingerprint(signal: NormalizedSignal, scored: ReturnType<typeof scoreAvailableComponents>): string {
@@ -442,6 +440,7 @@ function materialFingerprint(signal: NormalizedSignal, scored: ReturnType<typeof
 export async function refreshDecisionIntelligence(): Promise<void> {
     const trx = currentTrx();
     const tenantId = currentTenantId();
+    await trx.rawQuery("SELECT pg_advisory_xact_lock(1764, hashtext(?))", [`decision-intelligence:${tenantId.toString()}`]);
     const signals = await detectSignals();
     const activeKeys = signals.map((signal) => signal.stableKey);
 
@@ -604,7 +603,8 @@ export async function listIntelligenceCases(options: {
         .orderBy("last_seen_at", "desc")
         .limit(options.limit)
         .offset((options.page - 1) * options.limit);
-    const [countRow, rows] = await Promise.all([countQuery, rowsQuery]);
+    const countRow = await countQuery;
+    const rows = await rowsQuery;
     const total = numberFrom(countRow?.count);
     return {
         data: rows.map(serializeCase),
@@ -616,28 +616,24 @@ export async function intelligenceSummary() {
     await refreshDecisionIntelligence();
     const trx = currentTrx();
     const tenantId = currentTenantId().toString();
-    const [totals, domains] = await Promise.all([
-        trx
-            .from("intelligence_cases")
-            .where("tenant_id", tenantId)
-            .select(
-                trx.raw("COUNT(*) FILTER (WHERE signal_state = 'open')::int AS open_count"),
-                trx.raw(
-                    "COUNT(*) FILTER (WHERE signal_state = 'open' AND severity IN ('high','critical'))::int AS high_critical_count",
-                ),
-                trx.raw("COUNT(*) FILTER (WHERE signal_state = 'open' AND score_mode = 'provisional')::int AS provisional_count"),
-                trx.raw("COUNT(*) FILTER (WHERE lifecycle_stage IN ('measured','learned'))::int AS measured_count"),
-            )
-            .first(),
-        trx
-            .from("intelligence_cases")
-            .where("tenant_id", tenantId)
-            .where("signal_state", "open")
-            .groupBy("domain")
-            .select("domain")
-            .count("id as count")
-            .orderBy("domain", "asc"),
-    ]);
+    const totals = await trx
+        .from("intelligence_cases")
+        .where("tenant_id", tenantId)
+        .select(
+            trx.raw("COUNT(*) FILTER (WHERE signal_state = 'open')::int AS open_count"),
+            trx.raw("COUNT(*) FILTER (WHERE signal_state = 'open' AND severity IN ('high','critical'))::int AS high_critical_count"),
+            trx.raw("COUNT(*) FILTER (WHERE signal_state = 'open' AND score_mode = 'provisional')::int AS provisional_count"),
+            trx.raw("COUNT(*) FILTER (WHERE lifecycle_stage IN ('measured','learned'))::int AS measured_count"),
+        )
+        .first();
+    const domains = await trx
+        .from("intelligence_cases")
+        .where("tenant_id", tenantId)
+        .where("signal_state", "open")
+        .groupBy("domain")
+        .select("domain")
+        .count("id as count")
+        .orderBy("domain", "asc");
     return {
         openCount: numberFrom(totals?.open_count),
         highCriticalCount: numberFrom(totals?.high_critical_count),
@@ -663,12 +659,22 @@ export async function intelligenceCaseDetail(id: string) {
     const tenantId = currentTenantId().toString();
     const row = await trx.from("intelligence_cases").where({ id, tenant_id: tenantId }).first();
     if (!row) return null;
-    const [evidence, decisions, actions, outcomes] = await Promise.all([
-        trx.from("intelligence_evidence_links").where({ case_id: id, tenant_id: tenantId }).orderBy("freshness_at", "desc"),
-        trx.from("intelligence_decisions").where({ case_id: id, tenant_id: tenantId }).orderBy("created_at", "desc"),
-        trx.from("intelligence_action_records").where({ case_id: id, tenant_id: tenantId }).orderBy("created_at", "desc"),
-        trx.from("intelligence_outcome_records").where({ case_id: id, tenant_id: tenantId }).orderBy("observed_at", "desc"),
-    ]);
+    const evidence = await trx
+        .from("intelligence_evidence_links")
+        .where({ case_id: id, tenant_id: tenantId })
+        .orderBy("freshness_at", "desc");
+    const decisions = await trx
+        .from("intelligence_decisions")
+        .where({ case_id: id, tenant_id: tenantId })
+        .orderBy("created_at", "desc");
+    const actions = await trx
+        .from("intelligence_action_records")
+        .where({ case_id: id, tenant_id: tenantId })
+        .orderBy("created_at", "desc");
+    const outcomes = await trx
+        .from("intelligence_outcome_records")
+        .where({ case_id: id, tenant_id: tenantId })
+        .orderBy("observed_at", "desc");
     return { case: serializeCase(row), evidence, decisions, actions, outcomes };
 }
 
