@@ -6,44 +6,6 @@ import { resolveTenantConnection } from "#config/database";
 import { runWithTenant } from "#services/tenant_context";
 import { type ResolvedTenant, resolveTenantByHost, resolveTenantByRef } from "#services/tenant_resolver";
 
-type KnexQuery = (...args: unknown[]) => Promise<unknown>;
-
-type KnexTransactionWithClient = {
-    client?: {
-        query?: KnexQuery;
-    };
-};
-
-/**
- * PostgreSQL executes one statement at a time per client. Every tenant request intentionally keeps
- * one transaction/client for the complete request so `SET LOCAL app.current_tenant`, forced RLS,
- * and the request atomic boundary all stay coupled. Some higher-level read models fan independent
- * queries out with `Promise.all`, which pg@8 used to queue implicitly and now deprecates ahead of
- * pg@9.
- *
- * Keep that architecture intact and provide the required external async flow control at the shared
- * transaction seam: callers can still compose promises normally, while the physical statements are
- * dispatched to this transaction client strictly one at a time. A failed statement does not poison
- * the JavaScript queue itself; PostgreSQL remains authoritative for the aborted transaction state and
- * the middleware rolls the request back as before.
- */
-function serializeTransactionQueries(knexTransaction: unknown): void {
-    const client = (knexTransaction as KnexTransactionWithClient).client;
-    if (!client?.query) return;
-
-    const query = client.query.bind(client);
-    let tail: Promise<void> = Promise.resolve();
-
-    client.query = (...args: unknown[]) => {
-        const result = tail.then(() => query(...args));
-        tail = result.then(
-            () => undefined,
-            () => undefined,
-        );
-        return result;
-    };
-}
-
 /**
  * Establishes per-request tenant context — the load-bearing seam for the whole platform. Mounted at
  * the server level (after locale detection, before metrics) so it wraps every matched + unmatched
@@ -56,7 +18,9 @@ function serializeTransactionQueries(knexTransaction: unknown): void {
  * When a tenant resolves, the middleware opens a transaction on the tenant's connection, sets the
  * `app.current_tenant` GUC transaction-locally (`set_config(..., true)` ≡ `SET LOCAL`, safe under
  * PgBouncer transaction pooling), and runs the rest of the request inside `runWithTenant`. Commit on
- * success, rollback on error.
+ * success, rollback on error. Authenticated routes opt into explicit query serialization only after
+ * the access-token lookup succeeds; keeping auth itself on the native transaction client preserves
+ * the framework's authentication semantics while still protecting business-layer fan-out.
  *
  * Resolution outcomes:
  *  - tenant indicated (header) but not found → **404** (no silent fallthrough to another tenant).
@@ -100,7 +64,6 @@ export default class TenantContextMiddleware {
         const trx = await db.connection(resolveTenantConnection(tenant)).transaction();
         try {
             await trx.rawQuery("SELECT set_config('app.current_tenant', ?, true)", [String(tenant.id)]);
-            serializeTransactionQueries(trx.knexClient);
             await runWithTenant(BigInt(tenant.id), trx, () => next());
         } catch (error) {
             /**
